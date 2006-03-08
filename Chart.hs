@@ -35,11 +35,10 @@ class Renderable a where
 
 ----------------------------------------------------------------------
 
-data AxisType = AS_Top | AS_Bottom | AS_Left | AS_Right
+data AxisType = AT_Top | AT_Bottom | AT_Left | AT_Right
 
 data Axis =  Axis {
     axis_viewport :: Rect,
-    axis_type :: AxisType,
     axis_line_style :: CairoLineStyle,
     axis_label_style :: CairoFontStyle,
 
@@ -48,16 +47,18 @@ data Axis =  Axis {
     axis_label_gap :: Double 
 }
 
-instance Renderable Axis where
+data AxisT = AxisT AxisType Axis
+
+instance Renderable AxisT where
    minsize = minsizeAxis
    render  = renderAxis 
 
-minsizeAxis :: Axis -> (Double,Double)
-minsizeAxis a = (s,s)
+minsizeAxis :: AxisT -> (Double,Double)
+minsizeAxis (AxisT at a) = (s,s)
    where s = maximum (map snd (axis_ticks a))
 
-renderAxis :: Axis -> Rect -> Cairo.Render ()
-renderAxis a rect = do
+renderAxis :: AxisT -> Rect -> Cairo.Render ()
+renderAxis (AxisT at a) rect = do
    Cairo.save
    lineStyle
    strokeLine (Point sx sy) (Point ex ey)
@@ -73,11 +74,11 @@ renderAxis a rect = do
 
    (Rect (Point vx1 vy1) (Point vx2 vy2)) = axis_viewport a
 
-   (sx,sy,ex,ey,vs,ve,tp) = case axis_type a of
-       AS_Top    -> (x1,y1,x2,y1, vx1, vx2, (Point 0 (-1))) 
-       AS_Bottom -> (x1,y2,x2,y2, vx1, vx2, (Point 0 1))		
-       AS_Left   -> (x2,y1,x2,y2, vy1, vy2, (Point (1) 0))		
-       AS_Right  -> (x1,y1,x1,y2, vy1, vy2,  (Point (-1) 0))
+   (sx,sy,ex,ey,vs,ve,tp) = case at of
+       AT_Top    -> (x1,y1,x2,y1, vx1, vx2, (Point 0 (-1))) 
+       AT_Bottom -> (x1,y2,x2,y2, vx1, vx2, (Point 0 1))		
+       AT_Left   -> (x2,y1,x2,y2, vy1, vy2, (Point (1) 0))		
+       AT_Right  -> (x1,y1,x1,y2, vy1, vy2,  (Point (-1) 0))
 
    axisPoint value = 
        let ax = (sx + (ex-sx) * (value - vs) / (ve-vs))
@@ -108,13 +109,13 @@ instance Renderable Layout1 where
 
 renderLayout1 :: Layout1 -> Rect -> Cairo.Render ()
 renderLayout1 l (Rect p0 p5) = do
-    renderMAxis (layout1_bottom_axis l) (mkrect p2 p1 p3 p2)
-    renderMAxis (layout1_left_axis l) (mkrect p1 p2 p2 p3)
-    renderMAxis (layout1_top_axis l) (mkrect p2 p3 p3 p4)
-    renderMAxis (layout1_right_axis l) (mkrect p3 p2 p4 p3)
+    renderMAxis AT_Bottom (layout1_bottom_axis l) (mkrect p2 p1 p3 p2)
+    renderMAxis AT_Left (layout1_left_axis l) (mkrect p1 p2 p2 p3)
+    renderMAxis AT_Top (layout1_top_axis l) (mkrect p2 p3 p3 p4)
+    renderMAxis AT_Right (layout1_right_axis l) (mkrect p3 p2 p4 p3)
   where
-    renderMAxis (Just a) rect = render a rect
-    renderMAxis Nothing  _ = return ()
+    renderMAxis at (Just a) rect = render (AxisT at a) rect
+    renderMAxis _ Nothing  _ = return ()
 
     mkrect (Point x1 y1) (Point x2 y2) (Point x3 y3) (Point x4 y4) =
 	Rect (Point x1 y2) (Point x3 y4)
@@ -135,10 +136,10 @@ minsizeLayout1 l = (2*m+w1+w2,2*m+h1+h2)
 
 axisSizes l = (w1,h1,w2,h2)
   where
-    w1 = maybe 0 (\a -> fst (minsize a)) (layout1_left_axis l) 
-    h1 = maybe 0 (\a -> snd (minsize a)) (layout1_bottom_axis l) 
-    w2 = maybe 0 (\a -> fst (minsize a)) (layout1_right_axis l) 
-    h2 = maybe 0 (\a -> snd (minsize a)) (layout1_top_axis l) 
+    w1 = maybe 0 (\a -> fst (minsize (AxisT AT_Left a))) (layout1_left_axis l) 
+    h1 = maybe 0 (\a -> snd (minsize (AxisT AT_Bottom a))) (layout1_bottom_axis l) 
+    w2 = maybe 0 (\a -> fst (minsize (AxisT AT_Right a))) (layout1_right_axis l) 
+    h2 = maybe 0 (\a -> snd (minsize (AxisT AT_Top a))) (layout1_top_axis l) 
 
 emptyLayout1 = Layout1 {
     layout1_bottom_axis = Nothing,
