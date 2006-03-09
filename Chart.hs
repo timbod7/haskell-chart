@@ -30,7 +30,7 @@ data Plot = Plot {
 }
     
 class Renderable a where
-   minsize  :: a -> (Double,Double)
+   minsize  :: a -> Cairo.Render (Double,Double)
    render   :: a -> Rect -> Cairo.Render ()
 
 ----------------------------------------------------------------------
@@ -53,22 +53,44 @@ instance Renderable AxisT where
    minsize = minsizeAxis
    render  = renderAxis 
 
-minsizeAxis :: AxisT -> (Double,Double)
-minsizeAxis (AxisT at a) = (s,s)
-   where s = maximum (map snd (axis_ticks a))
+minsizeAxis :: AxisT -> Cairo.Render (Double,Double)
+minsizeAxis (AxisT at a) = do
+    let labels = map snd (axis_labels a)
+    Cairo.save
+    setFontStyle
+    labelSizes <- mapM labelSize labels
+    Cairo.restore
+    let (lw,lh) = foldl maxsz (0,0) labelSizes
+    let ag = axis_label_gap a
+    let tsize = maximum [ max 0 (-l) | (v,l) <- axis_ticks a ]
+    let sz = case at of
+		     AT_Top    -> (lw,max (lh + ag) tsize)
+		     AT_Bottom -> (lw,max (lh + ag) tsize)
+		     AT_Left   -> (max (lw + ag) tsize, lh)
+		     AT_Right  -> (max (lw + ag) tsize, lh)
+    return sz
+
+  where
+    maxsz (w1,h1) (w2,h2) = (max w1 w2, max h1 h2)
+
+    labelSize s = do
+        te <- Cairo.textExtents s
+	return (Cairo.textExtentsWidth te, Cairo.textExtentsHeight te)
+
+    (CairoFontStyle setFontStyle) = axis_label_style a
 
 renderAxis :: AxisT -> Rect -> Cairo.Render ()
 renderAxis (AxisT at a) rect = do
    Cairo.save
-   lineStyle
+   setLineStyle
    strokeLine (Point sx sy) (Point ex ey)
    mapM_ drawTick (axis_ticks a)
-   fontStyle
+   setFontStyle
    mapM_ drawLabel (axis_labels a)
    Cairo.restore
  where
-   (CairoLineStyle lineStyle) = axis_line_style a
-   (CairoFontStyle fontStyle) = axis_label_style a
+   (CairoLineStyle setLineStyle) = axis_line_style a
+   (CairoFontStyle setFontStyle) = axis_label_style a
 
    (Rect (Point x1 y1) (Point x2 y2)) = rect
 
@@ -90,8 +112,11 @@ renderAxis (AxisT at a) rect = do
 	   t2 = t1 `padd` (pscale length tp)
        in strokeLine t1 t2
 
-   drawLabel (value,s) = 
-       return ()
+   drawLabel (value,s) = do
+       let (Point ax ay) = axisPoint value
+       Cairo.moveTo ax ay
+--       Cairo.scale 1 (-1)
+       Cairo.showText s
 
 ----------------------------------------------------------------------
 
@@ -109,6 +134,14 @@ instance Renderable Layout1 where
 
 renderLayout1 :: Layout1 -> Rect -> Cairo.Render ()
 renderLayout1 l (Rect p0 p5) = do
+    (w1,h1,w2,h2) <- axisSizes l
+
+    let mp = let s = (layout1_margin l) in (Point s s)
+    let p1 = p0 `padd` mp
+    let p2 = p1 `padd` (Point w1 h1)
+    let p4  = p5 `psub` mp
+    let p3  = p4 `psub` (Point w2 h2)
+
     renderMAxis AT_Bottom (layout1_bottom_axis l) (mkrect p2 p1 p3 p2)
     renderMAxis AT_Left (layout1_left_axis l) (mkrect p1 p2 p2 p3)
     renderMAxis AT_Top (layout1_top_axis l) (mkrect p2 p3 p3 p4)
@@ -119,27 +152,26 @@ renderLayout1 l (Rect p0 p5) = do
 
     mkrect (Point x1 y1) (Point x2 y2) (Point x3 y3) (Point x4 y4) =
 	Rect (Point x1 y2) (Point x3 y4)
-
-    p1 = p0 `padd` mp
-    p2 = p1 `padd` (Point w1 h1)
-
-    p4  = p5 `psub` mp
-    p3  = p4 `psub` (Point w2 h2)
     
-    mp = let s = (layout1_margin l) in (Point s s)
-    (w1,h1,w2,h2) = axisSizes l
 
-minsizeLayout1 l = (2*m+w1+w2,2*m+h1+h2)
-  where 
-    m = layout1_margin l
-    (w1,h1,w2,h2) = axisSizes l
+minsizeLayout1 l = do
+  let m = layout1_margin l
+  (w1,h1,w2,h2) <- axisSizes l
+  return (2*m+w1+w2,2*m+h1+h2)
 
-axisSizes l = (w1,h1,w2,h2)
+
+axisSizes l = do
+    w1 <- asize fst AT_Left   (layout1_left_axis l)
+    h1 <- asize snd AT_Bottom (layout1_bottom_axis l)
+    w2 <- asize fst AT_Right  (layout1_right_axis l)
+    h2 <- asize snd AT_Top    (layout1_top_axis l)
+    return (w1,h1,w2,h2)
   where
-    w1 = maybe 0 (\a -> fst (minsize (AxisT AT_Left a))) (layout1_left_axis l) 
-    h1 = maybe 0 (\a -> snd (minsize (AxisT AT_Bottom a))) (layout1_bottom_axis l) 
-    w2 = maybe 0 (\a -> fst (minsize (AxisT AT_Right a))) (layout1_right_axis l) 
-    h2 = maybe 0 (\a -> snd (minsize (AxisT AT_Top a))) (layout1_top_axis l) 
+    asize xyfn at ma = case ma of
+	  Nothing -> return 0
+	  Just a  -> do
+	      sz <- minsize (AxisT at a)
+	      return (xyfn sz)
 
 emptyLayout1 = Layout1 {
     layout1_bottom_axis = Nothing,

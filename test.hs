@@ -30,7 +30,7 @@ main =
 	axis_line_style=CairoLineStyle (return ()),
 	axis_label_style=CairoFontStyle (return ()),
 	axis_ticks=[(0.0,10),(0.25,10),(0.50,10),(0.75,10),(1.0,10)],
-	axis_labels=[],
+	axis_labels=[(0.0,"0.00"),(0.5,"0.50"),(1.0,"1.00")],
 	axis_label_gap=1
     }
 
