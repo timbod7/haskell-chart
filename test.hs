@@ -14,7 +14,6 @@ main =
     dheight = fromIntegral height
 
     chart = do
-        fixYCoordinates
 	save
 	setSourceRGB 1 1 1
 	paint
@@ -25,13 +24,17 @@ main =
         translate 0 dheight
 	scale 1 (-1)
 
+    lineStyle = do
+        setLineWidth 1.0
+	setSourceRGB 0 0 1.0
+
     axis = Axis {
         axis_viewport=Rect (Point 0 0) (Point 1.0 1.0),
-	axis_line_style=CairoLineStyle (return ()),
+	axis_line_style=CairoLineStyle lineStyle,
 	axis_label_style=CairoFontStyle (return ()),
 	axis_ticks=[(0.0,10),(0.25,10),(0.50,10),(0.75,10),(1.0,10)],
 	axis_labels=[(0.0,"0.00"),(0.5,"0.50"),(1.0,"1.00")],
-	axis_label_gap=1
+	axis_label_gap=10
     }
 
     layout = emptyLayout1 {
