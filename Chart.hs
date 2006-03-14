@@ -22,13 +22,6 @@ data Label = Label {
     label_style :: CairoFontStyle
 }
 
-data Plot = Plot {
-    plot_pointstyle :: Maybe CairoPointStyle,
-    plot_linestyle :: Maybe CairoLineStyle,
-    plot_values :: [Point],
-    plot_viewport :: Rect
-}
-    
 class Renderable a where
    minsize  :: a -> Cairo.Render (Double,Double)
    render   :: a -> Rect -> Cairo.Render ()
@@ -38,7 +31,7 @@ class Renderable a where
 data AxisType = AT_Top | AT_Bottom | AT_Left | AT_Right
 
 data Axis =  Axis {
-    axis_viewport :: Rect,
+    axis_viewport :: (Double,Double),
     axis_line_style :: CairoLineStyle,
     axis_label_style :: CairoFontStyle,
 
@@ -96,13 +89,13 @@ renderAxis (AxisT at a) rect = do
 
    (Rect (Point x1 y1) (Point x2 y2)) = rect
 
-   (Rect (Point vx1 vy1) (Point vx2 vy2)) = axis_viewport a
+   (vs,ve) = axis_viewport a
 
-   (sx,sy,ex,ey,vs,ve,tp) = case at of
-       AT_Top    -> (x1,y2,x2,y2, vx1, vx2, (Point 0 1)) 
-       AT_Bottom -> (x1,y1,x2,y1, vx1, vx2, (Point 0 (-1)))
-       AT_Left   -> (x2,y2,x2,y1, vy1, vy2, (Point (1) 0))		
-       AT_Right  -> (x1,y2,x1,y1, vy1, vy2,  (Point (-1) 0))
+   (sx,sy,ex,ey,tp) = case at of
+       AT_Top    -> (x1,y2,x2,y2, (Point 0 1)) 
+       AT_Bottom -> (x1,y1,x2,y1, (Point 0 (-1)))
+       AT_Left   -> (x2,y2,x2,y1, (Point (1) 0))		
+       AT_Right  -> (x1,y2,x1,y1, (Point (-1) 0))
 
    axisPoint value = 
        let ax = (sx + (ex-sx) * (value - vs) / (ve-vs))
@@ -133,22 +126,52 @@ renderAxis (AxisT at a) rect = do
 
 ----------------------------------------------------------------------
 
+data Plot = Plot {
+    plot_point_style :: Maybe CairoPointStyle,
+    plot_line_style :: Maybe CairoLineStyle,
+    plot_values :: [Point]
+}
+
+renderPlot :: Plot -> Rect -> Rect -> Cairo.Render ()
+renderPlot p (Rect pr1 pr2) (Rect pv1 pv2) = do
+    let values = plot_values p
+    case (plot_line_style p, values) of
+        (Just ls,_:_:_) -> drawLines ls values
+        _       -> return ()
+    drawPoints values
+  where
+    drawLines (CairoLineStyle setLineStyle) (p:ps) = do
+        Cairo.save
+	setLineStyle
+	moveTo (pmap p)
+	mapM_ (\p -> lineTo (pmap p)) ps
+	Cairo.stroke
+        Cairo.restore
+
+    drawPoints values = do
+        Cairo.save
+        Cairo.restore
+
+    xs = (p_x pr2 - p_x pr1) / (p_x pv2 - p_x pv1)
+    ys = (p_y pr2 - p_y pr1) / (p_y pv2 - p_y pv1)
+
+    pmap (Point x y) = Point (p_x pr1 + (x - p_x pv1) * xs)
+		             (p_y pr1 + (y - p_y pv1) * ys)
+			
+
+----------------------------------------------------------------------
+
+data HAxis = HA_Top | HA_Bottom
+data VAxis = VA_Left | VA_Right
+
 data Layout1 = Layout1 {
     layout1_bottom_axis :: Maybe Axis,
     layout1_left_axis :: Maybe Axis,
     layout1_top_axis :: Maybe Axis,
     layout1_right_axis :: Maybe Axis,
-    layout1_margin :: Double
+    layout1_margin :: Double,
+    layout1_plots :: [(HAxis, VAxis, Plot)]
 }
-
-
--- p0
---   p1
---     p2
--- 
---           p3
---             p4
---               p5
 
 instance Renderable Layout1 where
     render = renderLayout1
@@ -164,17 +187,41 @@ renderLayout1 l (Rect p0 p5) = do
     let p4  = p5 `psub` mp
     let p3  = p4 `psub` (Point w2 h2)
 
-    renderMAxis AT_Top (layout1_top_axis l) (mkrect p2 p1 p3 p2)
-    renderMAxis AT_Bottom (layout1_bottom_axis l) (mkrect p2 p3 p3 p4)
-    renderMAxis AT_Left (layout1_left_axis l) (mkrect p1 p2 p2 p3)
-    renderMAxis AT_Right (layout1_right_axis l) (mkrect p3 p2 p4 p3)
+    rMAxis AT_Top (layout1_top_axis l) (mkrect p2 p1 p3 p2)
+    rMAxis AT_Bottom (layout1_bottom_axis l) (mkrect p2 p3 p3 p4)
+    rMAxis AT_Left (layout1_left_axis l) (mkrect p1 p2 p2 p3)
+    rMAxis AT_Right (layout1_right_axis l) (mkrect p3 p2 p4 p3)
+    Cairo.save
+    setClipRegion p2 p3 
+    mapM_ (rPlot (Rect p2 p3)) (layout1_plots l)
+    Cairo.restore
   where
-    renderMAxis at (Just a) rect = render (AxisT at a) rect
-    renderMAxis _ Nothing  _ = return ()
+    rMAxis at (Just a) rect = render (AxisT at a) rect
+    rMAxis _ Nothing  _ = return ()
+
+    hvport HA_Bottom = layout1_bottom_axis
+    hvport HA_Top = layout1_top_axis
+    vvport VA_Left = layout1_left_axis
+    vvport VA_Right = layout1_right_axis
+
+    rPlot :: Rect -> (HAxis,VAxis,Plot) -> Cairo.Render ()
+    rPlot rect (ha,va,p) = 
+        let avport (Just a) = axis_viewport a
+	    avport Nothing  = (0,1)
+            (x1,x2) = avport (hvport ha l)
+	    (y1,y2) = avport (vvport va l)
+	in renderPlot p rect (Rect (Point x1 y1) (Point x2 y2))
 
     mkrect (Point x1 y1) (Point x2 y2) (Point x3 y3) (Point x4 y4) =
 	Rect (Point x1 y2) (Point x3 y4)
-    
+
+    setClipRegion p2 p3 = do    
+        Cairo.moveTo (p_x p2) (p_y p2)
+	Cairo.lineTo (p_x p2) (p_y p3)
+        Cairo.lineTo (p_x p3) (p_y p3)
+        Cairo.lineTo (p_x p3) (p_y p2)
+        Cairo.lineTo (p_x p2) (p_y p2)
+        Cairo.clip
 
 minsizeLayout1 l = do
   let m = layout1_margin l
@@ -200,13 +247,18 @@ emptyLayout1 = Layout1 {
     layout1_top_axis = Nothing,
     layout1_left_axis = Nothing,
     layout1_right_axis = Nothing,
-    layout1_margin = 10
+    layout1_margin = 10,
+    layout1_plots = []
 }
 
 ----------------------------------------------------------------------
 
-strokeLine p1@(Point p1x p1y) p2@(Point p2x p2y) = do
+moveTo, lineTo :: Point -> Cairo.Render ()
+moveTo (Point px py) = Cairo.moveTo px py
+lineTo (Point px py) = Cairo.lineTo px py
+
+strokeLine p1 p2 = do
    Cairo.newPath
-   Cairo.moveTo p1x p1y
-   Cairo.lineTo p2x p2y
+   moveTo p1
+   lineTo p2
    Cairo.stroke
