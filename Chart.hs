@@ -13,7 +13,7 @@ psub (Point x1 y1) (Point x2 y2) = (Point (x1-x2) (y1-y2))
 
 data Rect = Rect Point Point
 
-newtype CairoPointStyle = CairoPointStyle (Cairo.Render ())
+newtype CairoPointStyle = CairoPointStyle (Point -> Cairo.Render ())
 newtype CairoLineStyle = CairoLineStyle (Cairo.Render ())
 newtype CairoFontStyle = CairoFontStyle (Cairo.Render ())
 
@@ -125,39 +125,70 @@ renderAxis (AxisT at a) rect = do
        Cairo.showText s
 
 ----------------------------------------------------------------------
+data Plot = PPoints PlotPoints
+	  | PLines  PlotLines
 
-data Plot = Plot {
-    plot_point_style :: Maybe CairoPointStyle,
-    plot_line_style :: Maybe CairoLineStyle,
-    plot_values :: [Point]
+data PlotPoints = PlotPoints {
+    plot_points_style :: CairoPointStyle,
+    plot_points_values :: [Point]
 }
 
-renderPlot :: Plot -> Rect -> Rect -> Cairo.Render ()
-renderPlot p (Rect pr1 pr2) (Rect pv1 pv2) = do
-    let values = plot_values p
-    case (plot_line_style p, values) of
-        (Just ls,_:_:_) -> drawLines ls values
-        _       -> return ()
-    drawPoints values
+data PlotLines = PlotLines {
+    plot_lines_style :: CairoLineStyle,
+    plot_lines_values :: [Point]
+}
+
+renderPlotLines :: PlotLines -> Rect -> Rect -> Cairo.Render ()
+renderPlotLines p r v = do
+    Cairo.save
+    setLineStyle
+    drawLines (plot_lines_values p)
+    Cairo.restore
   where
-    drawLines (CairoLineStyle setLineStyle) (p:ps) = do
-        Cairo.save
-	setLineStyle
-	moveTo (pmap p)
-	mapM_ (\p -> lineTo (pmap p)) ps
+    drawLines (p:ps) = do
+	moveTo (pmap r v p)
+	mapM_ (\p -> lineTo (pmap r v p)) ps
 	Cairo.stroke
-        Cairo.restore
 
-    drawPoints values = do
-        Cairo.save
-        Cairo.restore
+    (CairoLineStyle setLineStyle) = plot_lines_style p
 
+
+pmap (Rect pr1 pr2) (Rect pv1 pv2) (Point x y) =
+    Point (p_x pr1 + (x - p_x pv1) * xs)
+          (p_y pr1 + (y - p_y pv1) * ys)
+  where
     xs = (p_x pr2 - p_x pr1) / (p_x pv2 - p_x pv1)
     ys = (p_y pr2 - p_y pr1) / (p_y pv2 - p_y pv1)
+    			
 
-    pmap (Point x y) = Point (p_x pr1 + (x - p_x pv1) * xs)
-		             (p_y pr1 + (y - p_y pv1) * ys)
-			
+renderPlotPoints :: PlotPoints -> Rect -> Rect -> Cairo.Render ()
+renderPlotPoints p r v = do
+    Cairo.save
+    mapM_ (drawPoint.(pmap r v)) (plot_points_values p)
+    Cairo.restore
+  where
+    (CairoPointStyle drawPoint) = (plot_points_style p)
+
+renderPlot :: Plot -> Rect -> Rect -> Cairo.Render ()
+renderPlot (PPoints p) r v = renderPlotPoints p r v
+renderPlot (PLines p) r v = renderPlotLines p r v
+
+filledCircles :: Double -> Double -> Double -> Double -> CairoPointStyle
+filledCircles radius r g b = CairoPointStyle rf
+  where
+    rf (Point x y) = do
+        Cairo.save
+	Cairo.setSourceRGB r g b
+        Cairo.newPath
+	Cairo.arc x y radius 0 360
+	Cairo.fill
+	Cairo.restore
+
+solidLine :: Double -> Double -> Double -> Double -> CairoLineStyle
+solidLine w r g b = CairoLineStyle (do
+    Cairo.setLineWidth w
+    Cairo.setSourceRGB r g b
+    )
 
 ----------------------------------------------------------------------
 
