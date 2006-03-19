@@ -177,12 +177,10 @@ filledCircles :: Double -> Double -> Double -> Double -> CairoPointStyle
 filledCircles radius r g b = CairoPointStyle rf
   where
     rf (Point x y) = do
-        Cairo.save
 	Cairo.setSourceRGB r g b
         Cairo.newPath
 	Cairo.arc x y radius 0 360
 	Cairo.fill
-	Cairo.restore
 
 solidLine :: Double -> Double -> Double -> Double -> CairoLineStyle
 solidLine w r g b = CairoLineStyle (do
@@ -293,3 +291,30 @@ strokeLine p1 p2 = do
    moveTo p1
    lineTo p2
    Cairo.stroke
+
+----------------------------------------------------------------------
+
+defaultPointStyle = filledCircles 1 1 1 1
+defaultFontStyle = CairoFontStyle (return ())
+
+defaultAxisLineStyle = solidLine 1 0 0 0
+defaultPlotLineStyle = solidLine 1 0 0 1
+
+defaultAxis = Axis {
+    axis_viewport = (0,1),
+    axis_line_style = defaultAxisLineStyle,
+    axis_label_style = defaultFontStyle,
+    axis_ticks = [(0,10),(1,10)],
+    axis_labels = [],
+    axis_label_gap =15
+}
+
+defaultPlotPoints = PlotPoints {
+    plot_points_style =defaultPointStyle,
+    plot_points_values = []
+}
+
+defaultPlotLines = PlotLines {
+    plot_lines_style = defaultPlotLineStyle,
+    plot_lines_values = []
+}

@@ -45,36 +45,27 @@ chart width height = do
         -- exactly one pixel 
         C.translate 0.5 0.5
 
-    axisLineStyle = solidLine 1 0 0 0
-
     plotLineStyle = solidLine 1 0 0 1
 
     plotPointStyle = filledCircles 2 1 0 0
 
-    xaxis = Axis {
+    xaxis = defaultAxis {
         axis_viewport=(0,360),
-	axis_line_style=axisLineStyle,
-	axis_label_style=CairoFontStyle (return ()),
 	axis_ticks=[(v,10) | v <- [0,90,180,270,360]],
-	axis_labels=[(0.0,"0"),(180,"180"),(360,"360")],
-	axis_label_gap=10
+	axis_labels=[(0.0,"0"),(180,"180"),(360,"360")]
     }
 
-    yaxis = Axis {
+    yaxis = defaultAxis {
         axis_viewport=(-1.2,1.2),
-	axis_line_style=axisLineStyle,
-	axis_label_style=CairoFontStyle (return ()),
 	axis_ticks=[(v,10) | v <- [-1,-0.5,0,0.5,1]],
-	axis_labels=[(-1,"-1.0"),(0,"0.0"),(1.0,"1.0")],
-	axis_label_gap=10
+	axis_labels=[(-1,"-1.0"),(0,"0.0"),(1.0,"1.0")]
     }
 
-    sinusoid1 = PlotLines {
-        plot_lines_style=plotLineStyle,
+    sinusoid1 = defaultPlotLines {
 	plot_lines_values = [ (Point x (sin (x*3.14159/180))) | x <- [0,5..360]]
     }
 
-    sinusoid2 = PlotPoints {
+    sinusoid2 = defaultPlotPoints {
         plot_points_style=plotPointStyle,
 	plot_points_values = [ (Point x (sin (x*3.14159/180))) | x <- [0,45..360]]
     }
