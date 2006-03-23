@@ -61,20 +61,24 @@ chart width height = do
 	axis_labels=[(-1,"-1.0"),(0,"0.0"),(1.0,"1.0")]
     }
 
+    am :: Double -> Double
+    am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
+
     sinusoid1 = defaultPlotLines {
-	plot_lines_values = [ (Point x (sin (x*3.14159/180))) | x <- [0,5..360]]
+	plot_lines_values = [ (Point x (am x)) | x <- [0,(0.5)..360]]
     }
 
     sinusoid2 = defaultPlotPoints {
         plot_points_style=plotPointStyle,
-	plot_points_values = [ (Point x (sin (x*3.14159/180))) | x <- [0,45..360]]
+	plot_points_values = [ (Point x (am x)) | x <- [0,7..360]]
     }
 
     layout = emptyLayout1 {
+        layout1_title="Amplitude Modulation",			   
         layout1_bottom_axis=Just xaxis,
 	layout1_left_axis=Just yaxis,
 	layout1_right_axis=Just yaxis,
-	layout1_top_axis=Nothing,
+	layout1_top_axis=Just xaxis,
 	layout1_plots = [(HA_Bottom,VA_Left,(PLines sinusoid1)),
 			 (HA_Bottom,VA_Left,(PPoints sinusoid2))]
     }

@@ -17,11 +17,6 @@ newtype CairoPointStyle = CairoPointStyle (Point -> Cairo.Render ())
 newtype CairoLineStyle = CairoLineStyle (Cairo.Render ())
 newtype CairoFontStyle = CairoFontStyle (Cairo.Render ())
 
-data Label = Label {
-    label_text :: String,
-    label_style :: CairoFontStyle
-}
-
 class Renderable a where
    minsize  :: a -> Cairo.Render (Double,Double)
    render   :: a -> Rect -> Cairo.Render ()
@@ -50,8 +45,8 @@ minsizeAxis :: AxisT -> Cairo.Render (Double,Double)
 minsizeAxis (AxisT at a) = do
     let labels = map snd (axis_labels a)
     Cairo.save
-    setFontStyle
-    labelSizes <- mapM labelSize labels
+    setFontStyle (axis_label_style a)
+    labelSizes <- mapM textSize labels
     Cairo.restore
     let (lw,lh) = foldl maxsz (0,0) labelSizes
     let ag = axis_label_gap a
@@ -66,27 +61,18 @@ minsizeAxis (AxisT at a) = do
   where
     maxsz (w1,h1) (w2,h2) = (max w1 w2, max h1 h2)
 
-    labelSize s = do
-        te <- Cairo.textExtents s
-	return (Cairo.textExtentsWidth te, Cairo.textExtentsHeight te)
-
-    (CairoFontStyle setFontStyle) = axis_label_style a
-
 renderAxis :: AxisT -> Rect -> Cairo.Render ()
 renderAxis (AxisT at a) rect = do
    Cairo.save
-   setLineStyle
+   setLineStyle (axis_line_style a)
    strokeLine (Point sx sy) (Point ex ey)
    mapM_ drawTick (axis_ticks a)
    Cairo.restore
    Cairo.save
-   setFontStyle
+   setFontStyle (axis_label_style a)
    mapM_ drawLabel (axis_labels a)
    Cairo.restore
  where
-   (CairoLineStyle setLineStyle) = axis_line_style a
-   (CairoFontStyle setFontStyle) = axis_label_style a
-
    (Rect (Point x1 y1) (Point x2 y2)) = rect
 
    (vs,ve) = axis_viewport a
@@ -107,22 +93,34 @@ renderAxis (AxisT at a) rect = do
 	   t2 = t1 `padd` (pscale length tp)
        in strokeLine t1 t2
 
-   loffset te =
-       let w = Cairo.textExtentsWidth te
-	   h = Cairo.textExtentsHeight te
-	   g = axis_label_gap a
+   (hta,vta,lp) = 
+       let g = axis_label_gap a
        in case at of
-		  AT_Top    -> (-w/2,-g)
-		  AT_Bottom -> (-w/2,h+g)
-		  AT_Left   -> (-w-g,h/2)
-		  AT_Right  -> (g,h/2)
+		  AT_Top    -> (HTA_Centre,VTA_Bottom,(Point 0 (-g)))
+		  AT_Bottom -> (HTA_Centre,VTA_Top,(Point 0 g))
+		  AT_Left   -> (HTA_Right,VTA_Centre,(Point (-g) 0))
+		  AT_Right  -> (HTA_Left,VTA_Centre,(Point g 0))
 
    drawLabel (value,s) = do
-       te <- Cairo.textExtents s
-       let (lx,ly) = loffset te
-       let (Point ax ay) = axisPoint value
-       Cairo.moveTo (ax+lx) (ay+ly)
-       Cairo.showText s
+       drawText hta vta (axisPoint value `padd` lp) s
+
+data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right
+data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom
+
+drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> Cairo.Render ()
+drawText hta vta (Point x y) s = do
+    te <- Cairo.textExtents s
+    let lx = xadj hta (Cairo.textExtentsWidth te)
+    let ly = yadj vta (Cairo.textExtentsHeight te)
+    Cairo.moveTo (x+lx) (y+ly)
+    Cairo.showText s
+  where
+    xadj HTA_Left   w = 0
+    xadj HTA_Centre w = (-w/2)
+    xadj HTA_Right  w = (-w)
+    yadj VTA_Top    h = h
+    yadj VTA_Centre h = h/2
+    yadj VTA_Bottom h = 0
 
 ----------------------------------------------------------------------
 data Plot = PPoints PlotPoints
@@ -141,7 +139,7 @@ data PlotLines = PlotLines {
 renderPlotLines :: PlotLines -> Rect -> Rect -> Cairo.Render ()
 renderPlotLines p r v = do
     Cairo.save
-    setLineStyle
+    setLineStyle (plot_lines_style p)
     drawLines (plot_lines_values p)
     Cairo.restore
   where
@@ -149,9 +147,6 @@ renderPlotLines p r v = do
 	moveTo (pmap r v p)
 	mapM_ (\p -> lineTo (pmap r v p)) ps
 	Cairo.stroke
-
-    (CairoLineStyle setLineStyle) = plot_lines_style p
-
 
 pmap (Rect pr1 pr2) (Rect pv1 pv2) (Point x y) =
     Point (p_x pr1 + (x - p_x pv1) * xs)
@@ -188,12 +183,22 @@ solidLine w r g b = CairoLineStyle (do
     Cairo.setSourceRGB r g b
     )
 
+fontStyle :: String -> Double -> Cairo.FontSlant ->
+	     Cairo.FontWeight -> CairoFontStyle
+fontStyle name size slant weight = CairoFontStyle fn
+  where
+    fn = do
+	 Cairo.selectFontFace name slant weight
+	 Cairo.setFontSize size
+
 ----------------------------------------------------------------------
 
 data HAxis = HA_Top | HA_Bottom
 data VAxis = VA_Left | VA_Right
 
 data Layout1 = Layout1 {
+    layout1_title :: String,
+    layout1_title_style :: CairoFontStyle,
     layout1_bottom_axis :: Maybe Axis,
     layout1_left_axis :: Maybe Axis,
     layout1_top_axis :: Maybe Axis,
@@ -206,15 +211,32 @@ instance Renderable Layout1 where
     render = renderLayout1
     minsize  = minsizeLayout1
 
+-- p0
+-- ptt
+-- ptb
+--    p1
+--      p2
+--        p3
+--          p4
+--            p5
+
 renderLayout1 :: Layout1 -> Rect -> Cairo.Render ()
 renderLayout1 l (Rect p0 p5) = do
+    (w0,h0) <- titleSize 
+
+    let margin  = (layout1_margin l)
+    let mp = (Point margin margin)
+
+    let ptt = if w0 == 0.0 then p0 else p0 `padd` (Point 0 margin)
+    let ptb = if w0 == 0.0 then p0 else ptt `padd` (Point 0 h0)
+
     (w1,h1,w2,h2) <- axisSizes l
 
-    let mp = let s = (layout1_margin l) in (Point s s)
-    let p1 = p0 `padd` mp
+    let p1 = ptb `padd` mp
     let p2 = p1 `padd` (Point w1 h1)
     let p4  = p5 `psub` mp
     let p3  = p4 `psub` (Point w2 h2)
+    let titlep = Point ((p_x p0 + p_x p5)/ 2) (p_y ptt)
 
     rMAxis AT_Top (layout1_top_axis l) (mkrect p2 p1 p3 p2)
     rMAxis AT_Bottom (layout1_bottom_axis l) (mkrect p2 p3 p3 p4)
@@ -224,7 +246,22 @@ renderLayout1 l (Rect p0 p5) = do
     setClipRegion p2 p3 
     mapM_ (rPlot (Rect p2 p3)) (layout1_plots l)
     Cairo.restore
+    rTitle titlep
+
   where
+    titleSize = do
+       Cairo.save
+       setFontStyle (layout1_title_style l)
+       sz <- textSize (layout1_title l)
+       Cairo.restore
+       return sz
+
+    rTitle titlep = do
+        Cairo.save
+	setFontStyle (layout1_title_style l)
+	drawText HTA_Centre VTA_Top titlep (layout1_title l)
+	Cairo.restore
+
     rMAxis at (Just a) rect = render (AxisT at a) rect
     rMAxis _ Nothing  _ = return ()
 
@@ -240,6 +277,7 @@ renderLayout1 l (Rect p0 p5) = do
             (x1,x2) = avport (hvport ha l)
 	    (y1,y2) = avport (vvport va l)
 	in renderPlot p rect (Rect (Point x1 y1) (Point x2 y2))
+
 
     mkrect (Point x1 y1) (Point x2 y2) (Point x3 y3) (Point x4 y4) =
 	Rect (Point x1 y2) (Point x3 y4)
@@ -272,6 +310,8 @@ axisSizes l = do
 	      return (xyfn sz)
 
 emptyLayout1 = Layout1 {
+    layout1_title = "",
+    layout1_title_style = fontStyle "sans" 15 Cairo.FontSlantNormal Cairo.FontWeightBold,
     layout1_bottom_axis = Nothing,
     layout1_top_axis = Nothing,
     layout1_left_axis = Nothing,
@@ -292,6 +332,14 @@ strokeLine p1 p2 = do
    lineTo p2
    Cairo.stroke
 
+setFontStyle (CairoFontStyle s) = s
+setLineStyle (CairoLineStyle s) = s
+
+textSize :: String -> Cairo.Render (Double,Double)
+textSize s = do
+    te <- Cairo.textExtents s
+    return (Cairo.textExtentsWidth te, Cairo.textExtentsHeight te)
+
 ----------------------------------------------------------------------
 
 defaultPointStyle = filledCircles 1 1 1 1
@@ -306,7 +354,7 @@ defaultAxis = Axis {
     axis_label_style = defaultFontStyle,
     axis_ticks = [(0,10),(1,10)],
     axis_labels = [],
-    axis_label_gap =15
+    axis_label_gap =10
 }
 
 defaultPlotPoints = PlotPoints {
