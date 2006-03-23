@@ -45,10 +45,6 @@ chart width height = do
         -- exactly one pixel 
         C.translate 0.5 0.5
 
-    plotLineStyle = solidLine 1 0 0 1
-
-    plotPointStyle = filledCircles 2 1 0 0
-
     xaxis = defaultAxis {
         axis_viewport=(0,360),
 	axis_ticks=[(v,10) | v <- [0,90,180,270,360]],
@@ -69,7 +65,7 @@ chart width height = do
     }
 
     sinusoid2 = defaultPlotPoints {
-        plot_points_style=plotPointStyle,
+        plot_points_style=filledCircles 2 1 0 0,
 	plot_points_values = [ (Point x (am x)) | x <- [0,7..360]]
     }
 

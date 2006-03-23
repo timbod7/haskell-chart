@@ -2,38 +2,73 @@ module Chart where
 
 import qualified Graphics.Rendering.Cairo as Cairo
 
+-- | A point in two dimensions
 data Point = Point {
     p_x :: Double,
     p_y :: Double
 } deriving Show
 
+-- | scale a point by a constant
+pscale :: Double -> Point -> Point
 pscale c (Point x y) = (Point (x*c) (y*c))
+
+-- | add two points
+padd :: Point -> Point -> Point
 padd (Point x1 y1) (Point x2 y2) = (Point (x1+x2) (y1+y2))
+
+-- | subtract two points
+psub :: Point -> Point -> Point
 psub (Point x1 y1) (Point x2 y2) = (Point (x1-x2) (y1-y2))
 
+-- | A rectangle is defined by two points
 data Rect = Rect Point Point
 
+-- | Abstract data type for the style of a plotted point
 newtype CairoPointStyle = CairoPointStyle (Point -> Cairo.Render ())
+
+-- | Abstract data type for the style of a line
 newtype CairoLineStyle = CairoLineStyle (Cairo.Render ())
+
+-- | Abstract data type for a font
 newtype CairoFontStyle = CairoFontStyle (Cairo.Render ())
 
+-- | A Renderable has a minimum size, and a Cairo action for
+-- drawing it within a specified rectangle.
 class Renderable a where
    minsize  :: a -> Cairo.Render (Double,Double)
    render   :: a -> Rect -> Cairo.Render ()
 
 ----------------------------------------------------------------------
 
-data AxisType = AT_Top | AT_Bottom | AT_Left | AT_Right
-
+-- | The concrete data type for an axis
 data Axis =  Axis {
+		   
+    -- | The range in "plot coordinates" covered by
+    -- this axis.
     axis_viewport :: (Double,Double),
+
     axis_line_style :: CairoLineStyle,
     axis_label_style :: CairoFontStyle,
 
+    -- | The tick marks on the axis as pairs.
+    -- The first element is the position on the axis
+    -- (in viewport units) and the second element is the
+    -- length of the tick in output coordinates.
+    -- The tick starts on the axis, and positive number are drawn
+    -- towards the plot area.
     axis_ticks :: [(Double,Double)],
+    
+    -- | The labels on an axis as pairs. The first element 
+    -- is the position on the axis (in viewport units) and
+    -- the second is the label text string.
     axis_labels :: [ (Double, String) ],
+
+    -- | How far the labels are to be drawn from the axis.
     axis_label_gap :: Double 
 }
+
+-- | An axis has to live on one side of the plotting area
+data AxisType = AT_Top | AT_Bottom | AT_Left | AT_Right
 
 data AxisT = AxisT AxisType Axis
 
@@ -104,9 +139,32 @@ renderAxis (AxisT at a) rect = do
    drawLabel (value,s) = do
        drawText hta vta (axisPoint value `padd` lp) s
 
+----------------------------------------------------------------------
+-- Assorted helper functions in Cairo Usage
+
+moveTo, lineTo :: Point -> Cairo.Render ()
+moveTo (Point px py) = Cairo.moveTo px py
+lineTo (Point px py) = Cairo.lineTo px py
+
+strokeLine p1 p2 = do
+   Cairo.newPath
+   moveTo p1
+   lineTo p2
+   Cairo.stroke
+
+setFontStyle (CairoFontStyle s) = s
+setLineStyle (CairoLineStyle s) = s
+
+textSize :: String -> Cairo.Render (Double,Double)
+textSize s = do
+    te <- Cairo.textExtents s
+    return (Cairo.textExtentsWidth te, Cairo.textExtentsHeight te)
+
 data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right
 data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom
 
+-- | Function to draw a textual label anchored by one of it's corners
+-- or edges.
 drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> Cairo.Render ()
 drawText hta vta (Point x y) s = do
     te <- Cairo.textExtents s
@@ -196,6 +254,8 @@ fontStyle name size slant weight = CairoFontStyle fn
 data HAxis = HA_Top | HA_Bottom
 data VAxis = VA_Left | VA_Right
 
+-- | A Layout1 value is a single plot area, with optional axes on
+-- each of the 4 sides, and an optional label at the top.
 data Layout1 = Layout1 {
     layout1_title :: String,
     layout1_title_style :: CairoFontStyle,
@@ -210,15 +270,6 @@ data Layout1 = Layout1 {
 instance Renderable Layout1 where
     render = renderLayout1
     minsize  = minsizeLayout1
-
--- p0
--- ptt
--- ptb
---    p1
---      p2
---        p3
---          p4
---            p5
 
 renderLayout1 :: Layout1 -> Rect -> Cairo.Render ()
 renderLayout1 l (Rect p0 p5) = do
@@ -309,38 +360,8 @@ axisSizes l = do
 	      sz <- minsize (AxisT at a)
 	      return (xyfn sz)
 
-emptyLayout1 = Layout1 {
-    layout1_title = "",
-    layout1_title_style = fontStyle "sans" 15 Cairo.FontSlantNormal Cairo.FontWeightBold,
-    layout1_bottom_axis = Nothing,
-    layout1_top_axis = Nothing,
-    layout1_left_axis = Nothing,
-    layout1_right_axis = Nothing,
-    layout1_margin = 10,
-    layout1_plots = []
-}
-
 ----------------------------------------------------------------------
-
-moveTo, lineTo :: Point -> Cairo.Render ()
-moveTo (Point px py) = Cairo.moveTo px py
-lineTo (Point px py) = Cairo.lineTo px py
-
-strokeLine p1 p2 = do
-   Cairo.newPath
-   moveTo p1
-   lineTo p2
-   Cairo.stroke
-
-setFontStyle (CairoFontStyle s) = s
-setLineStyle (CairoLineStyle s) = s
-
-textSize :: String -> Cairo.Render (Double,Double)
-textSize s = do
-    te <- Cairo.textExtents s
-    return (Cairo.textExtentsWidth te, Cairo.textExtentsHeight te)
-
-----------------------------------------------------------------------
+-- Assorted default data values intended to be used as prototypes.
 
 defaultPointStyle = filledCircles 1 1 1 1
 defaultFontStyle = CairoFontStyle (return ())
@@ -366,3 +387,15 @@ defaultPlotLines = PlotLines {
     plot_lines_style = defaultPlotLineStyle,
     plot_lines_values = []
 }
+
+emptyLayout1 = Layout1 {
+    layout1_title = "",
+    layout1_title_style = fontStyle "sans" 15 Cairo.FontSlantNormal Cairo.FontWeightBold,
+    layout1_bottom_axis = Nothing,
+    layout1_top_axis = Nothing,
+    layout1_left_axis = Nothing,
+    layout1_right_axis = Nothing,
+    layout1_margin = 10,
+    layout1_plots = []
+}
+
