@@ -1,4 +1,23 @@
-module Chart where
+module Chart(
+    Point(..),
+    Rect(..),
+    Axis(..),
+    Plot(..),
+    PlotPoints(..),
+    PlotLines(..),
+    Layout1(..),
+    HAxis(..),
+    VAxis(..),
+    Renderable(..),
+    defaultAxisLineStyle, 
+    defaultPlotLineStyle,
+    defaultAxis, 
+    defaultPlotPoints,
+    defaultPlotLines,
+    defaultLayout1,
+    filledCircles,
+    solidLine,
+) where
 
 import qualified Graphics.Rendering.Cairo as Cairo
 
@@ -346,7 +365,6 @@ minsizeLayout1 l = do
   (w1,h1,w2,h2) <- axisSizes l
   return (2*m+w1+w2,2*m+h1+h2)
 
-
 axisSizes l = do
     w1 <- asize fst AT_Left   (layout1_left_axis l)
     h1 <- asize snd AT_Top (layout1_top_axis l)
@@ -388,7 +406,7 @@ defaultPlotLines = PlotLines {
     plot_lines_values = []
 }
 
-emptyLayout1 = Layout1 {
+defaultLayout1 = Layout1 {
     layout1_title = "",
     layout1_title_style = fontStyle "sans" 15 Cairo.FontSlantNormal Cairo.FontWeightBold,
     layout1_bottom_axis = Nothing,
