@@ -203,21 +203,25 @@ drawText hta vta (Point x y) s = do
 data Plot = PPoints PlotPoints
 	  | PLines  PlotLines
 
+-- | Value defining a series of datapoints, and a style in
+-- which to render them
 data PlotPoints = PlotPoints {
     plot_points_style :: CairoPointStyle,
     plot_points_values :: [Point]
 }
 
+-- | Value defining a series of (possibly disjointed) lines,
+-- and a style in which to render them
 data PlotLines = PlotLines {
     plot_lines_style :: CairoLineStyle,
-    plot_lines_values :: [Point]
+    plot_lines_values :: [[Point]]
 }
 
 renderPlotLines :: PlotLines -> Rect -> Rect -> Cairo.Render ()
 renderPlotLines p r v = do
     Cairo.save
     setLineStyle (plot_lines_style p)
-    drawLines (plot_lines_values p)
+    mapM_ drawLines (plot_lines_values p)
     Cairo.restore
   where
     drawLines (p:ps) = do

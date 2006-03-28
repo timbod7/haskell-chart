@@ -20,7 +20,7 @@ chart = layout
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
 
     sinusoid1 = defaultPlotLines {
-	plot_lines_values = [ (Point x (am x)) | x <- [0,(0.5)..360]]
+	plot_lines_values = [[ (Point x (am x)) | x <- [0,(0.5)..360]]]
     }
 
     sinusoid2 = defaultPlotPoints {
