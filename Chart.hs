@@ -6,9 +6,9 @@ module Chart(
     PlotPoints(..),
     PlotLines(..),
     Layout1(..),
+    Renderable(..),
     HAxis(..),
     VAxis(..),
-    Renderable(..),
     defaultAxisLineStyle, 
     defaultPlotLineStyle,
     defaultAxis, 
@@ -17,6 +17,8 @@ module Chart(
     defaultLayout1,
     filledCircles,
     solidLine,
+    autoScaleLinkedAxes,
+    explicitLinkedAxes
 ) where
 
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -236,7 +238,6 @@ pmap (Rect pr1 pr2) (Rect pv1 pv2) (Point x y) =
     xs = (p_x pr2 - p_x pr1) / (p_x pv2 - p_x pv1)
     ys = (p_y pr2 - p_y pr1) / (p_y pv2 - p_y pv1)
     			
-
 renderPlotPoints :: PlotPoints -> Rect -> Rect -> Cairo.Render ()
 renderPlotPoints p r v = do
     Cairo.save
@@ -248,6 +249,10 @@ renderPlotPoints p r v = do
 renderPlot :: Plot -> Rect -> Rect -> Cairo.Render ()
 renderPlot (PPoints p) r v = renderPlotPoints p r v
 renderPlot (PLines p) r v = renderPlotLines p r v
+
+allPoints:: Plot -> [Point]
+allPoints (PPoints ps) = plot_points_values ps
+allPoints (PLines  ps) = concat (plot_lines_values ps)
 
 filledCircles :: Double -> Double -> Double -> Double -> CairoPointStyle
 filledCircles radius r g b = CairoPointStyle rf
@@ -277,17 +282,17 @@ fontStyle name size slant weight = CairoFontStyle fn
 data HAxis = HA_Top | HA_Bottom
 data VAxis = VA_Left | VA_Right
 
+type AxesFn = [Double] -> [Double] -> (Maybe Axis,Maybe Axis)
+
 -- | A Layout1 value is a single plot area, with optional axes on
 -- each of the 4 sides, and an optional label at the top.
 data Layout1 = Layout1 {
     layout1_title :: String,
     layout1_title_style :: CairoFontStyle,
-    layout1_bottom_axis :: Maybe Axis,
-    layout1_left_axis :: Maybe Axis,
-    layout1_top_axis :: Maybe Axis,
-    layout1_right_axis :: Maybe Axis,
+    layout1_horizontal_axes :: AxesFn,
+    layout1_vertical_axes :: AxesFn,
     layout1_margin :: Double,
-    layout1_plots :: [(HAxis, VAxis, Plot)]
+    layout1_plots :: [(HAxis,VAxis,Plot)]
 }
 
 instance Renderable Layout1 where
@@ -312,10 +317,11 @@ renderLayout1 l (Rect p0 p5) = do
     let p3  = p4 `psub` (Point w2 h2)
     let titlep = Point ((p_x p0 + p_x p5)/ 2) (p_y ptt)
 
-    rMAxis AT_Top (layout1_top_axis l) (mkrect p2 p1 p3 p2)
-    rMAxis AT_Bottom (layout1_bottom_axis l) (mkrect p2 p3 p3 p4)
-    rMAxis AT_Left (layout1_left_axis l) (mkrect p1 p2 p2 p3)
-    rMAxis AT_Right (layout1_right_axis l) (mkrect p3 p2 p4 p3)
+    rMAxis AT_Top tAxis (mkrect p2 p1 p3 p2)
+    rMAxis AT_Bottom  bAxis(mkrect p2 p3 p3 p4)
+    rMAxis AT_Left lAxis (mkrect p1 p2 p2 p3)
+    rMAxis AT_Right rAxis (mkrect p3 p2 p4 p3)
+
     Cairo.save
     setClipRegion p2 p3 
     mapM_ (rPlot (Rect p2 p3)) (layout1_plots l)
@@ -336,22 +342,27 @@ renderLayout1 l (Rect p0 p5) = do
 	drawText HTA_Centre VTA_Top titlep (layout1_title l)
 	Cairo.restore
 
+    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots l)
+    (tAxis,bAxis) = layout1_horizontal_axes l xvals0 xvals1
+    (lAxis,rAxis) = layout1_vertical_axes l yvals0 yvals1
+
     rMAxis at (Just a) rect = render (AxisT at a) rect
     rMAxis _ Nothing  _ = return ()
 
-    hvport HA_Bottom = layout1_bottom_axis
-    hvport HA_Top = layout1_top_axis
-    vvport VA_Left = layout1_left_axis
-    vvport VA_Right = layout1_right_axis
-
     rPlot :: Rect -> (HAxis,VAxis,Plot) -> Cairo.Render ()
     rPlot rect (ha,va,p) = 
-        let avport (Just a) = axis_viewport a
-	    avport Nothing  = (0,1)
-            (x1,x2) = avport (hvport ha l)
-	    (y1,y2) = avport (vvport va l)
+        let mxaxis = case ha of HA_Bottom -> bAxis
+				HA_Top    -> tAxis
+	    myaxis = case va of VA_Left   -> lAxis
+				VA_Right  -> rAxis
+        in rPlot1 rect mxaxis myaxis p
+	      
+    rPlot1 :: Rect -> Maybe Axis -> Maybe Axis -> Plot -> Cairo.Render ()
+    rPlot1 rect (Just xaxis) (Just yaxis) p = 
+	let (x1,x2) = axis_viewport xaxis
+	    (y1,y2) = axis_viewport yaxis
 	in renderPlot p rect (Rect (Point x1 y1) (Point x2 y2))
-
+    rPlot1 _ _ _ _ = return ()
 
     mkrect (Point x1 y1) (Point x2 y2) (Point x3 y3) (Point x4 y4) =
 	Rect (Point x1 y2) (Point x3 y4)
@@ -370,17 +381,30 @@ minsizeLayout1 l = do
   return (2*m+w1+w2,2*m+h1+h2)
 
 axisSizes l = do
-    w1 <- asize fst AT_Left   (layout1_left_axis l)
-    h1 <- asize snd AT_Top (layout1_top_axis l)
-    w2 <- asize fst AT_Right  (layout1_right_axis l)
-    h2 <- asize snd AT_Bottom    (layout1_bottom_axis l)
+    w1 <- asize fst AT_Left   tAxis
+    h1 <- asize snd AT_Top bAxis
+    w2 <- asize fst AT_Right  lAxis
+    h2 <- asize snd AT_Bottom    rAxis
     return (w1,h1,w2,h2)
   where
+    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots l)
+    (tAxis,bAxis) = layout1_horizontal_axes l xvals0 xvals1
+    (lAxis,rAxis) = layout1_vertical_axes l yvals0 yvals1
+
     asize xyfn at ma = case ma of
 	  Nothing -> return 0
 	  Just a  -> do
 	      sz <- minsize (AxisT at a)
 	      return (xyfn sz)
+
+allPlottedValues :: [(HAxis,VAxis,Plot)] -> ( [Double], [Double], [Double], [Double] )
+allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
+  where
+    pts = concat [ [ (ha,va,pt)| pt <- allPoints p] | (ha,va,p) <- plots ]
+    xvals0 = [ (p_x pt) | (HA_Bottom,_,pt) <- pts  ]
+    xvals1 = [ (p_x pt) | (HA_Top,_,pt) <- pts  ]
+    yvals0 = [ (p_y pt) | (_,VA_Left,pt) <- pts  ]
+    yvals1 = [ (p_y pt) | (_,VA_Right,pt) <- pts  ]
 
 ----------------------------------------------------------------------
 -- Assorted default data values intended to be used as prototypes.
@@ -413,11 +437,31 @@ defaultPlotLines = PlotLines {
 defaultLayout1 = Layout1 {
     layout1_title = "",
     layout1_title_style = fontStyle "sans" 15 Cairo.FontSlantNormal Cairo.FontWeightBold,
-    layout1_bottom_axis = Nothing,
-    layout1_top_axis = Nothing,
-    layout1_left_axis = Nothing,
-    layout1_right_axis = Nothing,
+    layout1_horizontal_axes = autoScaleLinkedAxes defaultAxis,
+    layout1_vertical_axes = autoScaleLinkedAxes defaultAxis,
     layout1_margin = 10,
     layout1_plots = []
 }
+
+explicitLinkedAxes :: Axis -> AxesFn
+explicitLinkedAxes a _ _ = (Just a, Just a)
+
+autoScaleLinkedAxes :: Axis -> AxesFn
+autoScaleLinkedAxes a pts1 pts2 = (Just axis, Just axis)
+  where
+    axis =  a {
+        axis_viewport=newViewport,
+	axis_ticks=newTicks,
+	axis_labels=newLabels
+	}
+    newViewport = (min,max)
+    newTicks = [(min,10),(max,10)]
+    newLabels = [(min,show min), (max,show max)]
+    (min,max) = case pts1++pts2 of
+		[] -> (0,1)
+		ps -> let min = minimum ps
+			  max = maximum ps in
+			  if min == max then (min-0.5,max+0.5)
+			                else (min,max)
+    vfn _ = axis_viewport axis
 
