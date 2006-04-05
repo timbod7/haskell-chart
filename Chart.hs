@@ -26,6 +26,7 @@ module Chart(
 ) where
 
 import qualified Graphics.Rendering.Cairo as C
+import Data.List
 
 -- | A point in two dimensions
 data Point = Point {
@@ -244,7 +245,7 @@ renderPlotLines p r v = do
 
 pmap (Rect pr1 pr2) (Rect pv1 pv2) (Point x y) =
     Point (p_x pr1 + (x - p_x pv1) * xs)
-          (p_y pr1 + (y - p_y pv1) * ys)
+          (p_y pr2 - (y - p_y pv1) * ys)
   where
     xs = (p_x pr2 - p_x pr1) / (p_x pv2 - p_x pv1)
     ys = (p_y pr2 - p_y pr1) / (p_y pv2 - p_y pv1)
@@ -494,17 +495,35 @@ autoScaledAxis a pts = Just axis
 	axis_ticks=newTicks,
 	axis_labels=newLabels
 	}
-    newViewport = (min,max)
-    newTicks = [(min,10),(max,10)]
-    newLabels = [(min,show min), (max,show max)]
+    newViewport = (min',max')
+    newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,10) | v <- labelvs ] 
+    newLabels = [(v,show v) | v <- labelvs]
     (min,max) = case pts of
 		[] -> (0,1)
 		ps -> let min = minimum ps
 			  max = maximum ps in
 			  if min == max then (min-0.5,max+0.5)
 			                else (min,max)
-    vfn _ = axis_viewport axis
+    labelvs = steps 5 (min,max)
+    min' = minimum labelvs
+    max' = maximum labelvs
+    tickvs = steps 50 (min',max')
 
+steps:: Int -> Range -> [Double]
+steps nSteps (min,max) = [ min' + i * s | i <- [0..n] ]
+  where
+    min' = fromIntegral (floor (min / s) ) * s
+    max' = fromIntegral (ceiling (max / s) ) * s
+    n = (max' - min') / s
+    s = chooseStep nSteps (min,max)
+
+chooseStep :: Int -> Range -> Double
+chooseStep nsteps (min,max) = s
+  where
+    mult = 10 ** fromIntegral (floor ((log (max-min) - log (fromIntegral nsteps)) / log 10))
+    steps = map (mult*) [0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 2.5, 5.0, 10, 20, 25, 50]
+    steps' =  sort [ (abs((max-min)/s - fromIntegral nsteps), s) | s <- steps ]
+    s = snd (head steps')
 
 ----------------------------------------------------------------------
 
