@@ -17,13 +17,15 @@ module Chart(
     defaultLayout1,
     filledCircles,
     solidLine,
-    autoScaleLinkedAxes,
-    explicitLinkedAxes,
+    independentAxes,
+    linkedAxes,
+    explicitAxis,
+    autoScaledAxis,
     renderableToPNGFile,
     setupRender
 ) where
 
-import qualified Graphics.Rendering.Cairo as Cairo
+import qualified Graphics.Rendering.Cairo as C
 
 -- | A point in two dimensions
 data Point = Point {
@@ -47,22 +49,25 @@ psub (Point x1 y1) (Point x2 y2) = (Point (x1-x2) (y1-y2))
 data Rect = Rect Point Point
 
 -- | Abstract data type for the style of a plotted point
-newtype CairoPointStyle = CairoPointStyle (Point -> Cairo.Render ())
+newtype CairoPointStyle = CairoPointStyle (Point -> C.Render ())
 
 -- | Abstract data type for the style of a line
-newtype CairoLineStyle = CairoLineStyle (Cairo.Render ())
+newtype CairoLineStyle = CairoLineStyle (C.Render ())
 
 -- | Abstract data type for a fill style
-newtype CairoFillStyle = CairoFillStyle (Cairo.Render ())
+newtype CairoFillStyle = CairoFillStyle (C.Render ())
 
 -- | Abstract data type for a font
-newtype CairoFontStyle = CairoFontStyle (Cairo.Render ())
+newtype CairoFontStyle = CairoFontStyle (C.Render ())
 
 -- | A Renderable has a minimum size, and a Cairo action for
 -- drawing it within a specified rectangle.
 class Renderable a where
-   minsize  :: a -> Cairo.Render (Double,Double)
-   render   :: a -> Rect -> Cairo.Render ()
+   minsize  :: a -> C.Render (Double,Double)
+   render   :: a -> Rect -> C.Render ()
+
+type Range = (Double,Double)
+type RectSize = (Double,Double)
 
 ----------------------------------------------------------------------
 
@@ -71,7 +76,7 @@ data Axis =  Axis {
 		   
     -- | The range in "plot coordinates" covered by
     -- this axis.
-    axis_viewport :: (Double,Double),
+    axis_viewport :: Range,
 
     axis_line_style :: CairoLineStyle,
     axis_label_style :: CairoFontStyle,
@@ -102,13 +107,13 @@ instance Renderable AxisT where
    minsize = minsizeAxis
    render  = renderAxis 
 
-minsizeAxis :: AxisT -> Cairo.Render (Double,Double)
+minsizeAxis :: AxisT -> C.Render RectSize
 minsizeAxis (AxisT at a) = do
     let labels = map snd (axis_labels a)
-    Cairo.save
+    C.save
     setFontStyle (axis_label_style a)
     labelSizes <- mapM textSize labels
-    Cairo.restore
+    C.restore
     let (lw,lh) = foldl maxsz (0,0) labelSizes
     let ag = axis_label_gap a
     let tsize = maximum [ max 0 (-l) | (v,l) <- axis_ticks a ]
@@ -122,17 +127,17 @@ minsizeAxis (AxisT at a) = do
   where
     maxsz (w1,h1) (w2,h2) = (max w1 w2, max h1 h2)
 
-renderAxis :: AxisT -> Rect -> Cairo.Render ()
+renderAxis :: AxisT -> Rect -> C.Render ()
 renderAxis (AxisT at a) rect = do
-   Cairo.save
+   C.save
    setLineStyle (axis_line_style a)
    strokeLine (Point sx sy) (Point ex ey)
    mapM_ drawTick (axis_ticks a)
-   Cairo.restore
-   Cairo.save
+   C.restore
+   C.save
    setFontStyle (axis_label_style a)
    mapM_ drawLabel (axis_labels a)
-   Cairo.restore
+   C.restore
  where
    (Rect (Point x1 y1) (Point x2 y2)) = rect
 
@@ -168,37 +173,37 @@ renderAxis (AxisT at a) rect = do
 ----------------------------------------------------------------------
 -- Assorted helper functions in Cairo Usage
 
-moveTo, lineTo :: Point -> Cairo.Render ()
-moveTo (Point px py) = Cairo.moveTo px py
-lineTo (Point px py) = Cairo.lineTo px py
+moveTo, lineTo :: Point -> C.Render ()
+moveTo (Point px py) = C.moveTo px py
+lineTo (Point px py) = C.lineTo px py
 
 strokeLine p1 p2 = do
-   Cairo.newPath
+   C.newPath
    moveTo p1
    lineTo p2
-   Cairo.stroke
+   C.stroke
 
 setFontStyle (CairoFontStyle s) = s
 setLineStyle (CairoLineStyle s) = s
 setFillStyle (CairoFillStyle s) = s
 
-textSize :: String -> Cairo.Render (Double,Double)
+textSize :: String -> C.Render RectSize
 textSize s = do
-    te <- Cairo.textExtents s
-    return (Cairo.textExtentsWidth te, Cairo.textExtentsHeight te)
+    te <- C.textExtents s
+    return (C.textExtentsWidth te, C.textExtentsHeight te)
 
 data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right
 data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom
 
 -- | Function to draw a textual label anchored by one of it's corners
 -- or edges.
-drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> Cairo.Render ()
+drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> C.Render ()
 drawText hta vta (Point x y) s = do
-    te <- Cairo.textExtents s
-    let lx = xadj hta (Cairo.textExtentsWidth te)
-    let ly = yadj vta (Cairo.textExtentsHeight te)
-    Cairo.moveTo (x+lx) (y+ly)
-    Cairo.showText s
+    te <- C.textExtents s
+    let lx = xadj hta (C.textExtentsWidth te)
+    let ly = yadj vta (C.textExtentsHeight te)
+    C.moveTo (x+lx) (y+ly)
+    C.showText s
   where
     xadj HTA_Left   w = 0
     xadj HTA_Centre w = (-w/2)
@@ -225,17 +230,17 @@ data PlotLines = PlotLines {
     plot_lines_values :: [[Point]]
 }
 
-renderPlotLines :: PlotLines -> Rect -> Rect -> Cairo.Render ()
+renderPlotLines :: PlotLines -> Rect -> Rect -> C.Render ()
 renderPlotLines p r v = do
-    Cairo.save
+    C.save
     setLineStyle (plot_lines_style p)
     mapM_ drawLines (plot_lines_values p)
-    Cairo.restore
+    C.restore
   where
     drawLines (p:ps) = do
 	moveTo (pmap r v p)
 	mapM_ (\p -> lineTo (pmap r v p)) ps
-	Cairo.stroke
+	C.stroke
 
 pmap (Rect pr1 pr2) (Rect pv1 pv2) (Point x y) =
     Point (p_x pr1 + (x - p_x pv1) * xs)
@@ -244,15 +249,15 @@ pmap (Rect pr1 pr2) (Rect pv1 pv2) (Point x y) =
     xs = (p_x pr2 - p_x pr1) / (p_x pv2 - p_x pv1)
     ys = (p_y pr2 - p_y pr1) / (p_y pv2 - p_y pv1)
     			
-renderPlotPoints :: PlotPoints -> Rect -> Rect -> Cairo.Render ()
+renderPlotPoints :: PlotPoints -> Rect -> Rect -> C.Render ()
 renderPlotPoints p r v = do
-    Cairo.save
+    C.save
     mapM_ (drawPoint.(pmap r v)) (plot_points_values p)
-    Cairo.restore
+    C.restore
   where
     (CairoPointStyle drawPoint) = (plot_points_style p)
 
-renderPlot :: Plot -> Rect -> Rect -> Cairo.Render ()
+renderPlot :: Plot -> Rect -> Rect -> C.Render ()
 renderPlot (PPoints p) r v = renderPlotPoints p r v
 renderPlot (PLines p) r v = renderPlotLines p r v
 
@@ -264,34 +269,35 @@ filledCircles :: Double -> Double -> Double -> Double -> CairoPointStyle
 filledCircles radius r g b = CairoPointStyle rf
   where
     rf (Point x y) = do
-	Cairo.setSourceRGB r g b
-        Cairo.newPath
-	Cairo.arc x y radius 0 360
-	Cairo.fill
+	C.setSourceRGB r g b
+        C.newPath
+	C.arc x y radius 0 360
+	C.fill
 
 solidLine :: Double -> Double -> Double -> Double -> CairoLineStyle
 solidLine w r g b = CairoLineStyle (do
-    Cairo.setLineWidth w
-    Cairo.setSourceRGB r g b
+    C.setLineWidth w
+    C.setSourceRGB r g b
     )
 
-fontStyle :: String -> Double -> Cairo.FontSlant ->
-	     Cairo.FontWeight -> CairoFontStyle
+fontStyle :: String -> Double -> C.FontSlant ->
+	     C.FontWeight -> CairoFontStyle
 fontStyle name size slant weight = CairoFontStyle fn
   where
     fn = do
-	 Cairo.selectFontFace name slant weight
-	 Cairo.setFontSize size
+	 C.selectFontFace name slant weight
+	 C.setFontSize size
 
 solidFillStyle :: Double -> Double -> Double -> CairoFillStyle
 solidFillStyle r g b = CairoFillStyle fn
-   where fn = Cairo.setSourceRGB r g b
+   where fn = C.setSourceRGB r g b
 
 ----------------------------------------------------------------------
 
 data HAxis = HA_Top | HA_Bottom
 data VAxis = VA_Left | VA_Right
 
+type AxisFn = [Double] -> Maybe Axis
 type AxesFn = [Double] -> [Double] -> (Maybe Axis,Maybe Axis)
 
 -- | A Layout1 value is a single plot area, with optional axes on
@@ -310,7 +316,7 @@ instance Renderable Layout1 where
     render = renderLayout1
     minsize  = minsizeLayout1
 
-renderLayout1 :: Layout1 -> Rect -> Cairo.Render ()
+renderLayout1 :: Layout1 -> Rect -> C.Render ()
 renderLayout1 l (Rect p0 p5) = do
     (w0,h0) <- titleSize 
 
@@ -329,11 +335,11 @@ renderLayout1 l (Rect p0 p5) = do
     let titlep = Point ((p_x p0 + p_x p5)/ 2) (p_y ptt)
 
     -- render the background
-    Cairo.save
+    C.save
     setClipRegion p0 p5 
     setFillStyle (layout1_background l)
-    Cairo.paint
-    Cairo.restore
+    C.paint
+    C.restore
 
     -- render the axes
     rMAxis AT_Top tAxis (mkrect p2 p1 p3 p2)
@@ -342,27 +348,27 @@ renderLayout1 l (Rect p0 p5) = do
     rMAxis AT_Right rAxis (mkrect p3 p2 p4 p3)
 
     -- render the plots
-    Cairo.save
+    C.save
     setClipRegion p2 p3 
     mapM_ (rPlot (Rect p2 p3)) (layout1_plots l)
-    Cairo.restore
+    C.restore
 
     -- render the title
     rTitle titlep
 
   where
     titleSize = do
-       Cairo.save
+       C.save
        setFontStyle (layout1_title_style l)
        sz <- textSize (layout1_title l)
-       Cairo.restore
+       C.restore
        return sz
 
     rTitle titlep = do
-        Cairo.save
+        C.save
 	setFontStyle (layout1_title_style l)
 	drawText HTA_Centre VTA_Top titlep (layout1_title l)
-	Cairo.restore
+	C.restore
 
     (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots l)
     (tAxis,bAxis) = layout1_horizontal_axes l xvals0 xvals1
@@ -371,7 +377,7 @@ renderLayout1 l (Rect p0 p5) = do
     rMAxis at (Just a) rect = render (AxisT at a) rect
     rMAxis _ Nothing  _ = return ()
 
-    rPlot :: Rect -> (HAxis,VAxis,Plot) -> Cairo.Render ()
+    rPlot :: Rect -> (HAxis,VAxis,Plot) -> C.Render ()
     rPlot rect (ha,va,p) = 
         let mxaxis = case ha of HA_Bottom -> bAxis
 				HA_Top    -> tAxis
@@ -379,7 +385,7 @@ renderLayout1 l (Rect p0 p5) = do
 				VA_Right  -> rAxis
         in rPlot1 rect mxaxis myaxis p
 	      
-    rPlot1 :: Rect -> Maybe Axis -> Maybe Axis -> Plot -> Cairo.Render ()
+    rPlot1 :: Rect -> Maybe Axis -> Maybe Axis -> Plot -> C.Render ()
     rPlot1 rect (Just xaxis) (Just yaxis) p = 
 	let (x1,x2) = axis_viewport xaxis
 	    (y1,y2) = axis_viewport yaxis
@@ -390,12 +396,12 @@ renderLayout1 l (Rect p0 p5) = do
 	Rect (Point x1 y2) (Point x3 y4)
 
     setClipRegion p2 p3 = do    
-        Cairo.moveTo (p_x p2) (p_y p2)
-	Cairo.lineTo (p_x p2) (p_y p3)
-        Cairo.lineTo (p_x p3) (p_y p3)
-        Cairo.lineTo (p_x p3) (p_y p2)
-        Cairo.lineTo (p_x p2) (p_y p2)
-        Cairo.clip
+        C.moveTo (p_x p2) (p_y p2)
+	C.lineTo (p_x p2) (p_y p3)
+        C.lineTo (p_x p3) (p_y p3)
+        C.lineTo (p_x p3) (p_y p2)
+        C.lineTo (p_x p2) (p_y p2)
+        C.clip
 
 minsizeLayout1 l = do
   let m = layout1_margin l
@@ -403,10 +409,10 @@ minsizeLayout1 l = do
   return (2*m+w1+w2,2*m+h1+h2)
 
 axisSizes l = do
-    w1 <- asize fst AT_Left   tAxis
+    w1 <- asize fst AT_Left tAxis
     h1 <- asize snd AT_Top bAxis
-    w2 <- asize fst AT_Right  lAxis
-    h2 <- asize snd AT_Bottom    rAxis
+    w2 <- asize fst AT_Right lAxis
+    h2 <- asize snd AT_Bottom rAxis
     return (w1,h1,w2,h2)
   where
     (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots l)
@@ -459,18 +465,29 @@ defaultPlotLines = PlotLines {
 defaultLayout1 = Layout1 {
     layout1_background = solidFillStyle 1 1 1,
     layout1_title = "",
-    layout1_title_style = fontStyle "sans" 15 Cairo.FontSlantNormal Cairo.FontWeightBold,
-    layout1_horizontal_axes = autoScaleLinkedAxes defaultAxis,
-    layout1_vertical_axes = autoScaleLinkedAxes defaultAxis,
+    layout1_title_style = fontStyle "sans" 15 C.FontSlantNormal C.FontWeightBold,
+    layout1_horizontal_axes = linkedAxes (autoScaledAxis defaultAxis),
+    layout1_vertical_axes = linkedAxes (autoScaledAxis defaultAxis),
     layout1_margin = 10,
     layout1_plots = []
 }
 
-explicitLinkedAxes :: Axis -> AxesFn
-explicitLinkedAxes a _ _ = (Just a, Just a)
+-- | Show independent axes on each side of the layout
+independentAxes :: AxisFn -> AxisFn -> AxesFn
+independentAxes af1 af2 pts1 pts2 = (af1 pts1, af2 pts2)
 
-autoScaleLinkedAxes :: Axis -> AxesFn
-autoScaleLinkedAxes a pts1 pts2 = (Just axis, Just axis)
+-- | Show the same axis on both sides of the layout
+linkedAxes :: AxisFn -> AxesFn
+linkedAxes af pts1 pts2 = (a,a)
+  where
+    a = af (pts1++pts2)
+
+explicitAxis :: Maybe Axis -> AxisFn
+explicitAxis ma _ = ma
+
+-- | Calculate an axis automatically based upon the data displayed,
+autoScaledAxis :: Axis -> AxisFn
+autoScaledAxis a pts = Just axis
   where
     axis =  a {
         axis_viewport=newViewport,
@@ -480,7 +497,7 @@ autoScaleLinkedAxes a pts1 pts2 = (Just axis, Just axis)
     newViewport = (min,max)
     newTicks = [(min,10),(max,10)]
     newLabels = [(min,show min), (max,show max)]
-    (min,max) = case pts1++pts2 of
+    (min,max) = case pts of
 		[] -> (0,1)
 		ps -> let min = minimum ps
 			  max = maximum ps in
@@ -489,11 +506,13 @@ autoScaleLinkedAxes a pts1 pts2 = (Just axis, Just axis)
     vfn _ = axis_viewport axis
 
 
+----------------------------------------------------------------------
+
 renderableToPNGFile :: Renderable a => a -> Int -> Int -> FilePath -> IO ()
 renderableToPNGFile chart width height path = 
-    Cairo.withImageSurface Cairo.FormatARGB32 width height $ \result -> do
-    Cairo.renderWith result $ rfn
-    Cairo.surfaceWriteToPNG result path
+    C.withImageSurface C.FormatARGB32 width height $ \result -> do
+    C.renderWith result $ rfn
+    C.surfaceWriteToPNG result path
   where
     rfn = do
         setupRender
@@ -502,8 +521,8 @@ renderableToPNGFile chart width height path =
     rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
 
 
-setupRender :: Cairo.Render ()
+setupRender :: C.Render ()
 setupRender = do
     -- move to centre of pixels so that stroke width of 1 is
     -- exactly one pixel 
-    Cairo.translate 0.5 0.5
+    C.translate 0.5 0.5

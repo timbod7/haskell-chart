@@ -30,8 +30,8 @@ chart = layout
 
     layout = defaultLayout1 {
         layout1_title="Amplitude Modulation",			   
-        layout1_horizontal_axes=autoScaleLinkedAxes xaxis,
-	layout1_vertical_axes=autoScaleLinkedAxes yaxis,
+        layout1_horizontal_axes=linkedAxes (autoScaledAxis xaxis),
+	layout1_vertical_axes=linkedAxes (autoScaledAxis yaxis),
 	layout1_plots = [(HA_Bottom,VA_Left,(PLines sinusoid1)),
 			 (HA_Bottom,VA_Left,(PPoints sinusoid2))]
     }
