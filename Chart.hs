@@ -18,7 +18,9 @@ module Chart(
     filledCircles,
     solidLine,
     autoScaleLinkedAxes,
-    explicitLinkedAxes
+    explicitLinkedAxes,
+    renderableToPNGFile,
+    setupRender
 ) where
 
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -49,6 +51,9 @@ newtype CairoPointStyle = CairoPointStyle (Point -> Cairo.Render ())
 
 -- | Abstract data type for the style of a line
 newtype CairoLineStyle = CairoLineStyle (Cairo.Render ())
+
+-- | Abstract data type for a fill style
+newtype CairoFillStyle = CairoFillStyle (Cairo.Render ())
 
 -- | Abstract data type for a font
 newtype CairoFontStyle = CairoFontStyle (Cairo.Render ())
@@ -175,6 +180,7 @@ strokeLine p1 p2 = do
 
 setFontStyle (CairoFontStyle s) = s
 setLineStyle (CairoLineStyle s) = s
+setFillStyle (CairoFillStyle s) = s
 
 textSize :: String -> Cairo.Render (Double,Double)
 textSize s = do
@@ -277,6 +283,10 @@ fontStyle name size slant weight = CairoFontStyle fn
 	 Cairo.selectFontFace name slant weight
 	 Cairo.setFontSize size
 
+solidFillStyle :: Double -> Double -> Double -> CairoFillStyle
+solidFillStyle r g b = CairoFillStyle fn
+   where fn = Cairo.setSourceRGB r g b
+
 ----------------------------------------------------------------------
 
 data HAxis = HA_Top | HA_Bottom
@@ -287,6 +297,7 @@ type AxesFn = [Double] -> [Double] -> (Maybe Axis,Maybe Axis)
 -- | A Layout1 value is a single plot area, with optional axes on
 -- each of the 4 sides, and an optional label at the top.
 data Layout1 = Layout1 {
+    layout1_background :: CairoFillStyle,
     layout1_title :: String,
     layout1_title_style :: CairoFontStyle,
     layout1_horizontal_axes :: AxesFn,
@@ -317,15 +328,26 @@ renderLayout1 l (Rect p0 p5) = do
     let p3  = p4 `psub` (Point w2 h2)
     let titlep = Point ((p_x p0 + p_x p5)/ 2) (p_y ptt)
 
+    -- render the background
+    Cairo.save
+    setClipRegion p0 p5 
+    setFillStyle (layout1_background l)
+    Cairo.paint
+    Cairo.restore
+
+    -- render the axes
     rMAxis AT_Top tAxis (mkrect p2 p1 p3 p2)
     rMAxis AT_Bottom  bAxis(mkrect p2 p3 p3 p4)
     rMAxis AT_Left lAxis (mkrect p1 p2 p2 p3)
     rMAxis AT_Right rAxis (mkrect p3 p2 p4 p3)
 
+    -- render the plots
     Cairo.save
     setClipRegion p2 p3 
     mapM_ (rPlot (Rect p2 p3)) (layout1_plots l)
     Cairo.restore
+
+    -- render the title
     rTitle titlep
 
   where
@@ -435,6 +457,7 @@ defaultPlotLines = PlotLines {
 }
 
 defaultLayout1 = Layout1 {
+    layout1_background = solidFillStyle 1 1 1,
     layout1_title = "",
     layout1_title_style = fontStyle "sans" 15 Cairo.FontSlantNormal Cairo.FontWeightBold,
     layout1_horizontal_axes = autoScaleLinkedAxes defaultAxis,
@@ -465,3 +488,22 @@ autoScaleLinkedAxes a pts1 pts2 = (Just axis, Just axis)
 			                else (min,max)
     vfn _ = axis_viewport axis
 
+
+renderableToPNGFile :: Renderable a => a -> Int -> Int -> FilePath -> IO ()
+renderableToPNGFile chart width height path = 
+    Cairo.withImageSurface Cairo.FormatARGB32 width height $ \result -> do
+    Cairo.renderWith result $ rfn
+    Cairo.surfaceWriteToPNG result path
+  where
+    rfn = do
+        setupRender
+	render chart rect
+
+    rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
+
+
+setupRender :: Cairo.Render ()
+setupRender = do
+    -- move to centre of pixels so that stroke width of 1 is
+    -- exactly one pixel 
+    Cairo.translate 0.5 0.5

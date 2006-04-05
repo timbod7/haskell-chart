@@ -37,4 +37,5 @@ chart = layout
     }
 	      
 main = do
-    showChartInWindow chart 640 480
+    renderableToWindow chart 640 480
+    renderableToPNGFile chart 640 480 "chart.png"

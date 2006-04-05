@@ -1,11 +1,13 @@
-module GtkChart where
+module GtkChart(
+    renderableToWindow
+    ) where
 
 import qualified Graphics.UI.Gtk as G
 import qualified Graphics.Rendering.Cairo as C
 import Chart
 
-showChartInWindow :: Renderable a => a -> Int -> Int -> IO ()
-showChartInWindow chart windowWidth windowHeight = do
+renderableToWindow :: Renderable a => a -> Int -> Int -> IO ()
+renderableToWindow chart windowWidth windowHeight = do
     G.initGUI
     window <- G.windowNew
     canvas <- G.drawingAreaNew
@@ -29,14 +31,5 @@ updateCanvas chart canvas = do
     return True
   where
     rfn rect = do
-        -- move to centre of pixels so that stroke width of 1 is
-        -- exactly one pixel 
-        C.translate 0.5 0.5
-	 
-        -- paint background white
-        C.save
-	C.setSourceRGB 1 1 1
-	C.paint
-	C.restore
-
+        setupRender
 	render chart rect
