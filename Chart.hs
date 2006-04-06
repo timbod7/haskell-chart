@@ -19,6 +19,7 @@ module Chart(
     solidLine,
     independentAxes,
     linkedAxes,
+    linkedAxes',
     explicitAxis,
     autoScaledAxis,
     renderableToPNGFile,
@@ -27,6 +28,7 @@ module Chart(
 
 import qualified Graphics.Rendering.Cairo as C
 import Data.List
+import Control.Monad
 
 -- | A point in two dimensions
 data Point = Point {
@@ -61,14 +63,15 @@ newtype CairoFillStyle = CairoFillStyle (C.Render ())
 -- | Abstract data type for a font
 newtype CairoFontStyle = CairoFontStyle (C.Render ())
 
+type Range = (Double,Double)
+type RectSize = (Double,Double)
+
 -- | A Renderable has a minimum size, and a Cairo action for
 -- drawing it within a specified rectangle.
 class Renderable a where
-   minsize  :: a -> C.Render (Double,Double)
+   minsize  :: a -> C.Render RectSize
    render   :: a -> Rect -> C.Render ()
 
-type Range = (Double,Double)
-type RectSize = (Double,Double)
 
 ----------------------------------------------------------------------
 
@@ -106,7 +109,7 @@ data AxisT = AxisT AxisType Axis
 
 instance Renderable AxisT where
    minsize = minsizeAxis
-   render  = renderAxis 
+   render  = renderAxis
 
 minsizeAxis :: AxisT -> C.Render RectSize
 minsizeAxis (AxisT at a) = do
@@ -127,6 +130,29 @@ minsizeAxis (AxisT at a) = do
 
   where
     maxsz (w1,h1) (w2,h2) = (max w1 w2, max h1 h2)
+
+
+-- | Calculate the amount by which the labels extend beyond
+-- the ends of the axis
+axisOverhang :: AxisT -> C.Render (Double,Double)
+axisOverhang (AxisT at a) = do
+    let labels = map snd (sort (axis_labels a))
+    C.save
+    setFontStyle (axis_label_style a)
+    labelSizes <- mapM textSize labels
+    C.restore
+    case labelSizes of
+        [] -> return (0,0)
+	ls  -> let l1 = head ls
+		   l2 = last ls
+		   ohangv = return (snd l1 / 2, snd l2 / 2)
+		   ohangh = return (fst l1 / 2, fst l2 / 2)
+		   in
+		   case at of
+		       AT_Top -> ohangh
+		       AT_Bottom -> ohangh
+		       AT_Left -> ohangv
+		       AT_Right -> ohangh
 
 renderAxis :: AxisT -> Rect -> C.Render ()
 renderAxis (AxisT at a) rect = do
@@ -343,10 +369,10 @@ renderLayout1 l (Rect p0 p5) = do
     C.restore
 
     -- render the axes
-    rMAxis AT_Top tAxis (mkrect p2 p1 p3 p2)
-    rMAxis AT_Bottom  bAxis(mkrect p2 p3 p3 p4)
-    rMAxis AT_Left lAxis (mkrect p1 p2 p2 p3)
-    rMAxis AT_Right rAxis (mkrect p3 p2 p4 p3)
+    rMAxis tAxis (mkrect p2 p1 p3 p2)
+    rMAxis bAxis (mkrect p2 p3 p3 p4)
+    rMAxis lAxis (mkrect p1 p2 p2 p3)
+    rMAxis rAxis (mkrect p3 p2 p4 p3)
 
     -- render the plots
     C.save
@@ -371,12 +397,10 @@ renderLayout1 l (Rect p0 p5) = do
 	drawText HTA_Centre VTA_Top titlep (layout1_title l)
 	C.restore
 
-    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots l)
-    (tAxis,bAxis) = layout1_horizontal_axes l xvals0 xvals1
-    (lAxis,rAxis) = layout1_vertical_axes l yvals0 yvals1
+    (bAxis,lAxis,tAxis,rAxis) = getAxes l
 
-    rMAxis at (Just a) rect = render (AxisT at a) rect
-    rMAxis _ Nothing  _ = return ()
+    rMAxis (Just at) rect = render at rect
+    rMAxis Nothing  _ = return ()
 
     rPlot :: Rect -> (HAxis,VAxis,Plot) -> C.Render ()
     rPlot rect (ha,va,p) = 
@@ -386,8 +410,8 @@ renderLayout1 l (Rect p0 p5) = do
 				VA_Right  -> rAxis
         in rPlot1 rect mxaxis myaxis p
 	      
-    rPlot1 :: Rect -> Maybe Axis -> Maybe Axis -> Plot -> C.Render ()
-    rPlot1 rect (Just xaxis) (Just yaxis) p = 
+    rPlot1 :: Rect -> Maybe AxisT -> Maybe AxisT -> Plot -> C.Render ()
+    rPlot1 rect (Just (AxisT _ xaxis)) (Just (AxisT _ yaxis)) p = 
 	let (x1,x2) = axis_viewport xaxis
 	    (y1,y2) = axis_viewport yaxis
 	in renderPlot p rect (Rect (Point x1 y1) (Point x2 y2))
@@ -410,21 +434,41 @@ minsizeLayout1 l = do
   return (2*m+w1+w2,2*m+h1+h2)
 
 axisSizes l = do
-    w1 <- asize fst AT_Left tAxis
-    h1 <- asize snd AT_Top bAxis
-    w2 <- asize fst AT_Right lAxis
-    h2 <- asize snd AT_Bottom rAxis
-    return (w1,h1,w2,h2)
-  where
-    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots l)
-    (tAxis,bAxis) = layout1_horizontal_axes l xvals0 xvals1
-    (lAxis,rAxis) = layout1_vertical_axes l yvals0 yvals1
+    w1a <- asize fst lAxis
+    h1a <- asize snd tAxis
+    w2a <- asize fst rAxis
+    h2a <- asize snd bAxis
+    (h1b,h2b) <- aohang lAxis
+    (w1b,w2b) <- aohang tAxis
+    (h1c,h2c) <- aohang rAxis
+    (w1c,w2c) <- aohang bAxis
 
-    asize xyfn at ma = case ma of
-	  Nothing -> return 0
-	  Just a  -> do
-	      sz <- minsize (AxisT at a)
-	      return (xyfn sz)
+    return (maximum [w1a,w1b,w1c],
+	    maximum [h1a,h1b,h1c],
+	    maximum [w2a,w2b,w2c],
+	    maximum [h2a,h2b,h2c] )
+  where
+    (bAxis,lAxis,tAxis,rAxis) = getAxes l
+
+    asize xyfn Nothing = return 0
+    asize xyfn (Just at) = do
+        sz <- minsize at
+	return (xyfn sz)
+
+    aohang Nothing = return (0,0)
+    aohang (Just a) = axisOverhang a
+
+
+getAxes :: Layout1 -> (Maybe AxisT, Maybe AxisT, Maybe AxisT, Maybe AxisT)
+getAxes l = (mk AT_Bottom bAxis, mk AT_Left lAxis,
+	     mk AT_Top tAxis, mk AT_Right rAxis)
+  where 
+    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots l)
+    (bAxis,tAxis) = layout1_horizontal_axes l xvals0 xvals1
+    (lAxis,rAxis) = layout1_vertical_axes l yvals0 yvals1
+    mk _ Nothing = Nothing
+    mk at (Just a) = Just (AxisT at a)
+
 
 allPlottedValues :: [(HAxis,VAxis,Plot)] -> ( [Double], [Double], [Double], [Double] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
@@ -482,6 +526,14 @@ linkedAxes :: AxisFn -> AxesFn
 linkedAxes af pts1 pts2 = (a,a)
   where
     a = af (pts1++pts2)
+
+-- | Show the same axis on both sides of the layout, but with labels
+-- only on the primary side
+linkedAxes' :: AxisFn -> AxesFn
+linkedAxes' af pts1 pts2 = (a,removeLabels a)
+  where
+    a  = af (pts1++pts2)
+    removeLabels = liftM (\a -> a{axis_labels = []})
 
 explicitAxis :: Maybe Axis -> AxisFn
 explicitAxis ma _ = ma

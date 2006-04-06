@@ -270,8 +270,8 @@ chart = layout
 
     layout = defaultLayout1 {
         layout1_title="Price History",			   
-        layout1_horizontal_axes=linkedAxes (autoScaledAxis defaultAxis),
-	layout1_vertical_axes=linkedAxes (autoScaledAxis defaultAxis),
+        layout1_horizontal_axes=linkedAxes' (autoScaledAxis defaultAxis),
+	layout1_vertical_axes=linkedAxes' (autoScaledAxis defaultAxis),
  	layout1_plots = [(HA_Bottom,VA_Left,(PLines price1)),
                          (HA_Bottom,VA_Left,(PLines price2))]
     }
