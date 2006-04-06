@@ -237,8 +237,9 @@ prices = [
     (31,03,2006, 28.00, 78.85)
     ]
 
-fromYMD :: Int -> Int -> Int -> ClockTime
-fromYMD yyyy mm dd = toClockTime CalendarTime {
+date dd mm yyyy = doubleFromClockTime ct
+  where
+    ct = toClockTime CalendarTime {
     ctYear=yyyy,
     ctMonth=toEnum (mm-1),
     ctDay=dd,
@@ -266,11 +267,9 @@ chart = layout
 	plot_lines_values = [[ Point (date d m y) v | (d,m,y,_,v) <- prices]]
     }
 
-    date d m y = fromIntegral (tdSec (fromYMD y m d `diffClockTimes` fromYMD 1970 01 01))
-
     layout = defaultLayout1 {
         layout1_title="Price History",			   
-        layout1_horizontal_axes=linkedAxes' (autoScaledAxis defaultAxis),
+        layout1_horizontal_axes=linkedAxes' (monthsAxis defaultAxis),
 	layout1_vertical_axes=linkedAxes' (autoScaledAxis defaultAxis),
  	layout1_plots = [(HA_Bottom,VA_Left,(PLines price1)),
                          (HA_Bottom,VA_Left,(PLines price2))]

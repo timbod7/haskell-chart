@@ -22,13 +22,18 @@ module Chart(
     linkedAxes',
     explicitAxis,
     autoScaledAxis,
+    monthsAxis,
     renderableToPNGFile,
-    setupRender
+    setupRender,
+    doubleFromClockTime,
+    clockTimeFromDouble,
 ) where
 
 import qualified Graphics.Rendering.Cairo as C
 import Data.List
 import Control.Monad
+import System.Time
+import System.Locale
 
 -- | A point in two dimensions
 data Point = Point {
@@ -577,6 +582,78 @@ chooseStep nsteps (min,max) = s
     steps' =  sort [ (abs((max-min)/s - fromIntegral nsteps), s) | s <- steps ]
     s = snd (head steps')
 
+----------------------------------------------------------------------
+
+refClockTime = toClockTime CalendarTime {
+    ctYear=1970,
+    ctMonth=toEnum 0,
+    ctDay=1,
+    ctHour=0,
+    ctMin=0,
+    ctSec=0,
+    ctPicosec=0,
+    ctTZ=0,
+    ctWDay=Monday,
+    ctYDay=0,
+    ctTZName="",
+    ctIsDST=False
+    }
+
+doubleFromClockTime :: ClockTime -> Double
+doubleFromClockTime ct = fromIntegral (tdSec (diffClockTimes ct refClockTime))
+
+clockTimeFromDouble :: Double -> ClockTime
+clockTimeFromDouble v = (addToClockTime tdiff refClockTime)
+  where
+    tdiff = TimeDiff {
+       tdYear = 0,
+       tdMonth = 0,
+       tdDay = 0,
+       tdHour = 0,
+       tdMin = 0,
+       tdSec = floor v,
+       tdPicosec = 0
+    }
+
+
+monthsAxis :: Axis -> AxisFn
+monthsAxis a pts = Just axis
+  where
+    axis =  a {
+        axis_viewport=newViewport,
+	axis_ticks=newTicks,
+	axis_labels=newLabels
+	}
+    (min,max) = case pts of
+		[] -> (refClockTime, nextMonthStart refClockTime)
+		ps -> let min = minimum ps
+			  max = maximum ps in
+			  (clockTimeFromDouble min,clockTimeFromDouble max)
+    min' = thisMonthStart min
+    max' = nextMonthStart max
+
+    newViewport = (doubleFromClockTime min', doubleFromClockTime max')
+    months = takeWhile (<=max') (iterate nextMonthStart min')
+    newTicks = [ (doubleFromClockTime ct,10) | ct <- months ]
+    newLabels = [ (mlabelv m1 m2, mlabelt m1) | (m1,m2) <- zip months (tail months) ]
+
+    mlabelt m =  formatCalendarTime defaultTimeLocale "%b-%y" (toUTCTime m)
+    mlabelv m1 m2 = (doubleFromClockTime m2 + doubleFromClockTime m1) / 2
+
+thisMonthStart ct = 
+    let calt = (toUTCTime ct) {
+            ctDay=1,
+	    ctHour=0,
+	    ctMin=0,
+	    ctSec=0,
+	    ctPicosec=0
+        } in
+        toClockTime calt
+
+nextMonthStart ct =
+    let month1 = noTimeDiff{tdMonth=1} in
+	addToClockTime month1 (thisMonthStart ct)
+ 
 ----------------------------------------------------------------------
 
 renderableToPNGFile :: Renderable a => a -> Int -> Int -> FilePath -> IO ()
