@@ -55,6 +55,11 @@ psub (Point x1 y1) (Point x2 y2) = (Point (x1-x2) (y1-y2))
 
 -- | A rectangle is defined by two points
 data Rect = Rect Point Point
+   deriving Show
+
+-- | Create a rectangle based upon the coordinates of 4 points
+mkrect (Point x1 _) (Point _ y2) (Point x3 _) (Point _ y4) =
+    Rect (Point x1 y2) (Point x3 y4)
 
 -- | Abstract data type for the style of a plotted point
 newtype CairoPointStyle = CairoPointStyle (Point -> C.Render ())
@@ -77,6 +82,22 @@ class Renderable a where
    minsize  :: a -> C.Render RectSize
    render   :: a -> Rect -> C.Render ()
 
+instance Renderable a => Renderable (Maybe a) where
+   minsize Nothing = return (0,0)
+   minsize (Just r) = minsize r
+
+   render Nothing _ = return () 
+   render (Just r) rect = render r rect
+
+data RenderWithMargins a = RenderWithMargins (Double,Double,Double,Double) a
+
+instance Renderable a => Renderable (RenderWithMargins a) where
+   minsize (RenderWithMargins (t,b,l,r) a) = do
+       (w,h) <- minsize a
+       return (w+l+r,h+t+b)
+
+   render (RenderWithMargins (t,b,l,r) a) (Rect p1 p2) =
+       render a (Rect (p1 `padd` (Point l 0)) (p2 `padd` (Point 0 b)))
 
 ----------------------------------------------------------------------
 
@@ -108,9 +129,9 @@ data Axis =  Axis {
 }
 
 -- | An axis has to live on one side of the plotting area
-data AxisType = AT_Top | AT_Bottom | AT_Left | AT_Right
+data RectEdge = E_Top | E_Bottom | E_Left | E_Right
 
-data AxisT = AxisT AxisType Axis
+data AxisT = AxisT RectEdge Axis
 
 instance Renderable AxisT where
    minsize = minsizeAxis
@@ -127,10 +148,10 @@ minsizeAxis (AxisT at a) = do
     let ag = axis_label_gap a
     let tsize = maximum [ max 0 (-l) | (v,l) <- axis_ticks a ]
     let sz = case at of
-		     AT_Top    -> (lw,max (lh + ag) tsize)
-		     AT_Bottom -> (lw,max (lh + ag) tsize)
-		     AT_Left   -> (max (lw + ag) tsize, lh)
-		     AT_Right  -> (max (lw + ag) tsize, lh)
+		     E_Top    -> (lw,max (lh + ag) tsize)
+		     E_Bottom -> (lw,max (lh + ag) tsize)
+		     E_Left   -> (max (lw + ag) tsize, lh)
+		     E_Right  -> (max (lw + ag) tsize, lh)
     return sz
 
   where
@@ -154,10 +175,10 @@ axisOverhang (AxisT at a) = do
 		   ohangh = return (fst l1 / 2, fst l2 / 2)
 		   in
 		   case at of
-		       AT_Top -> ohangh
-		       AT_Bottom -> ohangh
-		       AT_Left -> ohangv
-		       AT_Right -> ohangh
+		       E_Top -> ohangh
+		       E_Bottom -> ohangh
+		       E_Left -> ohangv
+		       E_Right -> ohangh
 
 renderAxis :: AxisT -> Rect -> C.Render ()
 renderAxis (AxisT at a) rect = do
@@ -176,10 +197,10 @@ renderAxis (AxisT at a) rect = do
    (vs,ve) = axis_viewport a
 
    (sx,sy,ex,ey,tp) = case at of
-       AT_Top    -> (x1,y2,x2,y2, (Point 0 1)) 
-       AT_Bottom -> (x1,y1,x2,y1, (Point 0 (-1)))
-       AT_Left   -> (x2,y2,x2,y1, (Point (1) 0))		
-       AT_Right  -> (x1,y2,x1,y1, (Point (-1) 0))
+       E_Top    -> (x1,y2,x2,y2, (Point 0 1)) 
+       E_Bottom -> (x1,y1,x2,y1, (Point 0 (-1)))
+       E_Left   -> (x2,y2,x2,y1, (Point (1) 0))		
+       E_Right  -> (x1,y2,x1,y1, (Point (-1) 0))
 
    axisPoint value = 
        let ax = (sx + (ex-sx) * (value - vs) / (ve-vs))
@@ -194,13 +215,67 @@ renderAxis (AxisT at a) rect = do
    (hta,vta,lp) = 
        let g = axis_label_gap a
        in case at of
-		  AT_Top    -> (HTA_Centre,VTA_Bottom,(Point 0 (-g)))
-		  AT_Bottom -> (HTA_Centre,VTA_Top,(Point 0 g))
-		  AT_Left   -> (HTA_Right,VTA_Centre,(Point (-g) 0))
-		  AT_Right  -> (HTA_Left,VTA_Centre,(Point g 0))
+		  E_Top    -> (HTA_Centre,VTA_Bottom,(Point 0 (-g)))
+		  E_Bottom -> (HTA_Centre,VTA_Top,(Point 0 g))
+		  E_Left   -> (HTA_Right,VTA_Centre,(Point (-g) 0))
+		  E_Right  -> (HTA_Left,VTA_Centre,(Point g 0))
 
    drawLabel (value,s) = do
        drawText hta vta (axisPoint value `padd` lp) s
+
+----------------------------------------------------------------------
+-- Legend
+
+data LegendStyle = LegendStyle {
+   legend_label_style :: CairoFontStyle,
+   legend_margin :: Double,
+   legend_plot_size :: Double
+}
+
+data Legend = Legend Bool LegendStyle [(String,Plot)]
+
+instance Renderable Legend where
+   minsize = minsizeLegend
+   render  = renderLegend
+
+minsizeLegend :: Legend -> C.Render RectSize
+minsizeLegend (Legend _ ls plots) = do
+    let labels = map fst plots
+    lsizes <- mapM textSize labels
+    lgap <- legendSpacer
+    let lm = legend_margin ls
+    let pw = legend_plot_size ls
+    let h = maximum  [h | (w,h) <- lsizes]
+    let n = fromIntegral (length lsizes)
+    let w = sum [w + lgap | (w,h) <- lsizes] + pw * (n+1) + lm * (n-1)
+    return (w,h)
+
+renderLegend :: Legend -> Rect -> C.Render ()
+renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
+    foldM_ rf rp1 plots
+  where
+    lm = legend_margin ls
+    lps = legend_plot_size ls
+
+    rf :: Point -> (String,Plot) -> C.Render Point
+    rf p1 (label,plot) = do
+        (w,h) <- textSize label
+	lgap <- legendSpacer
+	let p2 = (p1 `padd` Point lps 0)
+        renderPlotLegend plot (mkrect p1 rp1 p2 rp2)
+	let p3 = Point (p_x p2 + lgap) ((p_y rp1 + p_y rp2)/2)
+	drawText HTA_Left VTA_Centre p3 label
+        return (p3 `padd` Point (w+lm) 0)
+
+legendSpacer = do
+    (lgap,_) <- textSize "X"
+    return lgap
+
+defaultLegendStyle = LegendStyle {
+    legend_label_style=defaultFontStyle,
+    legend_margin=20,
+    legend_plot_size=20
+}
 
 ----------------------------------------------------------------------
 -- Assorted helper functions in Cairo Usage
@@ -293,6 +368,24 @@ renderPlot :: Plot -> Rect -> Rect -> C.Render ()
 renderPlot (PPoints p) r v = renderPlotPoints p r v
 renderPlot (PLines p) r v = renderPlotLines p r v
 
+renderPlotLegendPoints :: PlotPoints -> Rect -> C.Render ()
+renderPlotLegendPoints p r = return ()
+
+renderPlotLegendLines :: PlotLines -> Rect -> C.Render ()
+renderPlotLegendLines p r@(Rect p1 p2) = do
+    C.save
+    setLineStyle (plot_lines_style p)
+    let y = (p_y p1 + p_y p2) / 2
+    moveTo (Point (p_x p1) y)
+    lineTo (Point (p_x p2) y)
+    C.stroke
+    C.restore
+
+
+renderPlotLegend :: Plot -> Rect -> C.Render ()
+renderPlotLegend (PPoints p) r = renderPlotLegendPoints p r
+renderPlotLegend (PLines p)  r = renderPlotLegendLines p r
+
 allPoints:: Plot -> [Point]
 allPoints (PPoints ps) = plot_points_values ps
 allPoints (PLines  ps) = concat (plot_lines_values ps)
@@ -341,7 +434,8 @@ data Layout1 = Layout1 {
     layout1_horizontal_axes :: AxesFn,
     layout1_vertical_axes :: AxesFn,
     layout1_margin :: Double,
-    layout1_plots :: [(HAxis,VAxis,Plot)]
+    layout1_plots :: [(String,HAxis,VAxis,Plot)],
+    layout1_legend :: Maybe(LegendStyle)
 }
 
 instance Renderable Layout1 where
@@ -349,7 +443,7 @@ instance Renderable Layout1 where
     minsize  = minsizeLayout1
 
 renderLayout1 :: Layout1 -> Rect -> C.Render ()
-renderLayout1 l (Rect p0 p5) = do
+renderLayout1 l (Rect p0 p6) = do
     (w0,h0) <- titleSize 
 
     let margin  = (layout1_margin l)
@@ -358,17 +452,20 @@ renderLayout1 l (Rect p0 p5) = do
     let ptt = if w0 == 0.0 then p0 else p0 `padd` (Point 0 margin)
     let ptb = if w0 == 0.0 then p0 else ptt `padd` (Point 0 h0)
 
+    let leg = mkLegend l
     (w1,h1,w2,h2) <- axisSizes l
+    (w3,h3) <- minsize leg
 
     let p1 = ptb `padd` mp
     let p2 = p1 `padd` (Point w1 h1)
-    let p4  = p5 `psub` mp
+    let p5 = p6 `psub` mp
+    let p4  = p5 `psub` (Point 0 h3)
     let p3  = p4 `psub` (Point w2 h2)
     let titlep = Point ((p_x p0 + p_x p5)/ 2) (p_y ptt)
 
     -- render the background
     C.save
-    setClipRegion p0 p5 
+    setClipRegion p0 p6
     setFillStyle (layout1_background l)
     C.paint
     C.restore
@@ -387,6 +484,11 @@ renderLayout1 l (Rect p0 p5) = do
 
     -- render the title
     rTitle titlep
+
+    -- render the legend
+    let leg = mkLegend l
+    let lrect = (mkrect p2 p4 p3 p5)
+    render leg lrect
 
   where
     titleSize = do
@@ -407,8 +509,8 @@ renderLayout1 l (Rect p0 p5) = do
     rMAxis (Just at) rect = render at rect
     rMAxis Nothing  _ = return ()
 
-    rPlot :: Rect -> (HAxis,VAxis,Plot) -> C.Render ()
-    rPlot rect (ha,va,p) = 
+    rPlot :: Rect -> (String,HAxis,VAxis,Plot) -> C.Render ()
+    rPlot rect (_,ha,va,p) = 
         let mxaxis = case ha of HA_Bottom -> bAxis
 				HA_Top    -> tAxis
 	    myaxis = case va of VA_Left   -> lAxis
@@ -422,8 +524,9 @@ renderLayout1 l (Rect p0 p5) = do
 	in renderPlot p rect (Rect (Point x1 y1) (Point x2 y2))
     rPlot1 _ _ _ _ = return ()
 
-    mkrect (Point x1 y1) (Point x2 y2) (Point x3 y3) (Point x4 y4) =
-	Rect (Point x1 y2) (Point x3 y4)
+    rLegend :: Rect -> Maybe LegendStyle -> C.Render ()
+    rLegend _ Nothing = return ()
+    rLegend rect (Just ls) = render (Legend True ls [(s,p) | (s,_,_,p) <- layout1_plots l]) rect
 
     setClipRegion p2 p3 = do    
         C.moveTo (p_x p2) (p_y p2)
@@ -436,7 +539,13 @@ renderLayout1 l (Rect p0 p5) = do
 minsizeLayout1 l = do
   let m = layout1_margin l
   (w1,h1,w2,h2) <- axisSizes l
-  return (2*m+w1+w2,2*m+h1+h2)
+  (w3,h3) <- minsize (mkLegend l)
+  return (2*m+w1+w2,2*m+h1+h2+h3)
+
+mkLegend l = case layout1_legend l of
+    (Just ls) -> Just (RenderWithMargins (layout1_margin l,0,0,0) 
+		       (Legend True ls [(s,p) | (s,_,_,p) <- layout1_plots l]))
+    Nothing   -> Nothing
 
 axisSizes l = do
     w1a <- asize fst lAxis
@@ -465,8 +574,8 @@ axisSizes l = do
 
 
 getAxes :: Layout1 -> (Maybe AxisT, Maybe AxisT, Maybe AxisT, Maybe AxisT)
-getAxes l = (mk AT_Bottom bAxis, mk AT_Left lAxis,
-	     mk AT_Top tAxis, mk AT_Right rAxis)
+getAxes l = (mk E_Bottom bAxis, mk E_Left lAxis,
+	     mk E_Top tAxis, mk E_Right rAxis)
   where 
     (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots l)
     (bAxis,tAxis) = layout1_horizontal_axes l xvals0 xvals1
@@ -475,10 +584,10 @@ getAxes l = (mk AT_Bottom bAxis, mk AT_Left lAxis,
     mk at (Just a) = Just (AxisT at a)
 
 
-allPlottedValues :: [(HAxis,VAxis,Plot)] -> ( [Double], [Double], [Double], [Double] )
+allPlottedValues :: [(String,HAxis,VAxis,Plot)] -> ( [Double], [Double], [Double], [Double] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
   where
-    pts = concat [ [ (ha,va,pt)| pt <- allPoints p] | (ha,va,p) <- plots ]
+    pts = concat [ [ (ha,va,pt)| pt <- allPoints p] | (_,ha,va,p) <- plots ]
     xvals0 = [ (p_x pt) | (HA_Bottom,_,pt) <- pts  ]
     xvals1 = [ (p_x pt) | (HA_Top,_,pt) <- pts  ]
     yvals0 = [ (p_y pt) | (_,VA_Left,pt) <- pts  ]
@@ -519,7 +628,8 @@ defaultLayout1 = Layout1 {
     layout1_horizontal_axes = linkedAxes (autoScaledAxis defaultAxis),
     layout1_vertical_axes = linkedAxes (autoScaledAxis defaultAxis),
     layout1_margin = 10,
-    layout1_plots = []
+    layout1_plots = [],
+    layout1_legend = Just defaultLegendStyle
 }
 
 -- | Show independent axes on each side of the layout
