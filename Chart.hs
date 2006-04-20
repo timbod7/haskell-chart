@@ -97,8 +97,46 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         (w,h) <- minsize rd
         return (w+l+r,h+t+b)
 
-    rf (Rect p1 p2) =     
-        render rd (Rect (p1 `padd` (Point l 0)) (p2 `padd` (Point 0 b)))
+    rf r1@(Rect p1 p2) = do
+        render rd (Rect (p1 `padd` (Point l t)) (p2 `psub` (Point r b)))
+
+fillBackground :: CairoFillStyle -> Renderable -> Renderable
+fillBackground fs r = Renderable { minsize = minsize r, render = rf }
+  where
+    rf rect@(Rect p1 p2) = do
+        C.save
+        setClipRegion p1 p2
+        setFillStyle fs
+        C.paint
+        C.restore
+	render r rect
+
+vertical :: [(Double,Renderable)] -> Renderable 
+vertical rs = Renderable { minsize = mf, render = rf }
+  where
+    mf = do
+        (_,wmin,hmin) <- calcSizes
+	return (wmin, hmin)
+
+    rf (Rect p1 p2) = do
+        (sizes,wmin,hmin) <- calcSizes
+	let wactual = p_x p2 - p_x p1
+	let hextra = p_y p2 - p_y p1 - hmin
+	let etotal = sum (map fst rs)
+	let rs' = [ (wactual,h + hextra * e / etotal,r)
+		    | ((e,r),(w,h)) <- zip rs sizes ]
+	foldM_ render1 p1 rs'
+
+    calcSizes = do
+        sizes <- mapM minsize [ r | (_,r) <- rs]
+	let wmin = maximum [ w | (w,h) <- sizes ]
+	let hmin = sum [ h | (w,h) <- sizes ]
+	return (sizes,wmin,hmin)
+    
+    render1 :: Point -> (Double,Double,Renderable) -> C.Render Point
+    render1 p (w,h,r) = do
+        render r (Rect p (p `padd` Point w h))
+	return (p `padd` Point 0 h)
 
 class Rend a where
    toRenderable :: a -> Renderable
@@ -243,7 +281,7 @@ data Legend = Legend Bool LegendStyle [(String,Plot)]
 instance Rend Legend where
   toRenderable l = Renderable {
     minsize=minsizeLegend l,
-    render=renderLegend' l
+    render=renderLegend l
   }
 
 minsizeLegend :: Legend -> C.Render RectSize
@@ -258,8 +296,8 @@ minsizeLegend (Legend _ ls plots) = do
     let w = sum [w + lgap | (w,h) <- lsizes] + pw * (n+1) + lm * (n-1)
     return (w,h)
 
-renderLegend' :: Legend -> Rect -> C.Render ()
-renderLegend' (Legend _ ls plots) (Rect rp1 rp2) = do
+renderLegend :: Legend -> Rect -> C.Render ()
+renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
     foldM_ rf rp1 plots
   where
     lm = legend_margin ls
@@ -271,8 +309,8 @@ renderLegend' (Legend _ ls plots) (Rect rp1 rp2) = do
 	lgap <- legendSpacer
 	let p2 = (p1 `padd` Point lps 0)
         renderPlotLegend plot (mkrect p1 rp1 p2 rp2)
-	let p3 = Point (p_x p2 + lgap) ((p_y rp1 + p_y rp2)/2)
-	drawText HTA_Left VTA_Centre p3 label
+	let p3 = Point (p_x p2 + lgap) (p_y rp1)
+	drawText HTA_Left VTA_Top p3 label
         return (p3 `padd` Point (w+lm) 0)
 
 legendSpacer = do
@@ -291,6 +329,14 @@ defaultLegendStyle = LegendStyle {
 moveTo, lineTo :: Point -> C.Render ()
 moveTo (Point px py) = C.moveTo px py
 lineTo (Point px py) = C.lineTo px py
+
+setClipRegion p2 p3 = do    
+    C.moveTo (p_x p2) (p_y p2)
+    C.lineTo (p_x p2) (p_y p3)
+    C.lineTo (p_x p3) (p_y p3)
+    C.lineTo (p_x p3) (p_y p2)
+    C.lineTo (p_x p2) (p_y p2)
+    C.clip
 
 strokeLine p1 p2 = do
    C.newPath
@@ -427,6 +473,29 @@ solidFillStyle r g b = CairoFillStyle fn
 
 ----------------------------------------------------------------------
 
+label :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> String -> Renderable
+label fs hta vta s = Renderable { minsize = mf, render = rf }
+  where
+    mf = do
+       C.save
+       setFontStyle fs
+       sz <- textSize s
+       C.restore
+       return sz
+    rf (Rect p1 p2) = do
+       C.save
+       setFontStyle fs
+       let p = Point (xp hta (p_x p1) (p_x p2)) (yp vta (p_y p1) (p_y p2))
+       drawText hta vta p s
+       C.restore
+    xp HTA_Left x1 x2 = x1
+    xp HTA_Centre x1 x2 = (x1+x2)/2
+    xp HTA_Right x1 x2 = x2
+    yp VTA_Top y1 y2 = y2
+    yp VTA_Centre y1 y2 = (y1+y2)/2
+    yp VTA_Bottom y1 y2 = y1
+
+
 data HAxis = HA_Top | HA_Bottom
 data VAxis = VA_Left | VA_Right
 
@@ -447,38 +516,42 @@ data Layout1 = Layout1 {
 }
 
 instance Rend Layout1 where
-  toRenderable l = Renderable {
-    minsize=minsizeLayout1 l,
-    render = renderLayout1' l
-  }
+    toRenderable = layout1ToRenderable
 
-renderLayout1' :: Layout1 -> Rect -> C.Render ()
-renderLayout1' l (Rect p0 p6) = do
-    (w0,h0) <- titleSize 
+df = solidFillStyle 0.9 0.9 0.9
+layout1ToRenderable l =
+    fillBackground (layout1_background l) (
+        vertical [
+            (0, addMargins (lm/2,0,0,0)    (mkTitle l)),
+	    (1, addMargins (lm/2,lm,lm,lm) (plotArea l)),
+	    (0, mkLegend l)
+            ]
+        )
+  where
+    lm = layout1_margin l
 
-    let margin  = (layout1_margin l)
-    let mp = (Point margin margin)
+    mkTitle l = label (layout1_title_style l) HTA_Centre VTA_Centre (layout1_title l)
 
-    let ptt = if w0 == 0.0 then p0 else p0 `padd` (Point 0 margin)
-    let ptb = if w0 == 0.0 then p0 else ptt `padd` (Point 0 h0)
+    mkLegend l = maybe emptyRenderable mkLegend' (layout1_legend l)
+    mkLegend' ls = addMargins (0,lm,lm,0) (toRenderable (Legend True ls [(s,p) | (s,_,_,p) <- layout1_plots l]))
+ 
+    plotArea l = Renderable {
+        minsize=minsizePlotArea l,
+        render=renderPlotArea l
+    }
 
-    let leg = mkLegend l
+minsizePlotArea l = do
     (w1,h1,w2,h2) <- axisSizes l
-    (w3,h3) <- minsize leg
+    return (w1+w2,h1+h2)
 
-    let p1 = ptb `padd` mp
+renderPlotArea l (Rect p1 p5) = do
+    let margin  = (layout1_margin l)
+
+    (w1,h1,w2,h2) <- axisSizes l
+
     let p2 = p1 `padd` (Point w1 h1)
-    let p5 = p6 `psub` mp
-    let p4  = p5 `psub` (Point 0 h3)
+    let p4  = p5
     let p3  = p4 `psub` (Point w2 h2)
-    let titlep = Point ((p_x p0 + p_x p5)/ 2) (p_y ptt)
-
-    -- render the background
-    C.save
-    setClipRegion p0 p6
-    setFillStyle (layout1_background l)
-    C.paint
-    C.restore
 
     -- render the axes
     rMAxis tAxis (mkrect p2 p1 p3 p2)
@@ -492,28 +565,7 @@ renderLayout1' l (Rect p0 p6) = do
     mapM_ (rPlot (Rect p2 p3)) (layout1_plots l)
     C.restore
 
-    -- render the title
-    rTitle titlep
-
-    -- render the legend
-    let leg = mkLegend l
-    let lrect = (mkrect p2 p4 p3 p5)
-    render leg lrect
-
   where
-    titleSize = do
-       C.save
-       setFontStyle (layout1_title_style l)
-       sz <- textSize (layout1_title l)
-       C.restore
-       return sz
-
-    rTitle titlep = do
-        C.save
-	setFontStyle (layout1_title_style l)
-	drawText HTA_Centre VTA_Top titlep (layout1_title l)
-	C.restore
-
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
 
     rMAxis :: Maybe AxisT ->  Rect -> C.Render ()
@@ -534,24 +586,6 @@ renderLayout1' l (Rect p0 p6) = do
 	    (y1,y2) = axis_viewport yaxis
 	in renderPlot p rect (Rect (Point x1 y1) (Point x2 y2))
     rPlot1 _ _ _ _ = return ()
-
-    setClipRegion p2 p3 = do    
-        C.moveTo (p_x p2) (p_y p2)
-	C.lineTo (p_x p2) (p_y p3)
-        C.lineTo (p_x p3) (p_y p3)
-        C.lineTo (p_x p3) (p_y p2)
-        C.lineTo (p_x p2) (p_y p2)
-        C.clip
-
-minsizeLayout1 l = do
-  let m = layout1_margin l
-  (w1,h1,w2,h2) <- axisSizes l
-  (w3,h3) <- minsize (mkLegend l)
-  return (2*m+w1+w2,2*m+h1+h2+h3)
-
-mkLegend l = maybe emptyRenderable mk (layout1_legend l)
-  where
-     mk ls = addMargins (layout1_margin l,0,0,0) (toRenderable (Legend True ls [(s,p) | (s,_,_,p) <- layout1_plots l]))
 
 axisSizes l = do
     w1a <- asize fst lAxis
