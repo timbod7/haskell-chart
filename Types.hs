@@ -1,0 +1,128 @@
+module Types where
+
+import qualified Graphics.Rendering.Cairo as C
+
+-- | A point in two dimensions
+data Point = Point {
+    p_x :: Double,
+    p_y :: Double
+} deriving Show
+
+-- | scale a point by a constant
+pscale :: Double -> Point -> Point
+pscale c (Point x y) = (Point (x*c) (y*c))
+
+-- | add two points
+padd :: Point -> Point -> Point
+padd (Point x1 y1) (Point x2 y2) = (Point (x1+x2) (y1+y2))
+
+-- | subtract two points
+psub :: Point -> Point -> Point
+psub (Point x1 y1) (Point x2 y2) = (Point (x1-x2) (y1-y2))
+
+-- | A rectangle is defined by two points
+data Rect = Rect Point Point
+   deriving Show
+
+data RectEdge = E_Top | E_Bottom | E_Left | E_Right
+
+-- | Create a rectangle based upon the coordinates of 4 points
+mkrect (Point x1 _) (Point _ y2) (Point x3 _) (Point _ y4) =
+    Rect (Point x1 y2) (Point x3 y4)
+
+-- | Abstract data type for the style of a plotted point
+newtype CairoPointStyle = CairoPointStyle (Point -> C.Render ())
+
+-- | Abstract data type for the style of a line
+newtype CairoLineStyle = CairoLineStyle (C.Render ())
+
+-- | Abstract data type for a fill style
+newtype CairoFillStyle = CairoFillStyle (C.Render ())
+
+-- | Abstract data type for a font
+newtype CairoFontStyle = CairoFontStyle (C.Render ())
+
+type Range = (Double,Double)
+type RectSize = (Double,Double)
+
+----------------------------------------------------------------------
+-- Assorted helper functions in Cairo Usage
+
+moveTo, lineTo :: Point -> C.Render ()
+moveTo (Point px py) = C.moveTo px py
+lineTo (Point px py) = C.lineTo px py
+
+setClipRegion p2 p3 = do    
+    C.moveTo (p_x p2) (p_y p2)
+    C.lineTo (p_x p2) (p_y p3)
+    C.lineTo (p_x p3) (p_y p3)
+    C.lineTo (p_x p3) (p_y p2)
+    C.lineTo (p_x p2) (p_y p2)
+    C.clip
+
+strokeLine p1 p2 = do
+   C.newPath
+   moveTo p1
+   lineTo p2
+   C.stroke
+
+setFontStyle (CairoFontStyle s) = s
+setLineStyle (CairoLineStyle s) = s
+setFillStyle (CairoFillStyle s) = s
+
+textSize :: String -> C.Render RectSize
+textSize s = do
+    te <- C.textExtents s
+    return (C.textExtentsWidth te, C.textExtentsHeight te)
+
+data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right
+data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom
+
+-- | Function to draw a textual label anchored by one of it's corners
+-- or edges.
+drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> C.Render ()
+drawText hta vta (Point x y) s = do
+    te <- C.textExtents s
+    let lx = xadj hta (C.textExtentsWidth te)
+    let ly = yadj vta (C.textExtentsHeight te)
+    C.moveTo (x+lx) (y+ly)
+    C.showText s
+  where
+    xadj HTA_Left   w = 0
+    xadj HTA_Centre w = (-w/2)
+    xadj HTA_Right  w = (-w)
+    yadj VTA_Top    h = h
+    yadj VTA_Centre h = h/2
+    yadj VTA_Bottom h = 0
+
+----------------------------------------------------------------------
+filledCircles :: Double -> Double -> Double -> Double -> CairoPointStyle
+filledCircles radius r g b = CairoPointStyle rf
+  where
+    rf (Point x y) = do
+	C.setSourceRGB r g b
+        C.newPath
+	C.arc x y radius 0 360
+	C.fill
+
+solidLine :: Double -> Double -> Double -> Double -> CairoLineStyle
+solidLine w r g b = CairoLineStyle (do
+    C.setLineWidth w
+    C.setSourceRGB r g b
+    )
+
+fontStyle :: String -> Double -> C.FontSlant ->
+	     C.FontWeight -> CairoFontStyle
+fontStyle name size slant weight = CairoFontStyle fn
+  where
+    fn = do
+	 C.selectFontFace name slant weight
+	 C.setFontSize size
+
+solidFillStyle :: Double -> Double -> Double -> CairoFillStyle
+solidFillStyle r g b = CairoFillStyle fn
+   where fn = C.setSourceRGB r g b
+
+defaultPointStyle = filledCircles 1 1 1 1
+defaultFontStyle = CairoFontStyle (return ())
+
