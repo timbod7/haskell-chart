@@ -7,6 +7,7 @@ module Chart(
     PlotLines(..),
     Layout1(..),
     Renderable(..),
+    Rend(..),
     HAxis(..),
     VAxis(..),
     defaultAxisLineStyle, 
@@ -76,28 +77,31 @@ newtype CairoFontStyle = CairoFontStyle (C.Render ())
 type Range = (Double,Double)
 type RectSize = (Double,Double)
 
--- | A Renderable has a minimum size, and a Cairo action for
--- drawing it within a specified rectangle.
-class Renderable a where
-   minsize  :: a -> C.Render RectSize
-   render   :: a -> Rect -> C.Render ()
+-- | A Renderable has an Cairo action to calculate a minimum size,
+-- and a Cairo action for drawing it within a specified rectangle.
 
-instance Renderable a => Renderable (Maybe a) where
-   minsize Nothing = return (0,0)
-   minsize (Just r) = minsize r
+data Renderable = Renderable {
+   minsize :: C.Render RectSize,
+   render ::  Rect -> C.Render ()
+}
 
-   render Nothing _ = return () 
-   render (Just r) rect = render r rect
+emptyRenderable = Renderable {
+   minsize = return (0,0),
+   render  = \_ -> return ()
+}
 
-data RenderWithMargins a = RenderWithMargins (Double,Double,Double,Double) a
+addMargins :: (Double,Double,Double,Double) -> Renderable -> Renderable
+addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
+  where
+    mf = do
+        (w,h) <- minsize rd
+        return (w+l+r,h+t+b)
 
-instance Renderable a => Renderable (RenderWithMargins a) where
-   minsize (RenderWithMargins (t,b,l,r) a) = do
-       (w,h) <- minsize a
-       return (w+l+r,h+t+b)
+    rf (Rect p1 p2) =     
+        render rd (Rect (p1 `padd` (Point l 0)) (p2 `padd` (Point 0 b)))
 
-   render (RenderWithMargins (t,b,l,r) a) (Rect p1 p2) =
-       render a (Rect (p1 `padd` (Point l 0)) (p2 `padd` (Point 0 b)))
+class Rend a where
+   toRenderable :: a -> Renderable
 
 ----------------------------------------------------------------------
 
@@ -133,9 +137,11 @@ data RectEdge = E_Top | E_Bottom | E_Left | E_Right
 
 data AxisT = AxisT RectEdge Axis
 
-instance Renderable AxisT where
-   minsize = minsizeAxis
-   render  = renderAxis
+instance Rend AxisT where
+  toRenderable at = Renderable {
+     minsize=minsizeAxis at,
+     render=renderAxis' at
+  }
 
 minsizeAxis :: AxisT -> C.Render RectSize
 minsizeAxis (AxisT at a) = do
@@ -180,8 +186,8 @@ axisOverhang (AxisT at a) = do
 		       E_Left -> ohangv
 		       E_Right -> ohangh
 
-renderAxis :: AxisT -> Rect -> C.Render ()
-renderAxis (AxisT at a) rect = do
+renderAxis' :: AxisT -> Rect -> C.Render ()
+renderAxis' (AxisT at a) rect = do
    C.save
    setLineStyle (axis_line_style a)
    strokeLine (Point sx sy) (Point ex ey)
@@ -234,9 +240,11 @@ data LegendStyle = LegendStyle {
 
 data Legend = Legend Bool LegendStyle [(String,Plot)]
 
-instance Renderable Legend where
-   minsize = minsizeLegend
-   render  = renderLegend
+instance Rend Legend where
+  toRenderable l = Renderable {
+    minsize=minsizeLegend l,
+    render=renderLegend' l
+  }
 
 minsizeLegend :: Legend -> C.Render RectSize
 minsizeLegend (Legend _ ls plots) = do
@@ -250,8 +258,8 @@ minsizeLegend (Legend _ ls plots) = do
     let w = sum [w + lgap | (w,h) <- lsizes] + pw * (n+1) + lm * (n-1)
     return (w,h)
 
-renderLegend :: Legend -> Rect -> C.Render ()
-renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
+renderLegend' :: Legend -> Rect -> C.Render ()
+renderLegend' (Legend _ ls plots) (Rect rp1 rp2) = do
     foldM_ rf rp1 plots
   where
     lm = legend_margin ls
@@ -438,12 +446,14 @@ data Layout1 = Layout1 {
     layout1_legend :: Maybe(LegendStyle)
 }
 
-instance Renderable Layout1 where
-    render = renderLayout1
-    minsize  = minsizeLayout1
+instance Rend Layout1 where
+  toRenderable l = Renderable {
+    minsize=minsizeLayout1 l,
+    render = renderLayout1' l
+  }
 
-renderLayout1 :: Layout1 -> Rect -> C.Render ()
-renderLayout1 l (Rect p0 p6) = do
+renderLayout1' :: Layout1 -> Rect -> C.Render ()
+renderLayout1' l (Rect p0 p6) = do
     (w0,h0) <- titleSize 
 
     let margin  = (layout1_margin l)
@@ -506,7 +516,8 @@ renderLayout1 l (Rect p0 p6) = do
 
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
 
-    rMAxis (Just at) rect = render at rect
+    rMAxis :: Maybe AxisT ->  Rect -> C.Render ()
+    rMAxis (Just at) rect = render (toRenderable at) rect
     rMAxis Nothing  _ = return ()
 
     rPlot :: Rect -> (String,HAxis,VAxis,Plot) -> C.Render ()
@@ -524,10 +535,6 @@ renderLayout1 l (Rect p0 p6) = do
 	in renderPlot p rect (Rect (Point x1 y1) (Point x2 y2))
     rPlot1 _ _ _ _ = return ()
 
-    rLegend :: Rect -> Maybe LegendStyle -> C.Render ()
-    rLegend _ Nothing = return ()
-    rLegend rect (Just ls) = render (Legend True ls [(s,p) | (s,_,_,p) <- layout1_plots l]) rect
-
     setClipRegion p2 p3 = do    
         C.moveTo (p_x p2) (p_y p2)
 	C.lineTo (p_x p2) (p_y p3)
@@ -542,10 +549,9 @@ minsizeLayout1 l = do
   (w3,h3) <- minsize (mkLegend l)
   return (2*m+w1+w2,2*m+h1+h2+h3)
 
-mkLegend l = case layout1_legend l of
-    (Just ls) -> Just (RenderWithMargins (layout1_margin l,0,0,0) 
-		       (Legend True ls [(s,p) | (s,_,_,p) <- layout1_plots l]))
-    Nothing   -> Nothing
+mkLegend l = maybe emptyRenderable mk (layout1_legend l)
+  where
+     mk ls = addMargins (layout1_margin l,0,0,0) (toRenderable (Legend True ls [(s,p) | (s,_,_,p) <- layout1_plots l]))
 
 axisSizes l = do
     w1a <- asize fst lAxis
@@ -566,7 +572,7 @@ axisSizes l = do
 
     asize xyfn Nothing = return 0
     asize xyfn (Just at) = do
-        sz <- minsize at
+        sz <- minsize (toRenderable at)
 	return (xyfn sz)
 
     aohang Nothing = return (0,0)
@@ -766,7 +772,7 @@ nextMonthStart ct =
  
 ----------------------------------------------------------------------
 
-renderableToPNGFile :: Renderable a => a -> Int -> Int -> FilePath -> IO ()
+renderableToPNGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPNGFile chart width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
     C.renderWith result $ rfn

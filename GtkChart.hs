@@ -6,7 +6,7 @@ import qualified Graphics.UI.Gtk as G
 import qualified Graphics.Rendering.Cairo as C
 import Chart
 
-renderableToWindow :: Renderable a => a -> Int -> Int -> IO ()
+renderableToWindow :: Renderable -> Int -> Int -> IO ()
 renderableToWindow chart windowWidth windowHeight = do
     G.initGUI
     window <- G.windowNew
@@ -22,7 +22,7 @@ renderableToWindow chart windowWidth windowHeight = do
     G.widgetShowAll window
     G.mainGUI
 
-updateCanvas :: Chart.Renderable a => a -> G.DrawingArea  -> IO Bool
+updateCanvas :: Renderable -> G.DrawingArea  -> IO Bool
 updateCanvas chart canvas = do
     win <- G.drawingAreaGetDrawWindow canvas
     (width, height) <- G.drawingAreaGetSize canvas

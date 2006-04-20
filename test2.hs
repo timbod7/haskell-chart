@@ -276,4 +276,4 @@ chart = layout
     }
 
 main = do
-    renderableToWindow chart 640 480
+    renderableToWindow (toRenderable chart) 640 480
