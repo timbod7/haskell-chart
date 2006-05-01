@@ -35,7 +35,13 @@ data Axis =  Axis {
     axis_label_gap :: Double 
 }
 
+-- | Function type to generate an optional axis given a set
+-- of points to be plotted against that axis.
 type AxisFn = [Double] -> Maybe Axis
+
+-- | Function type to generate a pair of axes (either top 
+-- and bottom, or left and right), given the set of points to
+-- be plotted against each of them.
 type AxesFn = [Double] -> [Double] -> (Maybe Axis,Maybe Axis)
 
 data AxisT = AxisT RectEdge Axis

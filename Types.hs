@@ -73,27 +73,30 @@ setFillStyle (CairoFillStyle s) = s
 textSize :: String -> C.Render RectSize
 textSize s = do
     te <- C.textExtents s
-    return (C.textExtentsWidth te, C.textExtentsHeight te)
+    fe <- C.fontExtents
+    return (C.textExtentsWidth te, C.fontExtentsHeight fe)
 
 data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right
-data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom
+data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine
 
 -- | Function to draw a textual label anchored by one of it's corners
 -- or edges.
 drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> C.Render ()
 drawText hta vta (Point x y) s = do
     te <- C.textExtents s
+    fe <- C.fontExtents
     let lx = xadj hta (C.textExtentsWidth te)
-    let ly = yadj vta (C.textExtentsHeight te)
+    let ly = yadj vta te fe
     C.moveTo (x+lx) (y+ly)
     C.showText s
   where
     xadj HTA_Left   w = 0
     xadj HTA_Centre w = (-w/2)
     xadj HTA_Right  w = (-w)
-    yadj VTA_Top    h = h
-    yadj VTA_Centre h = h/2
-    yadj VTA_Bottom h = 0
+    yadj VTA_Top    te fe = C.fontExtentsAscent fe
+    yadj VTA_Centre te fe = - (C.textExtentsYbearing te) / 2
+    yadj VTA_BaseLine te fe = 0
+    yadj VTA_Bottom te fe = -(C.fontExtentsDescent fe)
 
 ----------------------------------------------------------------------
 filledCircles :: Double -> Double -> Double -> Double -> CairoPointStyle

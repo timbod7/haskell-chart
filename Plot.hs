@@ -52,7 +52,16 @@ renderPlot (PPoints p) r v = renderPlotPoints p r v
 renderPlot (PLines p) r v = renderPlotLines p r v
 
 renderPlotLegendPoints :: PlotPoints -> Rect -> C.Render ()
-renderPlotLegendPoints p r = return ()
+renderPlotLegendPoints p r@(Rect p1 p2) = do
+    C.save
+    drawPoint (Point (p_x p1) ((p_y p1 + p_y p2)/2))
+    drawPoint (Point ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2))
+    drawPoint (Point (p_x p2) ((p_y p1 + p_y p2)/2))
+    C.restore
+
+  where
+    (CairoPointStyle drawPoint) = (plot_points_style p)
+
 
 renderPlotLegendLines :: PlotLines -> Rect -> C.Render ()
 renderPlotLegendLines p r@(Rect p1 p2) = do
