@@ -129,7 +129,7 @@ renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
         (w,h) <- textSize label
 	lgap <- legendSpacer
 	let p2 = (p1 `padd` Point lps 0)
-        renderPlotLegend plot (mkrect p1 rp1 p2 rp2)
+        plot_render_legend plot (mkrect p1 rp1 p2 rp2)
 	let p3 = Point (p_x p2 + lgap) (p_y rp1)
 	drawText HTA_Left VTA_Top p3 label
         return (p3 `padd` Point (w+lm) 0)

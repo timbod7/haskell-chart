@@ -3,6 +3,7 @@ module Chart(
     Rect(..),
     Axis(..),
     Plot(..),
+    ToPlot(..),
     PlotPoints(..),
     PlotLines(..),
     Layout1(..),

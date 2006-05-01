@@ -20,8 +20,8 @@ chart = layout
         layout1_title="Amplitude Modulation",			   
         layout1_horizontal_axes=linkedAxes (autoScaledAxis defaultAxis),
 	layout1_vertical_axes=linkedAxes (autoScaledAxis defaultAxis),
-	layout1_plots = [("am",HA_Bottom,VA_Left,(PLines sinusoid1)),
-			 ("am points", HA_Bottom,VA_Left,(PPoints sinusoid2))]
+	layout1_plots = [("am",HA_Bottom,VA_Left,(toPlot sinusoid1)),
+			 ("am points", HA_Bottom,VA_Left,(toPlot sinusoid2))]
     }
 	      
 main = do

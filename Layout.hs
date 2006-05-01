@@ -90,7 +90,7 @@ renderPlotArea l (Rect p1 p5) = do
     rPlot1 rect (Just (AxisT _ xaxis)) (Just (AxisT _ yaxis)) p = 
 	let (x1,x2) = axis_viewport xaxis
 	    (y1,y2) = axis_viewport yaxis
-	in renderPlot p rect (Rect (Point x1 y1) (Point x2 y2))
+	in plot_render p rect (Rect (Point x1 y1) (Point x2 y2))
     rPlot1 _ _ _ _ = return ()
 
 axisSizes l = do
@@ -133,7 +133,7 @@ getAxes l = (mk E_Bottom bAxis, mk E_Left lAxis,
 allPlottedValues :: [(String,HAxis,VAxis,Plot)] -> ( [Double], [Double], [Double], [Double] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
   where
-    pts = concat [ [ (ha,va,pt)| pt <- allPoints p] | (_,ha,va,p) <- plots ]
+    pts = concat [ [ (ha,va,pt)| pt <- plot_all_points p] | (_,ha,va,p) <- plots ]
     xvals0 = [ (p_x pt) | (HA_Bottom,_,pt) <- pts  ]
     xvals1 = [ (p_x pt) | (HA_Top,_,pt) <- pts  ]
     yvals0 = [ (p_y pt) | (_,VA_Left,pt) <- pts  ]
