@@ -22,7 +22,7 @@ data Layout1 = Layout1 {
     layout1_legend :: Maybe(LegendStyle)
 }
 
-instance Rend Layout1 where
+instance ToRenderable Layout1 where
     toRenderable = layout1ToRenderable
 
 layout1ToRenderable l =

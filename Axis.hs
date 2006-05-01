@@ -46,7 +46,7 @@ type AxesFn = [Double] -> [Double] -> (Maybe Axis,Maybe Axis)
 
 data AxisT = AxisT RectEdge Axis
 
-instance Rend AxisT where
+instance ToRenderable AxisT where
   toRenderable at = Renderable {
      minsize=minsizeAxis at,
      render=renderAxis at

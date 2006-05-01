@@ -66,7 +66,7 @@ vertical rs = Renderable { minsize = mf, render = rf }
         render r (Rect p (p `padd` Point w h))
 	return (p `padd` Point 0 h)
 
-class Rend a where
+class ToRenderable a where
    toRenderable :: a -> Renderable
 
 renderableToPNGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
@@ -99,7 +99,7 @@ data LegendStyle = LegendStyle {
 
 data Legend = Legend Bool LegendStyle [(String,Plot)]
 
-instance Rend Legend where
+instance ToRenderable Legend where
   toRenderable l = Renderable {
     minsize=minsizeLegend l,
     render=renderLegend l

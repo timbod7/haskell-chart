@@ -8,7 +8,7 @@ module Chart(
     PlotLines(..),
     Layout1(..),
     Renderable(..),
-    Rend(..),
+    ToRenderable(..),
     HAxis(..),
     VAxis(..),
     defaultAxisLineStyle, 
