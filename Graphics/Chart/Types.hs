@@ -114,6 +114,13 @@ solidLine w r g b = CairoLineStyle (do
     C.setSourceRGB r g b
     )
 
+dashedLine :: Double -> [Double] -> Double -> Double -> Double -> CairoLineStyle
+dashedLine w dashes r g b = CairoLineStyle (do
+    C.setDash dashes 0
+    C.setLineWidth w
+    C.setSourceRGB r g b
+    )
+
 fontStyle :: String -> Double -> C.FontSlant ->
 	     C.FontWeight -> CairoFontStyle
 fontStyle name size slant weight = CairoFontStyle fn

@@ -16,9 +16,6 @@ data Axis =  Axis {
     -- this axis.
     axis_viewport :: Range,
 
-    axis_line_style :: CairoLineStyle,
-    axis_label_style :: CairoFontStyle,
-
     -- | The tick marks on the axis as pairs.
     -- The first element is the position on the axis
     -- (in viewport units) and the second element is the
@@ -32,8 +29,17 @@ data Axis =  Axis {
     -- the second is the label text string.
     axis_labels :: [ (Double, String) ],
 
+    -- | The positions on the axis (in viewport units) where
+    -- we want to show grid lines.
+    axis_grid :: [ Double ],
+
     -- | How far the labels are to be drawn from the axis.
-    axis_label_gap :: Double 
+    axis_label_gap :: Double,
+
+    axis_line_style :: CairoLineStyle,
+    axis_label_style :: CairoFontStyle,
+    axis_grid_style :: CairoLineStyle
+
 }
 
 -- | Function type to generate an optional axis given a set
@@ -97,7 +103,7 @@ axisOverhang (AxisT at a) = do
 		       E_Right -> ohangh
 
 renderAxis :: AxisT -> Rect -> C.Render ()
-renderAxis (AxisT at a) rect = do
+renderAxis at@(AxisT et a) rect = do
    C.save
    setLineStyle (axis_line_style a)
    strokeLine (Point sx sy) (Point ex ey)
@@ -108,20 +114,7 @@ renderAxis (AxisT at a) rect = do
    mapM_ drawLabel (axis_labels a)
    C.restore
  where
-   (Rect (Point x1 y1) (Point x2 y2)) = rect
-
-   (vs,ve) = axis_viewport a
-
-   (sx,sy,ex,ey,tp) = case at of
-       E_Top    -> (x1,y2,x2,y2, (Point 0 1)) 
-       E_Bottom -> (x1,y1,x2,y1, (Point 0 (-1)))
-       E_Left   -> (x2,y2,x2,y1, (Point (1) 0))		
-       E_Right  -> (x1,y2,x1,y1, (Point (-1) 0))
-
-   axisPoint value = 
-       let ax = (sx + (ex-sx) * (value - vs) / (ve-vs))
-	   ay = (sy + (ey-sy) * (value - vs) / (ve-vs))
-       in (Point ax ay)
+   (sx,sy,ex,ey,tp,axisPoint) = axisMapping at rect
 
    drawTick (value,length) = 
        let t1 = axisPoint value
@@ -130,7 +123,7 @@ renderAxis (AxisT at a) rect = do
 
    (hta,vta,lp) = 
        let g = axis_label_gap a
-       in case at of
+       in case et of
 		  E_Top    -> (HTA_Centre,VTA_Bottom,(Point 0 (-g)))
 		  E_Bottom -> (HTA_Centre,VTA_Top,(Point 0 g))
 		  E_Left   -> (HTA_Right,VTA_Centre,(Point (-g) 0))
@@ -138,6 +131,45 @@ renderAxis (AxisT at a) rect = do
 
    drawLabel (value,s) = do
        drawText hta vta (axisPoint value `padd` lp) s
+
+axisMapping (AxisT et a) rect = (sx,sy,ex,ey,tp,map)
+  where
+   (Rect (Point x1 y1) (Point x2 y2)) = rect
+
+   (vs,ve) = axis_viewport a
+
+   (sx,sy,ex,ey,tp) = case et of
+       E_Top    -> (x1,y2,x2,y2, (Point 0 1)) 
+       E_Bottom -> (x1,y1,x2,y1, (Point 0 (-1)))
+       E_Left   -> (x2,y2,x2,y1, (Point (1) 0))		
+       E_Right  -> (x1,y2,x1,y1, (Point (-1) 0))
+
+   map v = let 
+        ax = (sx + (ex-sx) * (v - vs) / (ve-vs))
+        ay = (sy + (ey-sy) * (v - vs) / (ve-vs))
+     in (Point ax ay)
+
+renderAxisGrid :: AxisT -> Rect -> C.Render ()
+renderAxisGrid at@(AxisT re a) rect@(Rect p1 p2) = do
+    C.save
+    setLineStyle (axis_grid_style a)
+    mapM_ (drawGridLine re) (axis_grid a)
+    C.restore
+  where
+    (sx,sy,ex,ey,tp,axisPoint) = axisMapping at rect
+
+    drawGridLine E_Top = vline
+    drawGridLine E_Bottom = vline
+    drawGridLine E_Left = hline
+    drawGridLine E_Right = hline
+
+    vline v = let v' = p_x (axisPoint v)
+	      in strokeLine (Point v' (p_y p1)) (Point v' (p_y p2))
+
+    hline v = let v' = p_y (axisPoint v)
+	      in strokeLine (Point (p_x p1) v') (Point (p_x p2) v')
+
+----------------------------------------------------------------------
 
 steps:: Int -> Range -> [Double]
 steps nSteps (min,max) = [ min' + i * s | i <- [0..n] ]
@@ -166,10 +198,11 @@ autoScaledAxis a pts = Just axis
     axis =  a {
         axis_viewport=newViewport,
 	axis_ticks=newTicks,
+	axis_grid=labelvs,
 	axis_labels=newLabels
 	}
     newViewport = (min',max')
-    newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,10) | v <- labelvs ] 
+    newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,5) | v <- labelvs ] 
     newLabels = [(v,show v) | v <- labelvs]
     (min,max) = case pts of
 		[] -> (0,1)
@@ -203,14 +236,17 @@ linkedAxes' af pts1 pts2 = (a,removeLabels a)
 ----------------------------------------------------------------------
 
 defaultAxisLineStyle = solidLine 1 0 0 0
+defaultGridLineStyle = dashedLine 1 [5,5] 0.8 0.8 0.8
 
 defaultAxis = Axis {
     axis_viewport = (0,1),
-    axis_line_style = defaultAxisLineStyle,
-    axis_label_style = defaultFontStyle,
     axis_ticks = [(0,10),(1,10)],
     axis_labels = [],
-    axis_label_gap =10
+    axis_grid = [],
+    axis_label_gap =10,
+    axis_line_style = defaultAxisLineStyle,
+    axis_label_style = defaultFontStyle,
+    axis_grid_style = defaultGridLineStyle
 }
 
 ----------------------------------------------------------------------
@@ -252,7 +288,8 @@ monthsAxis a pts = Just axis
     axis =  a {
         axis_viewport=newViewport,
 	axis_ticks=newTicks,
-	axis_labels=newLabels
+	axis_labels=newLabels,
+	axis_grid=[v | (v,_) <- newTicks]
 	}
     (min,max) = case pts of
 		[] -> (refClockTime, nextMonthStart refClockTime)
@@ -264,7 +301,7 @@ monthsAxis a pts = Just axis
 
     newViewport = (doubleFromClockTime min', doubleFromClockTime max')
     months = takeWhile (<=max') (iterate nextMonthStart min')
-    newTicks = [ (doubleFromClockTime ct,10) | ct <- months ]
+    newTicks = [ (doubleFromClockTime ct,5) | ct <- months ]
     newLabels = [ (mlabelv m1 m2, mlabelt m1) | (m1,m2) <- zip months (tail months) ]
 
     mlabelt m =  formatCalendarTime defaultTimeLocale "%b-%y" (toUTCTime m)
