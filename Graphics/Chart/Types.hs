@@ -60,11 +60,13 @@ setClipRegion p2 p3 = do
     C.lineTo (p_x p2) (p_y p2)
     C.clip
 
-strokeLine p1 p2 = do
-   C.newPath
-   moveTo p1
-   lineTo p2
-   C.stroke
+-- | stroke the lines between successive points
+strokeLines (p1:ps) = do
+    C.newPath
+    moveTo p1
+    mapM_ lineTo ps
+    C.stroke
+strokeLines _ = return ()
 
 setFontStyle (CairoFontStyle s) = s
 setLineStyle (CairoLineStyle s) = s

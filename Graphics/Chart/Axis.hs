@@ -106,7 +106,7 @@ renderAxis :: AxisT -> Rect -> C.Render ()
 renderAxis at@(AxisT et a) rect = do
    C.save
    setLineStyle (axis_line_style a)
-   strokeLine (Point sx sy) (Point ex ey)
+   strokeLines' True [Point sx sy,Point ex ey]
    mapM_ drawTick (axis_ticks a)
    C.restore
    C.save
@@ -119,7 +119,7 @@ renderAxis at@(AxisT et a) rect = do
    drawTick (value,length) = 
        let t1 = axisPoint value
 	   t2 = t1 `padd` (pscale length tp)
-       in strokeLine t1 t2
+       in strokeLines' True [t1,t2]
 
    (hta,vta,lp) = 
        let g = axis_label_gap a
@@ -164,10 +164,21 @@ renderAxisGrid at@(AxisT re a) rect@(Rect p1 p2) = do
     drawGridLine E_Right = hline
 
     vline v = let v' = p_x (axisPoint v)
-	      in strokeLine (Point v' (p_y p1)) (Point v' (p_y p2))
+	      in strokeLines' True [Point v' (p_y p1),Point v' (p_y p2)]
 
     hline v = let v' = p_y (axisPoint v)
-	      in strokeLine (Point (p_x p1) v') (Point (p_x p2) v')
+	      in strokeLines' True [Point (p_x p1) v',Point (p_x p2) v']
+
+-- | Same as strokeLines, but with a flag that, when true will
+-- adjust each point to land on a whole number. This is useful for
+-- drawing known horizontal and vertical lines so that the occupy
+-- exactly 
+
+strokeLines' :: Bool -> [Point] -> C.Render ()
+strokeLines' False ps = strokeLines ps
+strokeLines' True  ps = strokeLines (map adjfn ps)
+  where
+    adjfn (Point x y)= Point (fromIntegral (round x)) (fromIntegral (round y))
 
 ----------------------------------------------------------------------
 
