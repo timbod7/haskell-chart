@@ -1,4 +1,4 @@
-module Chart(
+module Graphics.Chart(
     Point(..),
     Rect(..),
     Axis(..),
@@ -31,8 +31,8 @@ module Chart(
     clockTimeFromDouble,
 ) where
 
-import Types
-import Renderable
-import Layout
-import Axis
-import Plot
+import Graphics.Chart.Types
+import Graphics.Chart.Renderable
+import Graphics.Chart.Layout
+import Graphics.Chart.Axis
+import Graphics.Chart.Plot

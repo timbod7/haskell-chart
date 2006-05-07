@@ -1,0 +1,18 @@
+Name: Chart
+Version: 2006.5.2
+License: LGPL
+License-file: LICENSE
+Copyright: Tim Docker, 2006
+Author: Tim Docker <tim@dockerz.net>
+Maintainer: Tim Docker <tim@dockerz.net>
+Homepage: http://www.dockerz.net/chart
+Description: A library for generating 2D Charts and Plots
+Build-depends: base, gtk, cairo
+Exposed-modules:
+	Graphics.Chart,
+	Graphics.Chart.GtkChart,
+	Graphics.Chart.Types,
+	Graphics.Chart.Renderable,
+	Graphics.Chart.Axis,
+	Graphics.Chart.Layout,
+	Graphics.Chart.Plot

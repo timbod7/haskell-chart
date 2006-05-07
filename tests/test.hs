@@ -1,6 +1,6 @@
 import qualified Graphics.Rendering.Cairo as C
-import Chart
-import GtkChart
+import Graphics.Chart
+import Graphics.Chart.GtkChart
 
 chart = layout 
   where

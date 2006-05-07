@@ -1,7 +1,7 @@
 import System.Time
 import qualified Graphics.Rendering.Cairo as C
-import Chart
-import GtkChart
+import Graphics.Chart
+import Graphics.Chart.GtkChart
 
 prices = [
     (03,05,2005, 16.18, 42.02),

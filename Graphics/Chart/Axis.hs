@@ -1,12 +1,13 @@
-module Axis where
+module Graphics.Chart.Axis where
 
 import qualified Graphics.Rendering.Cairo as C
 import System.Time
 import System.Locale
 import Control.Monad
-import Types
-import Renderable
 import Data.List
+
+import Graphics.Chart.Types
+import Graphics.Chart.Renderable
 
 -- | The concrete data type for an axis
 data Axis =  Axis {

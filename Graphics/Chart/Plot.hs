@@ -1,4 +1,4 @@
-module Plot(
+module Graphics.Chart.Plot(
     Plot(..),
     ToPlot(..),
     PlotPoints(..),
@@ -11,7 +11,7 @@ module Plot(
     ) where
 
 import qualified Graphics.Rendering.Cairo as C
-import Types
+import Graphics.Chart.Types
 
 -- | Interface to control plotting on a 2D area.
 data Plot = Plot {

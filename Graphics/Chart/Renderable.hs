@@ -1,9 +1,10 @@
-module Renderable where
+module Graphics.Chart.Renderable where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
-import Types
-import Plot
+
+import Graphics.Chart.Types
+import Graphics.Chart.Plot
 
 -- | A Renderable has an Cairo action to calculate a minimum size,
 -- and a Cairo action for drawing it within a specified rectangle.
