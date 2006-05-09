@@ -61,6 +61,12 @@ renderPlotArea l (Rect p1 p5) = do
     let p3  = p4 `psub` (Point w2 h2)
     let plotRect = (Rect p2 p3)
 
+    -- render the plots
+    C.save
+    setClipRegion p2 p3 
+    mapM_ (rPlot plotRect) (layout1_plots l)
+    C.restore
+
     -- render the axes grids
     rMAxisG tAxis plotRect
     rMAxisG bAxis plotRect
@@ -72,12 +78,6 @@ renderPlotArea l (Rect p1 p5) = do
     rMAxis bAxis (mkrect p2 p3 p3 p4)
     rMAxis lAxis (mkrect p1 p2 p2 p3)
     rMAxis rAxis (mkrect p3 p2 p4 p3)
-
-    -- render the plots
-    C.save
-    setClipRegion p2 p3 
-    mapM_ (rPlot plotRect) (layout1_plots l)
-    C.restore
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l

@@ -3,15 +3,18 @@ module Graphics.Chart.Plot(
     ToPlot(..),
     PlotPoints(..),
     PlotLines(..),
+    PlotFillBetween(..),
 
     defaultPlotLineStyle,
     defaultPlotPoints,
+    defaultPlotFillBetween,
     defaultPlotLines
     
     ) where
 
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Chart.Types
+import Control.Monad
 
 -- | Interface to control plotting on a 2D area.
 data Plot = Plot {
@@ -77,6 +80,12 @@ renderPlotLegendLines p r@(Rect p1 p2) = do
     C.stroke
     C.restore
 
+defaultPlotLineStyle = solidLine 1 0 0 1
+
+defaultPlotLines = PlotLines {
+    plot_lines_style = defaultPlotLineStyle,
+    plot_lines_values = []
+}
 ----------------------------------------------------------------------
 
 -- | Value defining a series of datapoints, and a style in
@@ -113,15 +122,57 @@ renderPlotLegendPoints p r@(Rect p1 p2) = do
   where
     (CairoPointStyle drawPoint) = (plot_points_style p)
 
-
-defaultPlotLineStyle = solidLine 1 0 0 1
-
 defaultPlotPoints = PlotPoints {
     plot_points_style =defaultPointStyle,
     plot_points_values = []
 }
+----------------------------------------------------------------------
+-- | Value specifying a plot filling the area between two sets of Y
+-- coordinates, given common X coordinates.
 
-defaultPlotLines = PlotLines {
-    plot_lines_style = defaultPlotLineStyle,
-    plot_lines_values = []
+data PlotFillBetween = PlotFillBetween {
+    plot_fillbetween_style :: CairoFillStyle,
+    plot_fillbetween_values :: [ (Double, (Double,Double))]
+}
+
+instance ToPlot PlotFillBetween where
+    toPlot p = Plot {
+        plot_render = renderPlotFillBetween p,
+	plot_render_legend = renderPlotLegendFill p,
+	plot_all_points = plotAllPointsFillBetween p
+    }
+
+renderPlotFillBetween :: PlotFillBetween -> Rect -> Rect -> C.Render ()
+renderPlotFillBetween p r v = renderPlotFillBetween' p (plot_fillbetween_values p) r v
+
+renderPlotFillBetween' p [] _ _ = return ()
+renderPlotFillBetween' p vs r v = do
+    C.save
+    setFillStyle (plot_fillbetween_style p)
+    moveTo p0
+    mapM_ lineTo p1s
+    mapM_ lineTo (reverse p2s)
+    lineTo p0
+    C.fill
+    C.restore
+  where
+    (p0:p1s) = map (pmap r v) [ Point x y1 | (x,(y1,y2)) <- vs ]
+    p2s = map (pmap r v) [ Point x y2 | (x,(y1,y2)) <- vs ]
+
+renderPlotLegendFill :: PlotFillBetween -> Rect -> C.Render ()
+renderPlotLegendFill p r = do
+    C.save
+    setFillStyle (plot_fillbetween_style p)
+    rectPath r
+    C.fill
+    C.restore
+
+plotAllPointsFillBetween :: PlotFillBetween -> [Point]
+plotAllPointsFillBetween p = concat [ [Point x y1, Point x y2]
+				      | (x,(y1,y2)) <- plot_fillbetween_values p]
+
+
+defaultPlotFillBetween = PlotFillBetween {
+    plot_fillbetween_style=solidFillStyle 0.5 0.5 1.0,
+    plot_fillbetween_values=[]
 }

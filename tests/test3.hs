@@ -4,6 +4,7 @@ import Graphics.Chart
 import Graphics.Chart.GtkChart
 import Prices
 
+
 date dd mm yyyy = doubleFromClockTime ct
   where
     ct = toClockTime CalendarTime {
@@ -21,17 +22,18 @@ date dd mm yyyy = doubleFromClockTime ct
     ctIsDST=False
     }
 
+
 chart = layout 
   where
 
-    price1 = defaultPlotLines {
-        plot_lines_style = solidLine 1 0 0 1,
-	plot_lines_values = [[ Point (date d m y) v | (d,m,y,v,_) <- prices]]
+    price1 = defaultPlotFillBetween {
+        plot_fillbetween_style = solidFillStyle 0.5 1 0.5,
+	plot_fillbetween_values = [ (date d m y,(0,v2)) | (d,m,y,v1,v2) <- prices]
     }
 
-    price2 = defaultPlotLines {
-        plot_lines_style = solidLine 1 0 1 0,
-	plot_lines_values = [[ Point (date d m y) v | (d,m,y,_,v) <- prices]]
+    price2 = defaultPlotFillBetween {
+        plot_fillbetween_style = solidFillStyle 0.5 0.5 1,
+	plot_fillbetween_values = [ (date d m y,(0,v1)) | (d,m,y,v1,v2) <- prices]
     }
 
     layout = defaultLayout1 {

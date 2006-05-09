@@ -68,6 +68,16 @@ strokeLines (p1:ps) = do
     C.stroke
 strokeLines _ = return ()
 
+-- | make a path from a rectable
+rectPath :: Rect -> C.Render ()
+rectPath (Rect (Point x1 y1) (Point x2 y2)) = do
+   C.newPath
+   C.moveTo x1 y1
+   C.lineTo x2 y1
+   C.lineTo x2 y2
+   C.lineTo x1 y2
+   C.lineTo x1 y1
+
 setFontStyle (CairoFontStyle s) = s
 setLineStyle (CairoLineStyle s) = s
 setFillStyle (CairoFillStyle s) = s
