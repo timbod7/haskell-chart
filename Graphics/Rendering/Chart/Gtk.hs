@@ -1,10 +1,10 @@
-module Graphics.Chart.GtkChart(
+module Graphics.Rendering.Chart.Gtk(
     renderableToWindow
     ) where
 
 import qualified Graphics.UI.Gtk as G
 import qualified Graphics.Rendering.Cairo as C
-import Graphics.Chart
+import Graphics.Rendering.Chart
 
 renderableToWindow :: Renderable -> Int -> Int -> IO ()
 renderableToWindow chart windowWidth windowHeight = do

@@ -1,4 +1,4 @@
-module Graphics.Chart.Plot(
+module Graphics.Rendering.Chart.Plot(
     Plot(..),
     ToPlot(..),
     PlotPoints(..),
@@ -13,7 +13,7 @@ module Graphics.Chart.Plot(
     ) where
 
 import qualified Graphics.Rendering.Cairo as C
-import Graphics.Chart.Types
+import Graphics.Rendering.Chart.Types
 import Control.Monad
 
 -- | Interface to control plotting on a 2D area.

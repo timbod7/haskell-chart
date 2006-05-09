@@ -1,4 +1,4 @@
-module Graphics.Chart.Types where
+module Graphics.Rendering.Chart.Types where
 
 import qualified Graphics.Rendering.Cairo as C
 

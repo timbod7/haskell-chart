@@ -9,10 +9,10 @@ Homepage: http://www.dockerz.net/chart
 Description: A library for generating 2D Charts and Plots
 Build-depends: base, gtk, cairo
 Exposed-modules:
-	Graphics.Chart,
-	Graphics.Chart.GtkChart,
-	Graphics.Chart.Types,
-	Graphics.Chart.Renderable,
-	Graphics.Chart.Axis,
-	Graphics.Chart.Layout,
-	Graphics.Chart.Plot
+	Graphics.Rendering.Chart,
+	Graphics.Rendering.Chart.Gtk,
+	Graphics.Rendering.Chart.Types,
+	Graphics.Rendering.Chart.Renderable,
+	Graphics.Rendering.Chart.Axis,
+	Graphics.Rendering.Chart.Layout,
+	Graphics.Rendering.Chart.Plot

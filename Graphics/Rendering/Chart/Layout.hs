@@ -1,11 +1,11 @@
-module Graphics.Chart.Layout where
+module Graphics.Rendering.Chart.Layout where
 
 import qualified Graphics.Rendering.Cairo as C
 
-import Graphics.Chart.Axis
-import Graphics.Chart.Types
-import Graphics.Chart.Plot
-import Graphics.Chart.Renderable
+import Graphics.Rendering.Chart.Axis
+import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Plot
+import Graphics.Rendering.Chart.Renderable
 
 data HAxis = HA_Top | HA_Bottom
 data VAxis = VA_Left | VA_Right
