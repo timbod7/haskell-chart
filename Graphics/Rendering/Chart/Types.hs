@@ -1,3 +1,9 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.Chart.Types
+-- Copyright   :  (c) Tim Docker 2006
+-- License     :  BSD-style (see chart/COPYRIGHT)
+
 module Graphics.Rendering.Chart.Types where
 
 import qualified Graphics.Rendering.Cairo as C

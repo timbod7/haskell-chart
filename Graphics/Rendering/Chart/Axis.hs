@@ -1,3 +1,9 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.Chart.Axis
+-- Copyright   :  (c) Tim Docker 2006
+-- License     :  BSD-style (see chart/COPYRIGHT)
+
 module Graphics.Rendering.Chart.Axis where
 
 import qualified Graphics.Rendering.Cairo as C

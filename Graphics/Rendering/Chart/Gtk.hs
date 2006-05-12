@@ -1,3 +1,9 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.Chart.Gtk
+-- Copyright   :  (c) Tim Docker 2006
+-- License     :  BSD-style (see chart/COPYRIGHT)
+
 module Graphics.Rendering.Chart.Gtk(
     renderableToWindow
     ) where
