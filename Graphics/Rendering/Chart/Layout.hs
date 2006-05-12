@@ -10,8 +10,8 @@ import Graphics.Rendering.Chart.Renderable
 data HAxis = HA_Top | HA_Bottom
 data VAxis = VA_Left | VA_Right
 
--- | A Layout1 value is a single plot area, with optional axes on
--- each of the 4 sides, and an optional label at the top.
+-- | A Layout1 value is a single plot area, with optional: axes on
+-- each of the 4 sides; title at the top; legend at the bottom.
 data Layout1 = Layout1 {
     layout1_background :: CairoFillStyle,
     layout1_title :: String,

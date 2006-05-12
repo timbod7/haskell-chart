@@ -31,15 +31,27 @@ mkrect (Point x1 _) (Point _ y2) (Point x3 _) (Point _ y4) =
     Rect (Point x1 y2) (Point x3 y4)
 
 -- | Abstract data type for the style of a plotted point
+--
+-- The contained Cairo action draws a point in the desired
+-- style, at the supplied device coordinates.
 newtype CairoPointStyle = CairoPointStyle (Point -> C.Render ())
 
 -- | Abstract data type for the style of a line
+--
+-- The contained Cairo action sets the required line
+-- in the Cairo rendering state.
 newtype CairoLineStyle = CairoLineStyle (C.Render ())
 
 -- | Abstract data type for a fill style
+--
+-- The contained Cairo action sets the required fill
+-- style in the Cairo rendering state.
 newtype CairoFillStyle = CairoFillStyle (C.Render ())
 
--- | Abstract data type for a font
+-- | Abstract data type for a font.
+--
+-- The contained Cairo action sets the required font
+-- in the Cairo rendering state.
 newtype CairoFontStyle = CairoFontStyle (C.Render ())
 
 type Range = (Double,Double)
@@ -111,7 +123,13 @@ drawText hta vta (Point x y) s = do
     yadj VTA_Bottom te fe = -(C.fontExtentsDescent fe)
 
 ----------------------------------------------------------------------
-filledCircles :: Double -> Double -> Double -> Double -> CairoPointStyle
+
+filledCircles ::
+     Double -- ^ radius of circle
+  -> Double -- ^ red component of colour
+  -> Double -- ^ green component of colour
+  -> Double -- ^ blue component of colour
+  -> CairoPointStyle
 filledCircles radius r g b = CairoPointStyle rf
   where
     rf (Point x y) = do
@@ -120,28 +138,47 @@ filledCircles radius r g b = CairoPointStyle rf
 	C.arc x y radius 0 360
 	C.fill
 
-solidLine :: Double -> Double -> Double -> Double -> CairoLineStyle
+solidLine ::
+     Double -- ^ width of line
+  -> Double -- ^ red component of colour
+  -> Double -- ^ green component of colour
+  -> Double -- ^ blue component of colour
+  -> CairoLineStyle
 solidLine w r g b = CairoLineStyle (do
     C.setLineWidth w
     C.setSourceRGB r g b
     )
 
-dashedLine :: Double -> [Double] -> Double -> Double -> Double -> CairoLineStyle
+dashedLine ::
+     Double   -- ^ width of line
+  -> [Double] -- ^ the dash pattern in device coordinates
+  -> Double   -- ^ red component of colour
+  -> Double   -- ^ green component of colour
+  -> Double   -- ^ blue component of colour
+  -> CairoLineStyle
 dashedLine w dashes r g b = CairoLineStyle (do
     C.setDash dashes 0
     C.setLineWidth w
     C.setSourceRGB r g b
     )
 
-fontStyle :: String -> Double -> C.FontSlant ->
-	     C.FontWeight -> CairoFontStyle
+fontStyle ::
+     String         -- ^ the font name
+  -> Double         -- ^ the font size
+  -> C.FontSlant    -- ^ the font slant
+  -> C.FontWeight   -- ^ the font weight
+  -> CairoFontStyle
 fontStyle name size slant weight = CairoFontStyle fn
   where
     fn = do
 	 C.selectFontFace name slant weight
 	 C.setFontSize size
 
-solidFillStyle :: Double -> Double -> Double -> CairoFillStyle
+solidFillStyle ::
+     Double         -- ^ red component of colour
+  -> Double         -- ^ green component of colour
+  -> Double         -- ^ blue component of colour
+  -> CairoFillStyle
 solidFillStyle r g b = CairoFillStyle fn
    where fn = C.setSourceRGB r g b
 

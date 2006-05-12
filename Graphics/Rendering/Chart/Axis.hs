@@ -202,7 +202,9 @@ chooseStep nsteps (min,max) = s
 explicitAxis :: Maybe Axis -> AxisFn
 explicitAxis ma _ = ma
 
--- | Calculate an axis automatically based upon the data displayed,
+-- | Generate an axis automatically.
+-- The supplied axis is used as a template, with the ticks, labels
+-- and grid set appropriately for the data displayed against that axies.
 autoScaledAxis :: Axis -> AxisFn
 autoScaledAxis a pts = Just axis
   where
@@ -277,9 +279,11 @@ refClockTime = toClockTime CalendarTime {
     ctIsDST=False
     }
 
+-- | Map a clocktime value to a plot cordinate
 doubleFromClockTime :: ClockTime -> Double
 doubleFromClockTime ct = fromIntegral (tdSec (diffClockTimes ct refClockTime))
 
+-- | Map a plot cordinate to a clocktime
 clockTimeFromDouble :: Double -> ClockTime
 clockTimeFromDouble v = (addToClockTime tdiff refClockTime)
   where

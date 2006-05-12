@@ -6,13 +6,22 @@ import Control.Monad
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
 
--- | A Renderable has an Cairo action to calculate a minimum size,
--- and a Cairo action for drawing it within a specified rectangle.
-
+-- | A Renderable is a record of functions required to layout a
+-- graphic elements.
 data Renderable = Renderable {
+
+   -- | a Cairo action to calculate a minimum size,
    minsize :: C.Render RectSize,
+
+   -- | a Cairo action for drawing it within a specified rectangle.
    render ::  Rect -> C.Render ()
 }
+
+-- | A type class abtracting the conversion of a value to a
+-- Renderable.
+
+class ToRenderable a where
+   toRenderable :: a -> Renderable
 
 emptyRenderable = Renderable {
    minsize = return (0,0),
@@ -66,9 +75,6 @@ vertical rs = Renderable { minsize = mf, render = rf }
     render1 p (w,h,r) = do
         render r (Rect p (p `padd` Point w h))
 	return (p `padd` Point 0 h)
-
-class ToRenderable a where
-   toRenderable :: a -> Renderable
 
 renderableToPNGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPNGFile chart width height path = 

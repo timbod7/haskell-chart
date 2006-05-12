@@ -20,18 +20,19 @@ import Control.Monad
 data Plot = Plot {
 
     -- | Given the model space coordinates, and the device coordinates
-    -- render the output.
+    -- render this plot into a chart.
     plot_render :: Rect -> Rect -> C.Render (),
 
-    -- | Render a small sample of the output into the given rectangle.
-    -- This is for use in the legend if any.
+    -- | Render a small sample of this plot into the given rectangle.
+    -- This is for used to generate a the legend a chart.
     plot_render_legend :: Rect -> C.Render (),
 
-    -- | All of the model space coordinates to be plotted. These may
-    -- be used to autoscale the axes.
+    -- | All of the model space coordinates to be plotted. These are
+    -- used to autoscale the axes where necessary.
     plot_all_points :: [Point]
 };
 
+-- | a type class abstracting the conversion of a value to a Plot.
 class ToPlot a where
    toPlot :: a -> Plot
 
