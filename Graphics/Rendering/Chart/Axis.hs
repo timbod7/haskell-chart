@@ -18,7 +18,7 @@ import Graphics.Rendering.Chart.Renderable
 -- | The concrete data type for an axis
 data Axis =  Axis {
 		   
-    -- | The range in "plot coordinates" covered by
+    -- | The range in model space coordinates covered by
     -- this axis.
     axis_viewport :: Range,
 

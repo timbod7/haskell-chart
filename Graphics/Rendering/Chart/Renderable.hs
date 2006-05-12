@@ -13,7 +13,7 @@ import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
 
 -- | A Renderable is a record of functions required to layout a
--- graphic elements.
+-- graphic element.
 data Renderable = Renderable {
 
    -- | a Cairo action to calculate a minimum size,
