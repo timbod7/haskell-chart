@@ -31,8 +31,8 @@ renderableToWindow chart windowWidth windowHeight = do
 
 updateCanvas :: Renderable -> G.DrawingArea  -> IO Bool
 updateCanvas chart canvas = do
-    win <- G.drawingAreaGetDrawWindow canvas
-    (width, height) <- G.drawingAreaGetSize canvas
+    win <- G.widgetGetDrawWindow canvas
+    (width, height) <- G.widgetGetSize canvas
     let rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
     G.renderWithDrawable win (rfn rect)
     return True
