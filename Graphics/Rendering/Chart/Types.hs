@@ -14,17 +14,26 @@ data Point = Point {
     p_y :: Double
 } deriving Show
 
--- | scale a point by a constant
-pscale :: Double -> Point -> Point
-pscale c (Point x y) = (Point (x*c) (y*c))
+data Vector = Vector {
+    v_x :: Double,
+    v_y :: Double
+} deriving Show
 
--- | add two points
-padd :: Point -> Point -> Point
-padd (Point x1 y1) (Point x2 y2) = (Point (x1+x2) (y1+y2))
+-- | scale a vector by a constant
+vscale :: Double -> Vector -> Vector
+vscale c (Vector x y) = (Vector (x*c) (y*c))
+
+-- | add a point and a vector
+pvadd :: Point -> Vector -> Point
+pvadd (Point x1 y1) (Vector x2 y2) = (Point (x1+x2) (y1+y2))
+
+-- | subtract a vector from a point
+pvsub :: Point -> Vector -> Point
+pvsub (Point x1 y1) (Vector x2 y2) = (Point (x1-x2) (y1-y2))
 
 -- | subtract two points
-psub :: Point -> Point -> Point
-psub (Point x1 y1) (Point x2 y2) = (Point (x1-x2) (y1-y2))
+psub :: Point -> Point -> Vector
+psub (Point x1 y1) (Point x2 y2) = (Vector (x1-x2) (y1-y2))
 
 -- | A rectangle is defined by two points
 data Rect = Rect Point Point

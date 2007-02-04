@@ -124,19 +124,19 @@ renderAxis at@(AxisT et a) rect = do
 
    drawTick (value,length) = 
        let t1 = axisPoint value
-	   t2 = t1 `padd` (pscale length tp)
+	   t2 = t1 `pvadd` (vscale length tp)
        in strokeLines' True [t1,t2]
 
    (hta,vta,lp) = 
        let g = axis_label_gap a
        in case et of
-		  E_Top    -> (HTA_Centre,VTA_Bottom,(Point 0 (-g)))
-		  E_Bottom -> (HTA_Centre,VTA_Top,(Point 0 g))
-		  E_Left   -> (HTA_Right,VTA_Centre,(Point (-g) 0))
-		  E_Right  -> (HTA_Left,VTA_Centre,(Point g 0))
+		  E_Top    -> (HTA_Centre,VTA_Bottom,(Vector 0 (-g)))
+		  E_Bottom -> (HTA_Centre,VTA_Top,(Vector 0 g))
+		  E_Left   -> (HTA_Right,VTA_Centre,(Vector (-g) 0))
+		  E_Right  -> (HTA_Left,VTA_Centre,(Vector g 0))
 
    drawLabel (value,s) = do
-       drawText hta vta (axisPoint value `padd` lp) s
+       drawText hta vta (axisPoint value `pvadd` lp) s
 
 axisMapping (AxisT et a) rect = (sx,sy,ex,ey,tp,map)
   where
@@ -145,10 +145,10 @@ axisMapping (AxisT et a) rect = (sx,sy,ex,ey,tp,map)
    (vs,ve) = axis_viewport a
 
    (sx,sy,ex,ey,tp) = case et of
-       E_Top    -> (x1,y2,x2,y2, (Point 0 1)) 
-       E_Bottom -> (x1,y1,x2,y1, (Point 0 (-1)))
-       E_Left   -> (x2,y2,x2,y1, (Point (1) 0))		
-       E_Right  -> (x1,y2,x1,y1, (Point (-1) 0))
+       E_Top    -> (x1,y2,x2,y2, (Vector 0 1)) 
+       E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)))
+       E_Left   -> (x2,y2,x2,y1, (Vector (1) 0))		
+       E_Right  -> (x1,y2,x1,y1, (Vector (-1) 0))
 
    map v = let 
         ax = (sx + (ex-sx) * (v - vs) / (ve-vs))

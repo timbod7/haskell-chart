@@ -42,7 +42,7 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         return (w+l+r,h+t+b)
 
     rf r1@(Rect p1 p2) = do
-        render rd (Rect (p1 `padd` (Point l t)) (p2 `psub` (Point r b)))
+        render rd (Rect (p1 `pvadd` (Vector l t)) (p2 `pvsub` (Vector r b)))
 
 fillBackground :: CairoFillStyle -> Renderable -> Renderable
 fillBackground fs r = Renderable { minsize = minsize r, render = rf }
@@ -79,8 +79,8 @@ vertical rs = Renderable { minsize = mf, render = rf }
     
     render1 :: Point -> (Double,Double,Renderable) -> C.Render Point
     render1 p (w,h,r) = do
-        render r (Rect p (p `padd` Point w h))
-	return (p `padd` Point 0 h)
+        render r (Rect p (p `pvadd` Vector w h))
+	return (p `pvadd` Vector 0 h)
 
 renderableToPNGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPNGFile chart width height path = 
@@ -141,11 +141,11 @@ renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
     rf p1 (label,plot) = do
         (w,h) <- textSize label
 	lgap <- legendSpacer
-	let p2 = (p1 `padd` Point lps 0)
+	let p2 = (p1 `pvadd` Vector lps 0)
         plot_render_legend plot (mkrect p1 rp1 p2 rp2)
 	let p3 = Point (p_x p2 + lgap) (p_y rp1)
 	drawText HTA_Left VTA_Top p3 label
-        return (p3 `padd` Point (w+lm) 0)
+        return (p3 `pvadd` Vector (w+lm) 0)
 
 legendSpacer = do
     (lgap,_) <- textSize "X"

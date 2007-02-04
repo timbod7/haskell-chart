@@ -62,9 +62,9 @@ renderPlotArea l (Rect p1 p5) = do
 
     (w1,h1,w2,h2) <- axisSizes l
 
-    let p2 = p1 `padd` (Point w1 h1)
+    let p2 = p1 `pvadd` (Vector w1 h1)
     let p4  = p5
-    let p3  = p4 `psub` (Point w2 h2)
+    let p3  = p4 `pvsub` (Vector w2 h2)
     let plotRect = (Rect p2 p3)
 
     -- render the plots
