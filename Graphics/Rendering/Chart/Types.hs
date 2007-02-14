@@ -35,6 +35,9 @@ pvsub (Point x1 y1) (Vector x2 y2) = (Point (x1-x2) (y1-y2))
 psub :: Point -> Point -> Vector
 psub (Point x1 y1) (Point x2 y2) = (Vector (x1-x2) (y1-y2))
 
+-- | a function mapping between points
+type PointMapFn = Point -> Point
+
 -- | A rectangle is defined by two points
 data Rect = Rect Point Point
    deriving Show
@@ -45,6 +48,10 @@ data RectEdge = E_Top | E_Bottom | E_Left | E_Right
 mkrect (Point x1 _) (Point _ y2) (Point x3 _) (Point _ y4) =
     Rect (Point x1 y2) (Point x3 y4)
 
+-- | A linear mapping of points in one range to another
+vmap :: Range -> Range -> Double -> Double
+vmap (v1,v2) (v3,v4) v = v3 + (v-v1) * (v4-v3) / (v2-v1)
+ 
 -- | Abstract data type for the style of a plotted point
 --
 -- The contained Cairo action draws a point in the desired

@@ -18,9 +18,9 @@ import Graphics.Rendering.Chart.Renderable
 -- | The concrete data type for an axis
 data Axis =  Axis {
 		   
-    -- | The range in model space coordinates covered by
-    -- this axis.
-    axis_viewport :: Range,
+    -- | The axis_viewport function maps values into device
+    -- cordinates.
+    axis_viewport :: Range -> Double -> Double,
 
     -- | The tick marks on the axis as pairs.
     -- The first element is the position on the axis
@@ -138,22 +138,20 @@ renderAxis at@(AxisT et a) rect = do
    drawLabel (value,s) = do
        drawText hta vta (axisPoint value `pvadd` lp) s
 
-axisMapping (AxisT et a) rect = (sx,sy,ex,ey,tp,map)
+axisMapping :: AxisT -> Rect -> (Double,Double,Double,Double,Vector,Double->Point)
+axisMapping (AxisT et a) rect = case et of
+    E_Top    -> (x1,y2,x2,y2, (Vector 0 1),    mapx (x1,x2) y2) 
+    E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)), mapx (x1,x2) y1)
+    E_Left   -> (x2,y2,x2,y1, (Vector (1) 0),  mapy (y1,y2) x2)		
+    E_Right  -> (x1,y2,x1,y1, (Vector (-1) 0), mapy (y1,y2) x1)
   where
-   (Rect (Point x1 y1) (Point x2 y2)) = rect
+    (Rect (Point x1 y1) (Point x2 y2)) = rect
 
-   (vs,ve) = axis_viewport a
+    mapx :: Range -> Double -> Double -> Point
+    mapx xr y x = Point (axis_viewport a xr x) y
 
-   (sx,sy,ex,ey,tp) = case et of
-       E_Top    -> (x1,y2,x2,y2, (Vector 0 1)) 
-       E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)))
-       E_Left   -> (x2,y2,x2,y1, (Vector (1) 0))		
-       E_Right  -> (x1,y2,x1,y1, (Vector (-1) 0))
-
-   map v = let 
-        ax = (sx + (ex-sx) * (v - vs) / (ve-vs))
-        ay = (sy + (ey-sy) * (v - vs) / (ve-vs))
-     in (Point ax ay)
+    mapy :: Range -> Double -> Double -> Point
+    mapy (yr0,yr1) x y = Point x (axis_viewport a (yr1,yr0) y)
 
 renderAxisGrid :: AxisT -> Rect -> C.Render ()
 renderAxisGrid at@(AxisT re a) rect@(Rect p1 p2) = do
@@ -220,7 +218,7 @@ autoScaledAxis a pts = Just axis
 	axis_grid=labelvs,
 	axis_labels=newLabels
 	}
-    newViewport = (min',max')
+    newViewport = vmap (min',max')
     newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,5) | v <- labelvs ] 
     newLabels = [(v,show v) | v <- labelvs]
     (min,max) = case pts of
@@ -258,7 +256,7 @@ defaultAxisLineStyle = solidLine 1 0 0 0
 defaultGridLineStyle = dashedLine 1 [5,5] 0.8 0.8 0.8
 
 defaultAxis = Axis {
-    axis_viewport = (0,1),
+    axis_viewport = vmap (0,1),
     axis_ticks = [(0,10),(1,10)],
     axis_labels = [],
     axis_grid = [],
@@ -320,7 +318,7 @@ monthsAxis a pts = Just axis
     min' = thisMonthStart min
     max' = nextMonthStart max
 
-    newViewport = (doubleFromClockTime min', doubleFromClockTime max')
+    newViewport = vmap (doubleFromClockTime min', doubleFromClockTime max')
     months = takeWhile (<=max') (iterate nextMonthStart min')
     newTicks = [ (doubleFromClockTime ct,5) | ct <- months ]
     newLabels = [ (mlabelv m1 m2, mlabelt m1) | (m1,m2) <- zip months (tail months) ]

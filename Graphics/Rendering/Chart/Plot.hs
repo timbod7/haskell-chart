@@ -25,9 +25,9 @@ import Control.Monad
 -- | Interface to control plotting on a 2D area.
 data Plot = Plot {
 
-    -- | Given the model space coordinates, and the device coordinates
+    -- | Given the mapping between model space coordinates and device coordinates,
     -- render this plot into a chart.
-    plot_render :: Rect -> Rect -> C.Render (),
+    plot_render :: PointMapFn -> C.Render (),
 
     -- | Render a small sample of this plot into the given rectangle.
     -- This is for used to generate a the legend a chart.
@@ -58,25 +58,18 @@ instance ToPlot PlotLines where
 	plot_all_points = concat (plot_lines_values p)
     }
 
-renderPlotLines :: PlotLines -> Rect -> Rect -> C.Render ()
-renderPlotLines p r v = do
+renderPlotLines :: PlotLines -> PointMapFn -> C.Render ()
+renderPlotLines p pmap = do
     C.save
     setLineStyle (plot_lines_style p)
     mapM_ drawLines (plot_lines_values p)
     C.restore
   where
     drawLines (p:ps) = do
-	moveTo (pmap r v p)
-	mapM_ (\p -> lineTo (pmap r v p)) ps
+	moveTo (pmap p)
+	mapM_ (\p -> lineTo (pmap p)) ps
 	C.stroke
 
-pmap (Rect pr1 pr2) (Rect pv1 pv2) (Point x y) =
-    Point (p_x pr1 + (x - p_x pv1) * xs)
-          (p_y pr2 - (y - p_y pv1) * ys)
-  where
-    xs = (p_x pr2 - p_x pr1) / (p_x pv2 - p_x pv1)
-    ys = (p_y pr2 - p_y pr1) / (p_y pv2 - p_y pv1)
-    			
 renderPlotLegendLines :: PlotLines -> Rect -> C.Render ()
 renderPlotLegendLines p r@(Rect p1 p2) = do
     C.save
@@ -109,10 +102,10 @@ instance ToPlot PlotPoints where
 	plot_all_points = plot_points_values p
     }
 
-renderPlotPoints :: PlotPoints -> Rect -> Rect -> C.Render ()
-renderPlotPoints p r v = do
+renderPlotPoints :: PlotPoints -> PointMapFn -> C.Render ()
+renderPlotPoints p pmap = do
     C.save
-    mapM_ (drawPoint.(pmap r v)) (plot_points_values p)
+    mapM_ (drawPoint.pmap) (plot_points_values p)
     C.restore
   where
     (CairoPointStyle drawPoint) = (plot_points_style p)
@@ -149,11 +142,11 @@ instance ToPlot PlotFillBetween where
 	plot_all_points = plotAllPointsFillBetween p
     }
 
-renderPlotFillBetween :: PlotFillBetween -> Rect -> Rect -> C.Render ()
-renderPlotFillBetween p r v = renderPlotFillBetween' p (plot_fillbetween_values p) r v
+renderPlotFillBetween :: PlotFillBetween -> PointMapFn -> C.Render ()
+renderPlotFillBetween p pmap = renderPlotFillBetween' p (plot_fillbetween_values p) pmap
 
-renderPlotFillBetween' p [] _ _ = return ()
-renderPlotFillBetween' p vs r v = do
+renderPlotFillBetween' p [] _ = return ()
+renderPlotFillBetween' p vs pmap  = do
     C.save
     setFillStyle (plot_fillbetween_style p)
     moveTo p0
@@ -163,8 +156,8 @@ renderPlotFillBetween' p vs r v = do
     C.fill
     C.restore
   where
-    (p0:p1s) = map (pmap r v) [ Point x y1 | (x,(y1,y2)) <- vs ]
-    p2s = map (pmap r v) [ Point x y2 | (x,(y1,y2)) <- vs ]
+    (p0:p1s) = map pmap [ Point x y1 | (x,(y1,y2)) <- vs ]
+    p2s = map pmap [ Point x y2 | (x,(y1,y2)) <- vs ]
 
 renderPlotLegendFill :: PlotFillBetween -> Rect -> C.Render ()
 renderPlotLegendFill p r = do

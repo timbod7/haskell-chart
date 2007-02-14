@@ -105,10 +105,11 @@ renderPlotArea l (Rect p1 p5) = do
         in rPlot1 rect mxaxis myaxis p
 	      
     rPlot1 :: Rect -> Maybe AxisT -> Maybe AxisT -> Plot -> C.Render ()
-    rPlot1 rect (Just (AxisT _ xaxis)) (Just (AxisT _ yaxis)) p = 
-	let (x1,x2) = axis_viewport xaxis
-	    (y1,y2) = axis_viewport yaxis
-	in plot_render p rect (Rect (Point x1 y1) (Point x2 y2))
+    rPlot1 (Rect dc1 dc2) (Just (AxisT _ xaxis)) (Just (AxisT _ yaxis)) p = 
+	let xrange = (p_x dc1, p_x dc2)
+	    yrange = (p_y dc2, p_y dc1)
+	    pmfn (Point x y) = Point (axis_viewport xaxis xrange x) (axis_viewport yaxis yrange y)
+	in plot_render p pmfn
     rPlot1 _ _ _ _ = return ()
 
 axisSizes l = do
