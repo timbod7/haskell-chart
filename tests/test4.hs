@@ -4,13 +4,14 @@ import Graphics.Rendering.Chart.Gtk
 
 chart = layout 
   where
-    decades = [1,10,100,1000]
-    vmin = head decades
-    vmax = last decades
+    decades = [1000,100,10,1]
+    vmin = minimum decades
+    vmax = maximum decades
 
     logAxis = defaultAxis {
 	axis_viewport = viewfn,
-	axis_ticks  = [ (v*m,5) | v <- [1,2,3,4,5,6,7,8,9], m <- decades ],
+	axis_ticks  = ((head decades),5):
+          [ (v*m,5) | v <- [1,2,3,4,5,6,7,8,9], m <- (tail decades) ],
 	axis_labels = [ (v*m,show (v*m)) | v <- [1], m <- decades ],
 	axis_grid   = [ (v*m) | v <- [1], m <- decades ]
     }
