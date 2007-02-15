@@ -16,7 +16,7 @@ chart = layout
 	axis_grid   = [ (v*m) | v <- [1], m <- decades ]
     }
 
-    viewfn (dmin, dmax) v = dmin + logBase 10 v * (dmax - dmin) / (logBase 10 vmax - logBase 10 vmin)
+    viewfn (dmin, dmax) v = dmin + log v * (dmax - dmin) / (log vmax - log vmin)
 
     points = defaultPlotPoints {
         plot_points_style=filledCircles 3 1 0 0,
