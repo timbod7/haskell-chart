@@ -256,15 +256,20 @@ logTicks (low,high) = (major,minor)
   inRange (a,b) l x = (lower a l <= x) && (x <= upper b l)
   powers (x,y) l = [a*10^^p | p<-[(floor (log10 x))..(ceiling (log10 y))], a<-l]
   midselection r l = filter (inRange r l) (powers r l)
-  major | 3 < log ratio = map (10**) $
+  major | 17.5 < log10 ratio = map (10**) $
                          steps (min 5 (log10 ratio)) (log10 low, log10 high)
+        | 12 < log10 ratio = map (10**) $
+                         steps ((log10 ratio)/5) (log10 low, log10 high)
+        | 6 < log10 ratio = map (10**) $
+                         steps ((log10 ratio)/2) (log10 low, log10 high)
+        | 3 < log10 ratio = midselection (low,high) [1,10]
         | 20 < ratio = midselection (low,high) [1,5,10]
         | 6 < ratio = midselection (low,high) [1,2,4,6,8,10]
         | 3 < ratio = midselection (low,high) [1..10]
         | otherwise = steps 5 (low,high)
   (l',h') = (minimum major, maximum major)
   ratio' = h'/l'
-  minor | 50 < log10 ratio' = map (10**) $ -- TODO: integer only steps see 1-10^15
+  minor | 50 < log10 ratio' = map (10**) $
                               steps 50 (log10 l', log10 h')
         | 6 < log10 ratio' = filter (\x -> l'<=x && x <=h') $
                              powers (l',h') [1,10]
