@@ -245,28 +245,33 @@ log10 = logBase 10
 
 lmap (x1,x2) r x = vmap (log x1, log x2) r (log x)
 
-logMajorTicks :: Range -> [Double]
-logMajorTicks (low,high) | 1000 < ratio = map (10**) $ steps (min 5 (log10 ratio))
-                                                        (log10 low, log10 high)
-                    | 20 < ratio = midselection [1,5,10]
-                    | 6 < ratio = midselection [1,2,4,6,8,10]
-                    | 3 < ratio = midselection [1,2,3,4,5,6,7,8,9,10]
-                    | otherwise = steps 5 (low,high)
+logTicks :: Range -> ([Double],[Double])
+logTicks (low,high) = (major,minor)
  where
   ratio = high/low
-  lower :: [Double] -> Double
-  lower l = let (i,r) = properFraction (log10 low) in
+  lower a l = let (i,r) = properFraction (log10 a) in
             (maximum (filter (\x -> log10 x <= r) l))*10^^i
-  upper :: [Double] -> Double
-  upper l = let (i,r) = properFraction (log10 high) in
+  upper a l = let (i,r) = properFraction (log10 a) in
             (minimum (filter (\x -> r <= log10 x) l))*10^^i
-  inRange :: [Double] -> Double -> Bool
-  inRange l x = (lower l <= x) && (x <= upper l)
-  powers :: [Double] -> [Double]
-  powers l = [a*10^^p | p<-[(floor (log10 low))..(ceiling (log10 high))], a<-l]
-  midselection :: [Double] -> [Double]
-  midselection l = filter (inRange l) (powers l)
-
+  inRange (a,b) l x = (lower a l <= x) && (x <= upper b l)
+  powers (x,y) l = [a*10^^p | p<-[(floor (log10 x))..(ceiling (log10 y))], a<-l]
+  midselection r l = filter (inRange r l) (powers r l)
+  major | 3 < log ratio = map (10**) $
+                         steps (min 5 (log10 ratio)) (log10 low, log10 high)
+        | 20 < ratio = midselection (low,high) [1,5,10]
+        | 6 < ratio = midselection (low,high) [1,2,4,6,8,10]
+        | 3 < ratio = midselection (low,high) [1..10]
+        | otherwise = steps 5 (low,high)
+  (l',h') = (minimum major, maximum major)
+  ratio' = h'/l'
+  minor | 50 < log10 ratio' = map (10**) $ -- TODO: integer only steps see 1-10^15
+                              steps 50 (log10 l', log10 h')
+        | 6 < log10 ratio' = filter (\x -> l'<=x && x <=h') $
+                             powers (l',h') [1,10]
+        | 3 < log10 ratio' = filter (\x -> l'<=x && x <=h') $
+                             powers (l',h') [1,5,10]
+        | 3 < ratio' = filter (\x -> l'<=x && x <=h') $ powers (l',h') [1..10]
+        | otherwise = steps 50 (l',h')
 autoScaledLogAxis a pts = Just axis
   where
     axis =  a {
@@ -276,7 +281,7 @@ autoScaledLogAxis a pts = Just axis
 	axis_labels=newLabels
 	}
     newViewport = lmap (min',max')
-    newTicks = {-[ (v,2) | v <- tickvs ] ++-} [ (v,5) | v <- labelvs ] 
+    newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,5) | v <- labelvs ] 
     newLabels = [(v,show v) | v <- labelvs]
     (min,max) = case pts of
 		[] -> (1,10)
@@ -284,11 +289,9 @@ autoScaledLogAxis a pts = Just axis
 			  max = maximum ps in
 			  if min == max then (min-0.5,max+0.5)
 			                else (min,max)
-    labelvs = logMajorTicks (min,max)
+    (labelvs, tickvs) = logTicks (min,max)
     min' = minimum labelvs
     max' = maximum labelvs
-    {-tickvs = steps 50 (min',max')-}
-
 
 -- | Show independent axes on each side of the layout
 independentAxes :: AxisFn -> AxisFn -> AxesFn
