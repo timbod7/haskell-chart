@@ -186,7 +186,7 @@ strokeLines' True  ps = strokeLines (map adjfn ps)
 
 ----------------------------------------------------------------------
 
-steps:: Int -> Range -> [Double]
+steps:: Double -> Range -> [Double]
 steps nSteps (min,max) = [ min' + i * s | i <- [0..n] ]
   where
     min' = fromIntegral (floor (min / s) ) * s
@@ -194,12 +194,12 @@ steps nSteps (min,max) = [ min' + i * s | i <- [0..n] ]
     n = (max' - min') / s
     s = chooseStep nSteps (min,max)
 
-chooseStep :: Int -> Range -> Double
+chooseStep :: Double -> Range -> Double
 chooseStep nsteps (min,max) = s
   where
-    mult = 10 ** fromIntegral (floor ((log (max-min) - log (fromIntegral nsteps)) / log 10))
+    mult = 10 ** fromIntegral (floor ((log (max-min) - log nsteps) / log 10))
     steps = map (mult*) [0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 2.5, 5.0, 10, 20, 25, 50]
-    steps' =  sort [ (abs((max-min)/s - fromIntegral nsteps), s) | s <- steps ]
+    steps' =  sort [ (abs((max-min)/s - nsteps), s) | s <- steps ]
     s = snd (head steps')
 
 -- | Explicitly specify an axis
