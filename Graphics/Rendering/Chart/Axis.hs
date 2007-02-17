@@ -275,7 +275,8 @@ logTicks (low,high) = (major,minor)
                              powers (l',h') [1,10]
         | 3 < log10 ratio' = filter (\x -> l'<=x && x <=h') $
                              powers (l',h') [1,5,10]
-        | 3 < ratio' = filter (\x -> l'<=x && x <=h') $ powers (l',h') [1..10]
+        | 6 < ratio' = filter (\x -> l'<=x && x <=h') $ powers (l',h') [1..10]
+        | 3 < ratio' = filter (\x -> l'<=x && x <=h') $ powers (l',h') [1,1.2..10]
         | otherwise = steps 50 (l',h')
 autoScaledLogAxis a pts = Just axis
   where
