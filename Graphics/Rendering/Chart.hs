@@ -47,6 +47,7 @@ module Graphics.Rendering.Chart(
     linkedAxes',
     explicitAxis,
     autoScaledAxis,
+    autoScaledLogAxis,
     monthsAxis,
     renderableToPNGFile,
     doubleFromClockTime,

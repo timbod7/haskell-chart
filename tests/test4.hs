@@ -8,14 +8,6 @@ chart = layout
     vmin = minimum decades
     vmax = maximum decades
 
-    logAxis = defaultAxis {
-	axis_viewport = viewfn,
-	axis_ticks  = ((head decades),5):
-          [ (v*m,5) | v <- [1,2,3,4,5,6,7,8,9], m <- (tail decades) ],
-	axis_labels = [ (v*m,show (v*m)) | v <- [1], m <- decades ],
-	axis_grid   = [ (v*m) | v <- [1], m <- decades ]
-    }
-
     viewfn (dmin, dmax) v = dmin + log v * (dmax - dmin) / (log vmax - log vmin)
 
     points = defaultPlotPoints {
@@ -30,7 +22,7 @@ chart = layout
     layout = defaultLayout1 {
         layout1_title="Log/Linear Example",			   
         layout1_horizontal_axes=linkedAxes (autoScaledAxis defaultAxis),
-	layout1_vertical_axes=linkedAxes (explicitAxis (Just logAxis)),
+	layout1_vertical_axes=linkedAxes (autoScaledLogAxis defaultAxis),
 	layout1_plots = [("values",HA_Bottom,VA_Left,(toPlot points)),
 			 ("values",HA_Bottom,VA_Left,(toPlot lines)) ]
     }
