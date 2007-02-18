@@ -206,12 +206,14 @@ chooseStep nsteps (min,max) = s
 explicitAxis :: Maybe Axis -> AxisFn
 explicitAxis ma _ = ma
 
+linearTicks r = (major, minor)
+ where
+  major = steps 5 r
+  minor = steps 50 (fromRational (minimum major),fromRational (maximum major))
+
 -- | Generate an axis automatically.
 -- The supplied axis is used as a template, with the ticks, labels
 -- and grid set appropriately for the data displayed against that axies.
--- The resulting axis will only show a grid if the template has some grid
--- values.
-
 autoScaledAxis :: Axis -> AxisFn
 autoScaledAxis a pts = Just axis
   where
@@ -221,7 +223,7 @@ autoScaledAxis a pts = Just axis
 	axis_grid=gridvs,
 	axis_labels=newLabels
 	}
-    newViewport = vmap (min',max')
+    newViewport = transform (min',max')
     newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,5) | v <- labelvs ] 
     newLabels = [(v,show v) | v <- labelvs]
     (min,max) = case pts of
@@ -233,7 +235,14 @@ autoScaledAxis a pts = Just axis
     labelvs = steps 5 (min,max)
     min' = minimum labelvs
     max' = maximum labelvs
-    tickvs = map fromRational $ steps 50 (min',max')
+
+autoScaledAxis :: Axis -> AxisFn
+autoScaledAxis a [] = autoAxis vmap (linearTicks (0,1)) a
+autoScaledAxis a ps | min==max = autoAxis vmap 
+                                  (linearTicks (min-0.5,max+0.5)) a
+                    | otherwise = autoAxis vmap (linearTicks (min,max)) a
+ where
+  (min, max) = (minimum ps,maximum ps)
 
 log10 :: (Floating a) => a -> a
 log10 = logBase 10
@@ -289,27 +298,14 @@ logTicks (low,high) = (major,minor)
         | 3 < ratio' = filter (\x -> l'<=x && x <=h') $ 
                        powers (dl',dh') [1,1.2..10]
         | otherwise = steps 50 (dl', dh')
-autoScaledLogAxis a pts = Just axis
-  where
-    axis =  a {
-        axis_viewport=newViewport,
-	axis_ticks=newTicks,
-	axis_grid=labelvs,
-	axis_labels=newLabels
-	}
-    newViewport = lmap (min',max')
-    newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,5) | v <- labelvs ] 
-    newLabels = [(v,show v) | v <- labelvs]
-    (min,max) = case pts of
-		[] -> (1,10)
-		ps -> let min = minimum ps
-			  max = maximum ps in
-			  if min == max then (min-0.5,max+0.5)
-			                else (min,max)
-    (labelvsr, tickvsr) = logTicks (min,max)
-    (labelvs, tickvs) = (map fromRational labelvsr, map fromRational tickvsr)
-    min' = minimum labelvs
-    max' = maximum labelvs
+
+autoScaledLogAxis :: Axis -> AxisFn
+autoScaledLogAxis a [] = autoAxis lmap (logTicks (1,10)) a
+autoScaledLogAxis a ps | min==max = autoAxis lmap 
+                                  (logTicks (min/3,max*3)) a
+                    | otherwise = autoAxis lmap (logTicks (min,max)) a
+ where
+  (min, max) = (minimum ps,maximum ps)
 
 -- | Show independent axes on each side of the layout
 independentAxes :: AxisFn -> AxisFn -> AxesFn
