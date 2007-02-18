@@ -245,6 +245,13 @@ frac x | 0 <= b = (a,b)
 
 lmap (x1,x2) r x = vmap (log x1, log x2) r (log x)
 
+{- 
+ Rules: Do no subdivide between powers of 10 until all powers of 10
+          get a major ticks.
+        Do not subdivide between powers of ten as [1,2,4,6,8,10] when
+          5 gets a major ticks 
+          (ie the major ticks need to be a subset of the minor tick)
+-}
 logTicks :: Range -> ([Rational],[Rational])
 logTicks (low,high) = (major,minor)
  where
