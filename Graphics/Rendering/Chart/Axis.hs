@@ -243,16 +243,21 @@ autoScaledAxis a pts = Just axis
 log10 :: (Floating a) => a -> a
 log10 = logBase 10
 
+frac x | 0 <= b = (a,b)
+       | otherwise = (a-1,b+1)
+ where
+  (a,b) = properFraction x
+
 lmap (x1,x2) r x = vmap (log x1, log x2) r (log x)
 
 logTicks :: Range -> ([Double],[Double])
 logTicks (low,high) = (major,minor)
  where
   ratio = high/low
-  lower a l = let (i,r) = properFraction (log10 a) in
-            (maximum (filter (\x -> log10 x <= r) l))*10^^i
+  lower a l = let (i,r) = frac (log10 a) in
+            (maximum (1:(filter (\x -> log10 x <= r) l)))*10^^i
   upper a l = let (i,r) = properFraction (log10 a) in
-            (minimum (filter (\x -> r <= log10 x) l))*10^^i
+            (minimum (10:(filter (\x -> r <= log10 x) l)))*10^^i
   inRange (a,b) l x = (lower a l <= x) && (x <= upper b l)
   powers (x,y) l = [a*10^^p | p<-[(floor (log10 x))..(ceiling (log10 y))], a<-l]
   midselection r l = filter (inRange r l) (powers r l)
