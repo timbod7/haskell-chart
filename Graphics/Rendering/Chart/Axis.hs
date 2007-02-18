@@ -186,20 +186,20 @@ strokeLines' True  ps = strokeLines (map adjfn ps)
 
 ----------------------------------------------------------------------
 
-steps:: Double -> Range -> [Double]
-steps nSteps (min,max) = [ min' + i * s | i <- [0..n] ]
+steps:: Double -> Range -> [Rational]
+steps nSteps (min,max) = [ (fromIntegral (min' + i)) * s | i <- [0..n] ]
   where
-    min' = fromIntegral (floor (min / s) ) * s
-    max' = fromIntegral (ceiling (max / s) ) * s
-    n = (max' - min') / s
+    min' = floor (min / fromRational s)
+    max' = ceiling (max / fromRational s)
+    n = (max' - min')
     s = chooseStep nSteps (min,max)
 
-chooseStep :: Double -> Range -> Double
+chooseStep :: Double -> Range -> Rational
 chooseStep nsteps (min,max) = s
   where
-    mult = 10 ** fromIntegral (floor ((log (max-min) - log nsteps) / log 10))
+    mult = 10 ^^ (floor ((log (max-min) - log nsteps) / log 10))
     steps = map (mult*) [0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 2.5, 5.0, 10, 20, 25, 50]
-    steps' =  sort [ (abs((max-min)/s - nsteps), s) | s <- steps ]
+    steps' =  sort [ (abs((max-min)/(fromRational s) - nsteps), s) | s <- steps ]
     s = snd (head steps')
 
 -- | Explicitly specify an axis
@@ -231,14 +231,9 @@ autoScaledAxis a pts = Just axis
 			  if min == max then (min-0.5,max+0.5)
 			                else (min,max)
     labelvs = steps 5 (min,max)
-
-    gridvs = case (axis_grid a) of 
-       [] -> []
-       _  -> labelvs
-
     min' = minimum labelvs
     max' = maximum labelvs
-    tickvs = steps 50 (min',max')
+    tickvs = map fromRational $ steps 50 (min',max')
 
 log10 :: (Floating a) => a -> a
 log10 = logBase 10
@@ -250,22 +245,23 @@ frac x | 0 <= b = (a,b)
 
 lmap (x1,x2) r x = vmap (log x1, log x2) r (log x)
 
-logTicks :: Range -> ([Double],[Double])
+logTicks :: Range -> ([Rational],[Rational])
 logTicks (low,high) = (major,minor)
  where
   ratio = high/low
   lower a l = let (i,r) = frac (log10 a) in
-            (maximum (1:(filter (\x -> log10 x <= r) l)))*10^^i
+            (maximum (1:(filter (\x -> log10 (fromRational x) <= r) l)))*10^^i
   upper a l = let (i,r) = properFraction (log10 a) in
-            (minimum (10:(filter (\x -> r <= log10 x) l)))*10^^i
+            (minimum (10:(filter (\x -> r <= log10 (fromRational x)) l)))*10^^i
   inRange (a,b) l x = (lower a l <= x) && (x <= upper b l)
+  powers :: (Double,Double) -> [Rational] -> [Rational]
   powers (x,y) l = [a*10^^p | p<-[(floor (log10 x))..(ceiling (log10 y))], a<-l]
   midselection r l = filter (inRange r l) (powers r l)
-  major | 17.5 < log10 ratio = map (10**) $
+  major | 17.5 < log10 ratio = map (\x -> 10^^(round x)) $
                          steps (min 5 (log10 ratio)) (log10 low, log10 high)
-        | 12 < log10 ratio = map (10**) $
+        | 12 < log10 ratio = map (\x -> 10^^(round x)) $
                          steps ((log10 ratio)/5) (log10 low, log10 high)
-        | 6 < log10 ratio = map (10**) $
+        | 6 < log10 ratio = map (\x -> 10^^(round x)) $
                          steps ((log10 ratio)/2) (log10 low, log10 high)
         | 3 < log10 ratio = midselection (low,high) [1,10]
         | 20 < ratio = midselection (low,high) [1,5,10]
@@ -273,16 +269,19 @@ logTicks (low,high) = (major,minor)
         | 3 < ratio = midselection (low,high) [1..10]
         | otherwise = steps 5 (low,high)
   (l',h') = (minimum major, maximum major)
-  ratio' = h'/l'
-  minor | 50 < log10 ratio' = map (10**) $
-                              steps 50 (log10 l', log10 h')
+  (dl',dh') = (fromRational l', fromRational h')
+  ratio' = fromRational (h'/l')
+  minor | 50 < log10 ratio' = map (\x -> 10^^(round x)) $
+                              steps 50 (log10 $ dl', log10 $ dh')
         | 6 < log10 ratio' = filter (\x -> l'<=x && x <=h') $
-                             powers (l',h') [1,10]
+                             powers (dl', dh') [1,10]
         | 3 < log10 ratio' = filter (\x -> l'<=x && x <=h') $
-                             powers (l',h') [1,5,10]
-        | 6 < ratio' = filter (\x -> l'<=x && x <=h') $ powers (l',h') [1..10]
-        | 3 < ratio' = filter (\x -> l'<=x && x <=h') $ powers (l',h') [1,1.2..10]
-        | otherwise = steps 50 (l',h')
+                             powers (dl',dh') [1,5,10]
+        | 6 < ratio' = filter (\x -> l'<=x && x <=h') $ 
+                       powers (dl',dh') [1..10]
+        | 3 < ratio' = filter (\x -> l'<=x && x <=h') $ 
+                       powers (dl',dh') [1,1.2..10]
+        | otherwise = steps 50 (dl', dh')
 autoScaledLogAxis a pts = Just axis
   where
     axis =  a {
@@ -300,7 +299,8 @@ autoScaledLogAxis a pts = Just axis
 			  max = maximum ps in
 			  if min == max then (min-0.5,max+0.5)
 			                else (min,max)
-    (labelvs, tickvs) = logTicks (min,max)
+    (labelvsr, tickvsr) = logTicks (min,max)
+    (labelvs, tickvs) = (map fromRational labelvsr, map fromRational tickvsr)
     min' = minimum labelvs
     max' = maximum labelvs
 
