@@ -55,7 +55,7 @@ fillBackground fs r = Renderable { minsize = minsize r, render = rf }
         C.restore
 	render r rect
 
-vertical :: [(Double,Renderable)] -> Renderable 
+vertical, horizontal :: [(Double,Renderable)] -> Renderable 
 vertical rs = Renderable { minsize = mf, render = rf }
   where
     mf = do
@@ -81,6 +81,32 @@ vertical rs = Renderable { minsize = mf, render = rf }
     render1 p (w,h,r) = do
         render r (Rect p (p `pvadd` Vector w h))
 	return (p `pvadd` Vector 0 h)
+
+horizontal rs = Renderable { minsize = mf, render = rf }
+  where
+    mf = do
+        (_,wmin,hmin) <- calcSizes
+	return (wmin, hmin)
+
+    rf (Rect p1 p2) = do
+        (sizes,wmin,hmin) <- calcSizes
+	let hactual = p_y p2 - p_y p1
+	let wextra = p_x p2 - p_x p1 - wmin
+	let etotal = sum (map fst rs)
+	let rs' = [ (w + wextra * e / etotal,hactual,r)
+		    | ((e,r),(w,h)) <- zip rs sizes ]
+	foldM_ render1 p1 rs'
+
+    calcSizes = do
+        sizes <- mapM minsize [ r | (_,r) <- rs]
+	let hmin = maximum [ h | (w,h) <- sizes ]
+	let wmin = sum [ w | (w,h) <- sizes ]
+	return (sizes,wmin,hmin)
+    
+    render1 :: Point -> (Double,Double,Renderable) -> C.Render Point
+    render1 p (w,h,r) = do
+        render r (Rect p (p `pvadd` Vector w h))
+	return (p `pvadd` Vector w 0)
 
 renderableToPNGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPNGFile chart width height path = 

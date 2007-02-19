@@ -13,8 +13,8 @@ import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
 import Graphics.Rendering.Chart.Renderable
 
-data HAxis = HA_Top | HA_Bottom
-data VAxis = VA_Left | VA_Right
+data HAxis = HA_Top | HA_Bottom deriving (Eq)
+data VAxis = VA_Left | VA_Right deriving (Eq)
 
 -- | A Layout1 value is a single plot area, with optional: axes on
 -- each of the 4 sides; title at the top; legend at the bottom.
@@ -37,7 +37,7 @@ layout1ToRenderable l =
         vertical [
             (0, addMargins (lm/2,0,0,0)    (mkTitle l)),
 	    (1, addMargins (lm/2,lm,lm,lm) (plotArea l)),
-	    (0, mkLegend l)
+	    (0, horizontal [ (0, mkLegend VA_Left l), (1,emptyRenderable), (0, mkLegend VA_Right l) ] )
             ]
         )
   where
@@ -45,8 +45,11 @@ layout1ToRenderable l =
 
     mkTitle l = label (layout1_title_style l) HTA_Centre VTA_Centre (layout1_title l)
 
-    mkLegend l = maybe emptyRenderable mkLegend' (layout1_legend l)
-    mkLegend' ls = addMargins (0,lm,lm,0) (toRenderable (Legend True ls [(s,p) | (s,_,_,p) <- layout1_plots l]))
+    mkLegend va l = case (layout1_legend l) of
+        Nothing -> emptyRenderable
+        (Just ls) -> case [(s,p) | (s,_,va',p) <- layout1_plots l, va' == va] of
+ 	    [] -> emptyRenderable
+	    ps -> addMargins (0,lm,lm,0) (toRenderable (Legend True ls ps))
  
     plotArea l = Renderable {
         minsize=minsizePlotArea l,
