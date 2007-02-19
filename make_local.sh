@@ -7,6 +7,8 @@ else
     runghc Setup.hs unregister --user
 fi
 
+(cd tests; rm *.o)
 (cd tests; ghc --make -package Chart -o test test.hs)
 (cd tests; ghc --make -package Chart -o test2 test2.hs)
 (cd tests; ghc --make -package Chart -o test3 test3.hs)
+(cd tests; ghc --make -package Chart -o test4 test4.hs)
