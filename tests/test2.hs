@@ -37,9 +37,9 @@ chart = layout
     layout = defaultLayout1 {
         layout1_title="Price History",			   
         layout1_horizontal_axes=linkedAxes' (monthsAxis defaultAxis),
-	layout1_vertical_axes=linkedAxes' (autoScaledAxis defaultAxis),
+	layout1_vertical_axes=independentAxes (autoScaledAxis defaultAxis) (autoScaledAxis defaultAxis),
  	layout1_plots = [("price 1", HA_Bottom,VA_Left,(toPlot price1)),
-                         ("price 2", HA_Bottom,VA_Left,(toPlot price2))]
+                         ("price 2", HA_Bottom,VA_Right,(toPlot price2))]
     }
 
 main = do
