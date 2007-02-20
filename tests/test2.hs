@@ -34,10 +34,13 @@ chart = layout
 	plot_lines_values = [[ Point (date d m y) v | (d,m,y,_,v) <- prices]]
     }
 
+    gridlessAxis = defaultAxis{axis_grid=[]}
+    vaxis = autoScaledAxis gridlessAxis
+
     layout = defaultLayout1 {
         layout1_title="Price History",			   
-        layout1_horizontal_axes=linkedAxes' (monthsAxis defaultAxis),
-	layout1_vertical_axes=independentAxes (autoScaledAxis defaultAxis) (autoScaledAxis defaultAxis),
+        layout1_horizontal_axes=linkedAxes' (monthsAxis gridlessAxis),
+	layout1_vertical_axes=independentAxes vaxis vaxis,
  	layout1_plots = [("price 1", HA_Bottom,VA_Left,(toPlot price1)),
                          ("price 2", HA_Bottom,VA_Right,(toPlot price2))]
     }

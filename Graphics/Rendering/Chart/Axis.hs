@@ -209,13 +209,16 @@ explicitAxis ma _ = ma
 -- | Generate an axis automatically.
 -- The supplied axis is used as a template, with the ticks, labels
 -- and grid set appropriately for the data displayed against that axies.
+-- The resulting axis will only show a grid if the template has some grid
+-- values.
+
 autoScaledAxis :: Axis -> AxisFn
 autoScaledAxis a pts = Just axis
   where
     axis =  a {
         axis_viewport=newViewport,
 	axis_ticks=newTicks,
-	axis_grid=labelvs,
+	axis_grid=gridvs,
 	axis_labels=newLabels
 	}
     newViewport = vmap (min',max')
@@ -228,6 +231,11 @@ autoScaledAxis a pts = Just axis
 			  if min == max then (min-0.5,max+0.5)
 			                else (min,max)
     labelvs = steps 5 (min,max)
+
+    gridvs = case (axis_grid a) of 
+       [] -> []
+       _  -> labelvs
+
     min' = minimum labelvs
     max' = maximum labelvs
     tickvs = steps 50 (min',max')
@@ -259,7 +267,7 @@ defaultAxis = Axis {
     axis_viewport = vmap (0,1),
     axis_ticks = [(0,10),(1,10)],
     axis_labels = [],
-    axis_grid = [],
+    axis_grid = [0.0,0.5,1.0],
     axis_label_gap =10,
     axis_line_style = defaultAxisLineStyle,
     axis_label_style = defaultFontStyle,
@@ -308,7 +316,7 @@ monthsAxis a pts = Just axis
         axis_viewport=newViewport,
 	axis_ticks=newTicks,
 	axis_labels=newLabels,
-	axis_grid=[v | (v,_) <- newTicks]
+	axis_grid=newGrid
 	}
     (min,max) = case pts of
 		[] -> (refClockTime, nextMonthStart refClockTime)
@@ -322,6 +330,9 @@ monthsAxis a pts = Just axis
     months = takeWhile (<=max') (iterate nextMonthStart min')
     newTicks = [ (doubleFromClockTime ct,5) | ct <- months ]
     newLabels = [ (mlabelv m1 m2, mlabelt m1) | (m1,m2) <- zip months (tail months) ]
+    newGrid = case axis_grid a of 
+        [] -> []
+        _  -> [v | (v,_) <- newTicks]
 
     mlabelt m =  formatCalendarTime defaultTimeLocale "%b-%y" (toUTCTime m)
     mlabelv m1 m2 = (doubleFromClockTime m2 + doubleFromClockTime m1) / 2
