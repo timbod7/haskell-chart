@@ -4,11 +4,6 @@ import Graphics.Rendering.Chart.Gtk
 
 chart = layout 
   where
-    decades = [1000,100,10,1]
-    vmin = minimum decades
-    vmax = maximum decades
-
-    viewfn (dmin, dmax) v = dmin + log v * (dmax - dmin) / (log vmax - log vmin)
 
     points = defaultPlotPoints {
         plot_points_style=filledCircles 3 1 0 0,
