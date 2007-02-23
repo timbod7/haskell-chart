@@ -381,6 +381,9 @@ clockTimeFromDouble v = (addToClockTime tdiff refClockTime)
        tdPicosec = 0
     }
 
+-- | An axis that plots dates, with ticks and labels corresponding to
+-- calendar months. The values to be plotted against this axis can
+-- be created with 'doubleFromClockTime'
 monthsAxis :: Axis -> AxisFn
 monthsAxis a pts = Just axis
   where
