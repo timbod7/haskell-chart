@@ -46,3 +46,4 @@ chart = layout
 
 main = do
     renderableToWindow (toRenderable chart) 640 480
+    renderableToPNGFile (toRenderable chart) 640 480 "test3.png"
