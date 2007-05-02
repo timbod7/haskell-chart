@@ -5,9 +5,9 @@ License-file: LICENSE
 Copyright: Tim Docker, 2006
 Author: Tim Docker <tim@dockerz.net>
 Maintainer: Tim Docker <tim@dockerz.net>
-Homepage: http://www.dockerz.net/chart
+Homepage: http://www.dockerz.net/software/chart.html
 Description: A library for generating 2D Charts and Plots
-Build-depends: base, gtk >= 0.9.11, cairo >= 0.9.11
+Build-depends: base, gtk, cairo
 Exposed-modules:
 	Graphics.Rendering.Chart,
 	Graphics.Rendering.Chart.Gtk,
