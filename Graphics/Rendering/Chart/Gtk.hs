@@ -38,5 +38,5 @@ updateCanvas chart canvas = do
     return True
   where
     rfn rect = do
-        setupRender
+        alignPixels
 	render chart rect

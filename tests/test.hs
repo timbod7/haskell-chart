@@ -2,13 +2,14 @@ import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Gtk
 
-chart = layout 
+chart lineWidth = layout 
   where
     am :: Double -> Double
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
 
     sinusoid1 = defaultPlotLines {
-	plot_lines_values = [[ (Point x (am x)) | x <- [0,(0.5)..400]]]
+	plot_lines_values = [[ (Point x (am x)) | x <- [0,(0.5)..400]]],
+        plot_lines_style = solidLine lineWidth 0 0 1
     }
 
     sinusoid2 = defaultPlotPoints {
@@ -23,7 +24,9 @@ chart = layout
 	layout1_plots = [("am",HA_Bottom,VA_Left,(toPlot sinusoid1)),
 			 ("am points", HA_Bottom,VA_Left,(toPlot sinusoid2))]
     }
-	      
+
 main = do
-    renderableToWindow (toRenderable chart) 640 480
-    renderableToPNGFile (toRenderable chart) 640 480 "test.png"
+    renderableToWindow (toRenderable (chart 1.0)) 640 480
+    renderableToPNGFile (toRenderable (chart 1.0)) 640 480 "test.png"
+    renderableToPDFFile (toRenderable (chart 0.25)) 640 480 "test.pdf"
+    renderableToPSFile (toRenderable (chart 0.25)) 640 480 "test.ps"

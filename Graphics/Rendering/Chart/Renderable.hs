@@ -115,14 +115,37 @@ renderableToPNGFile chart width height path =
     C.surfaceWriteToPNG result path
   where
     rfn = do
-        setupRender
+        alignPixels
 	render chart rect
 
     rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
 
+renderableToPDFFile :: Renderable -> Int -> Int -> FilePath -> IO ()
+renderableToPDFFile chart width height path = 
+    C.withPDFSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
+    C.renderWith result $ rfn
+    C.surfaceFinish result
+  where
+    rfn = do
+	render chart rect
+        C.showPage
 
-setupRender :: C.Render ()
-setupRender = do
+    rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
+
+renderableToPSFile :: Renderable -> Int -> Int -> FilePath -> IO ()
+renderableToPSFile chart width height path = 
+    C.withPSSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
+    C.renderWith result $ rfn
+    C.surfaceFinish result
+  where
+    rfn = do
+	render chart rect
+        C.showPage
+
+    rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
+
+alignPixels :: C.Render ()
+alignPixels = do
     -- move to centre of pixels so that stroke width of 1 is
     -- exactly one pixel 
     C.translate 0.5 0.5

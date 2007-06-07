@@ -50,6 +50,8 @@ module Graphics.Rendering.Chart(
     autoScaledLogAxis,
     monthsAxis,
     renderableToPNGFile,
+    renderableToPDFFile,
+    renderableToPSFile,
     doubleFromClockTime,
     clockTimeFromDouble,
     CairoLineStyle(..),

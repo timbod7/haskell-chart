@@ -7,7 +7,7 @@ Author: Tim Docker <tim@dockerz.net>
 Maintainer: Tim Docker <tim@dockerz.net>
 Homepage: http://www.dockerz.net/chart
 Description: A library for generating 2D Charts and Plots
-Build-depends: base, gtk, cairo
+Build-depends: base, gtk >= 0.9.11, cairo >= 0.9.11
 Exposed-modules:
 	Graphics.Rendering.Chart,
 	Graphics.Rendering.Chart.Gtk,
