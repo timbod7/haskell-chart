@@ -47,7 +47,7 @@ layout1ToRenderable l =
 
     mkLegend va l = case (layout1_legend l) of
         Nothing -> emptyRenderable
-        (Just ls) -> case [(s,p) | (s,_,va',p) <- layout1_plots l, va' == va] of
+        (Just ls) -> case [(s,p) | (s,_,va',p) <- layout1_plots l, va' == va, not (null s)] of
  	    [] -> emptyRenderable
 	    ps -> addMargins (0,lm,lm,0) (toRenderable (Legend True ls ps))
  
