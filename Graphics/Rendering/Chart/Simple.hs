@@ -6,24 +6,33 @@
 --
 -- An even simpler framework for creating 2D charts in Haskell.
 --
---
 -- The basic idea is to make it as easy to plot as octave, which means that
--- you provide no more information than you wish to provide.  There is one
--- function 'plot', which does all the work.  It accepts a variable number
--- of arguments.  You must provide a [Double] which defines the points on
--- the x axis, which must precede any of the "y" values.  The y values may
--- either be [Double] or functions.  After any given y value, you can give
--- either Strings or PlotKinds describing how you'd like that y printed.
+-- you provide no more information than you wish to provide.  We provide
+-- four plotting functions, which differ only in their output.  One
+-- produces a "Layout1" that you can customize using other
+-- Graphics.Rendering.Chart functions.  The other three produce their
+-- output directly.  All three accept the same input (except for the
+-- filename required by plotPDF and plotPS), and produce the same plots.
+--
+-- The plot functions accept a variable number of arguments.  You must
+-- provide a [Double] which defines the points on the x axis, which must
+-- precede any of the "y" values.  The y values may either be [Double] or
+-- functions.  After any given y value, you can give either Strings or
+-- PlotKinds describing how you'd like that y printed.
 --
 -- Examples:
 --
 -- renderableToWindow (toRenderable $ plot [0,0.1..10] sin "sin(x)") 640 480
 --
--- renderableToWindow (toRenderable $ plot [0,1,3,4,8]] [12,15,1,5,8] "o" "points") 640 480
+-- plotWindow [0,1,3,4,8]] [12,15,1,5,8] "o" "points"
 --
--- renderableToWindow (toRenderable $ plot [0,0.1..10] sin "- " cos ". " cos "o") 640 480
+-- plotPDF "foo.pdf" [0,0.1..10] sin "- " cos ". " cos "o"
+--
+-- plotPS "foo.ps" [0,0.1..10] (sin.exp) "- " (sin.exp) "o"
 -----------------------------------------------------------------------------
-module Graphics.Rendering.Chart.Simple( plot, PlotKind(..) ) where
+module Graphics.Rendering.Chart.Simple( plot, PlotKind(..),
+                                        plotWindow, plotPDF, plotPS
+                                      ) where
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Gtk
@@ -100,22 +109,55 @@ uplot us = iplot $ nameDoubles $ evalfuncs us
                                      (ks',uus') -> (ks++ks',uus')
           grabName uus = ([],uus)
 
--- | The main function.  The idea behind PlotType is shamelessly copied
--- from Text.Printf (and is not exported).  All you need to know is that
--- your arguments need to be in class PlotArg.  And PlotArg consists of
--- functions and [Double] and String and PlotKind or [PlotKind].
+-- | The main plotting function.  The idea behind PlotType is shamelessly
+-- copied from Text.Printf (and is not exported).  All you need to know is
+-- that your arguments need to be in class PlotArg.  And PlotArg consists
+-- of functions and [Double] and String and PlotKind or [PlotKind].
 
 plot :: PlotType a => a
 plot = pl []
-
 class PlotType t where
     pl :: [UPlot] -> t
-
 instance (PlotArg a, PlotType r) => PlotType (a -> r) where
     pl args = \ a -> pl (toUPlot a : args)
-
 instance PlotType Layout1 where
     pl args = uplot (reverse args)
+
+-- | Display a plot on the screen.
+
+plotWindow :: PlotWindowType a => a
+plotWindow = plw []
+class PlotWindowType t where
+    plw :: [UPlot] -> t
+instance (PlotArg a, PlotWindowType r) => PlotWindowType (a -> r) where
+    plw args = \ a -> plw (toUPlot a : args)
+instance PlotWindowType (IO a) where
+    plw args = do renderableToWindow (toRenderable $ uplot (reverse args)) 640 480
+                  return undefined
+
+-- | Save a plot as a PDF file.
+
+plotPDF :: PlotPDFType a => String -> a
+plotPDF fn = pld fn []
+class PlotPDFType t where
+    pld :: FilePath -> [UPlot] -> t
+instance (PlotArg a, PlotPDFType r) => PlotPDFType (a -> r) where
+    pld fn args = \ a -> pld fn (toUPlot a : args)
+instance PlotPDFType (IO a) where
+    pld fn args = do renderableToPDFFile (toRenderable $ uplot (reverse args)) 640 480 fn
+                     return undefined
+
+-- | Save a plot as a postscript file.
+
+plotPS :: PlotPSType a => String -> a
+plotPS fn = pls fn []
+class PlotPSType t where
+    pls :: FilePath -> [UPlot] -> t
+instance (PlotArg a, PlotPSType r) => PlotPSType (a -> r) where
+    pls fn args = \ a -> pls fn (toUPlot a : args)
+instance PlotPSType (IO a) where
+    pls fn args = do renderableToPSFile (toRenderable $ uplot (reverse args)) 640 480 fn
+                     return undefined
 
 data UPlot = UString String | UDoubles [Double] | UFunction (Double -> Double)
            | UKind [PlotKind]
