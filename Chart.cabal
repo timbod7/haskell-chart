@@ -9,9 +9,15 @@ Homepage: http://www.dockerz.net/software/chart.html
 Synopsis: A library for generating 2D Charts and Plots
 Description: A library for generating 2D Charts and Plots, based upon the cairo graphics library.
 Category: Graphics
-Cabal-Version: >= 1.2
-
-Extra-Source-Files: tests/test.hs, tests/Prices.hs
+Build-depends: base, gtk >= 0.9.11, cairo >= 0.9.11
+Exposed-modules:
+	Graphics.Rendering.Chart,
+	Graphics.Rendering.Chart.Gtk,
+	Graphics.Rendering.Chart.Types,
+	Graphics.Rendering.Chart.Renderable,
+	Graphics.Rendering.Chart.Axis,
+	Graphics.Rendering.Chart.Layout,
+	Graphics.Rendering.Chart.Plot
 
 flag splitbase
   description: Choose the new smaller, split-up base package.
