@@ -119,7 +119,7 @@ plot = pl []
 class PlotType t where
     pl :: [UPlot] -> t
 instance (PlotArg a, PlotType r) => PlotType (a -> r) where
-    pl args = \ a -> pl (toUPlot a : args)
+    pl args = \ a -> pl (toUPlot a ++ args)
 instance PlotType Layout1 where
     pl args = uplot (reverse args)
 
@@ -130,7 +130,7 @@ plotWindow = plw []
 class PlotWindowType t where
     plw :: [UPlot] -> t
 instance (PlotArg a, PlotWindowType r) => PlotWindowType (a -> r) where
-    plw args = \ a -> plw (toUPlot a : args)
+    plw args = \ a -> plw (toUPlot a ++ args)
 instance PlotWindowType (IO a) where
     plw args = do renderableToWindow (toRenderable $ uplot (reverse args)) 640 480
                   return undefined
@@ -142,7 +142,7 @@ plotPDF fn = pld fn []
 class PlotPDFType t where
     pld :: FilePath -> [UPlot] -> t
 instance (PlotArg a, PlotPDFType r) => PlotPDFType (a -> r) where
-    pld fn args = \ a -> pld fn (toUPlot a : args)
+    pld fn args = \ a -> pld fn (toUPlot a ++ args)
 instance PlotPDFType (IO a) where
     pld fn args = do renderableToPDFFile (toRenderable $ uplot (reverse args)) 640 480 fn
                      return undefined
@@ -154,7 +154,7 @@ plotPS fn = pls fn []
 class PlotPSType t where
     pls :: FilePath -> [UPlot] -> t
 instance (PlotArg a, PlotPSType r) => PlotPSType (a -> r) where
-    pls fn args = \ a -> pls fn (toUPlot a : args)
+    pls fn args = \ a -> pls fn (toUPlot a ++ args)
 instance PlotPSType (IO a) where
     pls fn args = do renderableToPSFile (toRenderable $ uplot (reverse args)) 640 480 fn
                      return undefined
@@ -163,25 +163,28 @@ data UPlot = UString String | UDoubles [Double] | UFunction (Double -> Double)
            | UKind [PlotKind]
 
 class PlotArg a where
-    toUPlot :: a -> UPlot
+    toUPlot :: a -> [UPlot]
 
 instance IsPlot p => PlotArg [p] where
     toUPlot = toUPlot'
 
 instance (Real a, Real b, Fractional a, Fractional b) => PlotArg (a -> b) where
-    toUPlot f = UFunction (realToFrac . f . realToFrac)
+    toUPlot f = [UFunction (realToFrac . f . realToFrac)]
 
 instance PlotArg PlotKind where
-    toUPlot = UKind . (:[])
+    toUPlot = (:[]) . UKind . (:[])
 
 class IsPlot c where
-    toUPlot' :: [c] -> UPlot
+    toUPlot' :: [c] -> [UPlot]
 
 instance IsPlot PlotKind where
-    toUPlot' = UKind
+    toUPlot' = (:[]) . UKind
 
 instance IsPlot Double where
-    toUPlot' = UDoubles
+    toUPlot' = (:[]) . UDoubles
 
 instance IsPlot Char where
-    toUPlot' = UString
+    toUPlot' = (:[]) . UString
+
+instance IsPlot p => IsPlot [p] where
+    toUPlot' = reverse . concatMap toUPlot'
