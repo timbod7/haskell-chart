@@ -30,7 +30,7 @@
 --
 -- plotPS "foo.ps" [0,0.1..10] (sin.exp) "- " (sin.exp) "o"
 -----------------------------------------------------------------------------
-module Graphics.Rendering.Chart.Simple( plot, PlotKind(..),
+module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                         plotWindow, plotPDF, plotPS
                                       ) where
 
@@ -42,10 +42,17 @@ styleColor f ind = case colorSequence !! ind of (r,g,b) -> f r g b
     where colorSequence = cycle [(0,0,1),(1,0,0),(0,1,0),(1,1,0),(0,1,1),(1,0,1),(0,0,0)]
 
 iplot :: [InternalPlot] -> Layout1
-iplot (IP xs kxs:yss) = defaultLayout1 {
-        layout1_plots = zipWith toplot yss [1..]
+iplot foobar = defaultLayout1 {
+        layout1_plots = zipWith toplot (ip foobar) [1..]
     }
-    where toplot (IP ys yks) ind = (name yks, HA_Bottom, VA_Left, p)
+    where ip (xs@(IPX _ _):xyss) = map (\ys -> (xs,ys)) yss ++ ip rest
+              where yss = takeWhile isIPY xyss
+                    rest = dropWhile isIPY xyss
+          ip (_:xyss) = ip xyss
+          ip [] = []
+          isIPY (IPY _ _) = True
+          isIPY _ = False
+          toplot (IPX xs _, IPY ys yks) ind = (name yks, HA_Bottom, VA_Left, p)
               where vs = zipWith (\x y -> Point x y) xs ys
                     p | Solid `elem` yks = toPlot $ defaultPlotLines {
                           plot_lines_values = [vs],
@@ -87,17 +94,24 @@ str2k n = Name n
 -- | Type to define a few simple properties of each plot.
 data PlotKind = Name String | FilledCircle | LittleDot | Dashed | Dotted | Solid
               deriving ( Eq, Show, Ord )
-data InternalPlot = IP [Double] [PlotKind]
+data InternalPlot = IPY [Double] [PlotKind] | IPX [Double] [PlotKind]
 
 uplot :: [UPlot] -> Layout1
 uplot us = iplot $ nameDoubles $ evalfuncs us
     where nameDoubles :: [UPlot] -> [InternalPlot]
+          nameDoubles (X xs:uus) = case grabName uus of
+                                     (ks,uus') -> IPX xs ks : nameDoubles uus'
           nameDoubles (UDoubles xs:uus) = case grabName uus of
-                                          (ks,uus') -> IP xs ks : nameDoubles uus'
+                                          (ks,uus') -> IPY xs ks : nameDoubles uus'
           nameDoubles (_:uus) = nameDoubles uus
           nameDoubles [] = []
           evalfuncs :: [UPlot] -> [UPlot]
-          evalfuncs (UDoubles xs:uus) = UDoubles xs : map ef uus
+          evalfuncs (UDoubles xs:uus) = X xs : map ef (takeWhile (not.isX) uus)
+                                        ++ evalfuncs (dropWhile (not.isX) uus)
+              where ef (UFunction f) = UDoubles (map f xs)
+                    ef u = u
+          evalfuncs (X xs:uus) = X xs : map ef (takeWhile (not.isX) uus)
+                                 ++ evalfuncs (dropWhile (not.isX) uus)
               where ef (UFunction f) = UDoubles (map f xs)
                     ef u = u
           evalfuncs (u:uus) = u : evalfuncs uus
@@ -108,6 +122,8 @@ uplot us = iplot $ nameDoubles $ evalfuncs us
           grabName (UKind ks:uus) = case grabName uus of
                                      (ks',uus') -> (ks++ks',uus')
           grabName uus = ([],uus)
+          isX (X _) = True
+          isX _ = False
 
 -- | The main plotting function.  The idea behind PlotType is shamelessly
 -- copied from Text.Printf (and is not exported).  All you need to know is
@@ -160,7 +176,10 @@ instance PlotPSType (IO a) where
                      return undefined
 
 data UPlot = UString String | UDoubles [Double] | UFunction (Double -> Double)
-           | UKind [PlotKind]
+           | UKind [PlotKind] | X [Double]
+
+xcoords :: [Double] -> UPlot
+xcoords = X
 
 class PlotArg a where
     toUPlot :: a -> [UPlot]
@@ -170,6 +189,9 @@ instance IsPlot p => PlotArg [p] where
 
 instance (Real a, Real b, Fractional a, Fractional b) => PlotArg (a -> b) where
     toUPlot f = [UFunction (realToFrac . f . realToFrac)]
+
+instance PlotArg UPlot where
+    toUPlot = (:[])
 
 instance PlotArg PlotKind where
     toUPlot = (:[]) . UKind . (:[])

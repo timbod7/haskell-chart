@@ -8,7 +8,7 @@ main = do let xs = [0,0.1..1] :: [Double]
           let pp :: Layout1
               pp = plot xs sin "foobar" cos "o" (sin.sin.cos) "." id "- " (const 0.5)
                    [0.1,0.7,0.5::Double] Dashed
-          plotWindow xs sin
+          plotWindow xs sin (xcoords [0,0.1..1.5]) cos
           plotPDF "test_simple.pdf" xs sin (cos.sin) "."
           plotPS "test_simple.ps" xs sin (sin.cos) "- "
           renderableToWindow (toRenderable pp) 640 480
