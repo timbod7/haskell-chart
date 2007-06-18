@@ -43,7 +43,7 @@ styleColor f ind = case colorSequence !! ind of (r,g,b) -> f r g b
 
 iplot :: [InternalPlot] -> Layout1
 iplot foobar = defaultLayout1 {
-        layout1_plots = zipWith toplot (ip foobar) [1..]
+        layout1_plots = zipWith toplot (ip foobar) [0..]
     }
     where ip (xs@(IPX _ _):xyss) = map (\ys -> (xs,ys)) yss ++ ip rest
               where yss = takeWhile isIPY xyss
