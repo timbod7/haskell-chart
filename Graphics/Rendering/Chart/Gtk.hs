@@ -15,7 +15,8 @@ import Graphics.Rendering.Chart.Renderable
 
 renderableToWindow :: Renderable -> Int -> Int -> IO ()
 renderableToWindow chart windowWidth windowHeight = do
-    G.initGUI
+    G.unsafeInitGUIForThreadedRTS
+    -- G.initGUI
     window <- G.windowNew
     canvas <- G.drawingAreaNew
     -- fix size

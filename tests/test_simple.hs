@@ -1,3 +1,5 @@
+#!/usr/bin/runhaskell -O0
+
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Simple
 import Graphics.Rendering.Chart.Gtk
