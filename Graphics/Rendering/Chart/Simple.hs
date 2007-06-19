@@ -53,7 +53,7 @@ iplot foobar = defaultLayout1 {
           isIPY (IPY _ _) = True
           isIPY _ = False
           toplot (IPX xs _, IPY ys yks) ind = (name yks, HA_Bottom, VA_Left, p)
-              where vs = zipWith (\x y -> Point x y) xs ys
+              where vs = map (\(x,y) -> Point x y) $ filter isOkay $ zip xs ys
                     p | Solid `elem` yks = toPlot $ defaultPlotLines {
                           plot_lines_values = [vs],
                           plot_lines_style = solidLine 1 `styleColor` ind
@@ -78,6 +78,7 @@ iplot foobar = defaultLayout1 {
                           plot_lines_values = [vs],
                           plot_lines_style = solidLine 1 `styleColor` ind
                         }
+          isOkay (_,n) = not (isNaN n || isInfinite n)
 
 name :: [PlotKind] -> String
 name (Name s:_) = s
