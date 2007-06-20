@@ -237,8 +237,9 @@ autoAxis transform (rlabelvs, rtickvs) a = Just axis
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
 autoScaledAxis :: Axis -> AxisFn
-autoScaledAxis a ps = autoAxis vmap (linearTicks (range ps)) a
+autoScaledAxis a ps0 = autoAxis vmap (linearTicks (range ps)) a
   where
+    ps = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
     range [] = (0,1)
     range _  | min == max = (min-0.5,min+0.5)
@@ -305,8 +306,9 @@ logTicks (low,high) = (major,minor)
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
 autoScaledLogAxis :: Axis -> AxisFn
-autoScaledLogAxis a ps = autoAxis lmap (logTicks (range ps)) a
+autoScaledLogAxis a ps0 = autoAxis lmap (logTicks (range ps)) a
   where
+    ps = filter isValidNumber ps0
     (min, max) = (minimum ps,maximum ps)
     range [] = (3,30)
     range _  | min == max = (min/3,max*3)

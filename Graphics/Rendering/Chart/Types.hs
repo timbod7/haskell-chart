@@ -207,3 +207,4 @@ solidFillStyle r g b = CairoFillStyle fn
 defaultPointStyle = filledCircles 1 1 1 1
 defaultFontStyle = CairoFontStyle (return ())
 
+isValidNumber v = not (isNaN v) && not (isInfinite v)
