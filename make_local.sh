@@ -9,8 +9,3 @@ fi
 
 (cd tests; rm *.o)
 (cd tests; ghc --make -package Chart test.hs)
-(cd tests; ghc --make -package Chart test2.hs)
-(cd tests; ghc --make -package Chart test3.hs)
-(cd tests; ghc --make -package Chart test4.hs)
-(cd tests; ghc --make -package Chart test5.hs)
-(cd tests; ghc --make -package Chart test6.hs)
