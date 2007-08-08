@@ -6,7 +6,8 @@ Copyright: Tim Docker, 2006
 Author: Tim Docker <tim@dockerz.net>
 Maintainer: Tim Docker <tim@dockerz.net>
 Homepage: http://www.dockerz.net/software/chart.html
-Description: A library for generating 2D Charts and Plots
+Synopsis: A library for generating 2D Charts and Plots
+Description: A library for generating 2D Charts and Plots, based upon the cairo graphics library.
 Category: Graphics
 Build-depends: base, gtk >= 0.9.11, cairo >= 0.9.11
 Exposed-modules:
