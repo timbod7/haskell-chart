@@ -31,5 +31,5 @@ library
         Graphics.Rendering.Chart.Axis,
         Graphics.Rendering.Chart.Layout,
         Graphics.Rendering.Chart.Plot
-	Graphics.Rendering.Chart.Simple
+        Graphics.Rendering.Chart.Simple
 
