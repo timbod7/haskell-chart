@@ -218,3 +218,11 @@ instance IsPlot Char where
 
 instance IsPlot p => IsPlot [p] where
     toUPlot' = reverse . concatMap toUPlot'
+
+instance (IsPlot p, IsPlot q, IsPlot r) => IsPlot (p,q,r) where
+    toUPlot' = reverse . concatMap f
+        where f (p,q,r) = toUPlot' [p] ++ toUPlot' [q] ++ toUPlot' [r]
+
+instance (IsPlot p, IsPlot q) => IsPlot (p,q) where
+    toUPlot' = reverse . concatMap f
+        where f (p,q) = toUPlot' [p] ++ toUPlot' [q]
