@@ -28,7 +28,7 @@
 --
 -- plotPDF "foo.pdf" [0,0.1..10] sin "- " cos ". " cos "o"
 --
--- plotPS "foo.ps" [0,0.1..10] (sin.exp) "- " (sin.exp) "o"
+-- plotPS "foo.ps" [0,0.1..10] (sin.exp) "- " (sin.exp) "o-"
 -----------------------------------------------------------------------------
 module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                         plotWindow, plotPDF, plotPS
@@ -81,13 +81,17 @@ name (Name s:_) = s
 name (_:ks) = name ks
 name [] = ""
 
-str2k :: String -> PlotKind
-str2k "o" = FilledCircle
-str2k "." = LittleDot
-str2k "- " = Dashed
-str2k ". " = Dotted
-str2k "-" = Solid
-str2k n = Name n
+str2k :: String -> [PlotKind]
+str2k ". " = [Dotted]
+str2k ('o':r) = case str2k r of
+                [Name _] -> [FilledCircle]
+                x -> FilledCircle:x
+str2k ('.':r) = case str2k r of
+                [Name _] -> [LittleDot]
+                x -> LittleDot:x
+str2k "- " = [Dashed]
+str2k "-" = [Solid]
+str2k n = [Name n]
 
 -- | Type to define a few simple properties of each plot.
 data PlotKind = Name String | FilledCircle | LittleDot | Dashed | Dotted | Solid
@@ -116,7 +120,7 @@ uplot us = iplot $ nameDoubles $ evalfuncs us
           evalfuncs [] = []
           grabName :: [UPlot] -> ([PlotKind],[UPlot])
           grabName (UString n:uus) = case grabName uus of
-                                     (ks,uus') -> (str2k n:ks,uus')
+                                     (ks,uus') -> (str2k n++ks,uus')
           grabName (UKind ks:uus) = case grabName uus of
                                      (ks',uus') -> (ks++ks',uus')
           grabName uus = ([],uus)
