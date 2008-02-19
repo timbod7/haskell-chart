@@ -73,6 +73,9 @@ iplot foobar = defaultLayout1 {
                     plotas FilledCircle = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
                                             plot_points_style=filledCircles 7 `styleColor` ind }
+                    plotas HollowCircle = Just $ toPlot $ defaultPlotPoints
+                                          { plot_points_values = vs,
+                                            plot_points_style=hollowCircles 7 1 `styleColor` ind }
                     plotas _ = Nothing
           isOkay (_,n) = not (isNaN n || isInfinite n)
 
@@ -83,9 +86,12 @@ name [] = ""
 
 str2k :: String -> [PlotKind]
 str2k ". " = [Dotted]
-str2k ('o':r) = case str2k r of
+str2k ('@':r) = case str2k r of
                 [Name _] -> [FilledCircle]
                 x -> FilledCircle:x
+str2k ('o':r) = case str2k r of
+                [Name _] -> [HollowCircle]
+                x -> HollowCircle:x
 str2k ('.':r) = case str2k r of
                 [Name _] -> [LittleDot]
                 x -> LittleDot:x
@@ -94,7 +100,7 @@ str2k "-" = [Solid]
 str2k n = [Name n]
 
 -- | Type to define a few simple properties of each plot.
-data PlotKind = Name String | FilledCircle | LittleDot | Dashed | Dotted | Solid
+data PlotKind = Name String | FilledCircle | HollowCircle | LittleDot | Dashed | Dotted | Solid
               deriving ( Eq, Show, Ord )
 data InternalPlot = IPY [Double] [PlotKind] | IPX [Double] [PlotKind]
 
