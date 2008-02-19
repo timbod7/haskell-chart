@@ -34,6 +34,8 @@ module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                         plotWindow, plotPDF, plotPS
                                       ) where
 
+import Data.Maybe ( catMaybes )
+
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Gtk
 
@@ -43,7 +45,7 @@ styleColor f ind = case colorSequence !! ind of (r,g,b) -> f r g b
 
 iplot :: [InternalPlot] -> Layout1
 iplot foobar = defaultLayout1 {
-        layout1_plots = zipWith toplot (ip foobar) [0..]
+        layout1_plots = concat $ zipWith toplot (ip foobar) [0..]
     }
     where ip (xs@(IPX _ _):xyss) = map (\ys -> (xs,ys)) yss ++ ip rest
               where yss = takeWhile isIPY xyss
@@ -52,32 +54,26 @@ iplot foobar = defaultLayout1 {
           ip [] = []
           isIPY (IPY _ _) = True
           isIPY _ = False
-          toplot (IPX xs _, IPY ys yks) ind = (name yks, HA_Bottom, VA_Left, p)
+          toplot (IPX xs _, IPY ys yks) ind = map (\z -> (name yks, HA_Bottom, VA_Left, z)) plots
               where vs = map (\(x,y) -> Point x y) $ filter isOkay $ zip xs ys
-                    p | Solid `elem` yks = toPlot $ defaultPlotLines {
-                          plot_lines_values = [vs],
-                          plot_lines_style = solidLine 1 `styleColor` ind
-                        }
-                      | Dashed `elem` yks = toPlot $ defaultPlotLines {
-                          plot_lines_values = [vs],
-                          plot_lines_style = dashedLine 1 [10, 10] `styleColor` ind
-                        }
-                      | Dotted `elem` yks = toPlot $ defaultPlotLines {
-                          plot_lines_values = [vs],
-                          plot_lines_style = dashedLine 1 [1, 11] `styleColor` ind
-                        }
-                      | FilledCircle `elem` yks = toPlot $ defaultPlotPoints {
-                          plot_points_values = vs,
-                          plot_points_style=filledCircles 7 `styleColor` ind
-                        }
-                      | FilledCircle `elem` yks = toPlot $ defaultPlotPoints {
-                          plot_points_values = vs,
-                          plot_points_style=filledCircles 2 `styleColor` ind
-                        }
-                      | otherwise = toPlot $ defaultPlotLines {
-                          plot_lines_values = [vs],
-                          plot_lines_style = solidLine 1 `styleColor` ind
-                        }
+                    plots = case catMaybes $ map plotas yks of
+                            [] -> [toPlot $ defaultPlotLines
+                                   { plot_lines_values = [vs],
+                                     plot_lines_style = solidLine 1 `styleColor` ind }]
+                            xs -> xs
+                    plotas Solid = Just $ toPlot $ defaultPlotLines
+                                   { plot_lines_values = [vs],
+                                     plot_lines_style = solidLine 1 `styleColor` ind }
+                    plotas Dashed = Just $ toPlot $ defaultPlotLines
+                                   { plot_lines_values = [vs],
+                                     plot_lines_style = dashedLine 1 [10,10] `styleColor` ind }
+                    plotas Dotted = Just $ toPlot $ defaultPlotLines
+                                   { plot_lines_values = [vs],
+                                     plot_lines_style = dashedLine 1 [1,11] `styleColor` ind }
+                    plotas FilledCircle = Just $ toPlot $ defaultPlotPoints
+                                          { plot_points_values = vs,
+                                            plot_points_style=filledCircles 7 `styleColor` ind }
+                    plotas _ = Nothing
           isOkay (_,n) = not (isNaN n || isInfinite n)
 
 name :: [PlotKind] -> String
@@ -90,6 +86,7 @@ str2k "o" = FilledCircle
 str2k "." = LittleDot
 str2k "- " = Dashed
 str2k ". " = Dotted
+str2k "-" = Solid
 str2k n = Name n
 
 -- | Type to define a few simple properties of each plot.
