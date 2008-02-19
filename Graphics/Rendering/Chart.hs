@@ -38,6 +38,7 @@ module Graphics.Rendering.Chart(
     defaultPlotFillBetween,
     defaultLayout1,
     filledCircles,
+    hollowCircles,
     solidLine,
     dashedLine,
     solidFillStyle,

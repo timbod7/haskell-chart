@@ -160,6 +160,22 @@ filledCircles radius r g b = CairoPointStyle rf
 	C.arc x y radius 0 360
 	C.fill
 
+hollowCircles ::
+     Double -- ^ radius of circle
+  -> Double -- ^ thickness of line
+  -> Double -- ^ red component of colour
+  -> Double -- ^ green component of colour
+  -> Double -- ^ blue component of colour
+  -> CairoPointStyle
+hollowCircles radius w r g b = CairoPointStyle rf
+  where
+    rf (Point x y) = do
+        C.setLineWidth w
+	C.setSourceRGB r g b
+        C.newPath
+	C.arc x y radius 0 360
+	C.stroke
+
 solidLine ::
      Double -- ^ width of line
   -> Double -- ^ red component of colour
