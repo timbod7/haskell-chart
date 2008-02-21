@@ -176,6 +176,107 @@ hollowCircles radius w r g b = CairoPointStyle rf
 	C.arc x y radius 0 360
 	C.stroke
 
+hollowPolygon ::
+     Double -- ^ radius of circle
+  -> Double -- ^ thickness of line
+  -> Int    -- ^ Number of vertices
+  -> Bool   -- ^ Is right-side-up?
+  -> Double -- ^ red component of colour
+  -> Double -- ^ green component of colour
+  -> Double -- ^ blue component of colour
+  -> CairoPointStyle
+hollowPolygon radius w sides isrot r g b = CairoPointStyle rf
+  where rf (Point x y) =
+            do C.setLineWidth w
+	       C.setSourceRGB r g b
+               C.newPath
+               let intToAngle n = if isrot
+                                  then fromIntegral n * 2*pi / fromIntegral sides
+                                  else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
+                   angles = map intToAngle [0 .. sides-1]
+                   (p:ps) = map (\a -> Point (x + radius * sin a) (y + radius * cos a)) angles
+               moveTo p
+               mapM_ lineTo (ps++[p])
+	       C.stroke
+
+filledPolygon ::
+     Double -- ^ radius of circle
+  -> Int    -- ^ Number of vertices
+  -> Bool   -- ^ Is right-side-up?
+  -> Double -- ^ red component of colour
+  -> Double -- ^ green component of colour
+  -> Double -- ^ blue component of colour
+  -> CairoPointStyle
+filledPolygon radius sides isrot r g b = CairoPointStyle rf
+  where rf (Point x y) =
+            do C.setSourceRGB r g b
+               C.newPath
+               let intToAngle n = if isrot
+                                  then fromIntegral n * 2*pi / fromIntegral sides
+                                  else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
+                   angles = map intToAngle [0 .. sides-1]
+                   (p:ps) = map (\a -> Point (x + radius * sin a) (y + radius * cos a)) angles
+               moveTo p
+               mapM_ lineTo (ps++[p])
+	       C.fill
+
+plusses ::
+     Double -- ^ radius of circle
+  -> Double -- ^ thickness of line
+  -> Double -- ^ red component of colour
+  -> Double -- ^ green component of colour
+  -> Double -- ^ blue component of colour
+  -> CairoPointStyle
+plusses radius w r g b = CairoPointStyle rf
+  where rf (Point x y) = do C.setLineWidth w
+	                    C.setSourceRGB r g b
+                            C.newPath
+                            C.moveTo (x+radius) y
+                            C.lineTo (x-radius) y
+                            C.moveTo x (y-radius)
+                            C.lineTo x (y+radius)
+	                    C.stroke
+
+exes ::
+     Double -- ^ radius of circle
+  -> Double -- ^ thickness of line
+  -> Double -- ^ red component of colour
+  -> Double -- ^ green component of colour
+  -> Double -- ^ blue component of colour
+  -> CairoPointStyle
+exes radius w r g b = CairoPointStyle rf
+  where rad = radius / sqrt 2
+        rf (Point x y) = do C.setLineWidth w
+	                    C.setSourceRGB r g b
+                            C.newPath
+                            C.moveTo (x+rad) (y+rad)
+                            C.lineTo (x-rad) (y-rad)
+                            C.moveTo (x+rad) (y-rad)
+                            C.lineTo (x-rad) (y+rad)
+	                    C.stroke
+
+stars ::
+     Double -- ^ radius of circle
+  -> Double -- ^ thickness of line
+  -> Double -- ^ red component of colour
+  -> Double -- ^ green component of colour
+  -> Double -- ^ blue component of colour
+  -> CairoPointStyle
+stars radius w r g b = CairoPointStyle rf
+  where rad = radius / sqrt 2
+        rf (Point x y) = do C.setLineWidth w
+	                    C.setSourceRGB r g b
+                            C.newPath
+                            C.moveTo (x+radius) y
+                            C.lineTo (x-radius) y
+                            C.moveTo x (y-radius)
+                            C.lineTo x (y+radius)
+                            C.moveTo (x+rad) (y+rad)
+                            C.lineTo (x-rad) (y-rad)
+                            C.moveTo (x+rad) (y-rad)
+                            C.lineTo (x-rad) (y+rad)
+	                    C.stroke
+
 solidLine ::
      Double -- ^ width of line
   -> Double -- ^ red component of colour
