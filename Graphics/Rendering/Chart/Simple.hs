@@ -43,6 +43,11 @@ styleColor :: (Double -> Double -> Double -> a) -> Int -> a
 styleColor f ind = case colorSequence !! ind of (r,g,b) -> f r g b
     where colorSequence = cycle [(0,0,1),(1,0,0),(0,1,0),(1,1,0),(0,1,1),(1,0,1),(0,0,0)]
 
+styleSymbol :: Int -> PlotKind
+styleSymbol ind = symbolSequence !! ind
+    where symbolSequence = cycle [ Ex, HollowCircle, Triangle, DownTriangle, Square,
+                                   Diamond, Plus, Star, FilledCircle ]
+
 iplot :: [InternalPlot] -> Layout1
 iplot foobar = defaultLayout1 {
         layout1_plots = concat $ zipWith toplot (ip foobar) [0..]
@@ -72,10 +77,32 @@ iplot foobar = defaultLayout1 {
                                      plot_lines_style = dashedLine 1 [1,11] `styleColor` ind }
                     plotas FilledCircle = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=filledCircles 7 `styleColor` ind }
+                                            plot_points_style=filledCircles 4 `styleColor` ind }
                     plotas HollowCircle = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=hollowCircles 7 1 `styleColor` ind }
+                                            plot_points_style=hollowCircles 5 1 `styleColor` ind }
+                    plotas Triangle = Just $ toPlot $ defaultPlotPoints
+                                          { plot_points_values = vs,
+                                            plot_points_style=hollowPolygon 7 1 3 False `styleColor` ind }
+                    plotas DownTriangle = Just $ toPlot $ defaultPlotPoints
+                                          { plot_points_values = vs,
+                                            plot_points_style=hollowPolygon 7 1 3 True `styleColor` ind }
+                    plotas Square = Just $ toPlot $ defaultPlotPoints
+                                          { plot_points_values = vs,
+                                            plot_points_style=hollowPolygon 7 1 4 False `styleColor` ind }
+                    plotas Diamond = Just $ toPlot $ defaultPlotPoints
+                                          { plot_points_values = vs,
+                                            plot_points_style=hollowPolygon 7 1 4 True `styleColor` ind }
+                    plotas Plus = Just $ toPlot $ defaultPlotPoints
+                                          { plot_points_values = vs,
+                                            plot_points_style=plusses 7 1 `styleColor` ind }
+                    plotas Ex = Just $ toPlot $ defaultPlotPoints
+                                          { plot_points_values = vs,
+                                            plot_points_style=exes 7 1 `styleColor` ind }
+                    plotas Star = Just $ toPlot $ defaultPlotPoints
+                                          { plot_points_values = vs,
+                                            plot_points_style=stars 7 1 `styleColor` ind }
+                    plotas Symbols = plotas (styleSymbol ind)
                     plotas _ = Nothing
           isOkay (_,n) = not (isNaN n || isInfinite n)
 
@@ -86,12 +113,33 @@ name [] = ""
 
 str2k :: String -> [PlotKind]
 str2k ". " = [Dotted]
+str2k ('?':r) = case str2k r of
+                [Name _] -> [Symbols]
+                x -> Symbols:x
 str2k ('@':r) = case str2k r of
                 [Name _] -> [FilledCircle]
                 x -> FilledCircle:x
+str2k ('#':r) = case str2k r of
+                [Name _] -> [Square]
+                x -> Square:x
+str2k ('v':r) = case str2k r of
+                [Name _] -> [DownTriangle]
+                x -> DownTriangle:x
+str2k ('^':r) = case str2k r of
+                [Name _] -> [Triangle]
+                x -> Triangle:x
 str2k ('o':r) = case str2k r of
                 [Name _] -> [HollowCircle]
                 x -> HollowCircle:x
+str2k ('+':r) = case str2k r of
+                [Name _] -> [Plus]
+                x -> Plus:x
+str2k ('x':r) = case str2k r of
+                [Name _] -> [Ex]
+                x -> Ex:x
+str2k ('*':r) = case str2k r of
+                [Name _] -> [Star]
+                x -> Star:x
 str2k ('.':r) = case str2k r of
                 [Name _] -> [LittleDot]
                 x -> LittleDot:x
@@ -100,7 +148,9 @@ str2k "-" = [Solid]
 str2k n = [Name n]
 
 -- | Type to define a few simple properties of each plot.
-data PlotKind = Name String | FilledCircle | HollowCircle | LittleDot | Dashed | Dotted | Solid
+data PlotKind = Name String | FilledCircle | HollowCircle
+              | Triangle | DownTriangle | Square | Diamond | Plus | Ex | Star | Symbols
+              | LittleDot | Dashed | Dotted | Solid
               deriving ( Eq, Show, Ord )
 data InternalPlot = IPY [Double] [PlotKind] | IPX [Double] [PlotKind]
 
