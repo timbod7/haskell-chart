@@ -8,6 +8,7 @@ module Graphics.Rendering.Chart.Renderable where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
+import Data.List ( nub, partition )
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
@@ -169,7 +170,7 @@ instance ToRenderable Legend where
 
 minsizeLegend :: Legend -> C.Render RectSize
 minsizeLegend (Legend _ ls plots) = do
-    let labels = map fst plots
+    let labels = nub $ map fst plots
     lsizes <- mapM textSize labels
     lgap <- legendSpacer
     let lm = legend_margin ls
@@ -181,20 +182,24 @@ minsizeLegend (Legend _ ls plots) = do
 
 renderLegend :: Legend -> Rect -> C.Render ()
 renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
-    foldM_ rf rp1 plots
+    foldM_ rf rp1 $ join_nub plots
   where
     lm = legend_margin ls
     lps = legend_plot_size ls
 
-    rf :: Point -> (String,Plot) -> C.Render Point
-    rf p1 (label,plot) = do
+    rf :: Point -> (String,[Plot]) -> C.Render Point
+    rf p1 (label,theseplots) = do
         (w,h) <- textSize label
 	lgap <- legendSpacer
 	let p2 = (p1 `pvadd` Vector lps 0)
-        plot_render_legend plot (mkrect p1 rp1 p2 rp2)
+        mapM_ (\p -> plot_render_legend p (mkrect p1 rp1 p2 rp2)) theseplots
 	let p3 = Point (p_x p2 + lgap) (p_y rp1)
 	drawText HTA_Left VTA_Top p3 label
         return (p3 `pvadd` Vector (w+lm) 0)
+    join_nub :: [(String, a)] -> [(String, [a])]
+    join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
+                           (xs, rest) -> (x, a1:map snd xs) : join_nub rest
+    join_nub [] = []
 
 legendSpacer = do
     (lgap,_) <- textSize "X"
