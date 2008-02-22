@@ -112,40 +112,27 @@ name (_:ks) = name ks
 name [] = ""
 
 str2k :: String -> [PlotKind]
+str2k "" = []
 str2k ". " = [Dotted]
-str2k ('?':r) = case str2k r of
-                [Name _] -> [Symbols]
-                x -> Symbols:x
-str2k ('@':r) = case str2k r of
-                [Name _] -> [FilledCircle]
-                x -> FilledCircle:x
-str2k ('#':r) = case str2k r of
-                [Name _] -> [Square]
-                x -> Square:x
-str2k ('v':r) = case str2k r of
-                [Name _] -> [DownTriangle]
-                x -> DownTriangle:x
-str2k ('^':r) = case str2k r of
-                [Name _] -> [Triangle]
-                x -> Triangle:x
-str2k ('o':r) = case str2k r of
-                [Name _] -> [HollowCircle]
-                x -> HollowCircle:x
-str2k ('+':r) = case str2k r of
-                [Name _] -> [Plus]
-                x -> Plus:x
-str2k ('x':r) = case str2k r of
-                [Name _] -> [Ex]
-                x -> Ex:x
-str2k ('*':r) = case str2k r of
-                [Name _] -> [Star]
-                x -> Star:x
-str2k ('.':r) = case str2k r of
-                [Name _] -> [LittleDot]
-                x -> LittleDot:x
+str2k s@('?':_) = str2khelper s Symbols
+str2k s@('@':_) = str2khelper s FilledCircle
+str2k s@('#':_) = str2khelper s Square
+str2k s@('v':_) = str2khelper s DownTriangle
+str2k s@('^':_) = str2khelper s Triangle
+str2k s@('o':_) = str2khelper s HollowCircle
+str2k s@('+':_) = str2khelper s Plus
+str2k s@('x':_) = str2khelper s Ex
+str2k s@('*':_) = str2khelper s Star
+str2k s@('.':_) = str2khelper s LittleDot
 str2k "- " = [Dashed]
 str2k "-" = [Solid]
 str2k n = [Name n]
+
+str2khelper :: String -> PlotKind -> [PlotKind]
+str2khelper s@(_:r) x = case str2k r of
+                        [] -> [x]
+                        [Name _] -> [Name s]
+                        xs -> x:xs
 
 -- | Type to define a few simple properties of each plot.
 data PlotKind = Name String | FilledCircle | HollowCircle
