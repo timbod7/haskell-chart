@@ -232,8 +232,9 @@ class PlotArg a where
 instance IsPlot p => PlotArg [p] where
     toUPlot = toUPlot'
 
-instance (Real a, Real b, Fractional a, Fractional b) => PlotArg (a -> b) where
-    toUPlot f = [UFunction (realToFrac . f . realToFrac)]
+instance (Real a, Real b, Fractional a, Fractional b) => IsPlot (a -> b) where
+    toUPlot' = reverse . concatMap f
+        where f x = [UFunction (realToFrac . x . realToFrac)]
 
 instance PlotArg UPlot where
     toUPlot = (:[])
