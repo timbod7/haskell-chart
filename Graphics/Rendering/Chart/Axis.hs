@@ -158,8 +158,8 @@ axisMapping (AxisT et a) rect = case et of
     mapy :: Range -> Double -> Double -> Point
     mapy (yr0,yr1) x y = Point x (axis_viewport a (yr1,yr0) y)
 
-renderAxisGrid :: AxisT -> Rect -> C.Render ()
-renderAxisGrid at@(AxisT re a) rect@(Rect p1 p2) = do
+renderAxisGrid :: Rect -> AxisT -> C.Render ()
+renderAxisGrid rect@(Rect p1 p2) at@(AxisT re a) = do
     C.save
     setLineStyle (axis_grid_style a)
     mapM_ (drawGridLine re) (axis_grid a)

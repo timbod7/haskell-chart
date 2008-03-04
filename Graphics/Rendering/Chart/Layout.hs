@@ -12,6 +12,7 @@ import Graphics.Rendering.Chart.Axis
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
 import Graphics.Rendering.Chart.Renderable
+import Control.Monad
 
 data HAxis = HA_Top | HA_Bottom deriving (Eq)
 data VAxis = VA_Left | VA_Right deriving (Eq)
@@ -90,27 +91,19 @@ renderPlotArea l (Rect p1 p5) = do
     C.restore
 
     -- render the axes grids
-    rMAxisG tAxis plotRect
-    rMAxisG bAxis plotRect
-    rMAxisG lAxis plotRect
-    rMAxisG rAxis plotRect
+    maybeM () (renderAxisGrid plotRect) tAxis
+    maybeM () (renderAxisGrid plotRect) bAxis
+    maybeM () (renderAxisGrid plotRect) lAxis
+    maybeM () (renderAxisGrid plotRect) rAxis
 
     -- render the axes
-    rMAxis tAxis (mkrect p2 p1 p3 p2)
-    rMAxis bAxis (mkrect p2 p3 p3 p4)
-    rMAxis lAxis (mkrect p1 p2 p2 p3)
-    rMAxis rAxis (mkrect p3 p2 p4 p3)
+    maybeM () (\at -> render (toRenderable at) (mkrect p2 p1 p3 p2)) tAxis
+    maybeM () (\at -> render (toRenderable at) (mkrect p2 p3 p3 p4)) bAxis
+    maybeM () (\at -> render (toRenderable at) (mkrect p1 p2 p2 p3)) lAxis
+    maybeM () (\at -> render (toRenderable at) (mkrect p3 p2 p4 p3)) rAxis
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
-
-    rMAxisG :: Maybe AxisT ->  Rect -> C.Render ()
-    rMAxisG (Just at) rect = renderAxisGrid at rect
-    rMAxisG Nothing  _ = return ()
-
-    rMAxis :: Maybe AxisT ->  Rect -> C.Render ()
-    rMAxis (Just at) rect = render (toRenderable at) rect
-    rMAxis Nothing  _ = return ()
 
     rPlot :: Rect -> (String,HAxis,VAxis,Plot) -> C.Render ()
     rPlot rect (_,ha,va,p) = 
@@ -129,14 +122,14 @@ renderPlotArea l (Rect p1 p5) = do
     rPlot1 _ _ _ _ = return ()
 
 axisSizes l = do
-    w1a <- asize fst lAxis
-    h1a <- asize snd tAxis
-    w2a <- asize fst rAxis
-    h2a <- asize snd bAxis
-    (h1b,h2b) <- aohang lAxis
-    (w1b,w2b) <- aohang tAxis
-    (h1c,h2c) <- aohang rAxis
-    (w1c,w2c) <- aohang bAxis
+    w1a <- maybeM 0 (liftM fst.minsize.toRenderable) lAxis
+    h1a <- maybeM 0 (liftM snd.minsize.toRenderable) tAxis
+    w2a <- maybeM 0 (liftM fst.minsize.toRenderable) rAxis
+    h2a <- maybeM 0 (liftM snd.minsize.toRenderable) bAxis
+    (h1b,h2b) <- maybeM (0,0) axisOverhang lAxis
+    (w1b,w2b) <- maybeM (0,0) axisOverhang tAxis
+    (h1c,h2c) <- maybeM (0,0) axisOverhang rAxis
+    (w1c,w2c) <- maybeM (0,0) axisOverhang bAxis
 
     return (maximum [w1a,w1b,w1c],
 	    maximum [h1a,h1b,h1c],
@@ -150,10 +143,7 @@ axisSizes l = do
         sz <- minsize (toRenderable at)
 	return (xyfn sz)
 
-    aohang Nothing = return (0,0)
-    aohang (Just a) = axisOverhang a
-
-
+maybeM v = maybe (return v)
 getAxes :: Layout1 -> (Maybe AxisT, Maybe AxisT, Maybe AxisT, Maybe AxisT)
 getAxes l = (mk E_Bottom bAxis, mk E_Left lAxis,
 	     mk E_Top tAxis, mk E_Right rAxis)
