@@ -8,7 +8,7 @@ module Graphics.Rendering.Chart.Renderable where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
-import Data.List ( nub, partition )
+import Data.List ( nub, partition, transpose )
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
@@ -57,57 +57,38 @@ fillBackground fs r = Renderable { minsize = minsize r, render = rf }
 	render r rect
 
 vertical, horizontal :: [(Double,Renderable)] -> Renderable 
-vertical rs = Renderable { minsize = mf, render = rf }
+vertical rs = grid [1] (map fst rs) [[snd r] | r <- rs]
+horizontal rs = grid (map fst rs) [1] [[snd r | r <- rs]]
+
+grid :: [Double] -> [Double] -> [[Renderable]] -> Renderable
+grid we he rss = Renderable { minsize = mf, render = rf }
   where
     mf = do
-        (_,wmin,hmin) <- calcSizes
-	return (wmin, hmin)
+      msizes <- getSizes
+      let widths = (map.map) fst msizes
+      let heights = (map.map) snd msizes
+      return ((sum.map maximum.transpose) widths,(sum.map maximum) heights)
 
     rf (Rect p1 p2) = do
-        (sizes,wmin,hmin) <- calcSizes
-	let wactual = p_x p2 - p_x p1
-	let hextra = p_y p2 - p_y p1 - hmin
-	let etotal = sum (map fst rs)
-	let rs' = [ (wactual,h + hextra * e / etotal,r)
-		    | ((e,r),(w,h)) <- zip rs sizes ]
-	foldM_ render1 p1 rs'
+      msizes <- getSizes
+      let widths = (map maximum.(map.map) fst.transpose) msizes
+      let heights = (map maximum.(map.map) snd) msizes
+      let widths1 = allocate (p_x p2 - p_x p1 - sum widths) we widths
+      let heights1 = allocate (p_y p2 - p_y p1 - sum heights) he heights
+      let xs = scanl (+) (p_x p1) widths1
+      let ys = scanl (+) (p_y p1) heights1
+      
+      forM_ (zip3 rss ys (tail ys))  $ \(rs,y0,y1) ->
+        forM_ (zip3 rs xs (tail xs))  $ \(r,x0,x1) ->
+          render r (Rect (Point x0 y0) (Point x1 y1))
 
-    calcSizes = do
-        sizes <- mapM minsize [ r | (_,r) <- rs]
-	let wmin = maximum [ w | (w,h) <- sizes ]
-	let hmin = sum [ h | (w,h) <- sizes ]
-	return (sizes,wmin,hmin)
-    
-    render1 :: Point -> (Double,Double,Renderable) -> C.Render Point
-    render1 p (w,h,r) = do
-        render r (Rect p (p `pvadd` Vector w h))
-	return (p `pvadd` Vector 0 h)
+    getSizes = (mapM.mapM) minsize rss
 
-horizontal rs = Renderable { minsize = mf, render = rf }
+allocate :: Double -> [Double] -> [Double] -> [Double]
+allocate extra ws vs = zipWith (+) vs (extras++[0,0..])
   where
-    mf = do
-        (_,wmin,hmin) <- calcSizes
-	return (wmin, hmin)
-
-    rf (Rect p1 p2) = do
-        (sizes,wmin,hmin) <- calcSizes
-	let hactual = p_y p2 - p_y p1
-	let wextra = p_x p2 - p_x p1 - wmin
-	let etotal = sum (map fst rs)
-	let rs' = [ (w + wextra * e / etotal,hactual,r)
-		    | ((e,r),(w,h)) <- zip rs sizes ]
-	foldM_ render1 p1 rs'
-
-    calcSizes = do
-        sizes <- mapM minsize [ r | (_,r) <- rs]
-	let hmin = maximum [ h | (w,h) <- sizes ]
-	let wmin = sum [ w | (w,h) <- sizes ]
-	return (sizes,wmin,hmin)
-    
-    render1 :: Point -> (Double,Double,Renderable) -> C.Render Point
-    render1 p (w,h,r) = do
-        render r (Rect p (p `pvadd` Vector w h))
-	return (p `pvadd` Vector w 0)
+    total = sum ws 
+    extras = [ extra * v / total | v <- ws ]
 
 renderableToPNGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPNGFile chart width height path = 
@@ -216,24 +197,57 @@ defaultLegendStyle = LegendStyle {
 -- Labels
 
 label :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> String -> Renderable
-label fs hta vta s = Renderable { minsize = mf, render = rf }
+label fs hta vta = rlabel fs hta vta 0
+
+rlabel :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> Double -> String -> Renderable
+rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
     mf = do
        C.save
        setFontStyle fs
-       sz <- textSize s
+       (w,h) <- textSize s
        C.restore
-       return sz
+       let sz' = (w*acr+h*asr,w*asr+h*acr)
+       return sz'
     rf (Rect p1 p2) = do
        C.save
        setFontStyle fs
-       let p = Point (xp hta (p_x p1) (p_x p2)) (yp vta (p_y p1) (p_y p2))
-       drawText hta vta p s
+       sz@(w,h) <- textSize s
+       C.translate (xadj sz hta (p_x p1) (p_x p2)) (yadj sz vta (p_y p1) (p_y p2))
+       C.rotate rot'
+       C.moveTo (-w/2) (h/2)
+       C.showText s
        C.restore
-    xp HTA_Left x1 x2 = x1
-    xp HTA_Centre x1 x2 = (x1+x2)/2
-    xp HTA_Right x1 x2 = x2
-    yp VTA_Top y1 y2 = y2
-    yp VTA_Centre y1 y2 = (y1+y2)/2
-    yp VTA_Bottom y1 y2 = y1
+    xadj (w,h) HTA_Left x1 x2 =  x1 +(w*acr+h*asr)/2
+    xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
+    xadj (w,h) HTA_Right x1 x2 =  x2 -(w*acr+h*asr)/2
+    yadj (w,h) VTA_Top y1 y2 =  y1 +(w*asr+h*acr)/2
+    yadj (w,h) VTA_Centre y1 y2 = (y1+y2)/2
+    yadj (w,h) VTA_Bottom y1 y2 =  y2 - (w*asr+h*acr)/2
 
+    rot' = rot / 180 * pi
+    (cr,sr) = (cos rot', sin rot')
+    (acr,asr) = (abs cr, abs sr)
+
+-- a quick test to display labels with all combinations
+-- of anchors
+labelTest rot = renderableToPNGFile r 800 800 "labels.png"
+  where
+    r = fillBackground white $ grid [1,1,1] [1,1,1] ls
+    ls = [ [addMargins (20,20,20,20) $ fillBackground blue $ crossHairs $ rlabel fs h v rot s | h <- hs] | v <- vs ]
+    s = "Labels"
+    hs = [HTA_Left, HTA_Centre, HTA_Right]
+    vs = [VTA_Top, VTA_Centre, VTA_Bottom]
+    white = solidFillStyle 1 1 1
+    blue = solidFillStyle 0.8 0.8 1
+    fs = fontStyle "sans" 30 C.FontSlantNormal C.FontWeightBold
+    crossHairs r =Renderable {
+      minsize = minsize r,
+      render = \rect@(Rect (Point x1 y1) (Point x2 y2)) -> do
+          let xa = (x1 + x2) / 2
+          let ya = (y1 + y2) / 2
+          strokeLines [Point x1 ya,Point x2 ya]
+          strokeLines [Point xa y1,Point xa y2]
+          render r rect
+    }
+    

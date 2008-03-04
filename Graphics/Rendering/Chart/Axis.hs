@@ -22,6 +22,10 @@ data Axis =  Axis {
     -- cordinates.
     axis_viewport :: Range -> Double -> Double,
 
+    axis_title :: String,
+    -- | The title string to be displayed on the axis. An
+    -- empty string means no title.
+
     -- | The tick marks on the axis as pairs.
     -- The first element is the position on the axis
     -- (in viewport units) and the second element is the
@@ -42,6 +46,7 @@ data Axis =  Axis {
     -- | How far the labels are to be drawn from the axis.
     axis_label_gap :: Double,
 
+    axis_title_style :: CairoFontStyle,
     axis_line_style :: CairoLineStyle,
     axis_label_style :: CairoFontStyle,
     axis_grid_style :: CairoLineStyle
@@ -330,7 +335,7 @@ linkedAxes' :: AxisFn -> AxesFn
 linkedAxes' af pts1 pts2 = (a,removeLabels a)
   where
     a  = af (pts1++pts2)
-    removeLabels = liftM (\a -> a{axis_labels = []})
+    removeLabels = liftM (\a -> a{axis_title="",axis_labels = []})
 
 ----------------------------------------------------------------------
 
@@ -339,10 +344,12 @@ defaultGridLineStyle = dashedLine 1 [5,5] 0.8 0.8 0.8
 
 defaultAxis = Axis {
     axis_viewport = vmap (0,1),
+    axis_title = "",
     axis_ticks = [(0,10),(1,10)],
     axis_labels = [],
     axis_grid = [0.0,0.5,1.0],
-    axis_label_gap =10,
+    axis_label_gap = 10,
+    axis_title_style = defaultFontStyle,
     axis_line_style = defaultAxisLineStyle,
     axis_label_style = defaultFontStyle,
     axis_grid_style = defaultGridLineStyle

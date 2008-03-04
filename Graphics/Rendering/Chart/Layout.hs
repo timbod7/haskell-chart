@@ -35,26 +35,39 @@ instance ToRenderable Layout1 where
 layout1ToRenderable l =
     fillBackground (layout1_background l) (
         vertical [
-            (0, addMargins (lm/2,0,0,0)    (mkTitle l)),
-	    (1, addMargins (lm/2,lm,lm,lm) (plotArea l)),
-	    (0, horizontal [ (0, mkLegend VA_Left l), (1,emptyRenderable), (0, mkLegend VA_Right l) ] )
+            (0, addMargins (lm/2,0,0,0)    title),
+	    (1, addMargins (lm,lm,lm,lm) plotArea),
+	    (0, horizontal [ (0, mkLegend VA_Left), (1,er), (0, mkLegend VA_Right) ] )
             ]
         )
   where
     lm = layout1_margin l
 
-    mkTitle l = label (layout1_title_style l) HTA_Centre VTA_Centre (layout1_title l)
+    title = label (layout1_title_style l) HTA_Centre VTA_Centre (layout1_title l)
 
-    mkLegend va l = case (layout1_legend l) of
-        Nothing -> emptyRenderable
+    mkLegend va = case (layout1_legend l) of
+        Nothing -> er
         (Just ls) -> case [(s,p) | (s,_,va',p) <- layout1_plots l, va' == va, not (null s)] of
- 	    [] -> emptyRenderable
+ 	    [] -> er
 	    ps -> addMargins (0,lm,lm,0) (toRenderable (Legend True ls ps))
  
-    plotArea l = Renderable {
+    (ba,la,ta,ra) = getAxes l
+    plotArea = grid [0,1,0] [0,1,0] [ [er,        atitle ta, er       ],
+                                      [atitle la, pa,        atitle ra],
+                                      [er,        atitle ba, er       ] ]
+
+    atitle Nothing = emptyRenderable
+    atitle (Just (AxisT e a)) = rlabel (axis_title_style a) ha va rot (axis_title a)
+      where (ha,va,rot) = case e of E_Top -> (HTA_Centre,VTA_Bottom,0)
+                                    E_Bottom -> (HTA_Centre,VTA_Top,0)
+                                    E_Left -> (HTA_Right,VTA_Centre,90)
+                                    E_Right -> (HTA_Left,VTA_Centre,90)
+
+    pa = Renderable {
         minsize=minsizePlotArea l,
         render=renderPlotArea l
     }
+    er = emptyRenderable
 
 minsizePlotArea l = do
     (w1,h1,w2,h2) <- axisSizes l

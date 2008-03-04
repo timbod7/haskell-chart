@@ -124,8 +124,8 @@ test4 otype = return layout
 
     layout = defaultLayout1 {
         layout1_title="Log/Linear Example",			   
-        layout1_horizontal_axes=linkedAxes (autoScaledAxis defaultAxis),
-	layout1_vertical_axes=linkedAxes (autoScaledLogAxis defaultAxis),
+        layout1_horizontal_axes=linkedAxes' (autoScaledAxis defaultAxis{axis_title="horizontal"}),
+	layout1_vertical_axes=linkedAxes' (autoScaledLogAxis defaultAxis{axis_title="vertical"}),
 	layout1_plots = [("values",HA_Bottom,VA_Left,(toPlot points)),
 			 ("values",HA_Bottom,VA_Left,(toPlot lines)) ]
     }
