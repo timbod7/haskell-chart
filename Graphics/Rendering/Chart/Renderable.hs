@@ -8,7 +8,7 @@ module Graphics.Rendering.Chart.Renderable where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
-import Data.List ( nub, partition, transpose )
+import Data.List ( nub, partition, transpose, sort )
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
@@ -30,8 +30,10 @@ data Renderable = Renderable {
 class ToRenderable a where
    toRenderable :: a -> Renderable
 
-emptyRenderable = Renderable {
-   minsize = return (0,0),
+emptyRenderable = spacer (0,0)
+
+spacer sz = Renderable {
+   minsize = return sz,
    render  = \_ -> return ()
 }
 
@@ -57,10 +59,18 @@ fillBackground fs r = Renderable { minsize = minsize r, render = rf }
 	render r rect
 
 vertical, horizontal :: [(Double,Renderable)] -> Renderable 
-vertical rs = grid [1] (map fst rs) [[snd r] | r <- rs]
-horizontal rs = grid (map fst rs) [1] [[snd r | r <- rs]]
+vertical rs = grid [1] (map fst rs) [[(0,snd r)] | r <- rs]
+horizontal rs = grid (map fst rs) [1] [[(0,snd r) | r <- rs]]
 
-grid :: [Double] -> [Double] -> [[Renderable]] -> Renderable
+-- | Layout multiple Renderables into a grid.
+-- Arg 1 is the weights for the allocation of extra horizontal space
+-- to columns, Arg 2 is the weights for the allocation of extra
+-- vertical space to rows, and Arg 3 is the grid of renderables to be
+-- layed out. Each element of the grid is a tuple - the first item of
+-- the tuple is the drawing priority.  Lower priorities get drawn
+-- first. Drawing order is significant when Renderables draw outside
+-- their edges.
+grid :: [Double] -> [Double] -> [[(Int,Renderable)]] -> Renderable
 grid we he rss = Renderable { minsize = mf, render = rf }
   where
     mf = do
@@ -78,11 +88,13 @@ grid we he rss = Renderable { minsize = mf, render = rf }
       let xs = scanl (+) (p_x p1) widths1
       let ys = scanl (+) (p_y p1) heights1
       
-      forM_ (zip3 rss ys (tail ys))  $ \(rs,y0,y1) ->
-        forM_ (zip3 rs xs (tail xs))  $ \(r,x0,x1) ->
-          render r (Rect (Point x0 y0) (Point x1 y1))
+      forM_ priorities $ \pr->
+        forM_ (zip3 rss ys (tail ys))  $ \(rs,y0,y1) ->
+          forM_ (zip3 rs xs (tail xs))  $ \((n,r),x0,x1) ->
+            when (n==pr) $ render r (Rect (Point x0 y0) (Point x1 y1))
 
-    getSizes = (mapM.mapM) minsize rss
+    getSizes = (mapM.mapM) (\(n,r)-> minsize r) rss
+    priorities = sort (nub ((concatMap.map) fst rss))
 
 allocate :: Double -> [Double] -> [Double] -> [Double]
 allocate extra ws vs = zipWith (+) vs (extras++[0,0..])
@@ -131,6 +143,13 @@ alignPixels = do
     -- move to centre of pixels so that stroke width of 1 is
     -- exactly one pixel 
     C.translate 0.5 0.5
+
+embedRenderable :: C.Render Renderable -> Renderable
+embedRenderable ca = Renderable {
+   minsize = do { a <- ca; minsize a },
+   render = \ r -> do { a <- ca; render a r }
+}
+
 
 ----------------------------------------------------------------------
 -- Legend
@@ -234,7 +253,7 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
 labelTest rot = renderableToPNGFile r 800 800 "labels.png"
   where
     r = fillBackground white $ grid [1,1,1] [1,1,1] ls
-    ls = [ [addMargins (20,20,20,20) $ fillBackground blue $ crossHairs $ rlabel fs h v rot s | h <- hs] | v <- vs ]
+    ls = [ [(0,addMargins (20,20,20,20) $ fillBackground blue $ crossHairs $ rlabel fs h v rot s) | h <- hs] | v <- vs ]
     s = "Labels"
     hs = [HTA_Left, HTA_Centre, HTA_Right]
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]

@@ -34,28 +34,30 @@ instance ToRenderable Layout1 where
     toRenderable = layout1ToRenderable
 
 layout1ToRenderable l =
-    fillBackground (layout1_background l) (
-        vertical [
-            (0, addMargins (lm/2,0,0,0)    title),
-	    (1, addMargins (lm,lm,lm,lm) plotArea),
-	    (0, horizontal [ (0, mkLegend VA_Left), (1,er), (0, mkLegend VA_Right) ] )
-            ]
-        )
+   fillBackground (layout1_background l) (
+       vertical [
+       (0, addMargins (lm/2,0,0,0)    title),
+       (1, addMargins (lm,lm,lm,lm) plotArea),
+       (0, horizontal [ (0,mkLegend VA_Left),(1,emptyRenderable),(0, mkLegend VA_Right) ] )
+       ]
+     )
   where
     lm = layout1_margin l
 
     title = label (layout1_title_style l) HTA_Centre VTA_Centre (layout1_title l)
 
     mkLegend va = case (layout1_legend l) of
-        Nothing -> er
+        Nothing -> emptyRenderable
         (Just ls) -> case [(s,p) | (s,_,va',p) <- layout1_plots l, va' == va, not (null s)] of
- 	    [] -> er
+ 	    [] -> emptyRenderable
 	    ps -> addMargins (0,lm,lm,0) (toRenderable (Legend True ls ps))
- 
-    (ba,la,ta,ra) = getAxes l
-    plotArea = grid [0,1,0] [0,1,0] [ [er,        atitle ta, er       ],
-                                      [atitle la, pa,        atitle ra],
-                                      [er,        atitle ba, er       ] ]
+
+    plotArea = grid [0,0,1,0,0] [0,0,1,0,0]
+       [ [er,            er,        (1,atitle ta), er,        er       ],
+         [er,            (1,tl),    (1,taxis),     (1,tr),    er       ],
+         [(1,atitle la), (1,laxis), (0,plots),     (1,raxis), (1,atitle ra)],
+         [er,            (1,bl),    (1,baxis),     (1,br),    er       ],
+         [er,            er,        (1,atitle ba), er,        er       ] ]
 
     atitle Nothing = emptyRenderable
     atitle (Just (AxisT e a)) = rlabel (axis_title_style a) ha va rot (axis_title a)
@@ -64,43 +66,36 @@ layout1ToRenderable l =
                                     E_Left -> (HTA_Right,VTA_Centre,90)
                                     E_Right -> (HTA_Left,VTA_Centre,90)
 
-    pa = Renderable {
-        minsize=minsizePlotArea l,
-        render=renderPlotArea l
+    plots = Renderable {
+        minsize=return (0,0),
+        render=renderPlots l
     }
-    er = emptyRenderable
 
-minsizePlotArea l = do
-    (w1,h1,w2,h2) <- axisSizes l
-    return (w1+w2,h1+h2)
+    (ba,la,ta,ra) = getAxes l
+    baxis = maybe emptyRenderable toRenderable ba
+    taxis = maybe emptyRenderable toRenderable ta
+    laxis = maybe emptyRenderable toRenderable la
+    raxis = maybe emptyRenderable toRenderable ra
 
-renderPlotArea l (Rect p1 p5) = do
-    let margin  = (layout1_margin l)
+    tl = axesSpacer fst ta fst la
+    bl = axesSpacer fst ba snd la
+    tr = axesSpacer snd ta fst ra
+    br = axesSpacer snd ba snd ra
 
-    (w1,h1,w2,h2) <- axisSizes l
+    er = (0,emptyRenderable)
 
-    let p2 = p1 `pvadd` (Vector w1 h1)
-    let p4  = p5
-    let p3  = p4 `pvsub` (Vector w2 h2)
-    let plotRect = (Rect p2 p3)
-
+renderPlots l r@(Rect p1 p2) = do
     -- render the plots
     C.save
-    setClipRegion p2 p3 
-    mapM_ (rPlot plotRect) (layout1_plots l)
+    setClipRegion p1 p2 
+    mapM_ (rPlot r) (layout1_plots l)
     C.restore
 
     -- render the axes grids
-    maybeM () (renderAxisGrid plotRect) tAxis
-    maybeM () (renderAxisGrid plotRect) bAxis
-    maybeM () (renderAxisGrid plotRect) lAxis
-    maybeM () (renderAxisGrid plotRect) rAxis
-
-    -- render the axes
-    maybeM () (\at -> render (toRenderable at) (mkrect p2 p1 p3 p2)) tAxis
-    maybeM () (\at -> render (toRenderable at) (mkrect p2 p3 p3 p4)) bAxis
-    maybeM () (\at -> render (toRenderable at) (mkrect p1 p2 p2 p3)) lAxis
-    maybeM () (\at -> render (toRenderable at) (mkrect p3 p2 p4 p3)) rAxis
+    maybeM () (renderAxisGrid r) tAxis
+    maybeM () (renderAxisGrid r) bAxis
+    maybeM () (renderAxisGrid r) lAxis
+    maybeM () (renderAxisGrid r) rAxis
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
@@ -121,29 +116,13 @@ renderPlotArea l (Rect p1 p5) = do
 	in plot_render p pmfn
     rPlot1 _ _ _ _ = return ()
 
-axisSizes l = do
-    w1a <- maybeM 0 (liftM fst.minsize.toRenderable) lAxis
-    h1a <- maybeM 0 (liftM snd.minsize.toRenderable) tAxis
-    w2a <- maybeM 0 (liftM fst.minsize.toRenderable) rAxis
-    h2a <- maybeM 0 (liftM snd.minsize.toRenderable) bAxis
-    (h1b,h2b) <- maybeM (0,0) axisOverhang lAxis
-    (w1b,w2b) <- maybeM (0,0) axisOverhang tAxis
-    (h1c,h2c) <- maybeM (0,0) axisOverhang rAxis
-    (w1c,w2c) <- maybeM (0,0) axisOverhang bAxis
-
-    return (maximum [w1a,w1b,w1c],
-	    maximum [h1a,h1b,h1c],
-	    maximum [w2a,w2b,w2c],
-	    maximum [h2a,h2b,h2c] )
-  where
-    (bAxis,lAxis,tAxis,rAxis) = getAxes l
-
-    asize xyfn Nothing = return 0
-    asize xyfn (Just at) = do
-        sz <- minsize (toRenderable at)
-	return (xyfn sz)
+axesSpacer f1 a1 f2 a2 = embedRenderable $ do
+    oh1 <- maybeM (0,0) axisOverhang a1
+    oh2 <- maybeM (0,0) axisOverhang a2
+    return (spacer (f1 oh1, f2 oh2))
 
 maybeM v = maybe (return v)
+
 getAxes :: Layout1 -> (Maybe AxisT, Maybe AxisT, Maybe AxisT, Maybe AxisT)
 getAxes l = (mk E_Bottom bAxis, mk E_Left lAxis,
 	     mk E_Top tAxis, mk E_Right rAxis)
