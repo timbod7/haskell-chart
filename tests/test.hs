@@ -1,5 +1,6 @@
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
+import Graphics.Rendering.Chart.Simple
 import Graphics.Rendering.Chart.Gtk
 import System.Environment(getArgs)
 import System.Time
@@ -167,6 +168,20 @@ test5 otype = do
 
     lineWidth = chooseLineWidth otype
 
+
+----------------------------------------------------------------------        
+-- Test the Simple interface
+
+test6 :: OutputType -> IO Layout1
+test6 otype = return pp{layout1_title="Graphics.Rendering.Chart.Simple example"}
+  where
+    pp = plot xs sin "sin"
+                 cos "cos" "o"
+                 (sin.sin.cos) "sin.sin.cos" "."
+                 (/3) "- "
+                 (const 0.5)
+                 [0.1,0.7,0.5::Double] "+"
+    xs = [0,0.3..3] :: [Double]
 ----------------------------------------------------------------------        
 allTests =
      [ ("test1",test1)
@@ -174,6 +189,7 @@ allTests =
      , ("test3",test3)
      , ("test4",test4)
      , ("test5",test5)
+     , ("test6",test6)
      ]
 
 main = do
