@@ -22,9 +22,9 @@ data Axis =  Axis {
     -- cordinates.
     axis_viewport :: Range -> Double -> Double,
 
-    axis_title :: String,
     -- | The title string to be displayed on the axis. An
     -- empty string means no title.
+    axis_title :: String,
 
     -- | The tick marks on the axis as pairs.
     -- The first element is the position on the axis

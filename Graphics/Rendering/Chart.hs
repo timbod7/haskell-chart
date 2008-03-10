@@ -4,7 +4,7 @@
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
--- A Simple framework for creating 2D charts in Haskell.
+-- A framework for creating 2D charts in Haskell.
 --
 -- The basic model is that you define a value of type 'Renderable',
 -- typically by applying 'toRenderable' to some other value. This
@@ -14,6 +14,9 @@
 -- Currently, the only useful 'Renderable' for displaying charts
 -- is created by applying 'toRenderable' to a value of type
 -- 'Graphics.Rendering.Chart.Layout.Layout1'
+--
+-- For a simpler though less flexible API, see "Graphics.Rendering.Chart.Simple".
+--
 -----------------------------------------------------------------------------
 
 module Graphics.Rendering.Chart(
