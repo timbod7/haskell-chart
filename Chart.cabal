@@ -10,6 +10,7 @@ Synopsis: A library for generating 2D Charts and Plots
 Description: A library for generating 2D Charts and Plots, based upon the cairo graphics library.
 Category: Graphics
 Cabal-Version: >= 1.2
+Build-Type: Simple
 
 Extra-Source-Files: tests/test.hs, tests/Prices.hs
 
