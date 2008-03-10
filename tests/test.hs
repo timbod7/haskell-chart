@@ -208,5 +208,5 @@ match ts t = (fst t) `elem` ts
 
 renderToWindow (n,t) = t Window >>= \l -> renderableToWindow (toRenderable l) 640 480
 renderToPNG (n,t) = t PNG >>= \l -> renderableToPNGFile (toRenderable l) 640 480 (n ++ ".png")
-renderToPS (n,t) = t PS >>= \l -> renderableToPSFile (toRenderable l) 640 480 (n ++ ".png")
+renderToPS (n,t) = t PS >>= \l -> renderableToPSFile (toRenderable l) 640 480 (n ++ ".ps")
 renderToPDF (n,t) = t PDF >>= \l -> renderableToPDFFile (toRenderable l) 640 480 (n ++ ".pdf")
