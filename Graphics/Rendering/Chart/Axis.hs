@@ -216,7 +216,7 @@ linearTicks r = (major, minor)
   major = steps 5 r
   minor = steps 50 (fromRational (minimum major),fromRational (maximum major))
 
-autoAxis transform (rlabelvs, rtickvs) a = Just axis
+autoAxis labelf transform (rlabelvs, rtickvs) a = Just axis
   where
     axis =  a {
         axis_viewport=newViewport,
@@ -226,7 +226,7 @@ autoAxis transform (rlabelvs, rtickvs) a = Just axis
 	}
     newViewport = transform (min',max')
     newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,5) | v <- labelvs ] 
-    newLabels = [(v,show v) | v <- labelvs]
+    newLabels = [(v,labelf v) | v <- labelvs]
     labelvs = map fromRational rlabelvs
     tickvs = map fromRational rtickvs
     min' = minimum labelvs
@@ -241,14 +241,25 @@ autoAxis transform (rlabelvs, rtickvs) a = Just axis
 -- and grid set appropriately for the data displayed against that axies.
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
-autoScaledAxis :: Axis -> AxisFn
-autoScaledAxis a ps0 = autoAxis vmap (linearTicks (range ps)) a
+autoScaledAxis' :: (Double->String) -> Axis -> AxisFn
+autoScaledAxis' labelf a ps0 = autoAxis labelf vmap (linearTicks (range ps)) a
   where
     ps = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
     range [] = (0,1)
     range _  | min == max = (min-0.5,min+0.5)
 	     | otherwise = (min,max)
+
+-- | Generate a linear axis automatically.
+-- Same as autoScaledAxis', but with labels generated with "showD"
+-- (showD is show for doubles, but with any trailing ".0" removed)
+autoScaledAxis :: Axis -> AxisFn
+autoScaledAxis = autoScaledAxis' showD
+
+showD x = case reverse $ show x of
+            '0':'.':r -> reverse r
+            _ -> show x
+    
 
 log10 :: (Floating a) => a -> a
 log10 = logBase 10
@@ -310,14 +321,20 @@ logTicks (low,high) = (major,minor)
 -- and grid set appropriately for the data displayed against that axies.
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
-autoScaledLogAxis :: Axis -> AxisFn
-autoScaledLogAxis a ps0 = autoAxis lmap (logTicks (range ps)) a
+autoScaledLogAxis' :: (Double->String) -> Axis -> AxisFn
+autoScaledLogAxis' labelf a ps0 = autoAxis labelf lmap (logTicks (range ps)) a
   where
     ps = filter isValidNumber ps0
     (min, max) = (minimum ps,maximum ps)
     range [] = (3,30)
     range _  | min == max = (min/3,max*3)
 	     | otherwise = (min,max)
+
+-- | Generate a log axis automatically.
+-- Same as autoScaledLogAxis', but with labels generated with "showD"
+-- (showD is show for doubles, but with any trailing ".0" removed)
+autoScaledLogAxis :: Axis -> AxisFn
+autoScaledLogAxis = autoScaledLogAxis' showD
 
 -- | Show independent axes on each side of the layout
 independentAxes :: AxisFn -> AxisFn -> AxesFn
