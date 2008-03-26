@@ -358,7 +358,7 @@ defaultAxis = Axis {
 ----------------------------------------------------------------------
 
 refClockTime = toClockTime CalendarTime {
-    ctYear=1970,
+    ctYear=2000,
     ctMonth=toEnum 0,
     ctDay=1,
     ctHour=0,
@@ -366,7 +366,7 @@ refClockTime = toClockTime CalendarTime {
     ctSec=0,
     ctPicosec=0,
     ctTZ=0,
-    ctWDay=Monday,
+    ctWDay=Saturday,
     ctYDay=0,
     ctTZName="",
     ctIsDST=False
