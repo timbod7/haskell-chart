@@ -102,6 +102,8 @@ allocate extra ws vs = zipWith (+) vs (extras++[0,0..])
     total = sum ws 
     extras = [ extra * v / total | v <- ws ]
 
+-- | Output the given renderable to a PNG file of the specifed size
+-- (in pixels), to the specified file.
 renderableToPNGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPNGFile chart width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
@@ -114,6 +116,8 @@ renderableToPNGFile chart width height path =
 
     rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
 
+-- | Output the given renderable to a PDF file of the specifed size
+-- (in points), to the specified file.
 renderableToPDFFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPDFFile chart width height path = 
     C.withPDFSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
@@ -126,6 +130,8 @@ renderableToPDFFile chart width height path =
 
     rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
 
+-- | Output the given renderable to a postscript file of the specifed size
+-- (in points), to the specified file.
 renderableToPSFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPSFile chart width height path = 
     C.withPSSurface path (fromIntegral width) (fromIntegral height) $ \result -> do

@@ -14,7 +14,10 @@ import Graphics.Rendering.Chart.Plot
 import Graphics.Rendering.Chart.Renderable
 import Control.Monad
 
+-- | The side of an horizontal axis
 data HAxis = HA_Top | HA_Bottom deriving (Eq)
+
+-- | The side of a vertical axis
 data VAxis = VA_Left | VA_Right deriving (Eq)
 
 -- | A Layout1 value is a single plot area, with optional: axes on
