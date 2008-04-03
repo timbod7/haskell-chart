@@ -60,6 +60,7 @@ module Graphics.Rendering.Chart(
     timeAxis,
     autoTimeAxis,
     formatTime,
+    days, months, years,
     renderableToPNGFile,
     renderableToPDFFile,
     renderableToPSFile,

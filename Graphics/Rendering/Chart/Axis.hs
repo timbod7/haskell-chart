@@ -408,10 +408,10 @@ clockTimeFromDouble v = (addToClockTime tdiff refClockTime)
     }
 
 -- | TimeSeq is a (potentially infinite) set of times. When passes
--- a reference time, the function returns a a pair of lists. The
--- first contains all times in the set less than the reference
--- time. The second contains all times in the set greater than or
--- equal to the reference time.
+-- a reference time, the function returns a a pair of lists. The first
+-- contains all times in the set less than the reference time in
+-- decreasing order. The second contains all times in the set greater
+-- than or equal to the reference time, in increasing order.
 type TimeSeq = ClockTime-> ([ClockTime],[ClockTime])
 
 coverTS tseq min max = min' ++ enumerateTS tseq min max ++ max'
@@ -427,49 +427,60 @@ elemTS t tseq = case tseq t of
     (_,(t0:_)) | t == t0 -> True
     _                    -> False
 
+-- | How to display a time
 type TimeLabelFn = ClockTime -> String
 
+-- | Use an strftime() formatted string to display a time
 formatTime :: String -> TimeLabelFn
 formatTime s t =  formatCalendarTime defaultTimeLocale s (toUTCTime t)
 
-timeAxis :: TimeSeq -> TimeLabelFn -> Axis -> AxisFn
-timeAxis tseq labelf a pts = Just axis
+-- | Create an 'AxisFn' to for a time axis. The first 'TimeSeq' sets the minor ticks,
+-- and the ultimate range will aligned to it's elements. The second 'TimeSeq' sets
+-- the labels and grid. The 'TimeLabelFn' is used to format clocktimes for labels.
+-- The values to be plotted against this axis can be created with 'doubleFromClockTime'
+timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> Axis -> AxisFn
+timeAxis tseq lseq labelf a pts = Just axis
   where
     axis =  a {
-        axis_viewport=viewport,
-	axis_ticks=[ (t,5) | t <- times'],
-	axis_labels=labels,
-	axis_grid=times'
+        axis_viewport=vmap (dfct min', dfct max'),
+	axis_ticks=[ (dfct t,2) | t <- times] ++ [ (t,5) | t <- ltimes', visible t],
+	axis_labels=[ (t,l) | (t,l) <- labels, visible t],
+	axis_grid=[ t | t <- ltimes', visible t]
 	}
     (min,max) = case pts of
 		[] -> (refClockTime,refClockTime)
 		ps -> let min = minimum ps
 			  max = maximum ps in
-			  (clockTimeFromDouble min,clockTimeFromDouble max)
+			  (ctfd min,ctfd max)
 
     times = coverTS tseq min max
-    times' = map doubleFromClockTime times
-    viewport = vmap (doubleFromClockTime (minimum times), doubleFromClockTime (maximum times))
-    labels = [ (mlabelv m1 m2, labelf m1) | (m1,m2) <- zip times (tail times) ]
+    ltimes = coverTS lseq min max
+    ltimes' = map dfct ltimes
+    min' = minimum times
+    max' = maximum times
+    visible t = dfct min' <= t && t <= dfct max'
+    labels = [ ((dfct m2 + dfct m1) / 2, labelf m1) | (m1,m2) <- zip ltimes (tail ltimes) ]
+    dfct = doubleFromClockTime
+    ctfd = clockTimeFromDouble
 
-    mlabelt m =  formatCalendarTime defaultTimeLocale "%b-%y" (toUTCTime m)
-    mlabelv m1 m2 = (doubleFromClockTime m2 + doubleFromClockTime m1) / 2
-
-empty, days, months, years :: TimeSeq
-empty t = ([],[])
-
+-- | A 'TimeSeq' for calendar days
+days :: TimeSeq
 days t = (iterate rev t1, tail (iterate fwd t1))
   where t0 = (toClockTime.zeroTime.toUTCTime) t
         t1 = if t0 < t then t0 else (rev t0)
         rev = addToClockTime noTimeDiff{tdDay=(-1)}
         fwd = addToClockTime noTimeDiff{tdDay=1}
 
+-- | A 'TimeSeq' for calendar months
+months :: TimeSeq
 months t = (iterate rev t1, tail (iterate fwd t1))
   where t0 = (toClockTime.(\t -> t{ctDay=1}).zeroTime.toUTCTime) t
         t1 = if t0 < t then t0 else (rev t0)
         rev = addToClockTime noTimeDiff{tdMonth=(-1)}
         fwd = addToClockTime noTimeDiff{tdMonth=1}
 
+-- | A 'TimeSeq' for calendar years
+years :: TimeSeq
 years t = (iterate rev t1, tail (iterate fwd t1))
   where t0 = (toClockTime.(\t -> t{ctMonth=January,ctDay=1}).zeroTime.toUTCTime) t
         t1 = if t0 < t then t0 else (rev t0)
@@ -482,11 +493,15 @@ zeroTime t = t{ctHour=0,ctMin=0,ctSec=0,ctPicosec=0}
 -- The values to be plotted against this axis can be created with 'doubleFromClockTime'
 autoTimeAxis :: Axis -> AxisFn
 autoTimeAxis a pts =
-                 if tdiff < (normalizeTimeDiff noTimeDiff{tdDay=15})
-                 then  timeAxis days (formatTime "%d-%b")  a pts
-                 else if tdiff < (normalizeTimeDiff noTimeDiff{tdMonth=15})
-                      then timeAxis months (formatTime "%b-%y") a pts
-                      else timeAxis years (formatTime "%y") a pts
+    if tdiff < (normalizeTimeDiff noTimeDiff{tdDay=15})
+    then  timeAxis days days (formatTime "%d-%b")  a pts
+    else if tdiff < (normalizeTimeDiff noTimeDiff{tdMonth=3})
+         then timeAxis days months (formatTime "%b-%y") a pts
+         else if tdiff < (normalizeTimeDiff noTimeDiff{tdMonth=15})
+              then timeAxis months months (formatTime "%b-%y") a pts
+              else if tdiff < (normalizeTimeDiff noTimeDiff{tdMonth=60})
+                   then timeAxis months years (formatTime "%Y") a pts
+                   else timeAxis years years (formatTime "%Y") a pts
   where
     tdiff = normalizeTimeDiff (t1 `diffClockTimes` t0)
     t1 = clockTimeFromDouble (maximum pts)
