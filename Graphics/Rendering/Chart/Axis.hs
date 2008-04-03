@@ -8,7 +8,7 @@ module Graphics.Rendering.Chart.Axis where
 
 import qualified Graphics.Rendering.Cairo as C
 import System.Time
-import System.Locale
+import System.Locale (defaultTimeLocale)
 import Control.Monad
 import Data.List
 
@@ -407,48 +407,88 @@ clockTimeFromDouble v = (addToClockTime tdiff refClockTime)
        tdPicosec = 0
     }
 
--- | An axis that plots dates, with ticks and labels corresponding to
--- calendar months. The values to be plotted against this axis can
--- be created with 'doubleFromClockTime'
-monthsAxis :: Axis -> AxisFn
-monthsAxis a pts = Just axis
+-- | TimeSeq is a (potentially infinite) set of times. When passes
+-- a reference time, the function returns a a pair of lists. The
+-- first contains all times in the set less than the reference
+-- time. The second contains all times in the set greater than or
+-- equal to the reference time.
+type TimeSeq = ClockTime-> ([ClockTime],[ClockTime])
+
+coverTS tseq min max = min' ++ enumerateTS tseq min max ++ max'
+  where
+    min' =  if elemTS min tseq then [] else take 1 (fst (tseq min))
+    max' =  if elemTS max tseq then [] else take 1 (snd (tseq max))
+
+enumerateTS tseq min max = reverse (takeWhile (>=min) ts1)  ++ takeWhile (<=max) ts2
+  where
+    (ts1,ts2) = tseq min
+
+elemTS t tseq = case tseq t of
+    (_,(t0:_)) | t == t0 -> True
+    _                    -> False
+
+type TimeLabelFn = ClockTime -> String
+
+formatTime :: String -> TimeLabelFn
+formatTime s t =  formatCalendarTime defaultTimeLocale s (toUTCTime t)
+
+timeAxis :: TimeSeq -> TimeLabelFn -> Axis -> AxisFn
+timeAxis tseq labelf a pts = Just axis
   where
     axis =  a {
-        axis_viewport=newViewport,
-	axis_ticks=newTicks,
-	axis_labels=newLabels,
-	axis_grid=newGrid
+        axis_viewport=viewport,
+	axis_ticks=[ (t,5) | t <- times'],
+	axis_labels=labels,
+	axis_grid=times'
 	}
     (min,max) = case pts of
-		[] -> (refClockTime, nextMonthStart refClockTime)
+		[] -> (refClockTime,refClockTime)
 		ps -> let min = minimum ps
 			  max = maximum ps in
 			  (clockTimeFromDouble min,clockTimeFromDouble max)
-    min' = thisMonthStart min
-    max' = nextMonthStart max
 
-    newViewport = vmap (doubleFromClockTime min', doubleFromClockTime max')
-    months = takeWhile (<=max') (iterate nextMonthStart min')
-    newTicks = [ (doubleFromClockTime ct,5) | ct <- months ]
-    newLabels = [ (mlabelv m1 m2, mlabelt m1) | (m1,m2) <- zip months (tail months) ]
-    newGrid = case axis_grid a of 
-        [] -> []
-        _  -> [v | (v,_) <- newTicks]
+    times = coverTS tseq min max
+    times' = map doubleFromClockTime times
+    viewport = vmap (doubleFromClockTime (minimum times), doubleFromClockTime (maximum times))
+    labels = [ (mlabelv m1 m2, labelf m1) | (m1,m2) <- zip times (tail times) ]
 
     mlabelt m =  formatCalendarTime defaultTimeLocale "%b-%y" (toUTCTime m)
     mlabelv m1 m2 = (doubleFromClockTime m2 + doubleFromClockTime m1) / 2
 
-thisMonthStart ct = 
-    let calt = (toUTCTime ct) {
-            ctDay=1,
-	    ctHour=0,
-	    ctMin=0,
-	    ctSec=0,
-	    ctPicosec=0
-        } in
-        toClockTime calt
+empty, days, months, years :: TimeSeq
+empty t = ([],[])
 
-nextMonthStart ct =
-    let month1 = noTimeDiff{tdMonth=1} in
-	addToClockTime month1 (thisMonthStart ct)
- 
+days t = (iterate rev t1, tail (iterate fwd t1))
+  where t0 = (toClockTime.zeroTime.toUTCTime) t
+        t1 = if t0 < t then t0 else (rev t0)
+        rev = addToClockTime noTimeDiff{tdDay=(-1)}
+        fwd = addToClockTime noTimeDiff{tdDay=1}
+
+months t = (iterate rev t1, tail (iterate fwd t1))
+  where t0 = (toClockTime.(\t -> t{ctDay=1}).zeroTime.toUTCTime) t
+        t1 = if t0 < t then t0 else (rev t0)
+        rev = addToClockTime noTimeDiff{tdMonth=(-1)}
+        fwd = addToClockTime noTimeDiff{tdMonth=1}
+
+years t = (iterate rev t1, tail (iterate fwd t1))
+  where t0 = (toClockTime.(\t -> t{ctMonth=January,ctDay=1}).zeroTime.toUTCTime) t
+        t1 = if t0 < t then t0 else (rev t0)
+        rev = addToClockTime noTimeDiff{tdMonth=(-12)}
+        fwd = addToClockTime noTimeDiff{tdMonth=12}
+
+zeroTime t = t{ctHour=0,ctMin=0,ctSec=0,ctPicosec=0}
+
+-- | Automatically choose a suitable time axis, based upon the time range of data.
+-- The values to be plotted against this axis can be created with 'doubleFromClockTime'
+autoTimeAxis :: Axis -> AxisFn
+autoTimeAxis a pts =
+                 if tdiff < (normalizeTimeDiff noTimeDiff{tdDay=15})
+                 then  timeAxis days (formatTime "%d-%b")  a pts
+                 else if tdiff < (normalizeTimeDiff noTimeDiff{tdMonth=15})
+                      then timeAxis months (formatTime "%b-%y") a pts
+                      else timeAxis years (formatTime "%y") a pts
+  where
+    tdiff = normalizeTimeDiff (t1 `diffClockTimes` t0)
+    t1 = clockTimeFromDouble (maximum pts)
+    t0 = clockTimeFromDouble (minimum pts)
+

@@ -42,8 +42,8 @@ test1 otype = return layout
     lineWidth = chooseLineWidth otype
 
 ----------------------------------------------------------------------
-test2 :: OutputType -> IO Layout1
-test2 otype = return layout 
+test2 :: OutputType -> [(Int,Int,Int,Double,Double)] -> IO Layout1
+test2 otype prices = return layout 
   where
 
     price1 = defaultPlotLines {
@@ -61,7 +61,7 @@ test2 otype = return layout
 
     layout = defaultLayout1 {
         layout1_title="Price History",			   
-        layout1_horizontal_axes=linkedAxes' (monthsAxis gridlessAxis),
+        layout1_horizontal_axes=linkedAxes' (autoTimeAxis gridlessAxis),
 	layout1_vertical_axes=independentAxes vaxis vaxis,
  	layout1_plots = [("price 1", HA_Bottom,VA_Left,(toPlot price1)),
                          ("price 2", HA_Bottom,VA_Right,(toPlot price2))]
@@ -103,7 +103,7 @@ test3 otype = return layout
 
     layout = defaultLayout1 {
         layout1_title="Price History",			   
-        layout1_horizontal_axes=linkedAxes' (monthsAxis defaultAxis),
+        layout1_horizontal_axes=linkedAxes' (autoTimeAxis defaultAxis),
 	layout1_vertical_axes=linkedAxes' (autoScaledAxis defaultAxis),
  	layout1_plots = [("price 1", HA_Bottom,VA_Left,(toPlot price1)),
                          ("price 2", HA_Bottom,VA_Left,(toPlot price2))]
@@ -185,12 +185,16 @@ test6 otype = return pp{layout1_title="Graphics.Rendering.Chart.Simple example"}
 ----------------------------------------------------------------------        
 allTests =
      [ ("test1",test1)
-     , ("test2",test2)
+     , ("test2a",\ot -> test2 ot prices)
+     , ("test2b",\ot -> test2 ot (filterPrices (date 1 1 2005) (date 31 12 2005)))
+     , ("test2c",\ot -> test2 ot (filterPrices (date 1 1 2006) (date 10 1 2006)))
      , ("test3",test3)
      , ("test4",test4)
      , ("test5",test5)
      , ("test6",test6)
      ]
+
+filterPrices t1 t2 = [ v | v@(d,m,y,_,_) <- prices, let t = date d m y in t >= t1 && t <= t2]
 
 main = do
     args <- getArgs
