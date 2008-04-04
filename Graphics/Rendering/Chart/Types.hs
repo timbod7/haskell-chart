@@ -19,6 +19,12 @@ data Vector = Vector {
     v_y :: Double
 } deriving Show
 
+data Color = Color {
+    c_r :: Double,
+    c_g :: Double,
+    c_b :: Double
+}
+
 -- | scale a vector by a constant
 vscale :: Double -> Vector -> Vector
 vscale c (Vector x y) = (Vector (x*c) (y*c))
@@ -79,6 +85,13 @@ newtype CairoFontStyle = CairoFontStyle (C.Render ())
 type Range = (Double,Double)
 type RectSize = (Double,Double)
 
+black = Color 0 0 0
+grey8 = Color 0.8 0.8 0.8
+white = Color 1 1 1
+red = Color 1 0 0
+green = Color 0 1 0
+blue = Color 0 0 1
+
 ----------------------------------------------------------------------
 -- Assorted helper functions in Cairo Usage
 
@@ -116,6 +129,8 @@ setFontStyle (CairoFontStyle s) = s
 setLineStyle (CairoLineStyle s) = s
 setFillStyle (CairoFillStyle s) = s
 
+setSourceColor (Color r g b) = C.setSourceRGB r g b
+
 textSize :: String -> C.Render RectSize
 textSize s = do
     te <- C.textExtents s
@@ -148,14 +163,12 @@ drawText hta vta (Point x y) s = do
 
 filledCircles ::
      Double -- ^ radius of circle
-  -> Double -- ^ red component of colour
-  -> Double -- ^ green component of colour
-  -> Double -- ^ blue component of colour
+  -> Color -- ^ colour
   -> CairoPointStyle
-filledCircles radius r g b = CairoPointStyle rf
+filledCircles radius c = CairoPointStyle rf
   where
     rf (Point x y) = do
-	C.setSourceRGB r g b
+	setSourceColor c
         C.newPath
 	C.arc x y radius 0 360
 	C.fill
@@ -163,15 +176,13 @@ filledCircles radius r g b = CairoPointStyle rf
 hollowCircles ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
-  -> Double -- ^ red component of colour
-  -> Double -- ^ green component of colour
-  -> Double -- ^ blue component of colour
+  -> Color
   -> CairoPointStyle
-hollowCircles radius w r g b = CairoPointStyle rf
+hollowCircles radius w c = CairoPointStyle rf
   where
     rf (Point x y) = do
         C.setLineWidth w
-	C.setSourceRGB r g b
+	setSourceColor c
         C.newPath
 	C.arc x y radius 0 360
 	C.stroke
@@ -181,14 +192,12 @@ hollowPolygon ::
   -> Double -- ^ thickness of line
   -> Int    -- ^ Number of vertices
   -> Bool   -- ^ Is right-side-up?
-  -> Double -- ^ red component of colour
-  -> Double -- ^ green component of colour
-  -> Double -- ^ blue component of colour
+  -> Color
   -> CairoPointStyle
-hollowPolygon radius w sides isrot r g b = CairoPointStyle rf
+hollowPolygon radius w sides isrot c = CairoPointStyle rf
   where rf (Point x y) =
             do C.setLineWidth w
-	       C.setSourceRGB r g b
+	       setSourceColor c
                C.newPath
                let intToAngle n = if isrot
                                   then fromIntegral n * 2*pi / fromIntegral sides
@@ -203,13 +212,11 @@ filledPolygon ::
      Double -- ^ radius of circle
   -> Int    -- ^ Number of vertices
   -> Bool   -- ^ Is right-side-up?
-  -> Double -- ^ red component of colour
-  -> Double -- ^ green component of colour
-  -> Double -- ^ blue component of colour
+  -> Color
   -> CairoPointStyle
-filledPolygon radius sides isrot r g b = CairoPointStyle rf
+filledPolygon radius sides isrot c = CairoPointStyle rf
   where rf (Point x y) =
-            do C.setSourceRGB r g b
+            do setSourceColor c
                C.newPath
                let intToAngle n = if isrot
                                   then fromIntegral n * 2*pi / fromIntegral sides
@@ -223,13 +230,11 @@ filledPolygon radius sides isrot r g b = CairoPointStyle rf
 plusses ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
-  -> Double -- ^ red component of colour
-  -> Double -- ^ green component of colour
-  -> Double -- ^ blue component of colour
+  -> Color
   -> CairoPointStyle
-plusses radius w r g b = CairoPointStyle rf
+plusses radius w c = CairoPointStyle rf
   where rf (Point x y) = do C.setLineWidth w
-	                    C.setSourceRGB r g b
+	                    setSourceColor c
                             C.newPath
                             C.moveTo (x+radius) y
                             C.lineTo (x-radius) y
@@ -240,14 +245,12 @@ plusses radius w r g b = CairoPointStyle rf
 exes ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
-  -> Double -- ^ red component of colour
-  -> Double -- ^ green component of colour
-  -> Double -- ^ blue component of colour
+  -> Color
   -> CairoPointStyle
-exes radius w r g b = CairoPointStyle rf
+exes radius w c = CairoPointStyle rf
   where rad = radius / sqrt 2
         rf (Point x y) = do C.setLineWidth w
-	                    C.setSourceRGB r g b
+	                    setSourceColor c
                             C.newPath
                             C.moveTo (x+rad) (y+rad)
                             C.lineTo (x-rad) (y-rad)
@@ -258,14 +261,12 @@ exes radius w r g b = CairoPointStyle rf
 stars ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
-  -> Double -- ^ red component of colour
-  -> Double -- ^ green component of colour
-  -> Double -- ^ blue component of colour
+  -> Color 
   -> CairoPointStyle
-stars radius w r g b = CairoPointStyle rf
+stars radius w c = CairoPointStyle rf
   where rad = radius / sqrt 2
         rf (Point x y) = do C.setLineWidth w
-	                    C.setSourceRGB r g b
+	                    setSourceColor c
                             C.newPath
                             C.moveTo (x+radius) y
                             C.lineTo (x-radius) y
@@ -279,26 +280,22 @@ stars radius w r g b = CairoPointStyle rf
 
 solidLine ::
      Double -- ^ width of line
-  -> Double -- ^ red component of colour
-  -> Double -- ^ green component of colour
-  -> Double -- ^ blue component of colour
+  -> Color
   -> CairoLineStyle
-solidLine w r g b = CairoLineStyle (do
+solidLine w c = CairoLineStyle (do
     C.setLineWidth w
-    C.setSourceRGB r g b
+    setSourceColor c
     )
 
 dashedLine ::
      Double   -- ^ width of line
   -> [Double] -- ^ the dash pattern in device coordinates
-  -> Double   -- ^ red component of colour
-  -> Double   -- ^ green component of colour
-  -> Double   -- ^ blue component of colour
+  -> Color
   -> CairoLineStyle
-dashedLine w dashes r g b = CairoLineStyle (do
+dashedLine w dashes c = CairoLineStyle (do
     C.setDash dashes 0
     C.setLineWidth w
-    C.setSourceRGB r g b
+    setSourceColor c
     )
 
 fontStyle ::
@@ -314,14 +311,12 @@ fontStyle name size slant weight = CairoFontStyle fn
 	 C.setFontSize size
 
 solidFillStyle ::
-     Double         -- ^ red component of colour
-  -> Double         -- ^ green component of colour
-  -> Double         -- ^ blue component of colour
+     Color
   -> CairoFillStyle
-solidFillStyle r g b = CairoFillStyle fn
-   where fn = C.setSourceRGB r g b
+solidFillStyle c = CairoFillStyle fn
+   where fn = setSourceColor c
 
-defaultPointStyle = filledCircles 1 1 1 1
+defaultPointStyle = filledCircles 1 white
 defaultFontStyle = CairoFontStyle (return ())
 
 isValidNumber v = not (isNaN v) && not (isInfinite v)

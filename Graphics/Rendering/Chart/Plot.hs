@@ -80,7 +80,7 @@ renderPlotLegendLines p r@(Rect p1 p2) = do
     C.stroke
     C.restore
 
-defaultPlotLineStyle = solidLine 1 0 0 1
+defaultPlotLineStyle = solidLine 1 blue
 
 defaultPlotLines = PlotLines {
     plot_lines_style = defaultPlotLineStyle,
@@ -173,6 +173,6 @@ plotAllPointsFillBetween p = concat [ [Point x y1, Point x y2]
 
 
 defaultPlotFillBetween = PlotFillBetween {
-    plot_fillbetween_style=solidFillStyle 0.5 0.5 1.0,
+    plot_fillbetween_style=solidFillStyle (Color 0.5 0.5 1.0),
     plot_fillbetween_values=[]
 }

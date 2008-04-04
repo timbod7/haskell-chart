@@ -39,9 +39,11 @@ import Data.Maybe ( catMaybes )
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Gtk
 
-styleColor :: (Double -> Double -> Double -> a) -> Int -> a
-styleColor f ind = case colorSequence !! ind of (r,g,b) -> f r g b
-    where colorSequence = cycle [(0,0,1),(1,0,0),(0,1,0),(1,1,0),(0,1,1),(1,0,1),(0,0,0)]
+styleColor :: Int -> Color
+styleColor ind = colorSequence !! ind
+    where colorSequence = cycle [Color 0 0 1,Color 1 0 0,Color 0 1 0,
+                                 Color 1 1 0,Color 0 1 1,Color 1 0 1,
+                                 Color 0 0 0]
 
 styleSymbol :: Int -> PlotKind
 styleSymbol ind = symbolSequence !! ind
@@ -64,44 +66,44 @@ iplot foobar = defaultLayout1 {
                     plots = case catMaybes $ map plotas yks of
                             [] -> [toPlot $ defaultPlotLines
                                    { plot_lines_values = [vs],
-                                     plot_lines_style = solidLine 1 `styleColor` ind }]
+                                     plot_lines_style = solidLine 1 (styleColor ind) }]
                             xs -> xs
                     plotas Solid = Just $ toPlot $ defaultPlotLines
                                    { plot_lines_values = [vs],
-                                     plot_lines_style = solidLine 1 `styleColor` ind }
+                                     plot_lines_style = solidLine 1 (styleColor ind) }
                     plotas Dashed = Just $ toPlot $ defaultPlotLines
                                    { plot_lines_values = [vs],
-                                     plot_lines_style = dashedLine 1 [10,10] `styleColor` ind }
+                                     plot_lines_style = dashedLine 1 [10,10] (styleColor ind) }
                     plotas Dotted = Just $ toPlot $ defaultPlotLines
                                    { plot_lines_values = [vs],
-                                     plot_lines_style = dashedLine 1 [1,11] `styleColor` ind }
+                                     plot_lines_style = dashedLine 1 [1,11] (styleColor ind) }
                     plotas FilledCircle = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=filledCircles 4 `styleColor` ind }
+                                            plot_points_style=filledCircles 4 (styleColor ind) }
                     plotas HollowCircle = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=hollowCircles 5 1 `styleColor` ind }
+                                            plot_points_style=hollowCircles 5 1 (styleColor ind) }
                     plotas Triangle = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=hollowPolygon 7 1 3 False `styleColor` ind }
+                                            plot_points_style=hollowPolygon 7 1 3 False (styleColor ind) }
                     plotas DownTriangle = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=hollowPolygon 7 1 3 True `styleColor` ind }
+                                            plot_points_style=hollowPolygon 7 1 3 True (styleColor ind) }
                     plotas Square = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=hollowPolygon 7 1 4 False `styleColor` ind }
+                                            plot_points_style=hollowPolygon 7 1 4 False (styleColor ind) }
                     plotas Diamond = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=hollowPolygon 7 1 4 True `styleColor` ind }
+                                            plot_points_style=hollowPolygon 7 1 4 True (styleColor ind) }
                     plotas Plus = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=plusses 7 1 `styleColor` ind }
+                                            plot_points_style=plusses 7 1 (styleColor ind) }
                     plotas Ex = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=exes 7 1 `styleColor` ind }
+                                            plot_points_style=exes 7 1 (styleColor ind) }
                     plotas Star = Just $ toPlot $ defaultPlotPoints
                                           { plot_points_values = vs,
-                                            plot_points_style=stars 7 1 `styleColor` ind }
+                                            plot_points_style=stars 7 1 (styleColor ind) }
                     plotas Symbols = plotas (styleSymbol ind)
                     plotas _ = Nothing
           isOkay (_,n) = not (isNaN n || isInfinite n)

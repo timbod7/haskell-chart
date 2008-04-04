@@ -258,13 +258,13 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
 -- of anchors
 labelTest rot = renderableToPNGFile r 800 800 "labels.png"
   where
-    r = fillBackground white $ grid [1,1,1] [1,1,1] ls
-    ls = [ [(0,addMargins (20,20,20,20) $ fillBackground blue $ crossHairs $ rlabel fs h v rot s) | h <- hs] | v <- vs ]
+    r = fillBackground fwhite $ grid [1,1,1] [1,1,1] ls
+    ls = [ [(0,addMargins (20,20,20,20) $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s) | h <- hs] | v <- vs ]
     s = "Labels"
     hs = [HTA_Left, HTA_Centre, HTA_Right]
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]
-    white = solidFillStyle 1 1 1
-    blue = solidFillStyle 0.8 0.8 1
+    fwhite = solidFillStyle white
+    fblue = solidFillStyle (Color 0.8 0.8 1)
     fs = fontStyle "sans" 30 C.FontSlantNormal C.FontWeightBold
     crossHairs r =Renderable {
       minsize = minsize r,

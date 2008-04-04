@@ -148,7 +148,7 @@ allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
 
 
 defaultLayout1 = Layout1 {
-    layout1_background = solidFillStyle 1 1 1,
+    layout1_background = solidFillStyle white,
     layout1_title = "",
     layout1_title_style = fontStyle "sans" 15 C.FontSlantNormal C.FontWeightBold,
     layout1_horizontal_axes = linkedAxes (autoScaledAxis defaultAxis),

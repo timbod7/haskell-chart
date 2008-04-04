@@ -356,8 +356,8 @@ linkedAxes' af pts1 pts2 = (a,removeLabels a)
 
 ----------------------------------------------------------------------
 
-defaultAxisLineStyle = solidLine 1 0 0 0
-defaultGridLineStyle = dashedLine 1 [5,5] 0.8 0.8 0.8
+defaultAxisLineStyle = solidLine 1 black
+defaultGridLineStyle = dashedLine 1 [5,5] grey8
 
 defaultAxis = Axis {
     axis_viewport = vmap (0,1),

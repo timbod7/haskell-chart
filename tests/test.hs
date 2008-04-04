@@ -14,6 +14,12 @@ chooseLineWidth PNG = 1.0
 chooseLineWidth PDF = 0.25
 chooseLineWidth PS = 0.25
 
+blue = (Color 0 0 1)
+green = (Color 0 1 0)
+green1 = (Color 0.5 1 0.5)
+red = (Color 1 0 0)
+red1 = (Color 0.5 0.5 1)
+
 ----------------------------------------------------------------------
 test1 :: OutputType -> IO Layout1
 test1 otype = return layout 
@@ -23,11 +29,11 @@ test1 otype = return layout
 
     sinusoid1 = defaultPlotLines {
 	plot_lines_values = [[ (Point x (am x)) | x <- [0,(0.5)..400]]],
-        plot_lines_style = solidLine lineWidth 0 0 1
+        plot_lines_style = solidLine lineWidth blue
     }
 
     sinusoid2 = defaultPlotPoints {
-        plot_points_style=filledCircles 2 1 0 0,
+        plot_points_style=filledCircles 2 red,
 	plot_points_values = [ (Point x (am x)) | x <- [0,7..400]]
     }
 
@@ -47,12 +53,12 @@ test2 otype prices = return layout
   where
 
     price1 = defaultPlotLines {
-        plot_lines_style = solidLine lineWidth 0 0 1,
+        plot_lines_style = solidLine lineWidth blue,
 	plot_lines_values = [[ Point (date d m y) v | (d,m,y,v,_) <- prices]]
     }
 
     price2 = defaultPlotLines {
-        plot_lines_style = solidLine lineWidth 0 1 0,
+        plot_lines_style = solidLine lineWidth green,
 	plot_lines_values = [[ Point (date d m y) v | (d,m,y,_,v) <- prices]]
     }
 
@@ -92,12 +98,12 @@ test3 otype = return layout
   where
 
     price1 = defaultPlotFillBetween {
-        plot_fillbetween_style = solidFillStyle 0.5 1 0.5,
+        plot_fillbetween_style = solidFillStyle green1,
 	plot_fillbetween_values = [ (date d m y,(0,v2)) | (d,m,y,v1,v2) <- prices]
     }
 
     price2 = defaultPlotFillBetween {
-        plot_fillbetween_style = solidFillStyle 0.5 0.5 1,
+        plot_fillbetween_style = solidFillStyle red1,
 	plot_fillbetween_values = [ (date d m y,(0,v1)) | (d,m,y,v1,v2) <- prices]
     }
 
@@ -115,7 +121,7 @@ test4 otype = return layout
   where
 
     points = defaultPlotPoints {
-        plot_points_style=filledCircles 3 1 0 0,
+        plot_points_style=filledCircles 3 red,
 	plot_points_values = [ Point x (10**x) | x <- [0.5,1,1.5,2,2.5] ]
     }
 
@@ -163,8 +169,8 @@ test5 otype = do
         f True = (1+frac*(1+b))
         f False = (1-frac)
 
-    s1 = solidLine lineWidth 0 1 0
-    s2 = solidLine lineWidth 0 0 1
+    s1 = solidLine lineWidth green
+    s2 = solidLine lineWidth blue
 
     lineWidth = chooseLineWidth otype
 
