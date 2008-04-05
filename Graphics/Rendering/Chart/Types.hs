@@ -14,6 +14,13 @@ data Point = Point {
     p_y :: Double
 } deriving Show
 
+data ErrPoint = ErrPoint {
+      ep_x :: Double,
+      ep_y :: Double,
+      ep_dx :: Double,
+      ep_dy :: Double
+} deriving Show
+
 data Vector = Vector {
     v_x :: Double,
     v_y :: Double
@@ -63,6 +70,12 @@ vmap (v1,v2) (v3,v4) v = v3 + (v-v1) * (v4-v3) / (v2-v1)
 -- The contained Cairo action draws a point in the desired
 -- style, at the supplied device coordinates.
 newtype CairoPointStyle = CairoPointStyle (Point -> C.Render ())
+
+-- | Abstract data type for the style of a pair of errorbars
+--
+-- The contained Cairo action draws a pair of errorbars
+-- in the desired style, at the supplied device coordinates.
+newtype CairoErrPointStyle = CairoErrPointStyle (ErrPoint -> C.Render ())
 
 -- | Abstract data type for the style of a line
 --
@@ -316,7 +329,8 @@ solidFillStyle ::
 solidFillStyle c = CairoFillStyle fn
    where fn = setSourceColor c
 
-defaultPointStyle = filledCircles 1 white
+defaultPointStyle = filledCircles 1 1 1 1
 defaultFontStyle = CairoFontStyle (return ())
+defaultErrPointStyle = errorBars_default 3 0.7 0 0 1
 
 isValidNumber v = not (isNaN v) && not (isInfinite v)

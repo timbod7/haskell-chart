@@ -8,11 +8,13 @@ module Graphics.Rendering.Chart.Plot(
     Plot(..),
     ToPlot(..),
     PlotPoints(..),
+    PlotErrPoints(..),
     PlotLines(..),
     PlotFillBetween(..),
 
     defaultPlotLineStyle,
     defaultPlotPoints,
+    defaultPlotErrPoints,
     defaultPlotFillBetween,
     defaultPlotLines
     
@@ -85,6 +87,57 @@ defaultPlotLineStyle = solidLine 1 blue
 defaultPlotLines = PlotLines {
     plot_lines_style = defaultPlotLineStyle,
     plot_lines_values = []
+}
+----------------------------------------------------------------------
+
+-- | Value defining a series of datapoints and error intervals, and a style in
+-- which to render them
+data PlotErrPoints = PlotErrPoints {
+    plot_errpoints_style :: CairoErrPointStyle,
+    plot_errpoints_point_style :: CairoPointStyle,
+    plot_errpoints_values :: [ErrPoint]
+}
+
+instance ToPlot PlotErrPoints where
+    toPlot p = Plot {
+        plot_render = renderPlotErrPoints p,
+	plot_render_legend = renderPlotLegendErrPoints p,
+	plot_all_points = map (\(ErrPoint x y _ _) -> Point x y ) $plot_errpoints_values p
+    }
+
+renderPlotErrPoints :: PlotErrPoints -> PointMapFn -> C.Render ()
+renderPlotErrPoints p pmap = do
+    C.save
+    mapM_ (drawPoint.pmap.(\(ErrPoint x y _ _) -> Point x y)) (plot_errpoints_values p)
+    mapM_ (drawErrPoint.epmap) (plot_errpoints_values p)
+    C.restore
+  where
+    epmap (ErrPoint x y dx dy) = ErrPoint x' y' (abs $ x''-x') (abs $ y''-y')
+        where (Point x' y') = pmap (Point x y)
+              (Point x'' y'') = pmap (Point (x+dx) (y+dy))
+    (CairoErrPointStyle drawErrPoint) = (plot_errpoints_style p)
+    (CairoPointStyle drawPoint) = plot_errpoints_point_style p
+
+renderPlotLegendErrPoints :: PlotErrPoints -> Rect -> C.Render ()
+renderPlotLegendErrPoints p r@(Rect p1 p2) = do
+    C.save
+    drawPoint (Point (p_x p1) ((p_y p1 + p_y p2)/2)) 
+    drawPoint (Point ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2))
+    drawPoint (Point (p_x p2) ((p_y p1 + p_y p2)/2))
+    drawErrPoint (ErrPoint (p_x p1) ((p_y p1 + p_y p2)/2) dx dx ) 
+    drawErrPoint (ErrPoint ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2) dx dx)
+    drawErrPoint (ErrPoint (p_x p2) ((p_y p1 + p_y p2)/2) dx dx)
+    C.restore
+
+  where
+    (CairoErrPointStyle drawErrPoint) = (plot_errpoints_style p)
+    dx = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
+    (CairoPointStyle drawPoint) = plot_errpoints_point_style p
+
+defaultPlotErrPoints = PlotErrPoints {
+    plot_errpoints_style = defaultErrPointStyle,
+    plot_errpoints_point_style = hollowCircles 4 1 1 0 0,
+    plot_errpoints_values = []
 }
 ----------------------------------------------------------------------
 
