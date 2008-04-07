@@ -34,6 +34,8 @@ module Graphics.Rendering.Chart(
     VAxis(..),
     Rect(..),
     Point(..),
+    Color(..),
+    ErrPoint(..),
     defaultAxisLineStyle, 
     defaultPlotLineStyle,
     defaultAxis, 

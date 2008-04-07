@@ -188,6 +188,20 @@ test6 otype = return pp{layout1_title="Graphics.Rendering.Chart.Simple example"}
                  (const 0.5)
                  [0.1,0.7,0.5::Double] "+"
     xs = [0,0.3..3] :: [Double]
+----------------------------------------------------------------------
+test7 :: OutputType -> IO Layout1
+test7 otype = return layout 
+  where
+    points = defaultPlotErrPoints {
+        plot_errpoints_point_style=filledCircles 2 red,
+	plot_errpoints_values = [ (ErrPoint x (sin (exp x)) (sin x/2) (cos x/10)) | x <- [1..20]]
+    }
+
+    layout = defaultLayout1 {
+        layout1_title= "errorbars example",
+	layout1_plots = [("test",HA_Bottom,VA_Left,(toPlot points))]
+    }
+
 ----------------------------------------------------------------------        
 allTests =
      [ ("test1",test1)
@@ -199,6 +213,7 @@ allTests =
      , ("test4",test4)
      , ("test5",test5)
      , ("test6",test6)
+     , ("test7",test7)
      ]
 
 filterPrices t1 t2 = [ v | v@(d,m,y,_,_) <- prices, let t = date d m y in t >= t1 && t <= t2]

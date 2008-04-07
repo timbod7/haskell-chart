@@ -136,7 +136,7 @@ renderPlotLegendErrPoints p r@(Rect p1 p2) = do
 
 defaultPlotErrPoints = PlotErrPoints {
     plot_errpoints_style = defaultErrPointStyle,
-    plot_errpoints_point_style = hollowCircles 4 1 1 0 0,
+    plot_errpoints_point_style = hollowCircles 4 1 blue,
     plot_errpoints_values = []
 }
 ----------------------------------------------------------------------

@@ -329,8 +329,34 @@ solidFillStyle ::
 solidFillStyle c = CairoFillStyle fn
    where fn = setSourceColor c
 
-defaultPointStyle = filledCircles 1 1 1 1
+errorBars_default ::
+     Double -- ^ length of the ticks
+  -> Double -- ^ thickness of line
+  -> Color
+  -> CairoErrPointStyle
+errorBars_default tl w c = CairoErrPointStyle rf
+  where
+    rf (ErrPoint x y dx dy) = do
+        C.setLineWidth w
+	setSourceColor c
+        C.newPath
+        C.moveTo (x-dx-tl) y
+        C.lineTo (x+dx+tl) y
+        C.moveTo x (y-dy-tl)
+        C.lineTo x (y+dy+tl)
+        C.moveTo (x-dx) (y-tl)
+        C.lineTo (x-dx) (y+tl)
+        C.moveTo (x-tl) (y-dy)
+        C.lineTo (x+tl) (y-dy)
+        C.moveTo (x+dx) (y-tl)
+        C.lineTo (x+dx) (y+tl)
+        C.moveTo (x-tl) (y+dy)
+        C.lineTo (x+tl) (y+dy)
+	C.stroke
+
+
+defaultPointStyle = filledCircles 1 white
 defaultFontStyle = CairoFontStyle (return ())
-defaultErrPointStyle = errorBars_default 3 0.7 0 0 1
+defaultErrPointStyle = errorBars_default 3 0.7 blue
 
 isValidNumber v = not (isNaN v) && not (isInfinite v)
