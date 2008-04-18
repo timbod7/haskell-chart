@@ -47,8 +47,8 @@ styleColor ind = colorSequence !! ind
 
 styleSymbol :: Int -> PlotKind
 styleSymbol ind = symbolSequence !! ind
-    where symbolSequence = cycle [ Ex, HollowCircle, Triangle, DownTriangle, Square,
-                                   Diamond, Plus, Star, FilledCircle ]
+    where symbolSequence = cycle [ Ex, HollowCircle, Square, Diamond,
+                                   Triangle, DownTriangle, Plus, Star, FilledCircle ]
 
 iplot :: [InternalPlot] -> Layout1
 iplot foobar = defaultLayout1 {
