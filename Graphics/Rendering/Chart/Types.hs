@@ -170,7 +170,7 @@ filledCircles radius c = CairoPointStyle rf
     rf (Point x y) = do
 	setSourceColor c
         C.newPath
-	C.arc x y radius 0 360
+	C.arc x y radius 0 (2*pi)
 	C.fill
 
 hollowCircles ::
@@ -184,7 +184,7 @@ hollowCircles radius w c = CairoPointStyle rf
         C.setLineWidth w
 	setSourceColor c
         C.newPath
-	C.arc x y radius 0 360
+	C.arc x y radius 0 (2*pi)
 	C.stroke
 
 hollowPolygon ::
