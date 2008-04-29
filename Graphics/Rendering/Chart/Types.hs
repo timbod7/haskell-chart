@@ -14,13 +14,6 @@ data Point = Point {
     p_y :: Double
 } deriving Show
 
-data ErrPoint = ErrPoint {
-      ep_x :: Double,
-      ep_y :: Double,
-      ep_dx :: Double,
-      ep_dy :: Double
-} deriving Show
-
 data Vector = Vector {
     v_x :: Double,
     v_y :: Double
@@ -70,12 +63,6 @@ vmap (v1,v2) (v3,v4) v = v3 + (v-v1) * (v4-v3) / (v2-v1)
 -- The contained Cairo action draws a point in the desired
 -- style, at the supplied device coordinates.
 newtype CairoPointStyle = CairoPointStyle (Point -> C.Render ())
-
--- | Abstract data type for the style of a pair of errorbars
---
--- The contained Cairo action draws a pair of errorbars
--- in the desired style, at the supplied device coordinates.
-newtype CairoErrPointStyle = CairoErrPointStyle (ErrPoint -> C.Render ())
 
 -- | Abstract data type for the style of a line
 --
@@ -329,34 +316,7 @@ solidFillStyle ::
 solidFillStyle c = CairoFillStyle fn
    where fn = setSourceColor c
 
-errorBars_default ::
-     Double -- ^ length of the ticks
-  -> Double -- ^ thickness of line
-  -> Color
-  -> CairoErrPointStyle
-errorBars_default tl w c = CairoErrPointStyle rf
-  where
-    rf (ErrPoint x y dx dy) = do
-        C.setLineWidth w
-	setSourceColor c
-        C.newPath
-        C.moveTo (x-dx-tl) y
-        C.lineTo (x+dx+tl) y
-        C.moveTo x (y-dy-tl)
-        C.lineTo x (y+dy+tl)
-        C.moveTo (x-dx) (y-tl)
-        C.lineTo (x-dx) (y+tl)
-        C.moveTo (x-tl) (y-dy)
-        C.lineTo (x+tl) (y-dy)
-        C.moveTo (x+dx) (y-tl)
-        C.lineTo (x+dx) (y+tl)
-        C.moveTo (x-tl) (y+dy)
-        C.lineTo (x+tl) (y+dy)
-	C.stroke
-
-
 defaultPointStyle = filledCircles 1 white
 defaultFontStyle = CairoFontStyle (return ())
-defaultErrPointStyle = errorBars_default 3 0.7 blue
 
 isValidNumber v = not (isNaN v) && not (isInfinite v)
