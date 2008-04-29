@@ -8,14 +8,14 @@ module Graphics.Rendering.Chart.Plot(
     Plot(..),
     ToPlot(..),
     PlotPoints(..),
-    PlotErrPoints(..),
+    PlotErrBars(..),
     PlotLines(..),
     PlotFillBetween(..),
     ErrPoint(..),
 
     defaultPlotLineStyle,
     defaultPlotPoints,
-    defaultPlotErrPoints,
+    defaultPlotErrBars,
     defaultPlotFillBetween,
     defaultPlotLines
     
@@ -88,86 +88,6 @@ defaultPlotLineStyle = solidLine 1 blue
 defaultPlotLines = PlotLines {
     plot_lines_style = defaultPlotLineStyle,
     plot_lines_values = []
-}
-----------------------------------------------------------------------
-
--- | Value defining a series of datapoints and error intervals, and a style in
--- which to render them
-
-data ErrPoint = ErrPoint {
-      ep_x :: Double,
-      ep_y :: Double,
-      ep_dx :: Double,
-      ep_dy :: Double
-} deriving Show
-
-data PlotErrPoints = PlotErrPoints {
-    plot_errpoints_line_style :: CairoLineStyle,
-    plot_errpoints_point_style :: CairoPointStyle,
-    plot_errpoints_tick_length :: Double,
-    plot_errpoints_values :: [ErrPoint]
-}
-
-instance ToPlot PlotErrPoints where
-    toPlot p = Plot {
-        plot_render = renderPlotErrPoints p,
-	plot_render_legend = renderPlotLegendErrPoints p,
-	plot_all_points = map (\(ErrPoint x y _ _) -> Point x y ) $plot_errpoints_values p
-    }
-
-renderPlotErrPoints :: PlotErrPoints -> PointMapFn -> C.Render ()
-renderPlotErrPoints p pmap = do
-    C.save
-    mapM_ (drawPoint.pmap.(\(ErrPoint x y _ _) -> Point x y)) (plot_errpoints_values p)
-    mapM_ (drawErrPoint.epmap) (plot_errpoints_values p)
-    C.restore
-  where
-    epmap (ErrPoint x y dx dy) = ErrPoint x' y' (abs $ x''-x') (abs $ y''-y')
-        where (Point x' y') = pmap (Point x y)
-              (Point x'' y'') = pmap (Point (x+dx) (y+dy))
-    drawErrPoint = drawErrPoint0 p
-    (CairoPointStyle drawPoint) = plot_errpoints_point_style p
-
-drawErrPoint0 ps (ErrPoint x y dx dy) = do
-        let (CairoLineStyle setls) = plot_errpoints_line_style ps
-        let tl = plot_errpoints_tick_length ps
-        setls
-        C.newPath
-        C.moveTo (x-dx-tl) y
-        C.lineTo (x+dx+tl) y
-        C.moveTo x (y-dy-tl)
-        C.lineTo x (y+dy+tl)
-        C.moveTo (x-dx) (y-tl)
-        C.lineTo (x-dx) (y+tl)
-        C.moveTo (x-tl) (y-dy)
-        C.lineTo (x+tl) (y-dy)
-        C.moveTo (x+dx) (y-tl)
-        C.lineTo (x+dx) (y+tl)
-        C.moveTo (x-tl) (y+dy)
-        C.lineTo (x+tl) (y+dy)
-	C.stroke
-
-renderPlotLegendErrPoints :: PlotErrPoints -> Rect -> C.Render ()
-renderPlotLegendErrPoints p r@(Rect p1 p2) = do
-    C.save
-    drawPoint (Point (p_x p1) ((p_y p1 + p_y p2)/2)) 
-    drawPoint (Point ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2))
-    drawPoint (Point (p_x p2) ((p_y p1 + p_y p2)/2))
-    drawErrPoint (ErrPoint (p_x p1) ((p_y p1 + p_y p2)/2) dx dx ) 
-    drawErrPoint (ErrPoint ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2) dx dx)
-    drawErrPoint (ErrPoint (p_x p2) ((p_y p1 + p_y p2)/2) dx dx)
-    C.restore
-
-  where
-    drawErrPoint = drawErrPoint0 p
-    dx = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
-    (CairoPointStyle drawPoint) = plot_errpoints_point_style p
-
-defaultPlotErrPoints = PlotErrPoints {
-    plot_errpoints_line_style = solidLine 0.7 blue,
-    plot_errpoints_point_style = hollowCircles 4 1 blue,
-    plot_errpoints_tick_length = 3,
-    plot_errpoints_values = []
 }
 ----------------------------------------------------------------------
 
@@ -258,4 +178,81 @@ plotAllPointsFillBetween p = concat [ [Point x y1, Point x y2]
 defaultPlotFillBetween = PlotFillBetween {
     plot_fillbetween_style=solidFillStyle (Color 0.5 0.5 1.0),
     plot_fillbetween_values=[]
+}
+
+----------------------------------------------------------------------
+
+-- | Value for holding a point with associated error bounds for
+-- each axis.
+data ErrPoint = ErrPoint {
+      ep_x :: Double,
+      ep_y :: Double,
+      ep_dx :: Double,
+      ep_dy :: Double
+} deriving Show
+
+-- | Value defining a series of error intervals, and a style in
+-- which to render them
+data PlotErrBars = PlotErrBars {
+    plot_errbars_line_style :: CairoLineStyle,
+    plot_errbars_tick_length :: Double,
+    plot_errbars_overhang :: Double,
+    plot_errbars_values :: [ErrPoint]
+}
+
+instance ToPlot PlotErrBars where
+    toPlot p = Plot {
+        plot_render = renderPlotErrBars p,
+	plot_render_legend = renderPlotLegendErrBars p,
+	plot_all_points = map (\(ErrPoint x y _ _) -> Point x y ) $ plot_errbars_values p
+    }
+
+renderPlotErrBars :: PlotErrBars -> PointMapFn -> C.Render ()
+renderPlotErrBars p pmap = do
+    C.save
+    mapM_ (drawErrBar.epmap) (plot_errbars_values p)
+    C.restore
+  where
+    epmap (ErrPoint x y dx dy) = ErrPoint x' y' (abs $ x''-x') (abs $ y''-y')
+        where (Point x' y') = pmap (Point x y)
+              (Point x'' y'') = pmap (Point (x+dx) (y+dy))
+    drawErrBar = drawErrBar0 p
+
+drawErrBar0 ps (ErrPoint x y dx dy) = do
+        let (CairoLineStyle setls) = plot_errbars_line_style ps
+        let tl = plot_errbars_tick_length ps
+        let oh = plot_errbars_overhang ps
+        setls
+        C.newPath
+        C.moveTo (x-dx-oh) y
+        C.lineTo (x+dx+oh) y
+        C.moveTo x (y-dy-oh)
+        C.lineTo x (y+dy+oh)
+        C.moveTo (x-dx) (y-tl)
+        C.lineTo (x-dx) (y+tl)
+        C.moveTo (x-tl) (y-dy)
+        C.lineTo (x+tl) (y-dy)
+        C.moveTo (x+dx) (y-tl)
+        C.lineTo (x+dx) (y+tl)
+        C.moveTo (x-tl) (y+dy)
+        C.lineTo (x+tl) (y+dy)
+	C.stroke
+
+renderPlotLegendErrBars :: PlotErrBars -> Rect -> C.Render ()
+renderPlotLegendErrBars p r@(Rect p1 p2) = do
+    C.save
+    drawErrBar (ErrPoint (p_x p1) ((p_y p1 + p_y p2)/2) dx dx ) 
+    drawErrBar (ErrPoint ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2) dx dx)
+    drawErrBar (ErrPoint (p_x p2) ((p_y p1 + p_y p2)/2) dx dx)
+    C.restore
+
+  where
+    drawErrBar = drawErrBar0 p
+    dx = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
+
+defaultPlotErrBars = PlotErrBars {
+    plot_errbars_line_style = solidLine 1 blue,
+    plot_errbars_tick_length = 3,
+    plot_errbars_overhang = 0,
+    plot_errbars_values = []
 }

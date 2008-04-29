@@ -192,14 +192,19 @@ test6 otype = return pp{layout1_title="Graphics.Rendering.Chart.Simple example"}
 test7 :: OutputType -> IO Layout1
 test7 otype = return layout 
   where
-    points = defaultPlotErrPoints {
-        plot_errpoints_point_style=filledCircles 2 red,
-	plot_errpoints_values = [ (ErrPoint x (sin (exp x)) (sin x/2) (cos x/10)) | x <- [1..20]]
+    vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
+    bars = defaultPlotErrBars {
+	plot_errbars_values = [ErrPoint x y dx dy | (x,y,dx,dy) <- vals]
+    }
+    points = defaultPlotPoints {
+        plot_points_style=filledCircles 2 red,
+	plot_points_values = [Point x y |  (x,y,dx,dy) <- vals]
     }
 
     layout = defaultLayout1 {
         layout1_title= "errorbars example",
-	layout1_plots = [("test",HA_Bottom,VA_Left,(toPlot points))]
+	layout1_plots = [("test",HA_Bottom,VA_Left,(toPlot bars)),
+                         ("test",HA_Bottom,VA_Left,(toPlot points))]
     }
 
 ----------------------------------------------------------------------        
