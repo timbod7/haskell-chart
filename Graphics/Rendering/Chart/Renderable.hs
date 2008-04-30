@@ -182,6 +182,7 @@ instance ToRenderable Legend where
 minsizeLegend :: Legend -> CRender RectSize
 minsizeLegend (Legend _ ls plots) = do
     let labels = nub $ map fst plots
+    setFontStyle $ legend_label_style ls
     lsizes <- mapM textSize labels
     lgap <- legendSpacer
     let lm = legend_margin ls
@@ -200,6 +201,7 @@ renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
 
     rf :: Point -> (String,[Plot]) -> CRender Point
     rf p1 (label,theseplots) = do
+        setFontStyle $ legend_label_style ls
         (w,h) <- textSize label
 	lgap <- legendSpacer
 	let p2 = (p1 `pvadd` Vector lps 0)
