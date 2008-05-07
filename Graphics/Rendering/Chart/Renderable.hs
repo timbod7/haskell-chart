@@ -18,10 +18,10 @@ import Graphics.Rendering.Chart.Plot
 data Renderable = Renderable {
 
    -- | a Cairo action to calculate a minimum size,
-   minsize :: C.Render RectSize,
+   minsize :: CRender RectSize,
 
    -- | a Cairo action for drawing it within a specified rectangle.
-   render ::  Rect -> C.Render ()
+   render ::  Rect -> CRender ()
 }
 
 -- | A type class abtracting the conversion of a value to a
@@ -51,11 +51,11 @@ fillBackground :: CairoFillStyle -> Renderable -> Renderable
 fillBackground fs r = Renderable { minsize = minsize r, render = rf }
   where
     rf rect@(Rect p1 p2) = do
-        C.save
+        c $ C.save
         setClipRegion p1 p2
         setFillStyle fs
-        C.paint
-        C.restore
+        c $ C.paint
+        c $ C.restore
 	render r rect
 
 vertical, horizontal :: [(Double,Renderable)] -> Renderable 
@@ -107,7 +107,7 @@ allocate extra ws vs = zipWith (+) vs (extras++[0,0..])
 renderableToPNGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPNGFile chart width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
-    C.renderWith result $ rfn
+    C.renderWith result $ runCRender rfn bitmapEnv
     C.surfaceWriteToPNG result path
   where
     rfn = do
@@ -121,12 +121,12 @@ renderableToPNGFile chart width height path =
 renderableToPDFFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPDFFile chart width height path = 
     C.withPDFSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
-    C.renderWith result $ rfn
+    C.renderWith result $ runCRender rfn vectorEnv
     C.surfaceFinish result
   where
     rfn = do
 	render chart rect
-        C.showPage
+        c $ C.showPage
 
     rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
 
@@ -135,22 +135,28 @@ renderableToPDFFile chart width height path =
 renderableToPSFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToPSFile chart width height path = 
     C.withPSSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
-    C.renderWith result $ rfn
+    C.renderWith result $ runCRender rfn vectorEnv
     C.surfaceFinish result
   where
     rfn = do
 	render chart rect
-        C.showPage
+        c $ C.showPage
 
     rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
 
-alignPixels :: C.Render ()
+bitmapEnv = CEnv adjfn
+  where
+    adjfn (Point x y)= Point (fromIntegral (round x)) (fromIntegral (round y))
+
+vectorEnv = CEnv id
+
+alignPixels :: CRender ()
 alignPixels = do
     -- move to centre of pixels so that stroke width of 1 is
     -- exactly one pixel 
-    C.translate 0.5 0.5
+    c $ C.translate 0.5 0.5
 
-embedRenderable :: C.Render Renderable -> Renderable
+embedRenderable :: CRender Renderable -> Renderable
 embedRenderable ca = Renderable {
    minsize = do { a <- ca; minsize a },
    render = \ r -> do { a <- ca; render a r }
@@ -174,7 +180,7 @@ instance ToRenderable Legend where
     render=renderLegend l
   }
 
-minsizeLegend :: Legend -> C.Render RectSize
+minsizeLegend :: Legend -> CRender RectSize
 minsizeLegend (Legend _ ls plots) = do
     let labels = nub $ map fst plots
     lsizes <- mapM textSize labels
@@ -186,14 +192,14 @@ minsizeLegend (Legend _ ls plots) = do
     let w = sum [w + lgap | (w,h) <- lsizes] + pw * (n+1) + lm * (n-1)
     return (w,h)
 
-renderLegend :: Legend -> Rect -> C.Render ()
+renderLegend :: Legend -> Rect -> CRender ()
 renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
     foldM_ rf rp1 $ join_nub plots
   where
     lm = legend_margin ls
     lps = legend_plot_size ls
 
-    rf :: Point -> (String,[Plot]) -> C.Render Point
+    rf :: Point -> (String,[Plot]) -> CRender Point
     rf p1 (label,theseplots) = do
         (w,h) <- textSize label
 	lgap <- legendSpacer
@@ -228,21 +234,21 @@ rlabel :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> Double -> String -> Re
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
     mf = do
-       C.save
+       c $ C.save
        setFontStyle fs
        (w,h) <- textSize s
-       C.restore
+       c $ C.restore
        let sz' = (w*acr+h*asr,w*asr+h*acr)
        return sz'
     rf (Rect p1 p2) = do
-       C.save
+       c $ C.save
        setFontStyle fs
        sz@(w,h) <- textSize s
-       C.translate (xadj sz hta (p_x p1) (p_x p2)) (yadj sz vta (p_y p1) (p_y p2))
-       C.rotate rot'
-       C.moveTo (-w/2) (h/2)
-       C.showText s
-       C.restore
+       c $ C.translate (xadj sz hta (p_x p1) (p_x p2)) (yadj sz vta (p_y p1) (p_y p2))
+       c $ C.rotate rot'
+       c $ C.moveTo (-w/2) (h/2)
+       c $ C.showText s
+       c $ C.restore
     xadj (w,h) HTA_Left x1 x2 =  x1 +(w*acr+h*asr)/2
     xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
     xadj (w,h) HTA_Right x1 x2 =  x2 -(w*acr+h*asr)/2

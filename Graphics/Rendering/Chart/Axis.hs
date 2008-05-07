@@ -70,13 +70,13 @@ instance ToRenderable AxisT where
      render=renderAxis at
   }
 
-minsizeAxis :: AxisT -> C.Render RectSize
+minsizeAxis :: AxisT -> CRender RectSize
 minsizeAxis (AxisT at a) = do
     let labels = map snd (axis_labels a)
-    C.save
+    c $ C.save
     setFontStyle (axis_label_style a)
     labelSizes <- mapM textSize labels
-    C.restore
+    c $ C.restore
     let (lw,lh) = foldl maxsz (0,0) labelSizes
     let ag = axis_label_gap a
     let tsize = maximum [ max 0 (-l) | (v,l) <- axis_ticks a ]
@@ -93,13 +93,13 @@ minsizeAxis (AxisT at a) = do
 
 -- | Calculate the amount by which the labels extend beyond
 -- the ends of the axis
-axisOverhang :: AxisT -> C.Render (Double,Double)
+axisOverhang :: AxisT -> CRender (Double,Double)
 axisOverhang (AxisT at a) = do
     let labels = map snd (sort (axis_labels a))
-    C.save
+    c $ C.save
     setFontStyle (axis_label_style a)
     labelSizes <- mapM textSize labels
-    C.restore
+    c $ C.restore
     case labelSizes of
         [] -> return (0,0)
 	ls  -> let l1 = head ls
@@ -113,24 +113,24 @@ axisOverhang (AxisT at a) = do
 		       E_Left -> ohangv
 		       E_Right -> ohangh
 
-renderAxis :: AxisT -> Rect -> C.Render ()
+renderAxis :: AxisT -> Rect -> CRender ()
 renderAxis at@(AxisT et a) rect = do
-   C.save
+   c $ C.save
    setLineStyle (axis_line_style a)
-   strokeLines' True [Point sx sy,Point ex ey]
+   strokeLines [Point sx sy,Point ex ey]
    mapM_ drawTick (axis_ticks a)
-   C.restore
-   C.save
+   c $ C.restore
+   c $ C.save
    setFontStyle (axis_label_style a)
    mapM_ drawLabel (axis_labels a)
-   C.restore
+   c $ C.restore
  where
    (sx,sy,ex,ey,tp,axisPoint) = axisMapping at rect
 
    drawTick (value,length) = 
        let t1 = axisPoint value
 	   t2 = t1 `pvadd` (vscale length tp)
-       in strokeLines' True [t1,t2]
+       in strokeLines [t1,t2]
 
    (hta,vta,lp) = 
        let g = axis_label_gap a
@@ -158,12 +158,12 @@ axisMapping (AxisT et a) rect = case et of
     mapy :: Range -> Double -> Double -> Point
     mapy (yr0,yr1) x y = Point x (axis_viewport a (yr1,yr0) y)
 
-renderAxisGrid :: Rect -> AxisT -> C.Render ()
+renderAxisGrid :: Rect -> AxisT -> CRender ()
 renderAxisGrid rect@(Rect p1 p2) at@(AxisT re a) = do
-    C.save
+    c $ C.save
     setLineStyle (axis_grid_style a)
     mapM_ (drawGridLine re) (axis_grid a)
-    C.restore
+    c $ C.restore
   where
     (sx,sy,ex,ey,tp,axisPoint) = axisMapping at rect
 
@@ -173,21 +173,10 @@ renderAxisGrid rect@(Rect p1 p2) at@(AxisT re a) = do
     drawGridLine E_Right = hline
 
     vline v = let v' = p_x (axisPoint v)
-	      in strokeLines' True [Point v' (p_y p1),Point v' (p_y p2)]
+	      in strokeLines [Point v' (p_y p1),Point v' (p_y p2)]
 
     hline v = let v' = p_y (axisPoint v)
-	      in strokeLines' True [Point (p_x p1) v',Point (p_x p2) v']
-
--- | Same as strokeLines, but with a flag that, when true will
--- adjust each point to land on a whole number. This is useful for
--- drawing known horizontal and vertical lines so that the occupy
--- exactly 
-
-strokeLines' :: Bool -> [Point] -> C.Render ()
-strokeLines' False ps = strokeLines ps
-strokeLines' True  ps = strokeLines (map adjfn ps)
-  where
-    adjfn (Point x y)= Point (fromIntegral (round x)) (fromIntegral (round y))
+	      in strokeLines [Point (p_x p1) v',Point (p_x p2) v']
 
 ----------------------------------------------------------------------
 

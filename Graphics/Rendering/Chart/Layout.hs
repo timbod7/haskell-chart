@@ -89,10 +89,10 @@ layout1ToRenderable l =
 
 renderPlots l r@(Rect p1 p2) = do
     -- render the plots
-    C.save
+    c $ C.save
     setClipRegion p1 p2 
     mapM_ (rPlot r) (layout1_plots l)
-    C.restore
+    c $ C.restore
 
     -- render the axes grids
     maybeM () (renderAxisGrid r) tAxis
@@ -103,7 +103,7 @@ renderPlots l r@(Rect p1 p2) = do
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
 
-    rPlot :: Rect -> (String,HAxis,VAxis,Plot) -> C.Render ()
+    rPlot :: Rect -> (String,HAxis,VAxis,Plot) -> CRender ()
     rPlot rect (_,ha,va,p) = 
         let mxaxis = case ha of HA_Bottom -> bAxis
 				HA_Top    -> tAxis
@@ -111,7 +111,7 @@ renderPlots l r@(Rect p1 p2) = do
 				VA_Right  -> rAxis
         in rPlot1 rect mxaxis myaxis p
 	      
-    rPlot1 :: Rect -> Maybe AxisT -> Maybe AxisT -> Plot -> C.Render ()
+    rPlot1 :: Rect -> Maybe AxisT -> Maybe AxisT -> Plot -> CRender ()
     rPlot1 (Rect dc1 dc2) (Just (AxisT _ xaxis)) (Just (AxisT _ yaxis)) p = 
 	let xrange = (p_x dc1, p_x dc2)
 	    yrange = (p_y dc2, p_y dc1)

@@ -19,10 +19,10 @@ flag splitbase
 
 library
   if flag(splitbase)
-    Build-depends: base >= 3, old-locale, old-time
+    Build-depends: base >= 3, old-locale, old-time, mtl
   else
     Build-depends: base < 3
-  Build-depends: gtk >= 0.9.11, cairo >= 0.9.11
+  Build-depends: gtk >= 0.9.11, cairo >= 0.9.11, mtl
 
   Exposed-modules:
         Graphics.Rendering.Chart,

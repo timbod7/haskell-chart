@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Types
@@ -7,6 +8,8 @@
 module Graphics.Rendering.Chart.Types where
 
 import qualified Graphics.Rendering.Cairo as C
+import Control.Monad.Reader
+import Debug.Trace
 
 -- | A point in two dimensions
 data Point = Point {
@@ -57,30 +60,55 @@ mkrect (Point x1 _) (Point _ y2) (Point x3 _) (Point _ y4) =
 -- | A linear mapping of points in one range to another
 vmap :: Range -> Range -> Double -> Double
 vmap (v1,v2) (v3,v4) v = v3 + (v-v1) * (v4-v3) / (v2-v1)
+
+----------------------------------------------------------------------
+
+-- | The environment present in the CRender Monad.
+data CEnv = CEnv {
+    -- | A transform applied immediately prior to values
+    -- being displayed in device coordinates
+    --
+    -- When device coordinates correspond to pixels, a cleaner
+    -- image is created if this transform rounds to the nearest
+    -- pixel. With higher-resolution output, this transform can
+    -- just be the identity function.
+    cenv_point_alignfn :: Point -> Point
+}
+
+newtype CRender a = DR (ReaderT CEnv C.Render a)
+  deriving (Functor, Monad, MonadReader CEnv)
+
+runCRender :: CRender a -> CEnv -> C.Render a
+runCRender (DR m) e = runReaderT m e
+
+c :: C.Render a -> CRender a
+c = DR . lift
  
+----------------------------------------------------------------------
+
 -- | Abstract data type for the style of a plotted point
 --
 -- The contained Cairo action draws a point in the desired
 -- style, at the supplied device coordinates.
-newtype CairoPointStyle = CairoPointStyle (Point -> C.Render ())
+newtype CairoPointStyle = CairoPointStyle (Point -> CRender ())
 
 -- | Abstract data type for the style of a line
 --
 -- The contained Cairo action sets the required line
 -- in the Cairo rendering state.
-newtype CairoLineStyle = CairoLineStyle (C.Render ())
+newtype CairoLineStyle = CairoLineStyle (CRender ())
 
 -- | Abstract data type for a fill style
 --
 -- The contained Cairo action sets the required fill
 -- style in the Cairo rendering state.
-newtype CairoFillStyle = CairoFillStyle (C.Render ())
+newtype CairoFillStyle = CairoFillStyle (CRender ())
 
 -- | Abstract data type for a font.
 --
 -- The contained Cairo action sets the required font
 -- in the Cairo rendering state.
-newtype CairoFontStyle = CairoFontStyle (C.Render ())
+newtype CairoFontStyle = CairoFontStyle (CRender ())
 
 type Range = (Double,Double)
 type RectSize = (Double,Double)
@@ -95,29 +123,40 @@ blue = Color 0 0 1
 ----------------------------------------------------------------------
 -- Assorted helper functions in Cairo Usage
 
-moveTo, lineTo :: Point -> C.Render ()
-moveTo (Point px py) = C.moveTo px py
-lineTo (Point px py) = C.lineTo px py
+moveTo, lineTo :: Point -> CRender ()
+moveTo p  = do
+    p' <- alignp p
+    c $ C.moveTo (p_x p') (p_y p')
+
+alignp :: Point -> CRender Point
+alignp p = do 
+    alignfn <- fmap cenv_point_alignfn ask
+    return (alignfn p)
+
+lineTo p = do
+    p' <- alignp p
+    c $ C.lineTo (p_x p') (p_y p')
 
 setClipRegion p2 p3 = do    
-    C.moveTo (p_x p2) (p_y p2)
-    C.lineTo (p_x p2) (p_y p3)
-    C.lineTo (p_x p3) (p_y p3)
-    C.lineTo (p_x p3) (p_y p2)
-    C.lineTo (p_x p2) (p_y p2)
-    C.clip
+    c $ C.moveTo (p_x p2) (p_y p2)
+    c $ C.lineTo (p_x p2) (p_y p3)
+    c $ C.lineTo (p_x p3) (p_y p3)
+    c $ C.lineTo (p_x p3) (p_y p2)
+    c $ C.lineTo (p_x p2) (p_y p2)
+    c $ C.clip
 
 -- | stroke the lines between successive points
+strokeLines :: [Point] -> CRender ()
 strokeLines (p1:ps) = do
-    C.newPath
+    c $ C.newPath
     moveTo p1
     mapM_ lineTo ps
-    C.stroke
+    c $ C.stroke
 strokeLines _ = return ()
 
 -- | make a path from a rectable
-rectPath :: Rect -> C.Render ()
-rectPath (Rect (Point x1 y1) (Point x2 y2)) = do
+rectPath :: Rect -> CRender ()
+rectPath (Rect (Point x1 y1) (Point x2 y2)) = c $ do
    C.newPath
    C.moveTo x1 y1
    C.lineTo x2 y1
@@ -131,8 +170,8 @@ setFillStyle (CairoFillStyle s) = s
 
 setSourceColor (Color r g b) = C.setSourceRGB r g b
 
-textSize :: String -> C.Render RectSize
-textSize s = do
+textSize :: String -> CRender RectSize
+textSize s = c $ do
     te <- C.textExtents s
     fe <- C.fontExtents
     return (C.textExtentsWidth te, C.fontExtentsHeight fe)
@@ -142,8 +181,8 @@ data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine
 
 -- | Function to draw a textual label anchored by one of it's corners
 -- or edges.
-drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> C.Render ()
-drawText hta vta (Point x y) s = do
+drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> CRender ()
+drawText hta vta (Point x y) s = c $ do
     te <- C.textExtents s
     fe <- C.fontExtents
     let lx = xadj hta (C.textExtentsWidth te)
@@ -165,27 +204,29 @@ filledCircles ::
      Double -- ^ radius of circle
   -> Color -- ^ colour
   -> CairoPointStyle
-filledCircles radius c = CairoPointStyle rf
+filledCircles radius cl = CairoPointStyle rf
   where
-    rf (Point x y) = do
-	setSourceColor c
-        C.newPath
-	C.arc x y radius 0 (2*pi)
-	C.fill
+    rf p = do
+        (Point x y) <- alignp p
+	c $ setSourceColor cl
+        c $ C.newPath
+	c $ C.arc x y radius 0 (2*pi)
+	c $ C.fill
 
 hollowCircles ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
   -> Color
   -> CairoPointStyle
-hollowCircles radius w c = CairoPointStyle rf
+hollowCircles radius w cl = CairoPointStyle rf
   where
-    rf (Point x y) = do
-        C.setLineWidth w
-	setSourceColor c
-        C.newPath
-	C.arc x y radius 0 (2*pi)
-	C.stroke
+    rf p = do
+        (Point x y) <- alignp p
+        c $ C.setLineWidth w
+	c $ setSourceColor cl
+        c $ C.newPath
+	c $ C.arc x y radius 0 (2*pi)
+	c $ C.stroke
 
 hollowPolygon ::
      Double -- ^ radius of circle
@@ -194,11 +235,12 @@ hollowPolygon ::
   -> Bool   -- ^ Is right-side-up?
   -> Color
   -> CairoPointStyle
-hollowPolygon radius w sides isrot c = CairoPointStyle rf
-  where rf (Point x y) =
-            do C.setLineWidth w
-	       setSourceColor c
-               C.newPath
+hollowPolygon radius w sides isrot cl = CairoPointStyle rf
+  where rf p =
+            do (Point x y ) <- alignp p
+               c $ C.setLineWidth w
+	       c $ setSourceColor cl
+               c $ C.newPath
                let intToAngle n = if isrot
                                   then fromIntegral n * 2*pi / fromIntegral sides
                                   else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
@@ -206,7 +248,7 @@ hollowPolygon radius w sides isrot c = CairoPointStyle rf
                    (p:ps) = map (\a -> Point (x + radius * sin a) (y + radius * cos a)) angles
                moveTo p
                mapM_ lineTo (ps++[p])
-	       C.stroke
+	       c $ C.stroke
 
 filledPolygon ::
      Double -- ^ radius of circle
@@ -214,10 +256,11 @@ filledPolygon ::
   -> Bool   -- ^ Is right-side-up?
   -> Color
   -> CairoPointStyle
-filledPolygon radius sides isrot c = CairoPointStyle rf
-  where rf (Point x y) =
-            do setSourceColor c
-               C.newPath
+filledPolygon radius sides isrot cl = CairoPointStyle rf
+  where rf p =
+            do (Point x y ) <- alignp p
+               c $ setSourceColor cl
+               c $ C.newPath
                let intToAngle n = if isrot
                                   then fromIntegral n * 2*pi / fromIntegral sides
                                   else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
@@ -225,66 +268,69 @@ filledPolygon radius sides isrot c = CairoPointStyle rf
                    (p:ps) = map (\a -> Point (x + radius * sin a) (y + radius * cos a)) angles
                moveTo p
                mapM_ lineTo (ps++[p])
-	       C.fill
+	       c $ C.fill
 
 plusses ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
   -> Color
   -> CairoPointStyle
-plusses radius w c = CairoPointStyle rf
-  where rf (Point x y) = do C.setLineWidth w
-	                    setSourceColor c
-                            C.newPath
-                            C.moveTo (x+radius) y
-                            C.lineTo (x-radius) y
-                            C.moveTo x (y-radius)
-                            C.lineTo x (y+radius)
-	                    C.stroke
+plusses radius w cl = CairoPointStyle rf
+  where rf p = do (Point x y ) <- alignp p
+                  c $ C.setLineWidth w
+	          c $ setSourceColor cl
+                  c $ C.newPath
+                  c $ C.moveTo (x+radius) y
+                  c $ C.lineTo (x-radius) y
+                  c $ C.moveTo x (y-radius)
+                  c $ C.lineTo x (y+radius)
+	          c $ C.stroke
 
 exes ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
   -> Color
   -> CairoPointStyle
-exes radius w c = CairoPointStyle rf
+exes radius w cl = CairoPointStyle rf
   where rad = radius / sqrt 2
-        rf (Point x y) = do C.setLineWidth w
-	                    setSourceColor c
-                            C.newPath
-                            C.moveTo (x+rad) (y+rad)
-                            C.lineTo (x-rad) (y-rad)
-                            C.moveTo (x+rad) (y-rad)
-                            C.lineTo (x-rad) (y+rad)
-	                    C.stroke
+        rf p = do (Point x y ) <- alignp p
+                  c $ C.setLineWidth w
+	          c $ setSourceColor cl
+                  c $ C.newPath
+                  c $ C.moveTo (x+rad) (y+rad)
+                  c $ C.lineTo (x-rad) (y-rad)
+                  c $ C.moveTo (x+rad) (y-rad)
+                  c $ C.lineTo (x-rad) (y+rad)
+	          c $ C.stroke
 
 stars ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
   -> Color 
   -> CairoPointStyle
-stars radius w c = CairoPointStyle rf
+stars radius w cl = CairoPointStyle rf
   where rad = radius / sqrt 2
-        rf (Point x y) = do C.setLineWidth w
-	                    setSourceColor c
-                            C.newPath
-                            C.moveTo (x+radius) y
-                            C.lineTo (x-radius) y
-                            C.moveTo x (y-radius)
-                            C.lineTo x (y+radius)
-                            C.moveTo (x+rad) (y+rad)
-                            C.lineTo (x-rad) (y-rad)
-                            C.moveTo (x+rad) (y-rad)
-                            C.lineTo (x-rad) (y+rad)
-	                    C.stroke
+        rf p = do (Point x y ) <- alignp p
+                  c $ C.setLineWidth w
+	          c $ setSourceColor cl
+                  c $ C.newPath
+                  c $ C.moveTo (x+radius) y
+                  c $ C.lineTo (x-radius) y
+                  c $ C.moveTo x (y-radius)
+                  c $ C.lineTo x (y+radius)
+                  c $ C.moveTo (x+rad) (y+rad)
+                  c $ C.lineTo (x-rad) (y-rad)
+                  c $ C.moveTo (x+rad) (y-rad)
+                  c $ C.lineTo (x-rad) (y+rad)
+	          c $ C.stroke
 
 solidLine ::
      Double -- ^ width of line
   -> Color
   -> CairoLineStyle
-solidLine w c = CairoLineStyle (do
-    C.setLineWidth w
-    setSourceColor c
+solidLine w cl = CairoLineStyle (do
+    c $ C.setLineWidth w
+    c $ setSourceColor cl
     )
 
 dashedLine ::
@@ -292,10 +338,10 @@ dashedLine ::
   -> [Double] -- ^ the dash pattern in device coordinates
   -> Color
   -> CairoLineStyle
-dashedLine w dashes c = CairoLineStyle (do
-    C.setDash dashes 0
-    C.setLineWidth w
-    setSourceColor c
+dashedLine w dashes cl = CairoLineStyle (do
+    c $ C.setDash dashes 0
+    c $ C.setLineWidth w
+    c $ setSourceColor cl
     )
 
 fontStyle ::
@@ -307,14 +353,14 @@ fontStyle ::
 fontStyle name size slant weight = CairoFontStyle fn
   where
     fn = do
-	 C.selectFontFace name slant weight
-	 C.setFontSize size
+	 c $ C.selectFontFace name slant weight
+	 c $ C.setFontSize size
 
 solidFillStyle ::
      Color
   -> CairoFillStyle
-solidFillStyle c = CairoFillStyle fn
-   where fn = setSourceColor c
+solidFillStyle cl = CairoFillStyle fn
+   where fn = c $ setSourceColor cl
 
 defaultPointStyle = filledCircles 1 white
 defaultFontStyle = CairoFontStyle (return ())

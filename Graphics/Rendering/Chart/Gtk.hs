@@ -12,6 +12,7 @@ import qualified Graphics.UI.Gtk as G
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Renderable
+import Graphics.Rendering.Chart.Types
 
 renderableToWindow :: Renderable -> Int -> Int -> IO ()
 renderableToWindow chart windowWidth windowHeight = do
@@ -35,7 +36,7 @@ updateCanvas chart canvas = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
     let rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
-    G.renderWithDrawable win (rfn rect)
+    G.renderWithDrawable win $ runCRender (rfn rect) bitmapEnv
     return True
   where
     rfn rect = do
