@@ -73,10 +73,9 @@ instance ToRenderable AxisT where
 minsizeAxis :: AxisT -> CRender RectSize
 minsizeAxis (AxisT at a) = do
     let labels = map snd (axis_labels a)
-    c $ C.save
-    setFontStyle (axis_label_style a)
-    labelSizes <- mapM textSize labels
-    c $ C.restore
+    labelSizes <- preserveCState $ do
+        setFontStyle (axis_label_style a)
+        mapM textSize labels
     let (lw,lh) = foldl maxsz (0,0) labelSizes
     let ag = axis_label_gap a
     let tsize = maximum [ max 0 (-l) | (v,l) <- axis_ticks a ]
@@ -96,10 +95,9 @@ minsizeAxis (AxisT at a) = do
 axisOverhang :: AxisT -> CRender (Double,Double)
 axisOverhang (AxisT at a) = do
     let labels = map snd (sort (axis_labels a))
-    c $ C.save
-    setFontStyle (axis_label_style a)
-    labelSizes <- mapM textSize labels
-    c $ C.restore
+    labelSizes <- preserveCState $ do
+        setFontStyle (axis_label_style a)
+        mapM textSize labels
     case labelSizes of
         [] -> return (0,0)
 	ls  -> let l1 = head ls
@@ -115,15 +113,13 @@ axisOverhang (AxisT at a) = do
 
 renderAxis :: AxisT -> Rect -> CRender ()
 renderAxis at@(AxisT et a) rect = do
-   c $ C.save
-   setLineStyle (axis_line_style a)
-   strokeLines [Point sx sy,Point ex ey]
-   mapM_ drawTick (axis_ticks a)
-   c $ C.restore
-   c $ C.save
-   setFontStyle (axis_label_style a)
-   mapM_ drawLabel (axis_labels a)
-   c $ C.restore
+   preserveCState $ do
+       setLineStyle (axis_line_style a)
+       strokeLines [Point sx sy,Point ex ey]
+       mapM_ drawTick (axis_ticks a)
+   preserveCState $ do
+       setFontStyle (axis_label_style a)
+       mapM_ drawLabel (axis_labels a)
  where
    (sx,sy,ex,ey,tp,axisPoint) = axisMapping at rect
 
@@ -160,10 +156,9 @@ axisMapping (AxisT et a) rect = case et of
 
 renderAxisGrid :: Rect -> AxisT -> CRender ()
 renderAxisGrid rect@(Rect p1 p2) at@(AxisT re a) = do
-    c $ C.save
-    setLineStyle (axis_grid_style a)
-    mapM_ (drawGridLine re) (axis_grid a)
-    c $ C.restore
+    preserveCState $ do
+        setLineStyle (axis_grid_style a)
+        mapM_ (drawGridLine re) (axis_grid a)
   where
     (sx,sy,ex,ey,tp,axisPoint) = axisMapping at rect
 

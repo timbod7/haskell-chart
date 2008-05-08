@@ -87,12 +87,10 @@ layout1ToRenderable l =
 
     er = (0,emptyRenderable)
 
-renderPlots l r@(Rect p1 p2) = do
+renderPlots l r@(Rect p1 p2) = preserveCState $ do
     -- render the plots
-    c $ C.save
     setClipRegion p1 p2 
     mapM_ (rPlot r) (layout1_plots l)
-    c $ C.restore
 
     -- render the axes grids
     maybeM () (renderAxisGrid r) tAxis

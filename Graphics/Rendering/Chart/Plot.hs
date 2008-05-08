@@ -62,11 +62,9 @@ instance ToPlot PlotLines where
     }
 
 renderPlotLines :: PlotLines -> PointMapFn -> CRender ()
-renderPlotLines p pmap = do
-    c $ C.save
+renderPlotLines p pmap = preserveCState $ do
     setLineStyle (plot_lines_style p)
     mapM_ drawLines (plot_lines_values p)
-    c $ C.restore
   where
     drawLines (p:ps) = do
 	moveTo (pmap p)
@@ -74,14 +72,12 @@ renderPlotLines p pmap = do
 	c $ C.stroke
 
 renderPlotLegendLines :: PlotLines -> Rect -> CRender ()
-renderPlotLegendLines p r@(Rect p1 p2) = do
-    c $ C.save
+renderPlotLegendLines p r@(Rect p1 p2) = preserveCState $ do
     setLineStyle (plot_lines_style p)
     let y = (p_y p1 + p_y p2) / 2
     moveTo (Point (p_x p1) y)
     lineTo (Point (p_x p2) y)
     c $ C.stroke
-    c $ C.restore
 
 defaultPlotLineStyle = solidLine 1 blue
 
@@ -106,21 +102,17 @@ instance ToPlot PlotPoints where
     }
 
 renderPlotPoints :: PlotPoints -> PointMapFn -> CRender ()
-renderPlotPoints p pmap = do
-    c $ C.save
+renderPlotPoints p pmap = preserveCState $ do
     mapM_ (drawPoint.pmap) (plot_points_values p)
-    c $ C.restore
   where
     (CairoPointStyle drawPoint) = (plot_points_style p)
 
 
 renderPlotLegendPoints :: PlotPoints -> Rect -> CRender ()
-renderPlotLegendPoints p r@(Rect p1 p2) = do
-    c $ C.save
+renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
     drawPoint (Point (p_x p1) ((p_y p1 + p_y p2)/2))
     drawPoint (Point ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2))
     drawPoint (Point (p_x p2) ((p_y p1 + p_y p2)/2))
-    c $ C.restore
 
   where
     (CairoPointStyle drawPoint) = (plot_points_style p)
@@ -149,26 +141,22 @@ renderPlotFillBetween :: PlotFillBetween -> PointMapFn -> CRender ()
 renderPlotFillBetween p pmap = renderPlotFillBetween' p (plot_fillbetween_values p) pmap
 
 renderPlotFillBetween' p [] _ = return ()
-renderPlotFillBetween' p vs pmap  = do
-    c $ C.save
+renderPlotFillBetween' p vs pmap  = preserveCState $ do
     setFillStyle (plot_fillbetween_style p)
     moveTo p0
     mapM_ lineTo p1s
     mapM_ lineTo (reverse p2s)
     lineTo p0
     c $ C.fill
-    c $ C.restore
   where
     (p0:p1s) = map pmap [ Point x y1 | (x,(y1,y2)) <- vs ]
     p2s = map pmap [ Point x y2 | (x,(y1,y2)) <- vs ]
 
 renderPlotLegendFill :: PlotFillBetween -> Rect -> CRender ()
-renderPlotLegendFill p r = do
-    c $ C.save
+renderPlotLegendFill p r = preserveCState $ do
     setFillStyle (plot_fillbetween_style p)
     rectPath r
     c $ C.fill
-    c $ C.restore
 
 plotAllPointsFillBetween :: PlotFillBetween -> [Point]
 plotAllPointsFillBetween p = concat [ [Point x y1, Point x y2]
@@ -208,10 +196,8 @@ instance ToPlot PlotErrBars where
     }
 
 renderPlotErrBars :: PlotErrBars -> PointMapFn -> CRender ()
-renderPlotErrBars p pmap = do
-    c $ C.save
+renderPlotErrBars p pmap = preserveCState $ do
     mapM_ (drawErrBar.epmap) (plot_errbars_values p)
-    c $ C.restore
   where
     epmap (ErrPoint x y dx dy) = ErrPoint x' y' (abs $ x''-x') (abs $ y''-y')
         where (Point x' y') = pmap (Point x y)
@@ -238,12 +224,10 @@ drawErrBar0 ps (ErrPoint x y dx dy) = do
 	c $ C.stroke
 
 renderPlotLegendErrBars :: PlotErrBars -> Rect -> CRender ()
-renderPlotLegendErrBars p r@(Rect p1 p2) = do
-    c $ C.save
+renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
     drawErrBar (ErrPoint (p_x p1) ((p_y p1 + p_y p2)/2) dx dx ) 
     drawErrBar (ErrPoint ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2) dx dx)
     drawErrBar (ErrPoint (p_x p2) ((p_y p1 + p_y p2)/2) dx dx)
-    c $ C.restore
 
   where
     drawErrBar = drawErrBar0 p

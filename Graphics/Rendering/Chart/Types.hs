@@ -9,7 +9,6 @@ module Graphics.Rendering.Chart.Types where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad.Reader
-import Debug.Trace
 
 -- | A point in two dimensions
 data Point = Point {
@@ -197,6 +196,15 @@ drawText hta vta (Point x y) s = c $ do
     yadj VTA_Centre te fe = - (C.textExtentsYbearing te) / 2
     yadj VTA_BaseLine te fe = 0
     yadj VTA_Bottom te fe = -(C.fontExtentsDescent fe)
+
+-- | Execute a rendering action in a saved context (ie bracketed
+-- between C.save and C.restore)
+preserveCState :: CRender a -> CRender a
+preserveCState a = do 
+  c $ C.save
+  v <- a
+  c $ C.restore
+  return v
 
 ----------------------------------------------------------------------
 

@@ -51,11 +51,10 @@ fillBackground :: CairoFillStyle -> Renderable -> Renderable
 fillBackground fs r = Renderable { minsize = minsize r, render = rf }
   where
     rf rect@(Rect p1 p2) = do
-        c $ C.save
-        setClipRegion p1 p2
-        setFillStyle fs
-        c $ C.paint
-        c $ C.restore
+        preserveCState $ do
+            setClipRegion p1 p2
+            setFillStyle fs
+            c $ C.paint
 	render r rect
 
 vertical, horizontal :: [(Double,Renderable)] -> Renderable 
@@ -233,22 +232,17 @@ label fs hta vta = rlabel fs hta vta 0
 rlabel :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> Double -> String -> Renderable
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
-    mf = do
-       c $ C.save
+    mf = preserveCState $ do
        setFontStyle fs
        (w,h) <- textSize s
-       c $ C.restore
-       let sz' = (w*acr+h*asr,w*asr+h*acr)
-       return sz'
-    rf (Rect p1 p2) = do
-       c $ C.save
+       return (w*acr+h*asr,w*asr+h*acr)
+    rf (Rect p1 p2) = preserveCState $ do
        setFontStyle fs
        sz@(w,h) <- textSize s
        c $ C.translate (xadj sz hta (p_x p1) (p_x p2)) (yadj sz vta (p_y p1) (p_y p2))
        c $ C.rotate rot'
        c $ C.moveTo (-w/2) (h/2)
        c $ C.showText s
-       c $ C.restore
     xadj (w,h) HTA_Left x1 x2 =  x1 +(w*acr+h*asr)/2
     xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
     xadj (w,h) HTA_Right x1 x2 =  x2 -(w*acr+h*asr)/2
