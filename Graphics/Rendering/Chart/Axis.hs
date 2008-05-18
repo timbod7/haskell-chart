@@ -195,12 +195,7 @@ chooseStep nsteps (min,max) = s
 explicitAxis :: Maybe Axis -> AxisFn
 explicitAxis ma _ = ma
 
-linearTicks r = (major, minor)
- where
-  major = steps 5 r
-  minor = steps 50 (fromRational (minimum major),fromRational (maximum major))
-
-autoAxis labelf transform (rlabelvs, rtickvs) a = Just axis
+autoAxis labelf transform (rlabelvs, rtickvs, rgridvs) a = Just axis
   where
     axis =  a {
         axis_viewport=newViewport,
@@ -218,27 +213,55 @@ autoAxis labelf transform (rlabelvs, rtickvs) a = Just axis
 
     gridvs = case (axis_grid a) of 
        [] -> []
-       _  -> labelvs
+       _  -> map fromRational rgridvs
+
+data LinearAxisParams = LinearAxisParams {
+    -- | The function used to show the axes labels
+    la_labelf :: Double -> String,
+
+    -- | The target number of labels to be shown
+    la_nLabels :: Int,
+
+    -- | The target number of ticks to be shown
+    la_nTicks :: Int,
+
+    -- | If True, the grid is shown at the label values, otherwise the
+    -- otherwise the grid is shown at the tick values
+    la_gridAtMinor :: Bool
+}
+
+defaultLinearAxis = LinearAxisParams {
+    la_labelf = showD,
+    la_nLabels = 5,
+    la_nTicks = 50,
+    la_gridAtMinor = False
+}
 
 -- | Generate a linear axis automatically.
 -- The supplied axis is used as a template, with the viewport, ticks, labels
 -- and grid set appropriately for the data displayed against that axies.
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
-autoScaledAxis' :: (Double->String) -> Axis -> AxisFn
-autoScaledAxis' labelf a ps0 = autoAxis labelf vmap (linearTicks (range ps)) a
+autoScaledAxis' :: LinearAxisParams -> Axis -> AxisFn
+autoScaledAxis' lap a ps0 = autoAxis (la_labelf lap) vmap (labelvs,tickvs,gridvs) a
   where
     ps = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
     range [] = (0,1)
     range _  | min == max = (min-0.5,min+0.5)
 	     | otherwise = (min,max)
+    labelvs = steps (fromIntegral (la_nLabels lap)) r
+    tickvs = steps (fromIntegral (la_nTicks lap)) (fromRational (minimum labelvs),fromRational (maximum labelvs))
+    gridvs = case la_gridAtMinor lap of
+        False -> labelvs
+        True -> tickvs
+    r = range ps
 
 -- | Generate a linear axis automatically.
 -- Same as autoScaledAxis', but with labels generated with "showD"
 -- (showD is show for doubles, but with any trailing ".0" removed)
 autoScaledAxis :: Axis -> AxisFn
-autoScaledAxis = autoScaledAxis' showD
+autoScaledAxis = autoScaledAxis' defaultLinearAxis
 
 showD x = case reverse $ show x of
             '0':'.':r -> reverse r
@@ -262,8 +285,8 @@ lmap (x1,x2) r x = vmap (log x1, log x2) r (log x)
           5 gets a major ticks 
           (ie the major ticks need to be a subset of the minor tick)
 -}
-logTicks :: Range -> ([Rational],[Rational])
-logTicks (low,high) = (major,minor)
+logTicks :: Range -> ([Rational],[Rational],[Rational])
+logTicks (low,high) = (major,minor,major)
  where
   ratio = high/low
   lower a l = let (i,r) = frac (log10 a) in

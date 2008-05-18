@@ -47,6 +47,35 @@ test1 otype = return layout
 
     lineWidth = chooseLineWidth otype
 
+
+test1a :: OutputType -> IO Layout1
+test1a otype = return layout 
+  where
+    am :: Double -> Double
+    am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
+
+    sinusoid1 = defaultPlotLines {
+	plot_lines_values = [[ (Point x (am x)) | x <- [0,(0.5)..400]]],
+        plot_lines_style = solidLine lineWidth blue
+    }
+
+    sinusoid2 = defaultPlotPoints {
+        plot_points_style=filledCircles 2 red,
+	plot_points_values = [ (Point x (am x)) | x <- [0,7..400]]
+    }
+
+    lap = defaultLinearAxis{la_nLabels=2,la_nTicks=20,la_gridAtMinor=True}
+
+    layout = defaultLayout1 {
+        layout1_title="Amplitude Modulation",			   
+        layout1_horizontal_axes=linkedAxes (autoScaledAxis' lap defaultAxis),
+	layout1_vertical_axes=linkedAxes (autoScaledAxis' lap defaultAxis),
+	layout1_plots = [("am",HA_Bottom,VA_Left,(toPlot sinusoid1)),
+			 ("am points", HA_Bottom,VA_Left,(toPlot sinusoid2))]
+    }
+
+    lineWidth = chooseLineWidth otype
+
 ----------------------------------------------------------------------
 test2 :: OutputType -> [(Int,Int,Int,Double,Double)] -> IO Layout1
 test2 otype prices = return layout 
@@ -209,7 +238,8 @@ test7 otype = return layout
 
 ----------------------------------------------------------------------        
 allTests =
-     [ ("test1",test1)
+     [ ("test1", test1)
+     , ("test1a",test1a)
      , ("test2a",\ot -> test2 ot prices)
      , ("test2b",\ot -> test2 ot (filterPrices (date 1 1 2005) (date 31 12 2005)))
      , ("test2c",\ot -> test2 ot (filterPrices (date 1 5 2005) (date 1 7 2005)))
