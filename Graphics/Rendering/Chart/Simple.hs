@@ -22,13 +22,13 @@
 --
 -- Examples:
 --
--- renderableToWindow (toRenderable $ plot [0,0.1..10] sin "sin(x)") 640 480
+-- @renderableToWindow (toRenderable $ plot [0,0.1..10] sin "sin(x)") 640 480@
 --
--- plotWindow [0,1,3,4,8]] [12,15,1,5,8] "o" "points"
+-- @plotWindow [0,1,3,4,8]] [12,15,1,5,8] "o" "points"@
 --
--- plotPDF "foo.pdf" [0,0.1..10] sin "- " cos ". " cos "o"
+-- @plotPDF "foo.pdf" [0,0.1..10] sin "- " cos ". " cos "o"@
 --
--- plotPS "foo.ps" [0,0.1..10] (sin.exp) "- " (sin.exp) "o-"
+-- @plotPS "foo.ps" [0,0.1..10] (sin.exp) "- " (sin.exp) "o-"@
 -----------------------------------------------------------------------------
 module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                         plotWindow, plotPDF, plotPS
@@ -221,6 +221,20 @@ instance (PlotArg a, PlotPSType r) => PlotPSType (a -> r) where
 instance PlotPSType (IO a) where
     pls fn args = do renderableToPSFile (toRenderable $ uplot (reverse args)) 640 480 fn
                      return undefined
+
+-- | Save a plot as a png file
+plotPNG :: PlotPNGType a => String -> a
+plotPNG fn = plp fn []
+
+class PlotPNGType t where
+    plp :: FilePath -> [UPlot] -> t
+instance (PlotArg a, PlotPNGType r) => PlotPNGType (a -> r) where
+    plp fn args = \ a -> plp fn (toUPlot a ++ args)
+instance PlotPNGType (IO a) where
+    plp fn args = do renderableToPNGFile (toRenderable $ uplot (reverse args)) 640 480 fn
+                     return undefined
+
+
 
 data UPlot = UString String | UDoubles [Double] | UFunction (Double -> Double)
            | UKind [PlotKind] | X [Double]
