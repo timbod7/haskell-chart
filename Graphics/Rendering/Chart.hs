@@ -37,6 +37,9 @@ module Graphics.Rendering.Chart(
     Point(..),
     Color(..),
     ErrPoint(..),
+    PieChart(..),
+    PieLayout(..),
+    PieItem(..),
     defaultAxisLineStyle, 
     defaultPlotLineStyle,
     defaultAxis, 
@@ -46,6 +49,9 @@ module Graphics.Rendering.Chart(
     defaultPlotFillBetween,
     defaultLayout1,
     defaultLinearAxis,
+    defaultPieLayout,
+    defaultPieChart,
+    defaultPieItem,
     filledCircles,
     hollowCircles,
     exes, plusses, stars,
@@ -82,3 +88,4 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Layout
 import Graphics.Rendering.Chart.Axis
 import Graphics.Rendering.Chart.Plot
+import Graphics.Rendering.Chart.Pie

@@ -21,8 +21,8 @@ red = (Color 1 0 0)
 red1 = (Color 0.5 0.5 1)
 
 ----------------------------------------------------------------------
-test1 :: OutputType -> IO Layout1
-test1 otype = return layout 
+test1 :: OutputType -> IO Renderable
+test1 otype = return (toRenderable layout)
   where
     am :: Double -> Double
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
@@ -48,8 +48,8 @@ test1 otype = return layout
     lineWidth = chooseLineWidth otype
 
 
-test1a :: OutputType -> IO Layout1
-test1a otype = return layout 
+test1a :: OutputType -> IO Renderable
+test1a otype = return (toRenderable layout)
   where
     am :: Double -> Double
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
@@ -77,8 +77,8 @@ test1a otype = return layout
     lineWidth = chooseLineWidth otype
 
 ----------------------------------------------------------------------
-test2 :: OutputType -> [(Int,Int,Int,Double,Double)] -> IO Layout1
-test2 otype prices = return layout 
+test2 :: [(Int,Int,Int,Double,Double)] -> OutputType -> IO Renderable
+test2 prices otype = return (toRenderable layout)
   where
 
     price1 = defaultPlotLines {
@@ -122,8 +122,8 @@ date dd mm yyyy = doubleFromClockTime ct
     }
 
 ----------------------------------------------------------------------
-test3 :: OutputType -> IO Layout1
-test3 otype = return layout 
+test3 :: OutputType -> IO Renderable
+test3 otype = return (toRenderable layout)
   where
 
     price1 = defaultPlotFillBetween {
@@ -145,8 +145,8 @@ test3 otype = return layout
     }
 
 ----------------------------------------------------------------------        
-test4 :: OutputType -> IO Layout1
-test4 otype = return layout 
+test4 :: OutputType -> IO Renderable
+test4 otype = return (toRenderable layout)
   where
 
     points = defaultPlotPoints {
@@ -170,10 +170,10 @@ test4 otype = return layout
 ----------------------------------------------------------------------
 -- Example thanks to Russell O'Connor
 
-test5 :: OutputType -> IO Layout1
+test5 :: OutputType -> IO Renderable
 test5 otype = do
     bits <- fmap randoms getStdGen
-    return (layout 1001 (trial bits))
+    return (toRenderable (layout 1001 (trial bits)))
   where
     layout n t = defaultLayout1 {
            layout1_title="Simulation of betting on a biased coin",			   
@@ -207,8 +207,8 @@ test5 otype = do
 ----------------------------------------------------------------------        
 -- Test the Simple interface
 
-test6 :: OutputType -> IO Layout1
-test6 otype = return pp{layout1_title="Graphics.Rendering.Chart.Simple example"}
+test6 :: OutputType -> IO Renderable
+test6 otype = return (toRenderable pp{layout1_title="Graphics.Rendering.Chart.Simple example"})
   where
     pp = plot xs sin "sin"
                  cos "cos" "o"
@@ -217,9 +217,10 @@ test6 otype = return pp{layout1_title="Graphics.Rendering.Chart.Simple example"}
                  (const 0.5)
                  [0.1,0.7,0.5::Double] "+"
     xs = [0,0.3..3] :: [Double]
+
 ----------------------------------------------------------------------
-test7 :: OutputType -> IO Layout1
-test7 otype = return layout 
+test7 :: OutputType -> IO Renderable
+test7 otype = return (toRenderable layout)
   where
     vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
     bars = defaultPlotErrBars {
@@ -236,19 +237,33 @@ test7 otype = return layout
                          ("test",HA_Bottom,VA_Left,(toPlot points))]
     }
 
+----------------------------------------------------------------------
+test8 :: OutputType -> IO Renderable
+test8 otype = return (toRenderable layout)
+  where
+    values = [ ("eggs",38), ("milk",45), ("bread",11), ("salmon",8) ]
+    layout = defaultPieLayout {
+        pie_title = "Pie chart example",
+        pie_plot = defaultPieChart { pie_data =
+            [defaultPieItem{pitem_value=v,pitem_label=s} | (s,v) <- values ]
+        }
+    }
+
 ----------------------------------------------------------------------        
+allTests :: [ (String, OutputType -> IO Renderable) ]
 allTests =
-     [ ("test1", test1)
-     , ("test1a",test1a)
-     , ("test2a",\ot -> test2 ot prices)
-     , ("test2b",\ot -> test2 ot (filterPrices (date 1 1 2005) (date 31 12 2005)))
-     , ("test2c",\ot -> test2 ot (filterPrices (date 1 5 2005) (date 1 7 2005)))
-     , ("test2d",\ot -> test2 ot (filterPrices (date 1 1 2006) (date 10 1 2006)))
-     , ("test3",test3)
-     , ("test4",test4)
-     , ("test5",test5)
-     , ("test6",test6)
-     , ("test7",test7)
+     [ ("test1",  test1)
+     , ("test1a", test1a)
+     , ("test2a", test2 prices)
+     , ("test2b", test2 (filterPrices (date 1 1 2005) (date 31 12 2005)))
+     , ("test2c", test2 (filterPrices (date 1 5 2005) (date 1 7 2005)))
+     , ("test2d", test2 (filterPrices (date 1 1 2006) (date 10 1 2006)))
+     , ("test3", test3)
+     , ("test4", test4)
+     , ("test5", test5)
+     , ("test6", test6)
+     , ("test7", test7)
+     , ("test8", test8)
      ]
 
 filterPrices t1 t2 = [ v | v@(d,m,y,_,_) <- prices, let t = date d m y in t >= t1 && t <= t2]
@@ -257,17 +272,20 @@ main = do
     args <- getArgs
     main1 args
 
+main1 :: [String] -> IO ()
 main1 ("--png":tests) = showTests tests renderToPNG
 main1 ("--pdf":tests) = showTests tests renderToPDF
 main1 ("--ps":tests) = showTests tests renderToPS
 main1 tests = showTests tests renderToWindow
 
-showTests tests outputfn = mapM_ outputfn (filter (match tests) allTests)
+showTests :: [String] -> ((String,OutputType -> IO Renderable) -> IO()) -> IO ()
+showTests tests ofn = mapM_ ofn (filter (match tests) allTests)
 
+match :: [String] -> (String,a) -> Bool
 match [] t = True
 match ts t = (fst t) `elem` ts
 
-renderToWindow (n,t) = t Window >>= \l -> renderableToWindow (toRenderable l) 640 480
-renderToPNG (n,t) = t PNG >>= \l -> renderableToPNGFile (toRenderable l) 640 480 (n ++ ".png")
-renderToPS (n,t) = t PS >>= \l -> renderableToPSFile (toRenderable l) 640 480 (n ++ ".ps")
-renderToPDF (n,t) = t PDF >>= \l -> renderableToPDFFile (toRenderable l) 640 480 (n ++ ".pdf")
+renderToWindow (n,ir) = do { r <- ir Window; renderableToWindow r 640 480}
+renderToPNG (n,ir) = do { r <- ir PNG; renderableToPNGFile r 640 480 (n ++ ".png")}
+renderToPS (n,ir) = do { r <- ir PS; renderableToPSFile r 640 480 (n ++ ".ps")}
+renderToPDF (n,ir) = do { r <- ir PDF; renderableToPDFFile r 640 480 (n ++ ".pdf")}

@@ -31,6 +31,7 @@ library
         Graphics.Rendering.Chart.Renderable,
         Graphics.Rendering.Chart.Axis,
         Graphics.Rendering.Chart.Layout,
-        Graphics.Rendering.Chart.Plot
+        Graphics.Rendering.Chart.Plot,
+        Graphics.Rendering.Chart.Pie,
         Graphics.Rendering.Chart.Simple
 
