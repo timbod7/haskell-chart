@@ -241,11 +241,14 @@ test7 otype = return (toRenderable layout)
 test8 :: OutputType -> IO Renderable
 test8 otype = return (toRenderable layout)
   where
-    values = [ ("eggs",38), ("milk",45), ("bread",11), ("salmon",8) ]
+    values = [ ("eggs",38,e), ("milk",45,e), ("bread",11,e1), ("salmon",8,e) ]
+    e = 0
+    e1 = 15
     layout = defaultPieLayout {
-        pie_title = "Pie chart example",
-        pie_plot = defaultPieChart { pie_data =
-            [defaultPieItem{pitem_value=v,pitem_label=s} | (s,v) <- values ]
+        pie_title = "Pie Chart Example",
+        pie_plot = defaultPieChart {
+            pie_data = [ defaultPieItem{pitem_value=v,pitem_label=s,pitem_offset=o} 
+                         | (s,v,o) <- values ]
         }
     }
 

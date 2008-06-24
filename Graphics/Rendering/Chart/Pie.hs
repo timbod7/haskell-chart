@@ -5,9 +5,7 @@ import qualified Graphics.Rendering.Cairo as C
 
 import Data.List
 import Data.Bits
-import Data.Foldable 
 import Control.Monad 
-import Debug.Trace
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
@@ -24,6 +22,7 @@ data PieChart = PieChart {
    pie_data  :: [PieItem],
    pie_colors :: [Color],
    pie_label_style :: CairoFontStyle,
+   pie_label_line_style :: CairoLineStyle, 
    pie_start_angle :: Double
 
 }
@@ -38,6 +37,7 @@ defaultPieChart = PieChart {
     pie_data = [], 
     pie_colors = defaultColorSeq,
     pie_label_style = defaultFontStyle,
+    pie_label_line_style = solidLine 1 black,
     pie_start_angle = 0
 }
 
@@ -67,106 +67,64 @@ instance ToRenderable PieChart where
       render=renderPie p
     }
 
-minsizePie p = return (100,100)
-renderPie p rect = do
-    setFontStyle (pie_label_style p)                 
+extraSpace p = do
+    textSizes <- mapM textSize (map pitem_label (pie_data p))
+    let maxw = foldr (max.fst) 0 textSizes
+    let maxh = foldr (max.snd) 0 textSizes
+    let maxo = foldr (max.pitem_offset) 0 (pie_data p)
+    let extra = label_rgap + label_rlength + maxo
+    trace (show (maxw,maxh,maxo,extra)) $  return (extra + maxw, extra + maxh )
 
-    c $ aspect size
-    c $ C.moveTo `uncurry` center  
-    foldM_ paint (pie_start_angle p) (zip (pie_colors p) content)
+minsizePie p = do
+    (extraw,extrah) <- extraSpace p
+    return (extraw * 2, extrah * 2)
+
+renderPie p (Rect p1 p2) = do
+    (extraw,extrah) <- extraSpace p
+    let (w,h) = (p_x p2 - p_x p1, p_y p2 - p_y p1)
+    let center = Point (p_x p1 + w/2)  (p_y p1 + h/2)
+    let radius = (min (w - 2*extraw) (h - 2*extrah)) / 2
+
+    foldM_ (paint center radius) (pie_start_angle p) (zip (pie_colors p) content)
  
     where
-        color = 2 :: Int
-        content = let total = Data.List.sum (map pitem_value (pie_data p))
-                  in [ (pitem_value pi/total,pitem_label pi)
-                       | pi <- (pie_data p) ]
-        size = let (Rect p1 p2) = rect in (p_x p2 - p_x p1, p_y p2 - p_y p1)
-        center = (0.5, 0.55)
-        radius = 0.40
-        radian = (*(pi / 180.0))
+        content = let total = sum (map pitem_value (pie_data p))
+                  in [ pi{pitem_value=pitem_value pi/total} | pi <- pie_data p ]
 
-        ray angle n = (x', y')
-            where
-                x' = x + (cos' * x'')
-                y' = y + (sin' * x'')
+        paint :: Point -> Double -> Double -> (Color,PieItem) -> CRender Double
+        paint center radius a1 (color,pitem) = do
+            let ax = 360.0 * (pitem_value pitem)
+            let a2 = a1 + (ax / 2)
+            let a3 = a1 + ax
+            let offset = pitem_offset pitem
 
-                cos' = (cos . radian) angle
-                sin' = (sin . radian) angle
+            pieSlice (ray a2 offset) a1 a3 color
+            pieLabel (pitem_label pitem) a2 offset
 
-                x''  = ((x + radius + n) - x)
-                x    = fst center
-                y    = snd center
-
-        aspect (w,h) | w == h = uncurry C.scale (w,h)
-                     | w >  h = do
-                        C.translate ((w - h) / 2) 0
-                        C.scale h h
-                     | h >  w = do
-                        C.translate 0 ((h - w) / 2)
-                        C.scale w w
-
-        paint a1 (color,i@(percent, name)) = do
-            let ax = 360.0 * percent
-            let a2 = a1 + ax
-
-            pieSlice center a1 a2 color
-            pieLabel i (a1 + (ax / 2)) 
-
-            return a2
+            return a3
 
             where
-                
-                pieLabel (percent, name) angle = c $ do
-                    C.setSourceRGBA 0.0 0.0 0.0 0.8
-                    C.setLineWidth 0.002          
-                    C.setLineJoin C.LineJoinBevel
+                pieLabel :: String -> Double -> Double -> CRender ()
+                pieLabel name angle offset = do
+                    setFontStyle (pie_label_style p)
+                    setLineStyle (pie_label_line_style p)
 
+                    moveTo (ray angle (radius + label_rgap+offset))
+                    let p1 = (ray angle (radius + label_rgap + label_rlength+offset))
+                    lineTo p1
+                    (tw,th) <- textSize name
+                    let (offset,anchor) = if angle < 90 || angle > 270 
+                                          then ((0+),HTA_Left)
+                                          else ((0-),HTA_Right)
+                    c $ C.relLineTo (offset (tw + label_rgap))  0
+                    c $ C.stroke
 
-                    label (ray angle 0.05) $ name
+                    let p2 = p1 `pvadd` (Vector (offset label_rgap) 0)
+                    drawText anchor VTA_Bottom p2 name
 
-                    where
-
-                        label (x,y) str = do
-
-                            dot (ray angle 0.02) >> C.lineTo x y
-
-                            scaleText >> align >> C.showText str
-                            C.stroke
-
-                            where
-                                dot (x,y) = do
-                                    C.moveTo x y
-                                {-- C.arc x y 0.0025 0 (pi*2)
-                                    C.closePath
-
-                                    C.setSourceRGB 0.5 0.5 0.5
-                                    C.fillPreserve
-                                    C.setSourceRGB 0.5 0.5 0.5
-
-                                    C.stroke
-                                    C.moveTo x y
-                                    C.setSourceRGB 0.5 0.5 0.5 --}
-
-                                scaleText | percent < 3.0 = C.setFontSize 0.030
-                                          | percent < 6.0 = C.setFontSize 0.035
-                                          | otherwise     = C.setFontSize 0.042
-
-                                align = 
-                                    (underline . pad . C.textExtentsXadvance) =<< C.textExtents str
-
-                                    where
-                                        pad = (+0.005)
-                                        underline n | is'left   = C.relLineTo (negate n) 0 >> C.relMoveTo 0 bump 
-                                                    | otherwise = C.relLineTo n 0          >> C.moveTo (pad x) (bump + y)
-                                            where
-                                                is'left = angle > 90 && angle < 270
-
-                                                bump | angle < 180 = -0.0030 --(C.textExtentsHeight ext)
-                                                     | otherwise   = -0.0030 -- (-0.001)
-
-
-                pieSlice (x,y) a1 a2 color = c $ do 
-
+                pieSlice :: Point -> Double -> Double -> Color -> CRender ()
+                pieSlice (Point x y) a1 a2 color = c $ do 
+                    C.newPath
                     C.arc x y radius (radian a1) (radian a2)
                     C.lineTo x y
                     C.lineTo x y
@@ -177,3 +135,20 @@ renderPie p rect = do
                     C.setSourceRGBA 1 1 1 0.1
 
                     C.stroke
+
+                ray :: Double -> Double -> Point
+                ray angle r = Point x' y'
+                  where
+                    x' = x + (cos' * x'')
+                    y' = y + (sin' * x'')
+                    cos' = (cos . radian) angle
+                    sin' = (sin . radian) angle
+                    x''  = ((x + r) - x)
+                    x    = p_x center
+                    y    = p_y center
+
+                radian = (*(pi / 180.0))
+
+
+label_rgap = 5
+label_rlength = 15
