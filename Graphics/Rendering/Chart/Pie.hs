@@ -73,7 +73,7 @@ extraSpace p = do
     let maxh = foldr (max.snd) 0 textSizes
     let maxo = foldr (max.pitem_offset) 0 (pie_data p)
     let extra = label_rgap + label_rlength + maxo
-    trace (show (maxw,maxh,maxo,extra)) $  return (extra + maxw, extra + maxh )
+    return (extra + maxw, extra + maxh )
 
 minsizePie p = do
     (extraw,extrah) <- extraSpace p
