@@ -46,7 +46,7 @@ defaultPieItem = PieItem "" 0 0
 defaultPieLayout = PieLayout {
     pie_background = solidFillStyle white,
     pie_title = "",
-    pie_title_style = fontStyle "sans" 15 C.FontSlantNormal C.FontWeightBold,
+    pie_title_style = defaultFontStyle{font_size=15, font_weight=C.FontWeightBold},
     pie_plot = defaultPieChart,
     pie_margin = 10
 }

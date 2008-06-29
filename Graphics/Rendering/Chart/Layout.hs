@@ -30,7 +30,8 @@ data Layout1 = Layout1 {
     layout1_vertical_axes :: AxesFn,
     layout1_margin :: Double,
     layout1_plots :: [(String,HAxis,VAxis,Plot)],
-    layout1_legend :: Maybe(LegendStyle)
+    layout1_legend :: Maybe(LegendStyle),
+    layout1_grid_last :: Bool
 }
 
 instance ToRenderable Layout1 where
@@ -90,13 +91,10 @@ layout1ToRenderable l =
 renderPlots l r@(Rect p1 p2) = preserveCState $ do
     -- render the plots
     setClipRegion p1 p2 
-    mapM_ (rPlot r) (layout1_plots l)
 
-    -- render the axes grids
-    maybeM () (renderAxisGrid r) tAxis
-    maybeM () (renderAxisGrid r) bAxis
-    maybeM () (renderAxisGrid r) lAxis
-    maybeM () (renderAxisGrid r) rAxis
+    when (not (layout1_grid_last l)) renderGrids
+    mapM_ (rPlot r) (layout1_plots l)
+    when (layout1_grid_last l) renderGrids
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
@@ -116,6 +114,12 @@ renderPlots l r@(Rect p1 p2) = preserveCState $ do
 	    pmfn (Point x y) = Point (axis_viewport xaxis xrange x) (axis_viewport yaxis yrange y)
 	in plot_render p pmfn
     rPlot1 _ _ _ _ = return ()
+
+    renderGrids = do
+      maybeM () (renderAxisGrid r) tAxis
+      maybeM () (renderAxisGrid r) bAxis
+      maybeM () (renderAxisGrid r) lAxis
+      maybeM () (renderAxisGrid r) rAxis
 
 axesSpacer f1 a1 f2 a2 = embedRenderable $ do
     oh1 <- maybeM (0,0) axisOverhang a1
@@ -148,11 +152,12 @@ allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
 defaultLayout1 = Layout1 {
     layout1_background = solidFillStyle white,
     layout1_title = "",
-    layout1_title_style = fontStyle "sans" 15 C.FontSlantNormal C.FontWeightBold,
+    layout1_title_style = defaultFontStyle{font_size=15, font_weight=C.FontWeightBold},
     layout1_horizontal_axes = linkedAxes (autoScaledAxis defaultAxis),
     layout1_vertical_axes = linkedAxes (autoScaledAxis defaultAxis),
     layout1_margin = 10,
     layout1_plots = [],
-    layout1_legend = Just defaultLegendStyle
+    layout1_legend = Just defaultLegendStyle,
+    layout1_grid_last = True
 }
 

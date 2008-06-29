@@ -91,15 +91,30 @@ test2 prices otype = return (toRenderable layout)
 	plot_lines_values = [[ Point (date d m y) v | (d,m,y,_,v) <- prices]]
     }
 
-    gridlessAxis = defaultAxis{axis_grid=[]}
-    vaxis = autoScaledAxis gridlessAxis
+    baseAxis = defaultAxis{
+        axis_grid=[],
+        axis_line_style=solidLine 1 fg,
+        axis_grid_style=solidLine 1 fg1,
+        axis_label_style=(axis_label_style defaultAxis){font_color=fg}
+    }
+
+    vaxis = autoScaledAxis baseAxis
+    bg = Color 0 0 0.25
+    fg = Color 1 1 1
+    fg1 = Color 0.0 0.0 0.15
 
     layout = defaultLayout1 {
-        layout1_title="Price History",			   
-        layout1_horizontal_axes=linkedAxes' (autoTimeAxis gridlessAxis),
+        layout1_title="Price History",
+        layout1_title_style=(layout1_title_style defaultLayout1){font_color=fg},
+        layout1_background=solidFillStyle bg,
+        layout1_horizontal_axes=linkedAxes' (autoTimeAxis baseAxis),
 	layout1_vertical_axes=independentAxes vaxis vaxis,
  	layout1_plots = [("price 1", HA_Bottom,VA_Left,(toPlot price1)),
-                         ("price 2", HA_Bottom,VA_Right,(toPlot price2))]
+                         ("price 2", HA_Bottom,VA_Right,(toPlot price2))],
+        layout1_legend = Just (defaultLegendStyle{
+            legend_label_style=(legend_label_style defaultLegendStyle){font_color=fg}
+        } ),
+        layout1_grid_last=False
     }
 
     lineWidth = chooseLineWidth otype
@@ -243,7 +258,7 @@ test8 otype = return (toRenderable layout)
   where
     values = [ ("eggs",38,e), ("milk",45,e), ("bread",11,e1), ("salmon",8,e) ]
     e = 0
-    e1 = 15
+    e1 = 25
     layout = defaultPieLayout {
         pie_title = "Pie Chart Example",
         pie_plot = defaultPieChart {

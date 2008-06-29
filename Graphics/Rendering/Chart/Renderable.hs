@@ -267,7 +267,7 @@ labelTest rot = renderableToPNGFile r 800 800 "labels.png"
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]
     fwhite = solidFillStyle white
     fblue = solidFillStyle (Color 0.8 0.8 1)
-    fs = fontStyle "sans" 30 C.FontSlantNormal C.FontWeightBold
+    fs = defaultFontStyle{font_size=30,font_weight=C.FontWeightBold}
     crossHairs r =Renderable {
       minsize = minsize r,
       render = \rect@(Rect (Point x1 y1) (Point x2 y2)) -> do

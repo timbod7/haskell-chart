@@ -103,11 +103,14 @@ newtype CairoLineStyle = CairoLineStyle (CRender ())
 -- style in the Cairo rendering state.
 newtype CairoFillStyle = CairoFillStyle (CRender ())
 
--- | Abstract data type for a font.
---
--- The contained Cairo action sets the required font
--- in the Cairo rendering state.
-newtype CairoFontStyle = CairoFontStyle (CRender ())
+-- | Data type for a font
+data CairoFontStyle = CairoFontStyle {
+      font_name :: String,
+      font_size :: Double,
+      font_slant :: C.FontSlant,
+      font_weight :: C.FontWeight,
+      font_color :: Color
+}
 
 type Range = (Double,Double)
 type RectSize = (Double,Double)
@@ -164,7 +167,11 @@ rectPath (Rect (Point x1 y1) (Point x2 y2)) = c $ do
    C.lineTo x1 y2
    C.lineTo x1 y1
 
-setFontStyle (CairoFontStyle s) = s
+setFontStyle f = do
+    c $ C.selectFontFace (font_name f) (font_slant f) (font_weight f)
+    c $ C.setFontSize (font_size f)
+    c $ setSourceColor (font_color f)
+
 setLineStyle (CairoLineStyle s) = s
 setFillStyle (CairoFillStyle s) = s
 
@@ -353,18 +360,6 @@ dashedLine w dashes cl = CairoLineStyle (do
     c $ setSourceColor cl
     )
 
-fontStyle ::
-     String         -- ^ the font name
-  -> Double         -- ^ the font size
-  -> C.FontSlant    -- ^ the font slant
-  -> C.FontWeight   -- ^ the font weight
-  -> CairoFontStyle
-fontStyle name size slant weight = CairoFontStyle fn
-  where
-    fn = do
-	 c $ C.selectFontFace name slant weight
-	 c $ C.setFontSize size
-
 solidFillStyle ::
      Color
   -> CairoFillStyle
@@ -372,6 +367,13 @@ solidFillStyle cl = CairoFillStyle fn
    where fn = c $ setSourceColor cl
 
 defaultPointStyle = filledCircles 1 white
-defaultFontStyle = CairoFontStyle (return ())
+
+defaultFontStyle = CairoFontStyle {
+   font_name = "sans",
+   font_size = 10,
+   font_slant = C.FontSlantNormal,
+   font_weight = C.FontWeightNormal,
+   font_color = black
+}
 
 isValidNumber v = not (isNaN v) && not (isInfinite v)
