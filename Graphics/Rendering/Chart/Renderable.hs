@@ -115,11 +115,8 @@ renderableToPNGFile chart width height path =
 
     rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
 
--- | Output the given renderable to a PDF file of the specifed size
--- (in points), to the specified file.
-renderableToPDFFile :: Renderable -> Int -> Int -> FilePath -> IO ()
-renderableToPDFFile chart width height path = 
-    C.withPDFSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
+renderableToFile withSurface chart width height path = 
+    withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
     C.renderWith result $ runCRender rfn vectorEnv
     C.surfaceFinish result
   where
@@ -128,23 +125,24 @@ renderableToPDFFile chart width height path =
         c $ C.showPage
 
     rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
+
+-- | Output the given renderable to a PDF file of the specifed size
+-- (in points), to the specified file.
+renderableToPDFFile :: Renderable -> Int -> Int -> FilePath -> IO ()
+renderableToPDFFile = renderableToFile C.withPDFSurface
 
 -- | Output the given renderable to a postscript file of the specifed size
 -- (in points), to the specified file.
 renderableToPSFile :: Renderable -> Int -> Int -> FilePath -> IO ()
-renderableToPSFile chart width height path = 
-    C.withPSSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
-    C.renderWith result $ runCRender rfn vectorEnv
-    C.surfaceFinish result
-  where
-    rfn = do
-	render chart rect
-        c $ C.showPage
+renderableToPSFile = renderableToFile C.withPSSurface
 
-    rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
+-- | Output the given renderable to an SVG file of the specifed size
+-- (in points), to the specified file.
+renderableToSVGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
+renderableToSVGFile = renderableToFile C.withSVGSurface
 
 bitmapEnv = CEnv adjfn
-  where
+	  where
     adjfn (Point x y)= Point (fromIntegral (round x)) (fromIntegral (round y))
 
 vectorEnv = CEnv id
