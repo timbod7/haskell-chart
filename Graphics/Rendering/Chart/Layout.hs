@@ -93,9 +93,10 @@ renderPlots l r@(Rect p1 p2) = preserveCState $ do
     -- render the plots
     setClipRegion p1 p2 
 
-    -- render the plots
-    setClipRegion p1 p2 
-    mapM_ (rPlot r) (layout1_plots l)
+    when (not (layout1_grid_last l)) renderGrids
+    local (const vectorEnv) $ do
+      mapM_ (rPlot r) (layout1_plots l)
+    when (layout1_grid_last l) renderGrids
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
