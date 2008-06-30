@@ -76,8 +76,9 @@ module Graphics.Rendering.Chart(
     renderableToPNGFile,
     renderableToPDFFile,
     renderableToPSFile,
-    doubleFromClockTime,
-    clockTimeFromDouble,
+    renderableToSVGFile,
+    doubleFromLocalTime,
+    localTimeFromDouble,
     CairoLineStyle(..),
     CairoFillStyle(..),
     CairoFontStyle(..)
