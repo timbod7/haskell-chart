@@ -91,10 +91,17 @@ layout1ToRenderable l =
 renderPlots l r@(Rect p1 p2) = preserveCState $ do
     -- render the plots
     setClipRegion p1 p2 
-
-    when (not (layout1_grid_last l)) renderGrids
     mapM_ (rPlot r) (layout1_plots l)
-    when (layout1_grid_last l) renderGrids
+
+    -- render the axes grids
+    maybeM () (renderAxisGrid r) tAxis
+    maybeM () (renderAxisGrid r) bAxis
+    maybeM () (renderAxisGrid r) lAxis
+    maybeM () (renderAxisGrid r) rAxis
+
+    -- render the plots
+    setClipRegion p1 p2 
+    mapM_ (rPlot r) (layout1_plots l)
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
