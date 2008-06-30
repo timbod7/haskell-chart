@@ -39,6 +39,4 @@ updateCanvas chart canvas = do
     G.renderWithDrawable win $ runCRender (rfn rect) bitmapEnv
     return True
   where
-    rfn rect = do
-        alignPixels
-	render chart rect
+    rfn rect = render chart rect

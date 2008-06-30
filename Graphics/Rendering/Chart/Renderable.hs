@@ -110,7 +110,6 @@ renderableToPNGFile chart width height path =
     C.surfaceWriteToPNG result path
   where
     rfn = do
-        alignPixels
 	render chart rect
 
     rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
@@ -121,7 +120,7 @@ renderableToFile withSurface chart width height path =
     C.surfaceFinish result
   where
     rfn = do
-	render chart rect
+        render chart rect
         c $ C.showPage
 
     rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
@@ -143,15 +142,10 @@ renderableToSVGFile = renderableToFile C.withSVGSurface
 
 bitmapEnv = CEnv adjfn
   where
-    adjfn (Point x y)= Point (fromIntegral (round x)) (fromIntegral (round y))
+    adjfn (Point x y)= Point (adj x) (adj y)
+    adj x = (fromIntegral (round (x-0.5)))+0.5
 
 vectorEnv = CEnv id
-
-alignPixels :: CRender ()
-alignPixels = do
-    -- move to centre of pixels so that stroke width of 1 is
-    -- exactly one pixel 
-    c $ C.translate 0.5 0.5
 
 embedRenderable :: CRender Renderable -> Renderable
 embedRenderable ca = Renderable {
