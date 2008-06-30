@@ -5,6 +5,8 @@ import Graphics.Rendering.Chart.Gtk
 import System.Environment(getArgs)
 import System.Time
 import System.Random
+import Data.Time.Calendar
+import Data.Time.LocalTime
 import Prices
 
 data OutputType = Window | PNG | PS | PDF | SVG
@@ -120,22 +122,7 @@ test2 prices otype = return (toRenderable layout)
 
     lineWidth = chooseLineWidth otype
 
-date dd mm yyyy = doubleFromClockTime ct
-  where
-    ct = toClockTime CalendarTime {
-    ctYear=yyyy,
-    ctMonth=toEnum (mm-1),
-    ctDay=dd,
-    ctHour=0,
-    ctMin=0,
-    ctSec=0,
-    ctPicosec=0,
-    ctTZ=0,
-    ctWDay=Monday,
-    ctYDay=0,
-    ctTZName="",
-    ctIsDST=False
-    }
+date dd mm yyyy = doubleFromLocalTime (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
 
 ----------------------------------------------------------------------
 test3 :: OutputType -> IO Renderable
