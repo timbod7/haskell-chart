@@ -13,6 +13,7 @@ import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
 import Graphics.Rendering.Chart.Renderable
 import Control.Monad
+import Control.Monad.Reader (local)
 
 -- | The side of an horizontal axis
 data HAxis = HA_Top | HA_Bottom deriving (Eq)
@@ -92,9 +93,9 @@ renderPlots l r@(Rect p1 p2) = preserveCState $ do
     -- render the plots
     setClipRegion p1 p2 
 
-    when (not (layout1_grid_last l)) renderGrids
+    -- render the plots
+    setClipRegion p1 p2 
     mapM_ (rPlot r) (layout1_plots l)
-    when (layout1_grid_last l) renderGrids
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
