@@ -7,12 +7,13 @@ import System.Time
 import System.Random
 import Prices
 
-data OutputType = Window | PNG | PS | PDF
+data OutputType = Window | PNG | PS | PDF | SVG
 
 chooseLineWidth Window = 1.0
 chooseLineWidth PNG = 1.0
 chooseLineWidth PDF = 0.25
 chooseLineWidth PS = 0.25
+chooseLineWidth SVG = 0.25
 
 blue = (Color 0 0 1)
 green = (Color 0 1 0)
@@ -293,6 +294,7 @@ main = do
 main1 :: [String] -> IO ()
 main1 ("--png":tests) = showTests tests renderToPNG
 main1 ("--pdf":tests) = showTests tests renderToPDF
+main1 ("--svg":tests) = showTests tests renderToSVG
 main1 ("--ps":tests) = showTests tests renderToPS
 main1 tests = showTests tests renderToWindow
 
@@ -307,3 +309,4 @@ renderToWindow (n,ir) = do { r <- ir Window; renderableToWindow r 640 480}
 renderToPNG (n,ir) = do { r <- ir PNG; renderableToPNGFile r 640 480 (n ++ ".png")}
 renderToPS (n,ir) = do { r <- ir PS; renderableToPSFile r 640 480 (n ++ ".ps")}
 renderToPDF (n,ir) = do { r <- ir PDF; renderableToPDFFile r 640 480 (n ++ ".pdf")}
+renderToSVG (n,ir) = do { r <- ir SVG; renderableToSVGFile r 640 480 (n ++ ".svg")}

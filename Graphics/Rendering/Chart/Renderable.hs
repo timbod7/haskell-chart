@@ -142,7 +142,7 @@ renderableToSVGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
 renderableToSVGFile = renderableToFile C.withSVGSurface
 
 bitmapEnv = CEnv adjfn
-	  where
+  where
     adjfn (Point x y)= Point (fromIntegral (round x)) (fromIntegral (round y))
 
 vectorEnv = CEnv id
