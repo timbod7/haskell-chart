@@ -91,17 +91,10 @@ layout1ToRenderable l =
 renderPlots l r@(Rect p1 p2) = preserveCState $ do
     -- render the plots
     setClipRegion p1 p2 
-    mapM_ (rPlot r) (layout1_plots l)
 
-    -- render the axes grids
-    maybeM () (renderAxisGrid r) tAxis
-    maybeM () (renderAxisGrid r) bAxis
-    maybeM () (renderAxisGrid r) lAxis
-    maybeM () (renderAxisGrid r) rAxis
-
-    -- render the plots
-    setClipRegion p1 p2 
+    when (not (layout1_grid_last l)) renderGrids
     mapM_ (rPlot r) (layout1_plots l)
+    when (layout1_grid_last l) renderGrids
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
@@ -165,6 +158,6 @@ defaultLayout1 = Layout1 {
     layout1_margin = 10,
     layout1_plots = [],
     layout1_legend = Just defaultLegendStyle,
-    layout1_grid_last = True
+    layout1_grid_last = False
 }
 
