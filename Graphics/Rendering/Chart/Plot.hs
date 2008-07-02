@@ -79,7 +79,10 @@ renderPlotLegendLines p r@(Rect p1 p2) = preserveCState $ do
     lineTo (Point (p_x p2) y)
     c $ C.stroke
 
-defaultPlotLineStyle = solidLine 1 blue
+defaultPlotLineStyle = (solidLine 1 blue){ 
+     line_cap = C.LineCapRound,
+     line_join = C.LineJoinRound
+ }
 
 defaultPlotLines = PlotLines {
     plot_lines_style = defaultPlotLineStyle,

@@ -91,12 +91,15 @@ c = DR . lift
 -- style, at the supplied device coordinates.
 newtype CairoPointStyle = CairoPointStyle (Point -> CRender ())
 
--- | Abstract data type for the style of a line
---
--- The contained Cairo action sets the required line
--- in the Cairo rendering state.
-newtype CairoLineStyle = CairoLineStyle (CRender ())
-
+-- | Data type for the style of a line
+data CairoLineStyle = CairoLineStyle {
+   line_width :: Double,
+   line_color :: Color,
+   line_dashes :: [Double],
+   line_cap :: C.LineCap,
+   line_join :: C.LineJoin
+}
+   
 -- | Abstract data type for a fill style
 --
 -- The contained Cairo action sets the required fill
@@ -172,7 +175,15 @@ setFontStyle f = do
     c $ C.setFontSize (font_size f)
     c $ setSourceColor (font_color f)
 
-setLineStyle (CairoLineStyle s) = s
+setLineStyle ls = do
+    c $ C.setLineWidth (line_width ls)
+    c $ setSourceColor (line_color ls)
+    c $ C.setLineCap (line_cap ls)
+    c $ C.setLineJoin (line_join ls)
+    case line_dashes ls of
+      [] -> return ()
+      ds -> c $ C.setDash ds 0
+
 setFillStyle (CairoFillStyle s) = s
 
 setSourceColor (Color r g b) = C.setSourceRGB r g b
@@ -344,21 +355,14 @@ solidLine ::
      Double -- ^ width of line
   -> Color
   -> CairoLineStyle
-solidLine w cl = CairoLineStyle (do
-    c $ C.setLineWidth w
-    c $ setSourceColor cl
-    )
+solidLine w cl = CairoLineStyle w cl [] C.LineCapButt C.LineJoinMiter
 
 dashedLine ::
      Double   -- ^ width of line
   -> [Double] -- ^ the dash pattern in device coordinates
   -> Color
   -> CairoLineStyle
-dashedLine w dashes cl = CairoLineStyle (do
-    c $ C.setDash dashes 0
-    c $ C.setLineWidth w
-    c $ setSourceColor cl
-    )
+dashedLine w ds cl = CairoLineStyle w cl ds C.LineCapButt C.LineJoinMiter
 
 solidFillStyle ::
      Color

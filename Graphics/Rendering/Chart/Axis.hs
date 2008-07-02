@@ -113,9 +113,12 @@ axisOverhang (AxisT at a) = do
 
 renderAxis :: AxisT -> Rect -> CRender ()
 renderAxis at@(AxisT et a) rect = do
+   let ls = axis_line_style a
    preserveCState $ do
-       setLineStyle (axis_line_style a)
+       setLineStyle ls{line_cap=C.LineCapSquare}
        strokeLines [Point sx sy,Point ex ey]
+   preserveCState $ do
+       setLineStyle ls{line_cap=C.LineCapButt}
        mapM_ drawTick (axis_ticks a)
    preserveCState $ do
        setFontStyle (axis_label_style a)

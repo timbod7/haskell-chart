@@ -84,13 +84,18 @@ test2 :: [(Int,Int,Int,Double,Double)] -> OutputType -> IO Renderable
 test2 prices otype = return (toRenderable layout)
   where
 
+    lineStyle c = (plot_lines_style defaultPlotLines){
+                   line_width=3 * chooseLineWidth otype,
+                   line_color = c
+                  }
+
     price1 = defaultPlotLines {
-        plot_lines_style = solidLine lineWidth blue,
+        plot_lines_style = lineStyle blue,
 	plot_lines_values = [[ Point (date d m y) v | (d,m,y,v,_) <- prices]]
     }
 
     price2 = defaultPlotLines {
-        plot_lines_style = solidLine lineWidth green,
+        plot_lines_style = lineStyle green,
 	plot_lines_values = [[ Point (date d m y) v | (d,m,y,_,v) <- prices]]
     }
 
@@ -119,8 +124,6 @@ test2 prices otype = return (toRenderable layout)
         } ),
         layout1_grid_last=False
     }
-
-    lineWidth = chooseLineWidth otype
 
 date dd mm yyyy = doubleFromLocalTime (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
 
