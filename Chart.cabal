@@ -22,7 +22,7 @@ library
     Build-depends: base >= 3, old-locale, time, mtl
   else
     Build-depends: base < 3
-  Build-depends: gtk >= 0.9.11, cairo >= 0.9.11, mtl
+  Build-depends: gtk >= 0.9.11, cairo >= 0.9.11, time, mtl
 
   Exposed-modules:
         Graphics.Rendering.Chart,
