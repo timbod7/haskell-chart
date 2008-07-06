@@ -11,6 +11,7 @@ import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Axis
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
+import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
 import Control.Monad
 import Control.Monad.Reader (local)

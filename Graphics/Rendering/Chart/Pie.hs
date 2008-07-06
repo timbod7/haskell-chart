@@ -8,6 +8,7 @@ import Data.Bits
 import Control.Monad 
 
 import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
 
 data PieLayout = PieLayout {

@@ -89,4 +89,5 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Layout
 import Graphics.Rendering.Chart.Axis
 import Graphics.Rendering.Chart.Plot
+import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Pie

@@ -8,10 +8,9 @@ module Graphics.Rendering.Chart.Renderable where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
-import Data.List ( nub, partition, transpose, sort )
+import Data.List ( nub, transpose, sort )
 
 import Graphics.Rendering.Chart.Types
-import Graphics.Rendering.Chart.Plot
 
 -- | A Renderable is a record of functions required to layout a
 -- graphic element.
@@ -152,70 +151,6 @@ embedRenderable ca = Renderable {
    minsize = do { a <- ca; minsize a },
    render = \ r -> do { a <- ca; render a r }
 }
-
-
-----------------------------------------------------------------------
--- Legend
-
-data LegendStyle = LegendStyle {
-   legend_label_style :: CairoFontStyle,
-   legend_margin :: Double,
-   legend_plot_size :: Double
-}
-
-data Legend = Legend Bool LegendStyle [(String,Plot)]
-
-instance ToRenderable Legend where
-  toRenderable l = Renderable {
-    minsize=minsizeLegend l,
-    render=renderLegend l
-  }
-
-minsizeLegend :: Legend -> CRender RectSize
-minsizeLegend (Legend _ ls plots) = do
-    let labels = nub $ map fst plots
-    setFontStyle $ legend_label_style ls
-    lsizes <- mapM textSize labels
-    lgap <- legendSpacer
-    let lm = legend_margin ls
-    let pw = legend_plot_size ls
-    let h = maximum  [h | (w,h) <- lsizes]
-    let n = fromIntegral (length lsizes)
-    let w = sum [w + lgap | (w,h) <- lsizes] + pw * (n+1) + lm * (n-1)
-    return (w,h)
-
-renderLegend :: Legend -> Rect -> CRender ()
-renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
-    foldM_ rf rp1 $ join_nub plots
-  where
-    lm = legend_margin ls
-    lps = legend_plot_size ls
-
-    rf :: Point -> (String,[Plot]) -> CRender Point
-    rf p1 (label,theseplots) = do
-        setFontStyle $ legend_label_style ls
-        (w,h) <- textSize label
-	lgap <- legendSpacer
-	let p2 = (p1 `pvadd` Vector lps 0)
-        mapM_ (\p -> plot_render_legend p (mkrect p1 rp1 p2 rp2)) theseplots
-	let p3 = Point (p_x p2 + lgap) (p_y rp1)
-	drawText HTA_Left VTA_Top p3 label
-        return (p3 `pvadd` Vector (w+lm) 0)
-    join_nub :: [(String, a)] -> [(String, [a])]
-    join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
-                           (xs, rest) -> (x, a1:map snd xs) : join_nub rest
-    join_nub [] = []
-
-legendSpacer = do
-    (lgap,_) <- textSize "X"
-    return lgap
-
-defaultLegendStyle = LegendStyle {
-    legend_label_style=defaultFontStyle,
-    legend_margin=20,
-    legend_plot_size=20
-}
-
 
 ----------------------------------------------------------------------
 -- Labels
