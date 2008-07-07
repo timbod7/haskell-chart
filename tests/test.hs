@@ -24,8 +24,8 @@ red = (Color 1 0 0)
 red1 = (Color 0.5 0.5 1)
 
 ----------------------------------------------------------------------
-test1 :: OutputType -> IO Renderable
-test1 otype = return (toRenderable layout)
+test1 :: OutputType -> Renderable
+test1 otype = toRenderable layout
   where
     am :: Double -> Double
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
@@ -51,8 +51,8 @@ test1 otype = return (toRenderable layout)
     lineWidth = chooseLineWidth otype
 
 
-test1a :: OutputType -> IO Renderable
-test1a otype = return (toRenderable layout)
+test1a :: OutputType -> Renderable
+test1a otype = toRenderable layout
   where
     am :: Double -> Double
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
@@ -80,8 +80,8 @@ test1a otype = return (toRenderable layout)
     lineWidth = chooseLineWidth otype
 
 ----------------------------------------------------------------------
-test2 :: [(Int,Int,Int,Double,Double)] -> OutputType -> IO Renderable
-test2 prices otype = return (toRenderable layout)
+test2 :: [(Int,Int,Int,Double,Double)] -> OutputType -> Renderable
+test2 prices otype = toRenderable layout
   where
 
     lineStyle c = (plot_lines_style defaultPlotLines){
@@ -128,8 +128,8 @@ test2 prices otype = return (toRenderable layout)
 date dd mm yyyy = doubleFromLocalTime (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
 
 ----------------------------------------------------------------------
-test3 :: OutputType -> IO Renderable
-test3 otype = return (toRenderable layout)
+test3 :: OutputType -> Renderable
+test3 otype = toRenderable layout
   where
 
     price1 = defaultPlotFillBetween {
@@ -151,8 +151,8 @@ test3 otype = return (toRenderable layout)
     }
 
 ----------------------------------------------------------------------        
-test4 :: OutputType -> IO Renderable
-test4 otype = return (toRenderable layout)
+test4 :: OutputType -> Renderable
+test4 otype = toRenderable layout
   where
 
     points = defaultPlotPoints {
@@ -176,11 +176,10 @@ test4 otype = return (toRenderable layout)
 ----------------------------------------------------------------------
 -- Example thanks to Russell O'Connor
 
-test5 :: OutputType -> IO Renderable
-test5 otype = do
-    bits <- fmap randoms getStdGen
-    return (toRenderable (layout 1001 (trial bits)))
+test5 :: OutputType -> Renderable
+test5 otype = toRenderable (layout 1001 (trial bits))
   where
+    bits = randoms $ mkStdGen 0
     layout n t = defaultLayout1 {
            layout1_title="Simulation of betting on a biased coin",			   
            layout1_horizontal_axes=linkedAxes (autoScaledAxis defaultAxis),
@@ -213,8 +212,8 @@ test5 otype = do
 ----------------------------------------------------------------------        
 -- Test the Simple interface
 
-test6 :: OutputType -> IO Renderable
-test6 otype = return (toRenderable pp{layout1_title="Graphics.Rendering.Chart.Simple example"})
+test6 :: OutputType -> Renderable
+test6 otype = toRenderable pp{layout1_title="Graphics.Rendering.Chart.Simple example"}
   where
     pp = plot xs sin "sin"
                  cos "cos" "o"
@@ -225,8 +224,8 @@ test6 otype = return (toRenderable pp{layout1_title="Graphics.Rendering.Chart.Si
     xs = [0,0.3..3] :: [Double]
 
 ----------------------------------------------------------------------
-test7 :: OutputType -> IO Renderable
-test7 otype = return (toRenderable layout)
+test7 :: OutputType -> Renderable
+test7 otype = toRenderable layout
   where
     vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
     bars = defaultPlotErrBars {
@@ -244,8 +243,8 @@ test7 otype = return (toRenderable layout)
     }
 
 ----------------------------------------------------------------------
-test8 :: OutputType -> IO Renderable
-test8 otype = return (toRenderable layout)
+test8 :: OutputType -> Renderable
+test8 otype = toRenderable layout
   where
     values = [ ("eggs",38,e), ("milk",45,e), ("bread",11,e1), ("salmon",8,e) ]
     e = 0
@@ -259,7 +258,7 @@ test8 otype = return (toRenderable layout)
     }
 
 ----------------------------------------------------------------------        
-allTests :: [ (String, OutputType -> IO Renderable) ]
+allTests :: [ (String, OutputType -> Renderable) ]
 allTests =
      [ ("test1",  test1)
      , ("test1a", test1a)
@@ -288,15 +287,15 @@ main1 ("--svg":tests) = showTests tests renderToSVG
 main1 ("--ps":tests) = showTests tests renderToPS
 main1 tests = showTests tests renderToWindow
 
-showTests :: [String] -> ((String,OutputType -> IO Renderable) -> IO()) -> IO ()
+showTests :: [String] -> ((String,OutputType -> Renderable) -> IO()) -> IO ()
 showTests tests ofn = mapM_ ofn (filter (match tests) allTests)
 
 match :: [String] -> (String,a) -> Bool
 match [] t = True
 match ts t = (fst t) `elem` ts
 
-renderToWindow (n,ir) = do { r <- ir Window; renderableToWindow r 640 480}
-renderToPNG (n,ir) = do { r <- ir PNG; renderableToPNGFile r 640 480 (n ++ ".png")}
-renderToPS (n,ir) = do { r <- ir PS; renderableToPSFile r 640 480 (n ++ ".ps")}
-renderToPDF (n,ir) = do { r <- ir PDF; renderableToPDFFile r 640 480 (n ++ ".pdf")}
-renderToSVG (n,ir) = do { r <- ir SVG; renderableToSVGFile r 640 480 (n ++ ".svg")}
+renderToWindow (n,ir) = renderableToWindow (ir Window) 640 480
+renderToPNG (n,ir) = renderableToPNGFile (ir PNG) 640 480 (n ++ ".png")
+renderToPS (n,ir) = renderableToPSFile (ir PS) 640 480 (n ++ ".ps")
+renderToPDF (n,ir) = renderableToPDFFile (ir PDF) 640 480 (n ++ ".pdf")
+renderToSVG (n,ir) = renderableToSVGFile (ir SVG) 640 480 (n ++ ".svg")
