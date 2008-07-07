@@ -205,8 +205,9 @@ instance ToPlot PlotErrBars where
     toPlot p = Plot {
         plot_render = renderPlotErrBars p,
 	plot_render_legend = renderPlotLegendErrBars p,
-	plot_all_points = [Point (ev_best x) (ev_best y)
-                          | ErrPoint x y <- plot_errbars_values p]
+	plot_all_points = concat
+         [[Point (ev_low x) (ev_low y), Point (ev_high x) (ev_high y)]
+         | ErrPoint x y <- plot_errbars_values p]
     }
 
 renderPlotErrBars :: PlotErrBars -> PointMapFn -> CRender ()
