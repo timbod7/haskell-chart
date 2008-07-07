@@ -37,6 +37,7 @@ module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
 import Data.Maybe ( catMaybes )
 
 import Graphics.Rendering.Chart
+import Graphics.Rendering.Chart.Types (isValidNumber)
 import Graphics.Rendering.Chart.Gtk
 
 styleColor :: Int -> Color
@@ -62,7 +63,7 @@ iplot foobar = defaultLayout1 {
           isIPY (IPY _ _) = True
           isIPY _ = False
           toplot (IPX xs _, IPY ys yks) ind = map (\z -> (name yks, HA_Bottom, VA_Left, z)) plots
-              where vs = map (\(x,y) -> Point x y) $ filter isOkay $ zip xs ys
+              where vs = map (\(x,y) -> Point x y) $ filter (isValidNumber . snd) $ zip xs ys
                     plots = case catMaybes $ map plotas yks of
                             [] -> [toPlot $ defaultPlotLines
                                    { plot_lines_values = [vs],
@@ -106,7 +107,6 @@ iplot foobar = defaultLayout1 {
                                             plot_points_style=stars 7 1 (styleColor ind) }
                     plotas Symbols = plotas (styleSymbol ind)
                     plotas _ = Nothing
-          isOkay (_,n) = not (isNaN n || isInfinite n)
 
 name :: [PlotKind] -> String
 name (Name s:_) = s
