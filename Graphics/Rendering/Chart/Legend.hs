@@ -23,15 +23,15 @@ data LegendStyle = LegendStyle {
    legend_plot_size :: Double
 }
 
-data Legend = Legend Bool LegendStyle [(String,Plot)]
+data Legend x y = Legend Bool LegendStyle [(String,Plot x y)]
 
-instance ToRenderable Legend where
+instance ToRenderable (Legend x y) where
   toRenderable l = Renderable {
     minsize=minsizeLegend l,
     render=renderLegend l
   }
 
-minsizeLegend :: Legend -> CRender RectSize
+minsizeLegend :: Legend x y -> CRender RectSize
 minsizeLegend (Legend _ ls plots) = do
     let labels = nub $ map fst plots
     setFontStyle $ legend_label_style ls
@@ -44,14 +44,13 @@ minsizeLegend (Legend _ ls plots) = do
     let w = sum [w + lgap | (w,h) <- lsizes] + pw * (n+1) + lm * (n-1)
     return (w,h)
 
-renderLegend :: Legend -> Rect -> CRender ()
+renderLegend :: Legend x y -> Rect -> CRender ()
 renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
     foldM_ rf rp1 $ join_nub plots
   where
     lm = legend_margin ls
     lps = legend_plot_size ls
 
-    rf :: Point -> (String,[Plot]) -> CRender Point
     rf p1 (label,theseplots) = do
         setFontStyle $ legend_label_style ls
         (w,h) <- textSize label

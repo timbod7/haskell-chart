@@ -16,11 +16,11 @@ import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
 
 -- | The concrete data type for an axis
-data Axis =  Axis {
+data Axis x =  Axis {
 		   
     -- | The axis_viewport function maps values into device
     -- cordinates.
-    axis_viewport :: Range -> Double -> Double,
+    axis_viewport :: Range -> x -> Double,
 
     -- | The title string to be displayed on the axis. An
     -- empty string means no title.
@@ -32,16 +32,16 @@ data Axis =  Axis {
     -- length of the tick in output coordinates.
     -- The tick starts on the axis, and positive number are drawn
     -- towards the plot area.
-    axis_ticks :: [(Double,Double)],
+    axis_ticks :: [(x,Double)],
     
     -- | The labels on an axis as pairs. The first element 
     -- is the position on the axis (in viewport units) and
     -- the second is the label text string.
-    axis_labels :: [ (Double, String) ],
+    axis_labels :: [ (x, String) ],
 
     -- | The positions on the axis (in viewport units) where
     -- we want to show grid lines.
-    axis_grid :: [ Double ],
+    axis_grid :: [ x ],
 
     -- | How far the labels are to be drawn from the axis.
     axis_label_gap :: Double,
@@ -55,22 +55,22 @@ data Axis =  Axis {
 
 -- | Function type to generate an optional axis given a set
 -- of points to be plotted against that axis.
-type AxisFn = [Double] -> Maybe Axis
+type AxisFn x = [x] -> Maybe (Axis x)
 
 -- | Function type to generate a pair of axes (either top 
 -- and bottom, or left and right), given the set of points to
 -- be plotted against each of them.
-type AxesFn = [Double] -> [Double] -> (Maybe Axis,Maybe Axis)
+type AxesFn x x' = [x] -> [x'] -> (Maybe (Axis x), Maybe (Axis x'))
 
-data AxisT = AxisT RectEdge Axis
+data AxisT x = AxisT RectEdge (Axis x)
 
-instance ToRenderable AxisT where
+instance ToRenderable (AxisT x) where
   toRenderable at = Renderable {
      minsize=minsizeAxis at,
      render=renderAxis at
   }
 
-minsizeAxis :: AxisT -> CRender RectSize
+minsizeAxis :: AxisT x -> CRender RectSize
 minsizeAxis (AxisT at a) = do
     let labels = map snd (axis_labels a)
     labelSizes <- preserveCState $ do
@@ -94,7 +94,7 @@ minsizeAxis (AxisT at a) = do
 
 -- | Calculate the amount by which the labels extend beyond
 -- the ends of the axis
-axisOverhang :: AxisT -> CRender (Double,Double)
+axisOverhang :: Ord x => AxisT x -> CRender (Double,Double)
 axisOverhang (AxisT at a) = do
     let labels = map snd (sort (axis_labels a))
     labelSizes <- preserveCState $ do
@@ -113,7 +113,7 @@ axisOverhang (AxisT at a) = do
 		       E_Left -> ohangv
 		       E_Right -> ohangh
 
-renderAxis :: AxisT -> Rect -> CRender ()
+renderAxis :: AxisT x -> Rect -> CRender ()
 renderAxis at@(AxisT et a) rect = do
    let ls = axis_line_style a
    preserveCState $ do
@@ -144,7 +144,7 @@ renderAxis at@(AxisT et a) rect = do
    drawLabel (value,s) = do
        drawText hta vta (axisPoint value `pvadd` lp) s
 
-axisMapping :: AxisT -> Rect -> (Double,Double,Double,Double,Vector,Double->Point)
+axisMapping :: AxisT z -> Rect -> (Double,Double,Double,Double,Vector,z->Point)
 axisMapping (AxisT et a) rect = case et of
     E_Top    -> (x1,y2,x2,y2, (Vector 0 1),    mapx (x1,x2) y2) 
     E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)), mapx (x1,x2) y1)
@@ -153,13 +153,10 @@ axisMapping (AxisT et a) rect = case et of
   where
     (Rect (Point x1 y1) (Point x2 y2)) = rect
 
-    mapx :: Range -> Double -> Double -> Point
     mapx xr y x = Point (axis_viewport a xr x) y
-
-    mapy :: Range -> Double -> Double -> Point
     mapy (yr0,yr1) x y = Point x (axis_viewport a (yr1,yr0) y)
 
-renderAxisGrid :: Rect -> AxisT -> CRender ()
+renderAxisGrid :: Rect -> AxisT z -> CRender ()
 renderAxisGrid rect@(Rect p1 p2) at@(AxisT re a) = do
     preserveCState $ do
         setLineStyle (axis_grid_style a)
@@ -197,28 +194,23 @@ chooseStep nsteps (min,max) = s
     s = snd (head steps')
 
 -- | Explicitly specify an axis
-explicitAxis :: Maybe Axis -> AxisFn
+explicitAxis :: Maybe (Axis x)	 -> AxisFn x
 explicitAxis ma _ = ma
 
-autoAxis labelf transform (rlabelvs, rtickvs, rgridvs) a = Just axis
+autoAxis :: PlotValue x => (x -> String) -> ([x],[x],[x]) -> Axis x -> Maybe (Axis x)
+autoAxis labelf (labelvs, tickvs, gridvs) a = Just axis
   where
     axis =  a {
         axis_viewport=newViewport,
 	axis_ticks=newTicks,
-	axis_grid=gridvs,
+	axis_grid=if null (axis_grid a) then [] else gridvs,
 	axis_labels=newLabels
 	}
-    newViewport = transform (min',max')
+    newViewport = vmap (min',max')
     newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,5) | v <- labelvs ] 
     newLabels = [(v,labelf v) | v <- labelvs]
-    labelvs = map fromRational rlabelvs
-    tickvs = map fromRational rtickvs
     min' = minimum labelvs
     max' = maximum labelvs
-
-    gridvs = case (axis_grid a) of 
-       [] -> []
-       _  -> map fromRational rgridvs
 
 data LinearAxisParams = LinearAxisParams {
     -- | The function used to show the axes labels
@@ -247,25 +239,23 @@ defaultLinearAxis = LinearAxisParams {
 -- and grid set appropriately for the data displayed against that axies.
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
-autoScaledAxis' :: LinearAxisParams -> Axis -> AxisFn
-autoScaledAxis' lap a ps0 = autoAxis (la_labelf lap) vmap (labelvs,tickvs,gridvs) a
+autoScaledAxis' :: LinearAxisParams -> Axis Double -> AxisFn Double
+autoScaledAxis' lap a ps0 = autoAxis (la_labelf lap) (labelvs,tickvs,gridvs) a
   where
     ps = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
     range [] = (0,1)
     range _  | min == max = (min-0.5,min+0.5)
 	     | otherwise = (min,max)
-    labelvs = steps (fromIntegral (la_nLabels lap)) r
-    tickvs = steps (fromIntegral (la_nTicks lap)) (fromRational (minimum labelvs),fromRational (maximum labelvs))
-    gridvs = case la_gridAtMinor lap of
-        False -> labelvs
-        True -> tickvs
+    labelvs = map fromRational $ steps (fromIntegral (la_nLabels lap)) r
+    tickvs = map fromRational $ steps (fromIntegral (la_nTicks lap)) (minimum labelvs,maximum labelvs)
+    gridvs = if la_gridAtMinor lap then tickvs else labelvs
     r = range ps
 
 -- | Generate a linear axis automatically.
 -- Same as autoScaledAxis', but with labels generated with "showD"
 -- (showD is show for doubles, but with any trailing ".0" removed)
-autoScaledAxis :: Axis -> AxisFn
+autoScaledAxis :: Axis Double -> AxisFn Double
 autoScaledAxis = autoScaledAxis' defaultLinearAxis
 
 showD x = case reverse $ show x of
@@ -280,8 +270,6 @@ frac x | 0 <= b = (a,b)
        | otherwise = (a-1,b+1)
  where
   (a,b) = properFraction x
-
-lmap (x1,x2) r x = vmap (log x1, log x2) r (log x)
 
 {- 
  Rules: Do no subdivide between powers of 10 until all powers of 10
@@ -333,34 +321,37 @@ logTicks (low,high) = (major,minor,major)
 -- and grid set appropriately for the data displayed against that axies.
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
-autoScaledLogAxis' :: (Double->String) -> Axis -> AxisFn
-autoScaledLogAxis' labelf a ps0 = autoAxis labelf lmap (logTicks (range ps)) a
+autoScaledLogAxis' :: (LogValue->String) -> Axis LogValue -> AxisFn LogValue
+autoScaledLogAxis' labelf a ps0 = autoAxis labelf (wrap rlabelvs, wrap rtickvs, wrap rgridvs) a
   where
-    ps = filter isValidNumber ps0
+    ps = filter (\(LogValue x) -> isValidNumber x && 0 < x) ps0
     (min, max) = (minimum ps,maximum ps)
     range [] = (3,30)
-    range _  | min == max = (min/3,max*3)
-	     | otherwise = (min,max)
+    range _  | min == max = (unLogValue min/3,unLogValue max*3)
+             | otherwise = (unLogValue min,unLogValue max)
+    (rlabelvs, rtickvs, rgridvs) = logTicks (range ps)
+    wrap = map (LogValue . fromRational)
+    unLogValue (LogValue x) = x
 
 -- | Generate a log axis automatically.
 -- Same as autoScaledLogAxis', but with labels generated with "showD"
 -- (showD is show for doubles, but with any trailing ".0" removed)
-autoScaledLogAxis :: Axis -> AxisFn
-autoScaledLogAxis = autoScaledLogAxis' showD
+autoScaledLogAxis :: Axis LogValue -> AxisFn LogValue
+autoScaledLogAxis = autoScaledLogAxis' (\(LogValue x) -> showD x)
 
 -- | Show independent axes on each side of the layout
-independentAxes :: AxisFn -> AxisFn -> AxesFn
+independentAxes :: AxisFn x -> AxisFn x' -> AxesFn x x'
 independentAxes af1 af2 pts1 pts2 = (af1 pts1, af2 pts2)
 
 -- | Show the same axis on both sides of the layout
-linkedAxes :: AxisFn -> AxesFn
+linkedAxes :: AxisFn x -> AxesFn x x
 linkedAxes af pts1 pts2 = (a,a)
   where
     a = af (pts1++pts2)
 
 -- | Show the same axis on both sides of the layout, but with labels
 -- only on the primary side
-linkedAxes' :: AxisFn -> AxesFn
+linkedAxes' :: AxisFn x -> AxesFn x x
 linkedAxes' af pts1 pts2 = (a,removeLabels a)
   where
     a  = af (pts1++pts2)
@@ -372,11 +363,11 @@ defaultAxisLineStyle = solidLine 1 black
 defaultGridLineStyle = dashedLine 1 [5,5] grey8
 
 defaultAxis = Axis {
-    axis_viewport = vmap (0,1),
+    axis_viewport = error "Axis.defaultAxis.axis_viewport does not exist",
     axis_title = "",
-    axis_ticks = [(0,10),(1,10)],
+    axis_ticks = [],
     axis_labels = [],
-    axis_grid = [0.0,0.5,1.0],
+    axis_grid = [error "Axis.defaultAxis.axis_grid does not exist"],
     axis_label_gap = 10,
     axis_title_style = defaultFontStyle,
     axis_line_style = defaultAxisLineStyle,
@@ -425,30 +416,29 @@ type TimeLabelFn = LocalTime -> String
 -- and the ultimate range will aligned to it's elements. The second 'TimeSeq' sets
 -- the labels and grid. The 'TimeLabelFn' is used to format LocalTimes for labels.
 -- The values to be plotted against this axis can be created with 'doubleFromLocalTime'
-timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> Axis -> AxisFn
+timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> Axis LocalTime -> AxisFn LocalTime
 timeAxis tseq lseq labelf a pts = Just axis
   where
     axis =  a {
-        axis_viewport=vmap (dfct min', dfct max'),
-	axis_ticks=[ (dfct t,2) | t <- times] ++ [ (t,5) | t <- ltimes', visible t],
+        axis_viewport=vmap(min', max'),
+	axis_ticks=[ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
 	axis_labels=[ (t,l) | (t,l) <- labels, visible t],
-	axis_grid=[ t | t <- ltimes', visible t]
+	axis_grid=[ t | t <- ltimes, visible t]
 	}
     (min,max) = case pts of
 		[] -> (refLocalTime,refLocalTime)
-		ps -> let min = minimum ps
-			  max = maximum ps in
-			  (ctfd min,ctfd max)
+		ps -> (minimum ps, maximum ps)
     refLocalTime = LocalTime (ModifiedJulianDay 0) midnight
     times = coverTS tseq min max
     ltimes = coverTS lseq min max
-    ltimes' = map dfct ltimes
     min' = minimum times
     max' = maximum times
-    visible t = dfct min' <= t && t <= dfct max'
-    labels = [ ((dfct m2 + dfct m1) / 2, labelf m1) | (m1,m2) <- zip ltimes (tail ltimes) ]
-    dfct = doubleFromLocalTime
-    ctfd = localTimeFromDouble
+    visible t = min' <= t && t <= max'
+    labels = [ (avg m1 m2, labelf m1) | (m1,m2) <- zip ltimes (tail ltimes) ]
+    avg m1 m2 = localTimeFromDouble $ m1' + (m2' - m1')/2
+     where
+      m1' = doubleFromLocalTime m1
+      m2' = doubleFromLocalTime m2
 
 -- | A 'TimeSeq' for calendar days
 days :: TimeSeq
@@ -479,7 +469,7 @@ years t = (map toTime $ iterate rev t1, map toTime $ tail (iterate fwd t1))
 
 -- | Automatically choose a suitable time axis, based upon the time range of data.
 -- The values to be plotted against this axis can be created with 'doubleFromLocalTime'
-autoTimeAxis :: Axis -> AxisFn
+autoTimeAxis :: Axis LocalTime -> AxisFn LocalTime
 autoTimeAxis a [] = timeAxis days days (formatTime defaultTimeLocale "%d-%b")  a []
 autoTimeAxis a pts = 
     if tdiff < 15
@@ -492,8 +482,31 @@ autoTimeAxis a pts =
                    then timeAxis months years (ft "%Y") a pts
                    else timeAxis years years (ft "%Y") a pts
   where
-    tdiff = t1 - t0
+    tdiff = diffDays (localDay t1) (localDay t0)
     t1 = maximum pts
     t0 = minimum pts
     ft = formatTime defaultTimeLocale
 
+-----------------------------------------------------------------------------
+
+class Ord a => PlotValue a where
+ toValue :: a -> Double
+
+instance PlotValue Double where
+ toValue = id
+
+newtype LogValue = LogValue Double
+                    deriving (Eq, Ord)
+
+instance Show LogValue where
+ show (LogValue x) = show x
+
+instance PlotValue LogValue where
+ toValue (LogValue x) = log x
+
+instance PlotValue LocalTime where
+ toValue = doubleFromLocalTime
+
+-- | A linear mapping of points in one range to another
+vmap :: PlotValue x => (x,x) -> Range -> x -> Double
+vmap (v1,v2) (v3,v4) v = v3 + (toValue v - toValue v1) * (v4-v3) / (toValue v2 - toValue v1)

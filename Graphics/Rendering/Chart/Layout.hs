@@ -24,19 +24,19 @@ data VAxis = VA_Left | VA_Right deriving (Eq)
 
 -- | A Layout1 value is a single plot area, with optional: axes on
 -- each of the 4 sides; title at the top; legend at the bottom.
-data Layout1 = Layout1 {
+data Layout1 x y y' = Layout1 {
     layout1_background :: CairoFillStyle,
     layout1_title :: String,
     layout1_title_style :: CairoFontStyle,
-    layout1_horizontal_axes :: AxesFn,
-    layout1_vertical_axes :: AxesFn,
+    layout1_horizontal_axes :: AxesFn x x,
+    layout1_vertical_axes :: AxesFn y y',
     layout1_margin :: Double,
-    layout1_plots :: [(String,HAxis,VAxis,Plot)],
+    layout1_plots :: [(String,Either (Plot x y) (Plot x y'))],
     layout1_legend :: Maybe(LegendStyle),
     layout1_grid_last :: Bool
 }
 
-instance ToRenderable Layout1 where
+instance (Ord x, Ord y, Ord y') => ToRenderable (Layout1 x y y') where
     toRenderable = layout1ToRenderable
 
 layout1ToRenderable l =
@@ -44,17 +44,21 @@ layout1ToRenderable l =
        vertical [
        (0, addMargins (lm/2,0,0,0)    title),
        (1, addMargins (lm,lm,lm,lm) plotArea),
-       (0, horizontal [ (0,mkLegend VA_Left),(1,emptyRenderable),(0, mkLegend VA_Right) ] )
+       (0, horizontal [ (0,mkLegend lefts),(1,emptyRenderable),(0, mkLegend rights) ] )
        ]
      )
   where
+    lefts xs = [x | Left x <- xs]
+    rights xs = [x | Right x <- xs]
+    distrib (a,Left b) = Left (a,b)
+    distrib (a,Right b) = Right (a,b)
     lm = layout1_margin l
 
     title = label (layout1_title_style l) HTA_Centre VTA_Centre (layout1_title l)
 
-    mkLegend va = case (layout1_legend l) of
+    mkLegend side = case (layout1_legend l) of
         Nothing -> emptyRenderable
-        (Just ls) -> case [(s,p) | (s,_,va',p) <- layout1_plots l, va' == va, not (null s)] of
+        (Just ls) -> case [(s,p) | (s,p) <- side (map distrib (layout1_plots l)), not (null s)] of
  	    [] -> emptyRenderable
 	    ps -> addMargins (0,lm,lm,0) (toRenderable (Legend True ls ps))
 
@@ -103,19 +107,13 @@ renderPlots l r@(Rect p1 p2) = preserveCState $ do
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
 
-    rPlot :: Rect -> (String,HAxis,VAxis,Plot) -> CRender ()
-    rPlot rect (_,ha,va,p) = 
-        let mxaxis = case ha of HA_Bottom -> bAxis
-				HA_Top    -> tAxis
-	    myaxis = case va of VA_Left   -> lAxis
-				VA_Right  -> rAxis
-        in rPlot1 rect mxaxis myaxis p
-	      
-    rPlot1 :: Rect -> Maybe AxisT -> Maybe AxisT -> Plot -> CRender ()
+    rPlot rect (_,Left p) = rPlot1 rect bAxis lAxis p
+    rPlot rect (_,Right p) = rPlot1 rect bAxis rAxis p
+
     rPlot1 (Rect dc1 dc2) (Just (AxisT _ xaxis)) (Just (AxisT _ yaxis)) p = 
 	let xrange = (p_x dc1, p_x dc2)
 	    yrange = (p_y dc2, p_y dc1)
-	    pmfn (Point x y) = Point (axis_viewport xaxis xrange x) (axis_viewport yaxis yrange y)
+	    pmfn (x,y) = Point (axis_viewport xaxis xrange x) (axis_viewport yaxis yrange y)
 	in plot_render p pmfn
     rPlot1 _ _ _ _ = return ()
 
@@ -132,7 +130,7 @@ axesSpacer f1 a1 f2 a2 = embedRenderable $ do
 
 maybeM v = maybe (return v)
 
-getAxes :: Layout1 -> (Maybe AxisT, Maybe AxisT, Maybe AxisT, Maybe AxisT)
+getAxes :: Layout1 x y y' -> (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y'))
 getAxes l = (mk E_Bottom bAxis, mk E_Left lAxis,
 	     mk E_Top tAxis, mk E_Right rAxis)
   where 
@@ -143,15 +141,13 @@ getAxes l = (mk E_Bottom bAxis, mk E_Left lAxis,
     mk at (Just a) = Just (AxisT at a)
 
 
-allPlottedValues :: [(String,HAxis,VAxis,Plot)] -> ( [Double], [Double], [Double], [Double] )
+allPlottedValues :: [(String,Either (Plot x y) (Plot x' y'))] -> ( [x], [x'], [y], [y'] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
   where
-    pts = concat [ [ (ha,va,pt)| pt <- plot_all_points p] | (_,ha,va,p) <- plots ]
-    xvals0 = [ (p_x pt) | (HA_Bottom,_,pt) <- pts  ]
-    xvals1 = [ (p_x pt) | (HA_Top,_,pt) <- pts  ]
-    yvals0 = [ (p_y pt) | (_,VA_Left,pt) <- pts  ]
-    yvals1 = [ (p_y pt) | (_,VA_Right,pt) <- pts  ]
-
+    xvals0 = [ x | (_, Left p) <- plots, (x,_) <- plot_all_points p]
+    yvals0 = [ y | (_, Left p) <- plots, (_,y) <- plot_all_points p]
+    xvals1 = [ x | (_, Right p) <- plots, (x,_) <- plot_all_points p]
+    yvals1 = [ y | (_, Right p) <- plots, (_,y) <- plot_all_points p]
 
 defaultLayout1 = Layout1 {
     layout1_background = solidFillStyle white,

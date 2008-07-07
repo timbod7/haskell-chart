@@ -22,7 +22,7 @@
 --
 -- Examples:
 --
--- @renderableToWindow (toRenderable $ plot [0,0.1..10] sin "sin(x)") 640 480@
+-- @renderableToWindow (toRenderable $ plotLayout $ plot [0,0.1..10] sin "sin(x)") 640 480@
 --
 -- @plotWindow [0,1,3,4,8]] [12,15,1,5,8] "o" "points"@
 --
@@ -31,7 +31,8 @@
 -- @plotPS "foo.ps" [0,0.1..10] (sin.exp) "- " (sin.exp) "o-"@
 -----------------------------------------------------------------------------
 module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
-                                        plotWindow, plotPDF, plotPS
+                                        plotWindow, plotPDF, plotPS,
+                                        plotLayout
                                       ) where
 
 import Data.Maybe ( catMaybes )
@@ -51,7 +52,9 @@ styleSymbol ind = symbolSequence !! ind
     where symbolSequence = cycle [ Ex, HollowCircle, Square, Diamond,
                                    Triangle, DownTriangle, Plus, Star, FilledCircle ]
 
-iplot :: [InternalPlot] -> Layout1
+-- When defaultLayout1 has been generalized, change this signature to 
+-- [InternalPlot x y] -> Layout1 x y z
+iplot :: [InternalPlot Double Double] -> Layout1 Double Double Double
 iplot foobar = defaultLayout1 {
         layout1_plots = concat $ zipWith toplot (ip foobar) [0..]
     }
@@ -62,8 +65,8 @@ iplot foobar = defaultLayout1 {
           ip [] = []
           isIPY (IPY _ _) = True
           isIPY _ = False
-          toplot (IPX xs _, IPY ys yks) ind = map (\z -> (name yks, HA_Bottom, VA_Left, z)) plots
-              where vs = map (\(x,y) -> Point x y) $ filter (isValidNumber . snd) $ zip xs ys
+          toplot (IPX xs _, IPY ys yks) ind = map (\z -> (name yks, Left z)) plots
+              where vs = zip xs ys
                     plots = case catMaybes $ map plotas yks of
                             [] -> [toPlot $ defaultPlotLines
                                    { plot_lines_values = [vs],
@@ -141,15 +144,19 @@ data PlotKind = Name String | FilledCircle | HollowCircle
               | Triangle | DownTriangle | Square | Diamond | Plus | Ex | Star | Symbols
               | LittleDot | Dashed | Dotted | Solid
               deriving ( Eq, Show, Ord )
-data InternalPlot = IPY [Double] [PlotKind] | IPX [Double] [PlotKind]
+data InternalPlot x y = IPY [y] [PlotKind] | IPX [x] [PlotKind]
 
-uplot :: [UPlot] -> Layout1
-uplot us = iplot $ nameDoubles $ evalfuncs us
-    where nameDoubles :: [UPlot] -> [InternalPlot]
+newtype Layout1DDD = Layout1DDD { plotLayout :: Layout1 Double Double Double }
+instance ToRenderable Layout1DDD where
+ toRenderable = toRenderable . plotLayout
+
+uplot :: [UPlot] -> Layout1DDD
+uplot us = Layout1DDD $ iplot $ nameDoubles $ evalfuncs us
+    where nameDoubles :: [UPlot] -> [InternalPlot Double Double]
           nameDoubles (X xs:uus) = case grabName uus of
-                                     (ks,uus') -> IPX xs ks : nameDoubles uus'
+                                     (ks,uus') -> IPX (filter isValidNumber xs) ks : nameDoubles uus'
           nameDoubles (UDoubles xs:uus) = case grabName uus of
-                                          (ks,uus') -> IPY xs ks : nameDoubles uus'
+                                          (ks,uus') -> IPY (filter isValidNumber xs) ks : nameDoubles uus'
           nameDoubles (_:uus) = nameDoubles uus
           nameDoubles [] = []
           evalfuncs :: [UPlot] -> [UPlot]
@@ -183,7 +190,7 @@ class PlotType t where
     pl :: [UPlot] -> t
 instance (PlotArg a, PlotType r) => PlotType (a -> r) where
     pl args = \ a -> pl (toUPlot a ++ args)
-instance PlotType Layout1 where
+instance PlotType Layout1DDD where
     pl args = uplot (reverse args)
 
 -- | Display a plot on the screen.

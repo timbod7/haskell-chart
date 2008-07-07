@@ -30,21 +30,21 @@ test1 otype = toRenderable layout
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
 
     sinusoid1 = defaultPlotLines {
-	plot_lines_values = [[ (Point x (am x)) | x <- [0,(0.5)..400]]],
+	plot_lines_values = [[ (x,(am x)) | x <- [0,(0.5)..400]]],
         plot_lines_style = solidLine lineWidth blue
     }
 
     sinusoid2 = defaultPlotPoints {
         plot_points_style=filledCircles 2 red,
-	plot_points_values = [ (Point x (am x)) | x <- [0,7..400]]
+	plot_points_values = [ (x,(am x)) | x <- [0,7..400]]
     }
 
     layout = defaultLayout1 {
         layout1_title="Amplitude Modulation",			   
         layout1_horizontal_axes=linkedAxes (autoScaledAxis defaultAxis),
 	layout1_vertical_axes=linkedAxes (autoScaledAxis defaultAxis),
-	layout1_plots = [("am",HA_Bottom,VA_Left,(toPlot sinusoid1)),
-			 ("am points", HA_Bottom,VA_Left,(toPlot sinusoid2))]
+	layout1_plots = [("am",Left (toPlot sinusoid1)),
+			 ("am points", Left (toPlot sinusoid2))]
     }
 
     lineWidth = chooseLineWidth otype
@@ -57,13 +57,13 @@ test1a otype = toRenderable layout
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
 
     sinusoid1 = defaultPlotLines {
-	plot_lines_values = [[ (Point x (am x)) | x <- [0,(0.5)..400]]],
+	plot_lines_values = [[ (x,(am x)) | x <- [0,(0.5)..400]]],
         plot_lines_style = solidLine lineWidth blue
     }
 
     sinusoid2 = defaultPlotPoints {
         plot_points_style=filledCircles 2 red,
-	plot_points_values = [ (Point x (am x)) | x <- [0,7..400]]
+	plot_points_values = [ (x,(am x)) | x <- [0,7..400]]
     }
 
     lap = defaultLinearAxis{la_nLabels=2,la_nTicks=20,la_gridAtMinor=True}
@@ -72,8 +72,8 @@ test1a otype = toRenderable layout
         layout1_title="Amplitude Modulation",			   
         layout1_horizontal_axes=linkedAxes (autoScaledAxis' lap defaultAxis),
 	layout1_vertical_axes=linkedAxes (autoScaledAxis' lap defaultAxis),
-	layout1_plots = [("am",HA_Bottom,VA_Left,(toPlot sinusoid1)),
-			 ("am points", HA_Bottom,VA_Left,(toPlot sinusoid2))]
+	layout1_plots = [("am",Left (toPlot sinusoid1)),
+			 ("am points", Left (toPlot sinusoid2))]
     }
 
     lineWidth = chooseLineWidth otype
@@ -90,12 +90,12 @@ test2 prices otype = toRenderable layout
 
     price1 = defaultPlotLines {
         plot_lines_style = lineStyle blue,
-	plot_lines_values = [[ Point (date d m y) v | (d,m,y,v,_) <- prices]]
+	plot_lines_values = [[ ((date d m y), v) | (d,m,y,v,_) <- prices]]
     }
 
     price2 = defaultPlotLines {
         plot_lines_style = lineStyle green,
-	plot_lines_values = [[ Point (date d m y) v | (d,m,y,_,v) <- prices]]
+	plot_lines_values = [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
     }
 
     baseAxis = defaultAxis{
@@ -116,15 +116,15 @@ test2 prices otype = toRenderable layout
         layout1_background=solidFillStyle bg,
         layout1_horizontal_axes=linkedAxes' (autoTimeAxis baseAxis),
 	layout1_vertical_axes=independentAxes vaxis vaxis,
- 	layout1_plots = [("price 1", HA_Bottom,VA_Left,(toPlot price1)),
-                         ("price 2", HA_Bottom,VA_Right,(toPlot price2))],
+ 	layout1_plots = [("price 1", Left (toPlot price1)),
+                         ("price 2", Right (toPlot price2))],
         layout1_legend = Just (defaultLegendStyle{
             legend_label_style=(legend_label_style defaultLegendStyle){font_color=fg}
         } ),
         layout1_grid_last=False
     }
 
-date dd mm yyyy = doubleFromLocalTime (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
+date dd mm yyyy = (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
 
 ----------------------------------------------------------------------
 test3 :: OutputType -> Renderable
@@ -145,8 +145,8 @@ test3 otype = toRenderable layout
         layout1_title="Price History",			   
         layout1_horizontal_axes=linkedAxes' (autoTimeAxis defaultAxis),
 	layout1_vertical_axes=linkedAxes' (autoScaledAxis defaultAxis),
- 	layout1_plots = [("price 1", HA_Bottom,VA_Left,(toPlot price1)),
-                         ("price 2", HA_Bottom,VA_Left,(toPlot price2))]
+ 	layout1_plots = [("price 1", Left (toPlot price1)),
+                         ("price 2", Left (toPlot price2))]
     }
 
 ----------------------------------------------------------------------        
@@ -156,19 +156,19 @@ test4 otype = toRenderable layout
 
     points = defaultPlotPoints {
         plot_points_style=filledCircles 3 red,
-	plot_points_values = [ Point x (10**x) | x <- [0.5,1,1.5,2,2.5] ]
+	plot_points_values = [ (x, LogValue (10**x)) | x <- [0.5,1,1.5,2,2.5] ]
     }
 
     lines = defaultPlotLines {
-	plot_lines_values = [ [Point x (10**x) | x <- [0,3]] ]
+	plot_lines_values = [ [(x, LogValue (10**x)) | x <- [0,3]] ]
     }
 
     layout = defaultLayout1 {
         layout1_title="Log/Linear Example",			   
         layout1_horizontal_axes=linkedAxes' (autoScaledAxis defaultAxis{axis_title="horizontal"}),
 	layout1_vertical_axes=linkedAxes' (autoScaledLogAxis defaultAxis{axis_title="vertical"}),
-	layout1_plots = [("values",HA_Bottom,VA_Left,(toPlot points)),
-			 ("values",HA_Bottom,VA_Left,(toPlot lines)) ]
+	layout1_plots = [("values",Left (toPlot points)),
+			 ("values",Left (toPlot lines)) ]
     }
 
 
@@ -184,14 +184,14 @@ test5 otype = toRenderable (layout 1001 (trial bits))
            layout1_horizontal_axes=linkedAxes (autoScaledAxis defaultAxis),
             layout1_vertical_axes=linkedAxes (autoScaledLogAxis defaultAxis),
             layout1_plots = [
-             ("f=0.05",HA_Bottom,VA_Left,(toPlot (plot s1 n 0 (t 0.05)))),
-             ("f=0.1",HA_Bottom,VA_Left,(toPlot (plot s2 n 0 (t 0.1))))]
+             ("f=0.05", Left (toPlot (plot s1 n 0 (t 0.05)))),
+             ("f=0.1", Left (toPlot (plot s2 n 0 (t 0.1))))]
         }
 
     plot s n m t = defaultPlotLines {
             plot_lines_style = s,
             plot_lines_values =
-             [[Point (fromIntegral x) y | (x,y) <-
+             [[(fromIntegral x, LogValue y) | (x,y) <-
                           filter (\(x,_)->x `mod` (m+1)==0) $ take n $ zip [0..] t]]
         }
 
@@ -212,7 +212,7 @@ test5 otype = toRenderable (layout 1001 (trial bits))
 -- Test the Simple interface
 
 test6 :: OutputType -> Renderable
-test6 otype = toRenderable pp{layout1_title="Graphics.Rendering.Chart.Simple example"}
+test6 otype = toRenderable (plotLayout pp){layout1_title="Graphics.Rendering.Chart.Simple example"}
   where
     pp = plot xs sin "sin"
                  cos "cos" "o"
@@ -232,13 +232,13 @@ test7 otype = toRenderable layout
     }
     points = defaultPlotPoints {
         plot_points_style=filledCircles 2 red,
-	plot_points_values = [Point x y |  (x,y,dx,dy) <- vals]
+	plot_points_values = [(x,y) |  (x,y,dx,dy) <- vals]
     }
 
     layout = defaultLayout1 {
         layout1_title= "errorbars example",
-	layout1_plots = [("test",HA_Bottom,VA_Left,(toPlot bars)),
-                         ("test",HA_Bottom,VA_Left,(toPlot points))]
+	layout1_plots = [("test",Left (toPlot bars)),
+                         ("test",Left (toPlot points))]
     }
 
 ----------------------------------------------------------------------

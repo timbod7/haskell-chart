@@ -37,6 +37,7 @@ module Graphics.Rendering.Chart(
     Rect(..),
     Point(..),
     Color(..),
+    LogValue(..),
     ErrPoint(..),
     symErrPoint,
     PieChart(..),
@@ -78,8 +79,6 @@ module Graphics.Rendering.Chart(
     renderableToPDFFile,
     renderableToPSFile,
     renderableToSVGFile,
-    doubleFromLocalTime,
-    localTimeFromDouble,
     CairoLineStyle(..),
     CairoFillStyle(..),
     CairoFontStyle(..)
