@@ -230,7 +230,7 @@ test7 otype = return (toRenderable layout)
   where
     vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
     bars = defaultPlotErrBars {
-	plot_errbars_values = [ErrPoint x y dx dy | (x,y,dx,dy) <- vals]
+	plot_errbars_values = [symErrPoint x y dx dy | (x,y,dx,dy) <- vals]
     }
     points = defaultPlotPoints {
         plot_points_style=filledCircles 2 red,

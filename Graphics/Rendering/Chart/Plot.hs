@@ -12,6 +12,7 @@ module Graphics.Rendering.Chart.Plot(
     PlotLines(..),
     PlotFillBetween(..),
     ErrPoint(..),
+    symErrPoint,
 
     defaultPlotLineStyle,
     defaultPlotPoints,
@@ -175,12 +176,21 @@ defaultPlotFillBetween = PlotFillBetween {
 
 -- | Value for holding a point with associated error bounds for
 -- each axis.
-data ErrPoint = ErrPoint {
-      ep_x :: Double,
-      ep_y :: Double,
-      ep_dx :: Double,
-      ep_dy :: Double
+
+data ErrValue x = ErrValue {
+      ev_low :: x,
+      ev_best :: x,
+      ev_high :: x
 } deriving Show
+
+data ErrPoint = ErrPoint {
+      ep_x :: ErrValue Double,
+      ep_y :: ErrValue Double
+} deriving Show
+
+-- | When the error is symetric, we can simply pass in dx for the error
+symErrPoint x y dx dy = ErrPoint (ErrValue (x-dx) x (x+dx))
+                                 (ErrValue (y-dy) y (y+dy))
 
 -- | Value defining a series of error intervals, and a style in
 -- which to render them
@@ -195,42 +205,47 @@ instance ToPlot PlotErrBars where
     toPlot p = Plot {
         plot_render = renderPlotErrBars p,
 	plot_render_legend = renderPlotLegendErrBars p,
-	plot_all_points = map (\(ErrPoint x y _ _) -> Point x y ) $ plot_errbars_values p
+	plot_all_points = [Point (ev_best x) (ev_best y)
+                          | ErrPoint x y <- plot_errbars_values p]
     }
 
 renderPlotErrBars :: PlotErrBars -> PointMapFn -> CRender ()
 renderPlotErrBars p pmap = preserveCState $ do
     mapM_ (drawErrBar.epmap) (plot_errbars_values p)
   where
-    epmap (ErrPoint x y dx dy) = ErrPoint x' y' (abs $ x''-x') (abs $ y''-y')
+    epmap (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) =
+        ErrPoint (ErrValue xl'' x' xh'') (ErrValue yl'' y' yh'')
         where (Point x' y') = pmap (Point x y)
-              (Point x'' y'') = pmap (Point (x+dx) (y+dy))
+              (Point xl' yl') = pmap (Point xl yl)
+              (Point xh' yh') = pmap (Point xh yh)
+              (xl'', xh'') = (min xl' xh', max xl' xh')
+              (yl'', yh'') = (min yl' yh', max yl' yh')
     drawErrBar = drawErrBar0 p
 
-drawErrBar0 ps (ErrPoint x y dx dy) = do
+drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = plot_errbars_tick_length ps
         let oh = plot_errbars_overhang ps
         setLineStyle (plot_errbars_line_style ps)
         c $ C.newPath
-        c $ C.moveTo (x-dx-oh) y
-        c $ C.lineTo (x+dx+oh) y
-        c $ C.moveTo x (y-dy-oh)
-        c $ C.lineTo x (y+dy+oh)
-        c $ C.moveTo (x-dx) (y-tl)
-        c $ C.lineTo (x-dx) (y+tl)
-        c $ C.moveTo (x-tl) (y-dy)
-        c $ C.lineTo (x+tl) (y-dy)
-        c $ C.moveTo (x+dx) (y-tl)
-        c $ C.lineTo (x+dx) (y+tl)
-        c $ C.moveTo (x-tl) (y+dy)
-        c $ C.lineTo (x+tl) (y+dy)
+        c $ C.moveTo (xl-oh) y
+        c $ C.lineTo (xh+oh) y
+        c $ C.moveTo x (yl-oh)
+        c $ C.lineTo x (yh+oh)
+        c $ C.moveTo xl (y-tl)
+        c $ C.lineTo xl (y+tl)
+        c $ C.moveTo (x-tl) yl
+        c $ C.lineTo (x+tl) yl
+        c $ C.moveTo xh (y-tl)
+        c $ C.lineTo xh (y+tl)
+        c $ C.moveTo (x-tl) yh
+        c $ C.lineTo (x+tl) yh
 	c $ C.stroke
 
 renderPlotLegendErrBars :: PlotErrBars -> Rect -> CRender ()
 renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
-    drawErrBar (ErrPoint (p_x p1) ((p_y p1 + p_y p2)/2) dx dx ) 
-    drawErrBar (ErrPoint ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2) dx dx)
-    drawErrBar (ErrPoint (p_x p2) ((p_y p1 + p_y p2)/2) dx dx)
+    drawErrBar (symErrPoint (p_x p1) ((p_y p1 + p_y p2)/2) dx dx )
+    drawErrBar (symErrPoint ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2) dx dx)
+    drawErrBar (symErrPoint (p_x p2) ((p_y p1 + p_y p2)/2) dx dx)
 
   where
     drawErrBar = drawErrBar0 p

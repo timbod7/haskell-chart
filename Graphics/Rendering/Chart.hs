@@ -38,6 +38,7 @@ module Graphics.Rendering.Chart(
     Point(..),
     Color(..),
     ErrPoint(..),
+    symErrPoint,
     PieChart(..),
     PieLayout(..),
     PieItem(..),
