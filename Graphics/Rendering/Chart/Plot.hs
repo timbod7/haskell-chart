@@ -215,12 +215,10 @@ renderPlotErrBars p pmap = preserveCState $ do
     mapM_ (drawErrBar.epmap) (plot_errbars_values p)
   where
     epmap (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) =
-        ErrPoint (ErrValue xl'' x' xh'') (ErrValue yl'' y' yh'')
+        ErrPoint (ErrValue xl' x' xh') (ErrValue yl' y' yh')
         where (Point x' y') = pmap (Point x y)
               (Point xl' yl') = pmap (Point xl yl)
               (Point xh' yh') = pmap (Point xh yh)
-              (xl'', xh'') = (min xl' xh', max xl' xh')
-              (yl'', yh'') = (min yl' yh', max yl' yh')
     drawErrBar = drawErrBar0 p
 
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
