@@ -1,6 +1,8 @@
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Simple
+import Graphics.Rendering.Chart.Renderable
+import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Gtk
 import System.Environment(getArgs)
 import System.Time
@@ -17,10 +19,7 @@ chooseLineWidth PDF = 0.25
 chooseLineWidth PS = 0.25
 chooseLineWidth SVG = 0.25
 
-blue = (Color 0 0 1)
-green = (Color 0 1 0)
 green1 = (Color 0.5 1 0.5)
-red = (Color 1 0 0)
 red1 = (Color 0.5 0.5 1)
 
 ----------------------------------------------------------------------
@@ -257,6 +256,29 @@ test8 otype = toRenderable layout
         }
     }
 
+----------------------------------------------------------------------
+-- a quick test to display labels with all combinations
+-- of anchors
+misc1 rot otype = fillBackground fwhite $ grid [1,1,1] [1,1,1] ls
+  where
+    ls = [ [(0,addMargins (20,20,20,20) $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s) | h <- hs] | v <- vs ]
+    s = "Labelling"
+    hs = [HTA_Left, HTA_Centre, HTA_Right]
+    vs = [VTA_Top, VTA_Centre, VTA_Bottom]
+    fwhite = solidFillStyle white
+    fblue = solidFillStyle (Color 0.8 0.8 1)
+    fs = defaultFontStyle{font_size=20,font_weight=C.FontWeightBold}
+    crossHairs r =Renderable {
+      minsize = minsize r,
+      render = \rect@(Rect (Point x1 y1) (Point x2 y2)) -> do
+          let xa = (x1 + x2) / 2
+          let ya = (y1 + y2) / 2
+          strokeLines [Point x1 ya,Point x2 ya]
+          strokeLines [Point xa y1,Point xa y2]
+          render r rect
+    }
+    
+
 ----------------------------------------------------------------------        
 allTests :: [ (String, OutputType -> Renderable) ]
 allTests =
@@ -272,6 +294,8 @@ allTests =
      , ("test6", test6)
      , ("test7", test7)
      , ("test8", test8)
+     , ("misc1", misc1 0)
+     , ("misc1a", misc1 45)
      ]
 
 filterPrices t1 t2 = [ v | v@(d,m,y,_,_) <- prices, let t = date d m y in t >= t1 && t <= t2]

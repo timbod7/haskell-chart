@@ -168,6 +168,8 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
     rf (Rect p1 p2) = preserveCState $ do
        setFontStyle fs
        sz@(w,h) <- textSize s
+       fe <- c $ C.fontExtents
+       c $ C.translate 0 (-C.fontExtentsDescent fe)
        c $ C.translate (xadj sz hta (p_x p1) (p_x p2)) (yadj sz vta (p_y p1) (p_y p2))
        c $ C.rotate rot'
        c $ C.moveTo (-w/2) (h/2)
@@ -182,26 +184,3 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
     rot' = rot / 180 * pi
     (cr,sr) = (cos rot', sin rot')
     (acr,asr) = (abs cr, abs sr)
-
--- a quick test to display labels with all combinations
--- of anchors
-labelTest rot = renderableToPNGFile r 800 800 "labels.png"
-  where
-    r = fillBackground fwhite $ grid [1,1,1] [1,1,1] ls
-    ls = [ [(0,addMargins (20,20,20,20) $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s) | h <- hs] | v <- vs ]
-    s = "Labels"
-    hs = [HTA_Left, HTA_Centre, HTA_Right]
-    vs = [VTA_Top, VTA_Centre, VTA_Bottom]
-    fwhite = solidFillStyle white
-    fblue = solidFillStyle (Color 0.8 0.8 1)
-    fs = defaultFontStyle{font_size=30,font_weight=C.FontWeightBold}
-    crossHairs r =Renderable {
-      minsize = minsize r,
-      render = \rect@(Rect (Point x1 y1) (Point x2 y2)) -> do
-          let xa = (x1 + x2) / 2
-          let ya = (y1 + y2) / 2
-          strokeLines [Point x1 ya,Point x2 ya]
-          strokeLines [Point xa y1,Point xa y2]
-          render r rect
-    }
-    
