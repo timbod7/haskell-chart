@@ -478,7 +478,8 @@ years t = (map toTime $ iterate rev t1, map toTime $ tail (iterate fwd t1))
 -- | Automatically choose a suitable time axis, based upon the time range of data.
 -- The values to be plotted against this axis can be created with 'doubleFromLocalTime'
 autoTimeAxis :: Axis -> AxisFn
-autoTimeAxis a pts =
+autoTimeAxis a [] = timeAxis days days (formatTime defaultTimeLocale "%d-%b")  a []
+autoTimeAxis a pts = 
     if tdiff < 15
     then  timeAxis days days (ft "%d-%b")  a pts
     else if tdiff < 90
