@@ -80,14 +80,16 @@ minsizeAxis (AxisT at a) = do
     let ag = axis_label_gap a
     let tsize = maximum [ max 0 (-l) | (v,l) <- axis_ticks a ]
     let sz = case at of
-		     E_Top    -> (lw,max (lh + ag) tsize)
-		     E_Bottom -> (lw,max (lh + ag) tsize)
-		     E_Left   -> (max (lw + ag) tsize, lh)
-		     E_Right  -> (max (lw + ag) tsize, lh)
+		     E_Top    -> (lw,max (addIfNZ lh ag) tsize)
+		     E_Bottom -> (lw,max (addIfNZ lh ag) tsize)
+		     E_Left   -> (max (addIfNZ lw ag) tsize, lh)
+		     E_Right  -> (max (addIfNZ lw ag) tsize, lh)
     return sz
 
   where
     maxsz (w1,h1) (w2,h2) = (max w1 w2, max h1 h2)
+    addIfNZ a b | a == 0 = 0
+                | otherwise = a+b
 
 
 -- | Calculate the amount by which the labels extend beyond

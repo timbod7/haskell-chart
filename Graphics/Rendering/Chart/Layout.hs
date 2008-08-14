@@ -66,7 +66,8 @@ layout1ToRenderable l =
          [er,            er,        (1,atitle ba), er,        er       ] ]
 
     atitle Nothing = emptyRenderable
-    atitle (Just (AxisT e a)) = rlabel (axis_title_style a) ha va rot (axis_title a)
+    atitle (Just (AxisT e a)) | axis_title a == "" = emptyRenderable
+                              | otherwise = rlabel (axis_title_style a) ha va rot (axis_title a)
       where (ha,va,rot) = case e of E_Top -> (HTA_Centre,VTA_Bottom,0)
                                     E_Bottom -> (HTA_Centre,VTA_Top,0)
                                     E_Left -> (HTA_Right,VTA_Centre,90)
