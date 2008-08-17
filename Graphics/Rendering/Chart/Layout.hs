@@ -13,6 +13,7 @@ import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
+import Graphics.Rendering.Chart.Table
 import Control.Monad
 import Control.Monad.Reader (local)
 
@@ -41,12 +42,11 @@ instance (Ord x, Ord y, Ord y') => ToRenderable (Layout1 x y y') where
 
 layout1ToRenderable l =
    fillBackground (layout1_background l) (
-       vertical [
-       (0, addMargins (lm/2,0,0,0)    title),
-       (1, addMargins (lm,lm,lm,lm) plotArea),
-       (0, horizontal [ (0,mkLegend lefts),(1,emptyRenderable),(0, mkLegend rights) ] )
-       ]
-     )
+       renderTable $ aboveN [
+          tval $ addMargins (lm/2,0,0,0) () title,
+          weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) () plotArea,
+          tval $ renderTable $ besideN [ tval $ mkLegend lefts, tval $ emptyRenderable, tval $ mkLegend rights ]
+       ] )
   where
     lefts xs = [x | Left x <- xs]
     rights xs = [x | Right x <- xs]
@@ -60,75 +60,84 @@ layout1ToRenderable l =
         Nothing -> emptyRenderable
         (Just ls) -> case [(s,p) | (s,p) <- side (map distrib (layout1_plots l)), not (null s)] of
  	    [] -> emptyRenderable
-	    ps -> addMargins (0,lm,lm,0) (toRenderable (Legend True ls ps))
+	    ps -> addMargins (0,lm,lm,0) () (toRenderable (Legend True ls ps))
 
-    plotArea = grid [0,0,1,0,0] [0,0,1,0,0]
-       [ [er,            er,        (1,atitle ta), er,        er       ],
-         [er,            (1,tl),    (1,taxis),     (1,tr),    er       ],
-         [(1,atitle la), (1,laxis), (0,plots),     (1,raxis), (1,atitle ra)],
-         [er,            (1,bl),    (1,baxis),     (1,br),    er       ],
-         [er,            er,        (1,atitle ba), er,        er       ] ]
+    layer1 = aboveN [
+         besideN [er,        er,    er   ],
+         besideN [er,        er,    er   ],
+         besideN [er,        er,    weights (1,1) plots ]
+         ]
 
-    atitle Nothing = emptyRenderable
-    atitle (Just (AxisT e a)) | axis_title a == "" = emptyRenderable
-                              | otherwise = rlabel (axis_title_style a) ha va rot (axis_title a)
+    layer2 = aboveN [
+         besideN [er,        er,    atitle ta, er,    er       ],
+         besideN [er,        tl,    taxis,     tr,    er       ],
+         besideN [atitle la, laxis, er,        raxis, atitle ra],
+         besideN [er,        bl,    baxis,     br,    er       ],
+         besideN [er,        er,    atitle ba, er,    er       ]
+         ]
+
+    plotArea = renderTable (layer2 `overlay` layer1)
+
+    er = tval $ emptyRenderable
+
+    atitle Nothing = er
+    atitle (Just (AxisT e a)) | axis_title a == "" = er
+                              | otherwise = tval $ rlabel (axis_title_style a) ha va rot (axis_title a)
       where (ha,va,rot) = case e of E_Top -> (HTA_Centre,VTA_Bottom,0)
                                     E_Bottom -> (HTA_Centre,VTA_Top,0)
                                     E_Left -> (HTA_Right,VTA_Centre,90)
                                     E_Right -> (HTA_Left,VTA_Centre,90)
 
-    plots = Renderable {
+    plots = tval $Renderable {
         minsize=return (0,0),
-        render=renderPlots l
+        render= renderPlots l
     }
 
     (ba,la,ta,ra) = getAxes l
-    baxis = maybe emptyRenderable toRenderable ba
-    taxis = maybe emptyRenderable toRenderable ta
-    laxis = maybe emptyRenderable toRenderable la
-    raxis = maybe emptyRenderable toRenderable ra
+    baxis = tval $ maybe emptyRenderable toRenderable ba
+    taxis = tval $ maybe emptyRenderable toRenderable ta
+    laxis = tval $ maybe emptyRenderable toRenderable la
+    raxis = tval $ maybe emptyRenderable toRenderable ra
 
-    tl = axesSpacer fst ta fst la
-    bl = axesSpacer fst ba snd la
-    tr = axesSpacer snd ta fst ra
-    br = axesSpacer snd ba snd ra
+    tl = tval $ axesSpacer fst ta fst la
+    bl = tval $ axesSpacer fst ba snd la
+    tr = tval $ axesSpacer snd ta fst ra
+    br = tval $ axesSpacer snd ba snd ra
 
-    er = (0,emptyRenderable)
 
-renderPlots l r@(Rect p1 p2) = preserveCState $ do
+renderPlots l sz@(w,h) = preserveCState $ do
     -- render the plots
-    setClipRegion p1 p2 
+    setClipRegion (Point 0 0) (Point w h)
 
     when (not (layout1_grid_last l)) renderGrids
     local (const vectorEnv) $ do
-      mapM_ (rPlot r) (layout1_plots l)
+      mapM_ rPlot (layout1_plots l)
     when (layout1_grid_last l) renderGrids
+    return (const ())
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
 
-    rPlot rect (_,Left p) = rPlot1 rect bAxis lAxis p
-    rPlot rect (_,Right p) = rPlot1 rect bAxis rAxis p
+    rPlot (_,Left p) = rPlot1 bAxis lAxis p
+    rPlot (_,Right p) = rPlot1 bAxis rAxis p
 
-    rPlot1 (Rect dc1 dc2) (Just (AxisT _ xaxis)) (Just (AxisT _ yaxis)) p = 
-	let xrange = (p_x dc1, p_x dc2)
-	    yrange = (p_y dc2, p_y dc1)
+    rPlot1 (Just (AxisT _ xaxis)) (Just (AxisT _ yaxis)) p = 
+	let xrange = (0, w)
+	    yrange = (0, h)
 	    pmfn (x,y) = Point (axis_viewport xaxis xrange x) (axis_viewport yaxis yrange y)
 	in plot_render p pmfn
-    rPlot1 _ _ _ _ = return ()
+    rPlot1 _ _ _ = return ()
 
     renderGrids = do
-      maybeM () (renderAxisGrid r) tAxis
-      maybeM () (renderAxisGrid r) bAxis
-      maybeM () (renderAxisGrid r) lAxis
-      maybeM () (renderAxisGrid r) rAxis
+      maybeM () (renderAxisGrid sz) tAxis
+      maybeM () (renderAxisGrid sz) bAxis
+      maybeM () (renderAxisGrid sz) lAxis
+      maybeM () (renderAxisGrid sz) rAxis
 
 axesSpacer f1 a1 f2 a2 = embedRenderable $ do
     oh1 <- maybeM (0,0) axisOverhang a1
     oh2 <- maybeM (0,0) axisOverhang a2
     return (spacer (f1 oh1, f2 oh2))
-
-maybeM v = maybe (return v)
 
 getAxes :: Layout1 x y y' -> (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y'))
 getAxes l = (mk E_Bottom bAxis, mk E_Left lAxis,

@@ -113,8 +113,8 @@ axisOverhang (AxisT at a) = do
 		       E_Left -> ohangv
 		       E_Right -> ohangh
 
-renderAxis :: AxisT x -> Rect -> CRender ()
-renderAxis at@(AxisT et a) rect = do
+renderAxis :: AxisT x -> RectSize -> CRender (PickFn ())
+renderAxis at@(AxisT et a) sz = do
    let ls = axis_line_style a
    preserveCState $ do
        setLineStyle ls{line_cap=C.LineCapSquare}
@@ -125,8 +125,9 @@ renderAxis at@(AxisT et a) rect = do
    preserveCState $ do
        setFontStyle (axis_label_style a)
        mapM_ drawLabel (axis_labels a)
+   return (const ())
  where
-   (sx,sy,ex,ey,tp,axisPoint) = axisMapping at rect
+   (sx,sy,ex,ey,tp,axisPoint) = axisMapping at sz
 
    drawTick (value,length) = 
        let t1 = axisPoint value
@@ -144,25 +145,25 @@ renderAxis at@(AxisT et a) rect = do
    drawLabel (value,s) = do
        drawText hta vta (axisPoint value `pvadd` lp) s
 
-axisMapping :: AxisT z -> Rect -> (Double,Double,Double,Double,Vector,z->Point)
-axisMapping (AxisT et a) rect = case et of
+axisMapping :: AxisT z -> RectSize -> (Double,Double,Double,Double,Vector,z->Point)
+axisMapping (AxisT et a) (x2,y2) = case et of
     E_Top    -> (x1,y2,x2,y2, (Vector 0 1),    mapx (x1,x2) y2) 
     E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)), mapx (x1,x2) y1)
     E_Left   -> (x2,y2,x2,y1, (Vector (1) 0),  mapy (y1,y2) x2)		
     E_Right  -> (x1,y2,x1,y1, (Vector (-1) 0), mapy (y1,y2) x1)
   where
-    (Rect (Point x1 y1) (Point x2 y2)) = rect
+    (x1,y1) = (0,0)
 
     mapx xr y x = Point (axis_viewport a xr x) y
     mapy (yr0,yr1) x y = Point x (axis_viewport a (yr1,yr0) y)
 
-renderAxisGrid :: Rect -> AxisT z -> CRender ()
-renderAxisGrid rect@(Rect p1 p2) at@(AxisT re a) = do
+renderAxisGrid :: RectSize -> AxisT z -> CRender ()
+renderAxisGrid sz@(w,h) at@(AxisT re a) = do
     preserveCState $ do
         setLineStyle (axis_grid_style a)
         mapM_ (drawGridLine re) (axis_grid a)
   where
-    (sx,sy,ex,ey,tp,axisPoint) = axisMapping at rect
+    (sx,sy,ex,ey,tp,axisPoint) = axisMapping at sz
 
     drawGridLine E_Top = vline
     drawGridLine E_Bottom = vline
@@ -170,10 +171,10 @@ renderAxisGrid rect@(Rect p1 p2) at@(AxisT re a) = do
     drawGridLine E_Right = hline
 
     vline v = let v' = p_x (axisPoint v)
-	      in strokeLines [Point v' (p_y p1),Point v' (p_y p2)]
+	      in strokeLines [Point v' 0,Point v' h]
 
     hline v = let v' = p_y (axisPoint v)
-	      in strokeLines [Point (p_x p1) v',Point (p_x p2) v']
+	      in strokeLines [Point 0 v',Point w v']
 
 ----------------------------------------------------------------------
 

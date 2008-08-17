@@ -4,6 +4,7 @@ import Graphics.Rendering.Chart.Simple
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Gtk
+import Graphics.Rendering.Chart.Table
 import System.Environment(getArgs)
 import System.Time
 import System.Random
@@ -23,7 +24,7 @@ green1 = (Color 0.5 1 0.5)
 red1 = (Color 0.5 0.5 1)
 
 ----------------------------------------------------------------------
-test1 :: OutputType -> Renderable
+test1 :: OutputType -> Renderable ()
 test1 otype = toRenderable layout
   where
     am :: Double -> Double
@@ -50,7 +51,7 @@ test1 otype = toRenderable layout
     lineWidth = chooseLineWidth otype
 
 
-test1a :: OutputType -> Renderable
+test1a :: OutputType -> Renderable ()
 test1a otype = toRenderable layout
   where
     am :: Double -> Double
@@ -79,7 +80,7 @@ test1a otype = toRenderable layout
     lineWidth = chooseLineWidth otype
 
 ----------------------------------------------------------------------
-test2 :: [(Int,Int,Int,Double,Double)] -> OutputType -> Renderable
+test2 :: [(Int,Int,Int,Double,Double)] -> OutputType -> Renderable ()
 test2 prices otype = toRenderable layout
   where
 
@@ -127,7 +128,7 @@ test2 prices otype = toRenderable layout
 date dd mm yyyy = (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
 
 ----------------------------------------------------------------------
-test3 :: OutputType -> Renderable
+test3 :: OutputType -> Renderable ()
 test3 otype = toRenderable layout
   where
 
@@ -150,7 +151,7 @@ test3 otype = toRenderable layout
     }
 
 ----------------------------------------------------------------------        
-test4 :: OutputType -> Renderable
+test4 :: OutputType -> Renderable ()
 test4 otype = toRenderable layout
   where
 
@@ -175,7 +176,7 @@ test4 otype = toRenderable layout
 ----------------------------------------------------------------------
 -- Example thanks to Russell O'Connor
 
-test5 :: OutputType -> Renderable
+test5 :: OutputType -> Renderable ()
 test5 otype = toRenderable (layout 1001 (trial bits))
   where
     bits = randoms $ mkStdGen 0
@@ -211,7 +212,7 @@ test5 otype = toRenderable (layout 1001 (trial bits))
 ----------------------------------------------------------------------        
 -- Test the Simple interface
 
-test6 :: OutputType -> Renderable
+test6 :: OutputType -> Renderable ()
 test6 otype = toRenderable (plotLayout pp){layout1_title="Graphics.Rendering.Chart.Simple example"}
   where
     pp = plot xs sin "sin"
@@ -223,7 +224,7 @@ test6 otype = toRenderable (plotLayout pp){layout1_title="Graphics.Rendering.Cha
     xs = [0,0.3..3] :: [Double]
 
 ----------------------------------------------------------------------
-test7 :: OutputType -> Renderable
+test7 :: OutputType -> Renderable ()
 test7 otype = toRenderable layout
   where
     vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
@@ -242,7 +243,7 @@ test7 otype = toRenderable layout
     }
 
 ----------------------------------------------------------------------
-test8 :: OutputType -> Renderable
+test8 :: OutputType -> Renderable ()
 test8 otype = toRenderable layout
   where
     values = [ ("eggs",38,e), ("milk",45,e), ("bread",11,e1), ("salmon",8,e) ]
@@ -259,9 +260,10 @@ test8 otype = toRenderable layout
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
-misc1 rot otype = fillBackground fwhite $ grid [1,1,1] [1,1,1] ls
+misc1 rot otype = fillBackground fwhite $ (renderTable t)
   where
-    ls = [ [(0,addMargins (20,20,20,20) $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s) | h <- hs] | v <- vs ]
+    t = weights (1,1) $ aboveN [ besideN [tval (lb h v) | h <- hs] | v <- vs ]
+    lb h v = addMargins (20,20,20,20) () $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s
     s = "Labelling"
     hs = [HTA_Left, HTA_Centre, HTA_Right]
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]
@@ -270,17 +272,16 @@ misc1 rot otype = fillBackground fwhite $ grid [1,1,1] [1,1,1] ls
     fs = defaultFontStyle{font_size=20,font_weight=C.FontWeightBold}
     crossHairs r =Renderable {
       minsize = minsize r,
-      render = \rect@(Rect (Point x1 y1) (Point x2 y2)) -> do
-          let xa = (x1 + x2) / 2
-          let ya = (y1 + y2) / 2
-          strokeLines [Point x1 ya,Point x2 ya]
-          strokeLines [Point xa y1,Point xa y2]
-          render r rect
+      render = \sz@(w,h) -> do
+          let xa = w / 2
+          let ya = h / 2
+          strokeLines [Point 0 ya,Point w ya]
+          strokeLines [Point xa 0,Point xa h]
+          render r sz
     }
-    
 
 ----------------------------------------------------------------------        
-allTests :: [ (String, OutputType -> Renderable) ]
+allTests :: [ (String, OutputType -> Renderable ()) ]
 allTests =
      [ ("test1",  test1)
      , ("test1a", test1a)
@@ -311,7 +312,7 @@ main1 ("--svg":tests) = showTests tests renderToSVG
 main1 ("--ps":tests) = showTests tests renderToPS
 main1 tests = showTests tests renderToWindow
 
-showTests :: [String] -> ((String,OutputType -> Renderable) -> IO()) -> IO ()
+showTests :: [String] -> ((String,OutputType -> Renderable ()) -> IO()) -> IO ()
 showTests tests ofn = mapM_ ofn (filter (match tests) allTests)
 
 match :: [String] -> (String,a) -> Bool

@@ -14,7 +14,7 @@ import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Types
 
-renderableToWindow :: Renderable -> Int -> Int -> IO ()
+renderableToWindow :: Renderable a -> Int -> Int -> IO ()
 renderableToWindow chart windowWidth windowHeight = do
     G.unsafeInitGUIForThreadedRTS
     -- G.initGUI
@@ -31,12 +31,10 @@ renderableToWindow chart windowWidth windowHeight = do
     G.widgetShowAll window
     G.mainGUI
 
-updateCanvas :: Renderable -> G.DrawingArea  -> IO Bool
+updateCanvas :: Renderable a -> G.DrawingArea  -> IO Bool
 updateCanvas chart canvas = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
-    let rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
-    G.renderWithDrawable win $ runCRender (rfn rect) bitmapEnv
+    let sz = (fromIntegral width,fromIntegral height)
+    G.renderWithDrawable win $ runCRender (render chart sz) bitmapEnv
     return True
-  where
-    rfn rect = render chart rect

@@ -44,10 +44,13 @@ minsizeLegend (Legend _ ls plots) = do
     let w = sum [w + lgap | (w,h) <- lsizes] + pw * (n+1) + lm * (n-1)
     return (w,h)
 
-renderLegend :: Legend x y -> Rect -> CRender ()
-renderLegend (Legend _ ls plots) (Rect rp1 rp2) = do
+renderLegend :: Legend x y -> RectSize -> CRender (PickFn ())
+renderLegend (Legend _ ls plots) (w,h) = do
     foldM_ rf rp1 $ join_nub plots
+    return (const ())
   where
+    rp1 = (Point 0 0)
+    rp2 = (Point w h)
     lm = legend_margin ls
     lps = legend_plot_size ls
 

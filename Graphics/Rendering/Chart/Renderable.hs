@@ -12,106 +12,86 @@ import Data.List ( nub, transpose, sort )
 
 import Graphics.Rendering.Chart.Types
 
+type PickFn a = Point -> a
+
 -- | A Renderable is a record of functions required to layout a
 -- graphic element.
-data Renderable = Renderable {
+data Renderable a = Renderable {
 
    -- | a Cairo action to calculate a minimum size,
    minsize :: CRender RectSize,
 
-   -- | a Cairo action for drawing it within a specified rectangle.
-   render ::  Rect -> CRender ()
+   -- | a Cairo action for drawing it within a rectangle.
+   -- The rectangle is from the origin to the given point.
+   --
+   -- The resulting "pick" function  maps a point in the image to
+   -- a value.
+   render ::  RectSize -> CRender (PickFn a)
 }
 
 -- | A type class abtracting the conversion of a value to a
 -- Renderable.
 
 class ToRenderable a where
-   toRenderable :: a -> Renderable
+   toRenderable :: a -> Renderable ()
 
 emptyRenderable = spacer (0,0)
 
 spacer sz = Renderable {
    minsize = return sz,
-   render  = \_ -> return ()
+   render  = \_ -> return (const ())
 }
 
-addMargins :: (Double,Double,Double,Double) -> Renderable -> Renderable
-addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
+-- | Replace the pick function of a renderable with another
+setPickFn :: PickFn b -> Renderable a -> Renderable b
+setPickFn pickfn r = Renderable {
+    minsize=minsize r,
+    render = \sz -> do { render r sz; return pickfn; }
+    }
+
+addMargins :: (Double,Double,Double,Double) -> a -> Renderable a -> Renderable a
+addMargins (t,b,l,r) a rd = Renderable { minsize = mf, render = rf }
   where
     mf = do
         (w,h) <- minsize rd
         return (w+l+r,h+t+b)
 
-    rf r1@(Rect p1 p2) = do
-        render rd (Rect (p1 `pvadd` (Vector l t)) (p2 `pvsub` (Vector r b)))
+    rf (w,h) = do
+        preserveCState $ do
+            c $ C.translate l t
+            pickf <- render rd (w-l-r,h-t-b)
+            mtx <- c $ C.getMatrix
+            return (mkpickf pickf (w,h) mtx)
 
-fillBackground :: CairoFillStyle -> Renderable -> Renderable
+    mkpickf pickf (w,h) mtx pt | within pt' rect = pickf pt'
+                               | otherwise = a
+      where
+        pt' = transform mtx pt
+        rect = (Rect (Point 0 0) (Point w h))
+
+transform :: C.Matrix -> Point -> Point
+transform = undefined
+
+fillBackground :: CairoFillStyle -> Renderable a -> Renderable a
 fillBackground fs r = Renderable { minsize = minsize r, render = rf }
   where
-    rf rect@(Rect p1 p2) = do
+    rf rsize@(w,h) = do
         preserveCState $ do
-            setClipRegion p1 p2
+            setClipRegion (Point 0 0) (Point w h)
             setFillStyle fs
             c $ C.paint
-	render r rect
-
-vertical, horizontal :: [(Double,Renderable)] -> Renderable 
-vertical rs = grid [1] (map fst rs) [[(0,snd r)] | r <- rs]
-horizontal rs = grid (map fst rs) [1] [[(0,snd r) | r <- rs]]
-
--- | Layout multiple Renderables into a grid.
--- Arg 1 is the weights for the allocation of extra horizontal space
--- to columns, Arg 2 is the weights for the allocation of extra
--- vertical space to rows, and Arg 3 is the grid of renderables to be
--- layed out. Each element of the grid is a tuple - the first item of
--- the tuple is the drawing priority.  Lower priorities get drawn
--- first. Drawing order is significant when Renderables draw outside
--- their edges.
-grid :: [Double] -> [Double] -> [[(Int,Renderable)]] -> Renderable
-grid we he rss = Renderable { minsize = mf, render = rf }
-  where
-    mf = do
-      msizes <- getSizes
-      let widths = (map.map) fst msizes
-      let heights = (map.map) snd msizes
-      return ((sum.map maximum.transpose) widths,(sum.map maximum) heights)
-
-    rf (Rect p1 p2) = do
-      msizes <- getSizes
-      let widths = (map maximum.(map.map) fst.transpose) msizes
-      let heights = (map maximum.(map.map) snd) msizes
-      let widths1 = allocate (p_x p2 - p_x p1 - sum widths) we widths
-      let heights1 = allocate (p_y p2 - p_y p1 - sum heights) he heights
-      let xs = scanl (+) (p_x p1) widths1
-      let ys = scanl (+) (p_y p1) heights1
-      
-      forM_ priorities $ \pr->
-        forM_ (zip3 rss ys (tail ys))  $ \(rs,y0,y1) ->
-          forM_ (zip3 rs xs (tail xs))  $ \((n,r),x0,x1) ->
-            when (n==pr) $ render r (Rect (Point x0 y0) (Point x1 y1))
-
-    getSizes = (mapM.mapM) (\(n,r)-> minsize r) rss
-    priorities = sort (nub ((concatMap.map) fst rss))
-
-allocate :: Double -> [Double] -> [Double] -> [Double]
-allocate extra ws vs = zipWith (+) vs (extras++[0,0..])
-  where
-    total = sum ws 
-    extras = [ extra * v / total | v <- ws ]
+	render r rsize
 
 -- | Output the given renderable to a PNG file of the specifed size
 -- (in pixels), to the specified file.
-renderableToPNGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
+renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToPNGFile chart width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
     C.renderWith result $ runCRender rfn bitmapEnv
     C.surfaceWriteToPNG result path
   where
     rfn = do
-	render chart rect
-
-    rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
+	render chart (fromIntegral width, fromIntegral height)
 
 renderableToFile withSurface chart width height path = 
     withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
@@ -119,24 +99,22 @@ renderableToFile withSurface chart width height path =
     C.surfaceFinish result
   where
     rfn = do
-        render chart rect
+        render chart (fromIntegral width, fromIntegral height)
         c $ C.showPage
-
-    rect = Rect (Point 0 0) (Point (fromIntegral width) (fromIntegral height))
 
 -- | Output the given renderable to a PDF file of the specifed size
 -- (in points), to the specified file.
-renderableToPDFFile :: Renderable -> Int -> Int -> FilePath -> IO ()
+renderableToPDFFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToPDFFile = renderableToFile C.withPDFSurface
 
 -- | Output the given renderable to a postscript file of the specifed size
 -- (in points), to the specified file.
-renderableToPSFile :: Renderable -> Int -> Int -> FilePath -> IO ()
+renderableToPSFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToPSFile = renderableToFile C.withPSSurface
 
 -- | Output the given renderable to an SVG file of the specifed size
 -- (in points), to the specified file.
-renderableToSVGFile :: Renderable -> Int -> Int -> FilePath -> IO ()
+renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToSVGFile = renderableToFile C.withSVGSurface
 
 bitmapEnv = CEnv adjfn
@@ -146,34 +124,36 @@ bitmapEnv = CEnv adjfn
 
 vectorEnv = CEnv id
 
-embedRenderable :: CRender Renderable -> Renderable
+embedRenderable :: CRender (Renderable a) -> Renderable a
 embedRenderable ca = Renderable {
    minsize = do { a <- ca; minsize a },
    render = \ r -> do { a <- ca; render a r }
 }
 
+
 ----------------------------------------------------------------------
 -- Labels
 
-label :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> String -> Renderable
+label :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> String -> Renderable ()
 label fs hta vta = rlabel fs hta vta 0
 
-rlabel :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> Double -> String -> Renderable
+rlabel :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> Double -> String -> Renderable ()
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
     mf = preserveCState $ do
        setFontStyle fs
        (w,h) <- textSize s
        return (w*acr+h*asr,w*asr+h*acr)
-    rf (Rect p1 p2) = preserveCState $ do
+    rf (w0,h0) = preserveCState $ do
        setFontStyle fs
        sz@(w,h) <- textSize s
        fe <- c $ C.fontExtents
        c $ C.translate 0 (-C.fontExtentsDescent fe)
-       c $ C.translate (xadj sz hta (p_x p1) (p_x p2)) (yadj sz vta (p_y p1) (p_y p2))
+       c $ C.translate (xadj sz hta 0 w0) (yadj sz vta 0 h0)
        c $ C.rotate rot'
        c $ C.moveTo (-w/2) (h/2)
        c $ C.showText s
+       return (const ())
     xadj (w,h) HTA_Left x1 x2 =  x1 +(w*acr+h*asr)/2
     xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
     xadj (w,h) HTA_Right x1 x2 =  x2 -(w*acr+h*asr)/2
@@ -184,3 +164,77 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
     rot' = rot / 180 * pi
     (cr,sr) = (cos rot', sin rot')
     (acr,asr) = (abs cr, abs sr)
+
+----------------------------------------------------------------------
+-- Rectangles
+
+data RectCornerStyle = RCornerSquare
+                     | RCornerBevel Double
+                     | RCornerRounded Double
+
+data Rectangle = Rectangle {
+  rect_minsize :: RectSize,
+  rect_fillStyle :: Maybe CairoFillStyle,
+  rect_lineStyle :: Maybe CairoLineStyle,
+  rect_cornerStyle :: RectCornerStyle
+}
+
+defaultRectangle = Rectangle {
+  rect_minsize = (0,0),
+  rect_fillStyle = Nothing,
+  rect_lineStyle = Nothing,
+  rect_cornerStyle = RCornerSquare
+}
+
+instance ToRenderable Rectangle where
+   toRenderable rectangle = Renderable mf rf
+     where
+      mf = return (rect_minsize rectangle)
+      rf sz = preserveCState $ do
+        maybeM () (fill sz) (rect_fillStyle rectangle)
+        maybeM () (stroke sz) (rect_lineStyle rectangle)
+        return (const ())
+
+      fill sz fs = do
+          setFillStyle fs
+          strokeRectangle sz (rect_cornerStyle rectangle)
+          c $ C.fill
+
+      stroke sz ls = do
+          setLineStyle ls
+          strokeRectangle sz (rect_cornerStyle rectangle)
+          c $ C.stroke
+
+      strokeRectangle (x2,y2) RCornerSquare = c $ do
+          let (x1,y1) = (0,0)
+          C.moveTo x1 y1
+          C.lineTo x1 y2
+          C.lineTo x2 y2
+          C.lineTo x2 y1
+          C.lineTo x1 y1
+          C.lineTo x1 y2
+                                  
+      strokeRectangle (x2,y2) (RCornerBevel s) = c $ do
+          let (x1,y1) = (0,0)
+          C.moveTo x1 (y1+s)
+          C.lineTo x1 (y2-s)
+          C.lineTo (x1+s) y2
+          C.lineTo (x2-s) y2
+          C.lineTo x2 (y2-s)
+          C.lineTo x2 (y1+s)
+          C.lineTo (x2-s) y1
+          C.lineTo (x1+s) y1
+          C.lineTo x1 (y1+s)
+          C.lineTo x1 (y2-s)
+
+      strokeRectangle (x2,y2) (RCornerRounded s) = c $ do
+          let (x1,y1) = (0,0)
+          C.arcNegative (x1+s) (y2-s) s (pi2*2) pi2 
+          C.arcNegative (x2-s) (y2-s) s pi2 0
+          C.arcNegative (x2-s) (y1+s) s 0 (pi2*3)
+          C.arcNegative (x1+s) (y1+s) s (pi2*3) (pi2*2)
+          C.lineTo x1 (y2-s)
+
+      pi2 = pi / 2
+
+maybeM v = maybe (return v)

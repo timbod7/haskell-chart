@@ -10,6 +10,7 @@ import Control.Monad
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
+import Graphics.Rendering.Chart.Table
 
 data PieLayout = PieLayout {
    pie_title :: String,
@@ -54,9 +55,9 @@ defaultPieLayout = PieLayout {
 
 instance ToRenderable PieLayout where
     toRenderable p = fillBackground (pie_background p) (
-       vertical [
-       (0, addMargins (lm/2,0,0,0)  title),
-       (1, addMargins (lm,lm,lm,lm) (toRenderable $ pie_plot p))
+       renderTable $ aboveN [
+       tval $ addMargins (lm/2,0,0,0) () title,
+       weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) () (toRenderable $ pie_plot p)
        ] )
       where
         title = label (pie_title_style p) HTA_Centre VTA_Top (pie_title p)
@@ -80,15 +81,18 @@ minsizePie p = do
     (extraw,extrah) <- extraSpace p
     return (extraw * 2, extrah * 2)
 
-renderPie p (Rect p1 p2) = do
+renderPie p (w,h) = do
     (extraw,extrah) <- extraSpace p
     let (w,h) = (p_x p2 - p_x p1, p_y p2 - p_y p1)
     let center = Point (p_x p1 + w/2)  (p_y p1 + h/2)
     let radius = (min (w - 2*extraw) (h - 2*extrah)) / 2
 
     foldM_ (paint center radius) (pie_start_angle p) (zip (pie_colors p) content)
+    return (const ())
  
     where
+        p1 = Point 0 0 
+        p2 = Point w h 
         content = let total = sum (map pitem_value (pie_data p))
                   in [ pi{pitem_value=pitem_value pi/total} | pi <- pie_data p ]
 

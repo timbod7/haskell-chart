@@ -56,6 +56,11 @@ data RectEdge = E_Top | E_Bottom | E_Left | E_Right
 mkrect (Point x1 _) (Point _ y2) (Point x3 _) (Point _ y4) =
     Rect (Point x1 y2) (Point x3 y4)
 
+within :: Point -> Rect -> Bool
+within (Point x y) (Rect (Point x1 y1) (Point x2 y2)) =
+    x >= x1 && x <= x2 && y >= y1 && y <= y2
+
+
 ----------------------------------------------------------------------
 
 -- | The environment present in the CRender Monad.
