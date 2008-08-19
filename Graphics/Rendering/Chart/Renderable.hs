@@ -120,7 +120,7 @@ renderableToSVGFile = renderableToFile C.withSVGSurface
 bitmapEnv = CEnv adjfn
   where
     adjfn (Point x y)= Point (adj x) (adj y)
-    adj x = (fromIntegral (round (x-0.5)))+0.5
+    adj x = (fromIntegral.round) x + 0.5
 
 vectorEnv = CEnv id
 

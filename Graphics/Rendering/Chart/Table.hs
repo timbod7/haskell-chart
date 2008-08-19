@@ -20,7 +20,6 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Types
 --import Graphics.Rendering.Chart.Gtk
 import qualified Graphics.Rendering.Cairo as C
-import Debug.Trace
 
 type Span = (Int,Int)
 type Size = (Int,Int)
@@ -190,34 +189,45 @@ renderTable t = Renderable minsizef renderf
         let widths' = addExtraSpace w widths xweights
         let heights' = addExtraSpace h heights yweights
         let csizes = (ctotal widths',ctotal heights')
-        forM_ (assocs (flatten t)) $ \(loc,rs) -> do
-            forM_ rs $ \(r,sz,ew) -> do
-            let rr@(Rect (Point x0 y0) (Point x1 y1)) = mkRect csizes loc sz
+        rf1 csizes (0,0) t
+
+    rf1 csizes loc@(i,j) t = case t of
+        Null -> return (const ())
+        Empty -> return (const ())
+        (Value (r,span,_)) -> do
+            let (Rect (Point x0 y0) (Point x1 y1)) = mkRect csizes loc span
             preserveCState $ do
                 c $ C.translate x0 y0
                 render r (x1-x0,y1-y0)
-        return (const ())
+            return (const ())
+        (Above t1 t2 _) -> rf2 t1 (0,height t1) t2
+        (Beside t1 t2 _) -> rf2 t1 (width t1,0) t2
+        (Overlay t1 t2 _) ->  rf2 t2 (0,0) t1
       where
-        mkRect :: (DArray, DArray) -> (Int,Int) -> (Int,Int) -> Rect
-        mkRect (cwidths,cheights) (x,y) (w,h) = Rect (Point x1 y1) (Point x2 y2)
-          where
-            x1 = cwidths ! x
-            y1 = cheights ! y
-            x2 = cwidths ! min (x+w) (snd $ bounds cwidths) 
-            y2 = cheights ! min (y+h) (snd $ bounds cheights)
-            mx = fst (bounds cwidths)
-            my = fst (bounds cheights)
+         rf2 t1 (cs,rs) t2 = do
+             rf1 csizes (i,j) t1
+             rf1 csizes (i+cs,j+rs) t2
 
-        addExtraSpace :: Double -> DArray -> DArray -> DArray
-        addExtraSpace size sizes weights = 
-            if totalws == 0 then sizes
-                            else listArray (bounds sizes) sizes'
-          where
-            ws = elems weights
-            totalws = sum ws
-            extra = size - sum (elems sizes)
-            extras =  map (*(extra/totalws)) ws
-            sizes' = zipWith (+) extras (elems sizes)
+    mkRect :: (DArray, DArray) -> (Int,Int) -> (Int,Int) -> Rect
+    mkRect (cwidths,cheights) (x,y) (w,h) = Rect (Point x1 y1) (Point x2 y2)
+      where
+        x1 = cwidths ! x
+        y1 = cheights ! y
+        x2 = cwidths ! min (x+w) (snd $ bounds cwidths) 
+        y2 = cheights ! min (y+h) (snd $ bounds cheights)
+        mx = fst (bounds cwidths)
+        my = fst (bounds cheights)
+
+    addExtraSpace :: Double -> DArray -> DArray -> DArray
+    addExtraSpace size sizes weights = 
+        if totalws == 0 then sizes
+                        else listArray (bounds sizes) sizes'
+      where
+        ws = elems weights
+        totalws = sum ws
+        extra = size - sum (elems sizes)
+        extras =  map (*(extra/totalws)) ws
+        sizes' = zipWith (+) extras (elems sizes)
 
     ctotal :: DArray -> DArray
     ctotal a = listArray (let (i,j) = bounds a in (i,j+1)) (scanl (+) 0 (elems a))

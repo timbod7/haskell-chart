@@ -123,7 +123,7 @@ renderPlots l sz@(w,h) = preserveCState $ do
 
     rPlot1 (Just (AxisT _ xaxis)) (Just (AxisT _ yaxis)) p = 
 	let xrange = (0, w)
-	    yrange = (0, h)
+	    yrange = (h, 0)
 	    pmfn (x,y) = Point (axis_viewport xaxis xrange x) (axis_viewport yaxis yrange y)
 	in plot_render p pmfn
     rPlot1 _ _ _ = return ()
