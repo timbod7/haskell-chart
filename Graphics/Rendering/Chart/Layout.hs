@@ -17,27 +17,36 @@ import Graphics.Rendering.Chart.Table
 import Control.Monad
 import Control.Monad.Reader (local)
 
--- | The side of an horizontal axis
-data HAxis = HA_Top | HA_Bottom deriving (Eq)
+data AxisPair x = IndependentAxes (Axis x) (Axis x)
+                | LinkedAxes AxisMode (Axis x)
 
--- | The side of a vertical axis
-data VAxis = VA_Left | VA_Right deriving (Eq)
+data AxisMode = AM_First | AM_Second | AM_Both | AM_Both'
 
 -- | A Layout1 value is a single plot area, with optional: axes on
 -- each of the 4 sides; title at the top; legend at the bottom.
-data Layout1 x y y' = Layout1 {
+data Layout1 x y = Layout1 {
+
     layout1_background :: CairoFillStyle,
+
     layout1_title :: String,
     layout1_title_style :: CairoFontStyle,
-    layout1_horizontal_axes :: AxesFn x x,
-    layout1_vertical_axes :: AxesFn y y',
+
+    layout1_horizontal_axis :: Axis x,
+    layout1_horizontal_axis_mode :: AxisMode,
+    layout1_vertical_axes :: AxisPair y,
+
+    layout1_left_axis_title :: (CairoFontStyle,String),
+    layout1_right_axis_title :: (CairoFontStyle,String),
+    layout1_bottom_axis_title :: (CairoFontStyle,String),
+    layout1_top_axis_title :: (CairoFontStyle,String),
+
     layout1_margin :: Double,
-    layout1_plots :: [(String,Either (Plot x y) (Plot x y'))],
+    layout1_plots :: [(String,Either (Plot x y) (Plot x y))],
     layout1_legend :: Maybe(LegendStyle),
     layout1_grid_last :: Bool
 }
 
-instance (Ord x, Ord y, Ord y') => ToRenderable (Layout1 x y y') where
+instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
     toRenderable = layout1ToRenderable
 
 layout1ToRenderable l =
@@ -69,24 +78,24 @@ layout1ToRenderable l =
          ]
 
     layer2 = aboveN [
-         besideN [er,        er,    atitle ta, er,    er       ],
-         besideN [er,        tl,    taxis,     tr,    er       ],
-         besideN [atitle la, laxis, er,        raxis, atitle ra],
-         besideN [er,        bl,    baxis,     br,    er       ],
-         besideN [er,        er,    atitle ba, er,    er       ]
+         besideN [er,     er,    ttitle, er,    er       ],
+         besideN [er,     tl,    taxis,  tr,    er       ],
+         besideN [ltitle, laxis, er,     raxis, rtitle   ],
+         besideN [er,     bl,    baxis,  br,    er       ],
+         besideN [er,     er,    btitle, er,    er       ]
          ]
 
     plotArea = renderTable (layer2 `overlay` layer1)
+    ttitle = atitle HTA_Centre VTA_Bottom  0 layout1_top_axis_title
+    btitle = atitle HTA_Centre VTA_Top     0 layout1_bottom_axis_title
+    ltitle = atitle HTA_Right  VTA_Centre 90 layout1_left_axis_title
+    rtitle = atitle HTA_Left   VTA_Centre 90 layout1_right_axis_title
 
     er = tval $ emptyRenderable
 
-    atitle Nothing = er
-    atitle (Just (AxisT e a)) | axis_title a == "" = er
-                              | otherwise = tval $ rlabel (axis_title_style a) ha va rot (axis_title a)
-      where (ha,va,rot) = case e of E_Top -> (HTA_Centre,VTA_Bottom,0)
-                                    E_Bottom -> (HTA_Centre,VTA_Top,0)
-                                    E_Left -> (HTA_Right,VTA_Centre,90)
-                                    E_Right -> (HTA_Left,VTA_Centre,90)
+    atitle ha va rot af = if ttext == "" then er else tval $ rlabel tstyle ha va rot ttext
+      where
+        (tstyle,ttext) = af l
 
     plots = tval $Renderable {
         minsize=return (0,0),
@@ -121,7 +130,7 @@ renderPlots l sz@(w,h) = preserveCState $ do
     rPlot (_,Left p) = rPlot1 bAxis lAxis p
     rPlot (_,Right p) = rPlot1 bAxis rAxis p
 
-    rPlot1 (Just (AxisT _ xaxis)) (Just (AxisT _ yaxis)) p = 
+    rPlot1 (Just (AxisT _ _ xaxis)) (Just (AxisT _ _ yaxis)) p = 
 	let xrange = (0, w)
 	    yrange = (h, 0)
 	    pmfn (x,y) = Point (axis_viewport xaxis xrange x) (axis_viewport yaxis yrange y)
@@ -139,16 +148,30 @@ axesSpacer f1 a1 f2 a2 = embedRenderable $ do
     oh2 <- maybeM (0,0) axisOverhang a2
     return (spacer (f1 oh1, f2 oh2))
 
-getAxes :: Layout1 x y y' -> (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y'))
-getAxes l = (mk E_Bottom bAxis, mk E_Left lAxis,
-	     mk E_Top tAxis, mk E_Right rAxis)
+getAxes :: Layout1 x y -> (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
+getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where 
     (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots l)
-    (bAxis,tAxis) = layout1_horizontal_axes l xvals0 xvals1
-    (lAxis,rAxis) = layout1_vertical_axes l yvals0 yvals1
-    mk _ Nothing = Nothing
-    mk at (Just a) = Just (AxisT at a)
+    (bAxis,tAxis) = mkLinked E_Bottom E_Top (layout1_horizontal_axis_mode l) (layout1_horizontal_axis l) (xvals0++xvals1)
+    (lAxis,rAxis) = case (layout1_vertical_axes l) of
+        IndependentAxes a1 a2 -> (mk E_Left (axis_style a1) (axis_data a1 yvals0),
+                                  mk E_Right (axis_style a2) (axis_data a2 yvals1))
 
+        LinkedAxes am a -> mkLinked E_Left E_Right am a (yvals0++yvals1)
+
+    mkLinked t1 t2 AM_First  a vs = (mk t1 (axis_style a) (axis_data a vs), Nothing)
+    mkLinked t1 t2 AM_Second a vs = (Nothing, mk t2 (axis_style a) (axis_data a vs))
+    mkLinked t1 t2 AM_Both a vs = (mk t1 as ad, mk t2 as ad)
+      where
+        as = axis_style a
+        ad = axis_data a vs
+    mkLinked t1 t2 AM_Both' a vs = (mk t1 as ad, mk t2 as ad2)
+      where
+        as = axis_style a
+        ad = axis_data a vs
+        ad2 = (axis_data a vs){axis_labels=[],axis_grid=[]}
+
+    mk t as ad = Just (AxisT t as ad)
 
 allPlottedValues :: [(String,Either (Plot x y) (Plot x' y'))] -> ( [x], [x'], [y], [y'] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
@@ -160,10 +183,19 @@ allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
 
 defaultLayout1 = Layout1 {
     layout1_background = solidFillStyle white,
+
     layout1_title = "",
     layout1_title_style = defaultFontStyle{font_size=15, font_weight=C.FontWeightBold},
-    layout1_horizontal_axes = linkedAxes (autoScaledAxis defaultAxis),
-    layout1_vertical_axes = linkedAxes (autoScaledAxis defaultAxis),
+
+    layout1_horizontal_axis = (Axis defaultAxisStyle autoScaledAxis),
+    layout1_horizontal_axis_mode = AM_Both,
+    layout1_vertical_axes = LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledAxis),
+
+    layout1_left_axis_title = (defaultFontStyle{font_size=10},""),
+    layout1_right_axis_title = (defaultFontStyle{font_size=10},""),
+    layout1_bottom_axis_title = (defaultFontStyle{font_size=10},""),
+    layout1_top_axis_title = (defaultFontStyle{font_size=10},""),
+
     layout1_margin = 10,
     layout1_plots = [],
     layout1_legend = Just defaultLegendStyle,

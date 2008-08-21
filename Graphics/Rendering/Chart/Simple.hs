@@ -54,7 +54,7 @@ styleSymbol ind = symbolSequence !! ind
 
 -- When defaultLayout1 has been generalized, change this signature to 
 -- [InternalPlot x y] -> Layout1 x y z
-iplot :: [InternalPlot Double Double] -> Layout1 Double Double Double
+iplot :: [InternalPlot Double Double] -> Layout1 Double Double
 iplot foobar = defaultLayout1 {
         layout1_plots = concat $ zipWith toplot (ip foobar) [0..]
     }
@@ -146,7 +146,7 @@ data PlotKind = Name String | FilledCircle | HollowCircle
               deriving ( Eq, Show, Ord )
 data InternalPlot x y = IPY [y] [PlotKind] | IPX [x] [PlotKind]
 
-newtype Layout1DDD = Layout1DDD { plotLayout :: Layout1 Double Double Double }
+newtype Layout1DDD = Layout1DDD { plotLayout :: Layout1 Double Double }
 instance ToRenderable Layout1DDD where
  toRenderable = toRenderable . plotLayout
 
