@@ -35,5 +35,5 @@ library
         Graphics.Rendering.Chart.Plot,
         Graphics.Rendering.Chart.Pie,
         Graphics.Rendering.Chart.Simple,
-        Graphics.Rendering.Chart.Table
+        Graphics.Rendering.Chart.Grid
 

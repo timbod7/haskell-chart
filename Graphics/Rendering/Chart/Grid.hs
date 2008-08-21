@@ -1,5 +1,5 @@
-module Graphics.Rendering.Chart.Table (
-    Table,
+module Graphics.Rendering.Chart.Grid (
+    Grid,
     tval, tspan,
     empty, nullt,
     (.|.), (./.),
@@ -7,7 +7,7 @@ module Graphics.Rendering.Chart.Table (
     beside, besideN,
     overlay,
     width, height,
-    renderTable,
+    renderGrid,
     weights
 ) where
 
@@ -27,15 +27,15 @@ type SpaceWeight = (Double,Double)
 
 type Cell a = (a,Span,SpaceWeight)
 
-data Table a = Value (a,Span,SpaceWeight)
-             | Above (Table a) (Table a) Size 
-             | Beside (Table a) (Table a) Size
-             | Overlay (Table a) (Table a) Size
+data Grid a = Value (a,Span,SpaceWeight)
+             | Above (Grid a) (Grid a) Size 
+             | Beside (Grid a) (Grid a) Size
+             | Overlay (Grid a) (Grid a) Size
 	     | Empty
 	     | Null
    deriving (Show)
 
-width :: Table a -> Int
+width :: Grid a -> Int
 width Null = 0
 width Empty = 1
 width (Value _) = 1
@@ -43,7 +43,7 @@ width (Beside _ _ (w,h)) = w
 width (Above _ _ (w,h)) = w
 width (Overlay _ _ (w,h)) = w
 
-height :: Table a -> Int
+height :: Grid a -> Int
 height Null = 0
 height Empty = 1
 height (Value _) = 1
@@ -51,17 +51,17 @@ height (Beside _ _ (w,h)) = h
 height (Above _ _ (w,h)) = h
 height (Overlay _ _ (w,h)) = h
 
-tval :: a -> Table a
+tval :: a -> Grid a
 tval a = Value (a,(1,1),(0,0))
 
-tspan :: a -> Span -> Table a
+tspan :: a -> Span -> Grid a
 tspan a span = Value (a,span,(1,1))
 
-empty, nullt :: Table a
+empty, nullt :: Grid a
 empty = Empty
 nullt = Null
 
-above, beside :: Table a -> Table a -> Table a
+above, beside :: Grid a -> Grid a -> Grid a
 above Null t = t
 above t Null = t
 above t1 t2 = Above t1 t2 size
@@ -72,7 +72,7 @@ beside t Null = t
 beside t1 t2 = Beside t1 t2 size
   where size = (width t1 + width t2, max (height t1) (height t2))
 
-aboveN, besideN :: [Table a] -> Table a
+aboveN, besideN :: [Grid a] -> Grid a
 aboveN = foldl above nullt
 besideN = foldl beside nullt
 
@@ -84,7 +84,7 @@ overlay t1 t2 = Overlay t1 t2 size
 (.|.) = beside
 (./.) = above
 
-weights :: SpaceWeight -> Table a -> Table a
+weights :: SpaceWeight -> Grid a -> Grid a
 weights sw Null = Null
 weights sw Empty = Empty
 weights sw (Value (v,sp,_)) = Value (v,sp,sw)
@@ -95,7 +95,7 @@ weights sw (Overlay t1 t2 sz) = Overlay (weights sw t1) (weights sw t2) sz
 -- fix me, need to make .|. and .||. higher precedence
 -- than ./. and .//.
 
-instance Functor Table where
+instance Functor Grid where
     fmap f (Value (a,span,ew)) = Value (f a,span,ew)
     fmap f (Above t1 t2 s) = Above (fmap f t1) (fmap f t2) s
     fmap f (Beside t1 t2 s) = Beside (fmap f t1) (fmap f t2) s
@@ -103,35 +103,35 @@ instance Functor Table where
     fmap f Empty = Empty
     fmap f Null = Null
 
-mapTableM :: Monad m => (a -> m b) -> Table a -> m (Table b)
-mapTableM f (Value (a,span,ew)) = do 
+mapGridM :: Monad m => (a -> m b) -> Grid a -> m (Grid b)
+mapGridM f (Value (a,span,ew)) = do 
     b <- f a
     return (Value (b,span,ew))
-mapTableM f (Above t1 t2 s) = do
-    t1' <- mapTableM f t1
-    t2' <- mapTableM f t2
+mapGridM f (Above t1 t2 s) = do
+    t1' <- mapGridM f t1
+    t2' <- mapGridM f t2
     return (Above t1' t2' s)
-mapTableM f (Beside t1 t2 s) = do
-    t1' <- mapTableM f t1
-    t2' <- mapTableM f t2
+mapGridM f (Beside t1 t2 s) = do
+    t1' <- mapGridM f t1
+    t2' <- mapGridM f t2
     return (Beside t1' t2' s)
-mapTableM f (Overlay t1 t2 s) = do
-    t1' <- mapTableM f t1
-    t2' <- mapTableM f t2
+mapGridM f (Overlay t1 t2 s) = do
+    t1' <- mapGridM f t1
+    t2' <- mapGridM f t2
     return (Overlay t1' t2' s)
-mapTableM _ Empty = return Empty
-mapTableM _ Null = return Null
+mapGridM _ Empty = return Empty
+mapGridM _ Null = return Null
 
 ----------------------------------------------------------------------
-type FlatTable a = Array (Int,Int) [(a,Span,SpaceWeight)]
+type FlatGrid a = Array (Int,Int) [(a,Span,SpaceWeight)]
 
-flatten :: Table a -> FlatTable a
+flatten :: Grid a -> FlatGrid a
 flatten t = accumArray (flip (:)) [] ((0,0), (width t - 1, height t - 1))
                        (flatten2 (0,0) t [])
 
 type FlatEl a = ((Int,Int),Cell a)
 
-flatten2 :: (Int,Int) -> Table a -> [FlatEl a] -> [FlatEl a]
+flatten2 :: (Int,Int) -> Grid a -> [FlatEl a] -> [FlatEl a]
 flatten2 i Empty els = els
 flatten2 i Null els = els
 flatten2 i (Value cell) els = (i,cell):els
@@ -151,7 +151,7 @@ flatten2 i@(x,y) (Overlay t1 t2 size) els = (f1.f2) els
     f1 = flatten2 i t1
     f2 = flatten2 i t2
 
-foldT :: ((Int,Int) -> Cell a -> r -> r) -> r -> FlatTable a -> r
+foldT :: ((Int,Int) -> Cell a -> r -> r) -> r -> FlatGrid a -> r
 foldT f iv ft = foldr f' iv (assocs ft)
   where
     f' (i,vs) r = foldr (\cell -> f i cell) r vs  
@@ -159,12 +159,12 @@ foldT f iv ft = foldr f' iv (assocs ft)
 ----------------------------------------------------------------------
 type DArray = Array Int Double
 
-renderTable :: Table (Renderable a) -> Renderable ()
-renderTable t = Renderable minsizef renderf
+renderGrid :: Grid (Renderable a) -> Renderable ()
+renderGrid t = Renderable minsizef renderf
   where
     getSizes :: CRender (DArray, DArray, DArray, DArray)
     getSizes = do
-        szs <- mapTableM minsize t :: CRender (Table RectSize)
+        szs <- mapGridM minsize t :: CRender (Grid RectSize)
         let szs' = flatten szs
         let widths = accumArray max 0 (0, width t - 1) (foldT (ef wf) [] szs')
         let heights  = accumArray max 0 (0, height t - 1) (foldT (ef hf) [] szs')

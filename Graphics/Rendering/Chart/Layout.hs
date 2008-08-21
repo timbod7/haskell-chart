@@ -13,7 +13,7 @@ import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.Table
+import Graphics.Rendering.Chart.Grid
 import Control.Monad
 import Control.Monad.Reader (local)
 
@@ -51,10 +51,10 @@ instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
 
 layout1ToRenderable l =
    fillBackground (layout1_background l) (
-       renderTable $ aboveN [
+       renderGrid $ aboveN [
           tval $ addMargins (lm/2,0,0,0) () title,
           weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) () plotArea,
-          tval $ renderTable $ besideN [ tval $ mkLegend lefts, tval $ emptyRenderable, tval $ mkLegend rights ]
+          tval $ renderGrid $ besideN [ tval $ mkLegend lefts, tval $ emptyRenderable, tval $ mkLegend rights ]
        ] )
   where
     lefts xs = [x | Left x <- xs]
@@ -85,7 +85,7 @@ layout1ToRenderable l =
          besideN [er,     er,    btitle, er,    er       ]
          ]
 
-    plotArea = renderTable (layer2 `overlay` layer1)
+    plotArea = renderGrid (layer2 `overlay` layer1)
     ttitle = atitle HTA_Centre VTA_Bottom  0 layout1_top_axis_title
     btitle = atitle HTA_Centre VTA_Top     0 layout1_bottom_axis_title
     ltitle = atitle HTA_Right  VTA_Centre 90 layout1_left_axis_title

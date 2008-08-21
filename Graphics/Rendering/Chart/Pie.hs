@@ -10,7 +10,7 @@ import Control.Monad
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.Table
+import Graphics.Rendering.Chart.Grid
 
 data PieLayout = PieLayout {
    pie_title :: String,
@@ -55,7 +55,7 @@ defaultPieLayout = PieLayout {
 
 instance ToRenderable PieLayout where
     toRenderable p = fillBackground (pie_background p) (
-       renderTable $ aboveN [
+       renderGrid $ aboveN [
        tval $ addMargins (lm/2,0,0,0) () title,
        weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) () (toRenderable $ pie_plot p)
        ] )

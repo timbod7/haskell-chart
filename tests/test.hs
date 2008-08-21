@@ -4,7 +4,7 @@ import Graphics.Rendering.Chart.Simple
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Gtk
-import Graphics.Rendering.Chart.Table
+import Graphics.Rendering.Chart.Grid
 import System.Environment(getArgs)
 import System.Time
 import System.Random
@@ -258,7 +258,7 @@ test8 otype = toRenderable layout
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
-misc1 rot otype = fillBackground fwhite $ (renderTable t)
+misc1 rot otype = fillBackground fwhite $ (renderGrid t)
   where
     t = weights (1,1) $ aboveN [ besideN [tval (lb h v) | h <- hs] | v <- vs ]
     lb h v = addMargins (20,20,20,20) () $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s
