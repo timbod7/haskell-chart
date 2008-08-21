@@ -191,8 +191,8 @@ chooseStep nsteps (min,max) = s
     steps' =  sort [ (abs((max-min)/(fromRational s) - nsteps), s) | s <- steps ]
     s = snd (head steps')
 
-autoAxis :: PlotValue x => (x -> String) -> ([x],[x],[x]) -> AxisData x
-autoAxis labelf (labelvs, tickvs, gridvs) = AxisData {
+makeAxis :: PlotValue x => (x -> String) -> ([x],[x],[x]) -> AxisData x
+makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     axis_viewport=newViewport,
     axis_ticks=newTicks,
     axis_grid=gridvs,
@@ -234,7 +234,7 @@ defaultLinearAxis = LinearAxisParams {
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
 autoScaledAxis' :: LinearAxisParams -> AxisFn Double
-autoScaledAxis' lap ps0 = autoAxis (la_labelf lap) (labelvs,tickvs,gridvs)
+autoScaledAxis' lap ps0 = makeAxis (la_labelf lap) (labelvs,tickvs,gridvs)
   where
     ps = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
@@ -319,7 +319,7 @@ logTicks (low,high) = (major,minor,major)
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
 autoScaledLogAxis' :: (LogValue->String) -> AxisFn LogValue
-autoScaledLogAxis' labelf ps0 = autoAxis labelf (wrap rlabelvs, wrap rtickvs, wrap rgridvs)
+autoScaledLogAxis' labelf ps0 = makeAxis labelf (wrap rlabelvs, wrap rtickvs, wrap rgridvs)
   where
     ps = filter (\(LogValue x) -> isValidNumber x && 0 < x) ps0
     (min, max) = (minimum ps,maximum ps)
@@ -462,22 +462,26 @@ autoTimeAxis pts =
 -----------------------------------------------------------------------------
 
 class Ord a => PlotValue a where
- toValue :: a -> Double
+    toValue :: a -> Double
+    autoAxis ::AxisFn a
 
 instance PlotValue Double where
- toValue = id
+    toValue = id
+    autoAxis = autoScaledAxis
 
 newtype LogValue = LogValue Double
                     deriving (Eq, Ord)
 
 instance Show LogValue where
- show (LogValue x) = show x
+    show (LogValue x) = show x
 
 instance PlotValue LogValue where
- toValue (LogValue x) = log x
+    toValue (LogValue x) = log x
+    autoAxis = autoScaledLogAxis
 
 instance PlotValue LocalTime where
- toValue = doubleFromLocalTime
+    toValue = doubleFromLocalTime
+    autoAxis = autoTimeAxis
 
 -- | A linear mapping of points in one range to another
 vmap :: PlotValue x => (x,x) -> Range -> x -> Double
