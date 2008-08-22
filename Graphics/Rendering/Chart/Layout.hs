@@ -16,6 +16,7 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
 import Control.Monad
 import Control.Monad.Reader (local)
+import Data.Accessor
 
 data AxisPair x = IndependentAxes (Axis x) (Axis x)
                 | LinkedAxes AxisMode (Axis x)
@@ -26,31 +27,74 @@ data AxisMode = AM_First | AM_Second | AM_Both | AM_Both'
 -- each of the 4 sides; title at the top; legend at the bottom.
 data Layout1 x y = Layout1 {
 
-    layout1_background :: CairoFillStyle,
+    layout1_background_ :: CairoFillStyle,
 
-    layout1_title :: String,
-    layout1_title_style :: CairoFontStyle,
+    layout1_title_ :: String,
+    layout1_title_style_ :: CairoFontStyle,
 
-    layout1_horizontal_axis :: Axis x,
-    layout1_horizontal_axis_mode :: AxisMode,
-    layout1_vertical_axes :: AxisPair y,
+    layout1_horizontal_axis_ :: Axis x,
+    layout1_horizontal_axis_mode_ :: AxisMode,
+    layout1_vertical_axes_ :: AxisPair y,
 
-    layout1_left_axis_title :: (CairoFontStyle,String),
-    layout1_right_axis_title :: (CairoFontStyle,String),
-    layout1_bottom_axis_title :: (CairoFontStyle,String),
-    layout1_top_axis_title :: (CairoFontStyle,String),
+    layout1_left_axis_title_ :: (CairoFontStyle,String),
+    layout1_right_axis_title_ :: (CairoFontStyle,String),
+    layout1_bottom_axis_title_ :: (CairoFontStyle,String),
+    layout1_top_axis_title_ :: (CairoFontStyle,String),
 
-    layout1_margin :: Double,
-    layout1_plots :: [(String,Either (Plot x y) (Plot x y))],
-    layout1_legend :: Maybe(LegendStyle),
-    layout1_grid_last :: Bool
+    layout1_margin_ :: Double,
+    layout1_plots_ :: [(String,Either (Plot x y) (Plot x y))],
+    layout1_legend_ :: Maybe(LegendStyle),
+    layout1_grid_last_ :: Bool
 }
+
+-- | Accessor for field layout1_background_
+layout1_background = accessor (\v->layout1_background_ v) (\a v -> v{layout1_background_=a})
+
+-- | Accessor for field layout1_title_
+layout1_title = accessor (\v->layout1_title_ v) (\a v -> v{layout1_title_=a})
+
+-- | Accessor for field layout1_title_style_
+layout1_title_style = accessor (\v->layout1_title_style_ v) (\a v -> v{layout1_title_style_=a})
+
+-- | Accessor for field layout1_horizontal_axis_
+layout1_horizontal_axis = accessor (\v->layout1_horizontal_axis_ v) (\a v -> v{layout1_horizontal_axis_=a})
+
+-- | Accessor for field layout1_horizontal_axis_mode_
+layout1_horizontal_axis_mode = accessor (\v->layout1_horizontal_axis_mode_ v) (\a v -> v{layout1_horizontal_axis_mode_=a})
+
+-- | Accessor for field layout1_vertical_axes_
+layout1_vertical_axes = accessor (\v->layout1_vertical_axes_ v) (\a v -> v{layout1_vertical_axes_=a})
+
+-- | Accessor for field layout1_left_axis_title_
+layout1_left_axis_title = accessor (\v->layout1_left_axis_title_ v) (\a v -> v{layout1_left_axis_title_=a})
+
+-- | Accessor for field layout1_right_axis_title_
+layout1_right_axis_title = accessor (\v->layout1_right_axis_title_ v) (\a v -> v{layout1_right_axis_title_=a})
+
+-- | Accessor for field layout1_bottom_axis_title_
+layout1_bottom_axis_title = accessor (\v->layout1_bottom_axis_title_ v) (\a v -> v{layout1_bottom_axis_title_=a})
+
+-- | Accessor for field layout1_top_axis_title_
+layout1_top_axis_title = accessor (\v->layout1_top_axis_title_ v) (\a v -> v{layout1_top_axis_title_=a})
+
+-- | Accessor for field layout1_margin_
+layout1_margin = accessor (\v->layout1_margin_ v) (\a v -> v{layout1_margin_=a})
+
+-- | Accessor for field layout1_plots_
+layout1_plots = accessor (\v->layout1_plots_ v) (\a v -> v{layout1_plots_=a})
+
+-- | Accessor for field layout1_legend_
+layout1_legend = accessor (\v->layout1_legend_ v) (\a v -> v{layout1_legend_=a})
+
+-- | Accessor for field layout1_grid_last_
+layout1_grid_last = accessor (\v->layout1_grid_last_ v) (\a v -> v{layout1_grid_last_=a})
+
 
 instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
     toRenderable = layout1ToRenderable
 
 layout1ToRenderable l =
-   fillBackground (layout1_background l) (
+   fillBackground (layout1_background_ l) (
        renderGrid $ aboveN [
           tval $ addMargins (lm/2,0,0,0) () title,
           weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) () plotArea,
@@ -61,13 +105,13 @@ layout1ToRenderable l =
     rights xs = [x | Right x <- xs]
     distrib (a,Left b) = Left (a,b)
     distrib (a,Right b) = Right (a,b)
-    lm = layout1_margin l
+    lm = layout1_margin_ l
 
-    title = label (layout1_title_style l) HTA_Centre VTA_Centre (layout1_title l)
+    title = label (layout1_title_style_ l) HTA_Centre VTA_Centre (layout1_title_ l)
 
-    mkLegend side = case (layout1_legend l) of
+    mkLegend side = case (layout1_legend_ l) of
         Nothing -> emptyRenderable
-        (Just ls) -> case [(s,p) | (s,p) <- side (map distrib (layout1_plots l)), not (null s)] of
+        (Just ls) -> case [(s,p) | (s,p) <- side (map distrib (layout1_plots_ l)), not (null s)] of
  	    [] -> emptyRenderable
 	    ps -> addMargins (0,lm,lm,0) () (toRenderable (Legend True ls ps))
 
@@ -86,10 +130,10 @@ layout1ToRenderable l =
          ]
 
     plotArea = renderGrid (layer2 `overlay` layer1)
-    ttitle = atitle HTA_Centre VTA_Bottom  0 layout1_top_axis_title
-    btitle = atitle HTA_Centre VTA_Top     0 layout1_bottom_axis_title
-    ltitle = atitle HTA_Right  VTA_Centre 90 layout1_left_axis_title
-    rtitle = atitle HTA_Left   VTA_Centre 90 layout1_right_axis_title
+    ttitle = atitle HTA_Centre VTA_Bottom  0 layout1_top_axis_title_
+    btitle = atitle HTA_Centre VTA_Top     0 layout1_bottom_axis_title_
+    ltitle = atitle HTA_Right  VTA_Centre 90 layout1_left_axis_title_
+    rtitle = atitle HTA_Left   VTA_Centre 90 layout1_right_axis_title_
 
     er = tval $ emptyRenderable
 
@@ -118,10 +162,10 @@ renderPlots l sz@(w,h) = preserveCState $ do
     -- render the plots
     setClipRegion (Point 0 0) (Point w h)
 
-    when (not (layout1_grid_last l)) renderGrids
+    when (not (layout1_grid_last_ l)) renderGrids
     local (const vectorEnv) $ do
-      mapM_ rPlot (layout1_plots l)
-    when (layout1_grid_last l) renderGrids
+      mapM_ rPlot (layout1_plots_ l)
+    when (layout1_grid_last_ l) renderGrids
     return (const ())
 
   where
@@ -133,8 +177,8 @@ renderPlots l sz@(w,h) = preserveCState $ do
     rPlot1 (Just (AxisT _ _ xaxis)) (Just (AxisT _ _ yaxis)) p = 
 	let xrange = (0, w)
 	    yrange = (h, 0)
-	    pmfn (x,y) = Point (axis_viewport xaxis xrange x) (axis_viewport yaxis yrange y)
-	in plot_render p pmfn
+	    pmfn (x,y) = Point (axis_viewport_ xaxis xrange x) (axis_viewport_ yaxis yrange y)
+	in plot_render_ p pmfn
     rPlot1 _ _ _ = return ()
 
     renderGrids = do
@@ -151,54 +195,54 @@ axesSpacer f1 a1 f2 a2 = embedRenderable $ do
 getAxes :: Layout1 x y -> (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
 getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where 
-    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots l)
-    (bAxis,tAxis) = mkLinked E_Bottom E_Top (layout1_horizontal_axis_mode l) (layout1_horizontal_axis l) (xvals0++xvals1)
-    (lAxis,rAxis) = case (layout1_vertical_axes l) of
-        IndependentAxes a1 a2 -> (mk E_Left (axis_style a1) (axis_data a1 yvals0),
-                                  mk E_Right (axis_style a2) (axis_data a2 yvals1))
+    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots_ l)
+    (bAxis,tAxis) = mkLinked E_Bottom E_Top (layout1_horizontal_axis_mode_ l) (layout1_horizontal_axis_ l) (xvals0++xvals1)
+    (lAxis,rAxis) = case (layout1_vertical_axes_ l) of
+        IndependentAxes a1 a2 -> (mk E_Left (axis_style_ a1) (axis_data_ a1 yvals0),
+                                  mk E_Right (axis_style_ a2) (axis_data_ a2 yvals1))
 
         LinkedAxes am a -> mkLinked E_Left E_Right am a (yvals0++yvals1)
 
-    mkLinked t1 t2 AM_First  a vs = (mk t1 (axis_style a) (axis_data a vs), Nothing)
-    mkLinked t1 t2 AM_Second a vs = (Nothing, mk t2 (axis_style a) (axis_data a vs))
+    mkLinked t1 t2 AM_First  a vs = (mk t1 (axis_style_ a) (axis_data_ a vs), Nothing)
+    mkLinked t1 t2 AM_Second a vs = (Nothing, mk t2 (axis_style_ a) (axis_data_ a vs))
     mkLinked t1 t2 AM_Both a vs = (mk t1 as ad, mk t2 as ad)
       where
-        as = axis_style a
-        ad = axis_data a vs
+        as = axis_style_ a
+        ad = axis_data_ a vs
     mkLinked t1 t2 AM_Both' a vs = (mk t1 as ad, mk t2 as ad2)
       where
-        as = axis_style a
-        ad = axis_data a vs
-        ad2 = (axis_data a vs){axis_labels=[],axis_grid=[]}
+        as = axis_style_ a
+        ad = axis_data_ a vs
+        ad2 = (axis_data_ a vs){axis_labels_=[],axis_grid_=[]}
 
     mk t as ad = Just (AxisT t as ad)
 
 allPlottedValues :: [(String,Either (Plot x y) (Plot x' y'))] -> ( [x], [x'], [y], [y'] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
   where
-    xvals0 = [ x | (_, Left p) <- plots, (x,_) <- plot_all_points p]
-    yvals0 = [ y | (_, Left p) <- plots, (_,y) <- plot_all_points p]
-    xvals1 = [ x | (_, Right p) <- plots, (x,_) <- plot_all_points p]
-    yvals1 = [ y | (_, Right p) <- plots, (_,y) <- plot_all_points p]
+    xvals0 = [ x | (_, Left p) <- plots, (x,_) <- plot_all_points_ p]
+    yvals0 = [ y | (_, Left p) <- plots, (_,y) <- plot_all_points_ p]
+    xvals1 = [ x | (_, Right p) <- plots, (x,_) <- plot_all_points_ p]
+    yvals1 = [ y | (_, Right p) <- plots, (_,y) <- plot_all_points_ p]
 
 defaultLayout1 = Layout1 {
-    layout1_background = solidFillStyle white,
+    layout1_background_ = solidFillStyle white,
 
-    layout1_title = "",
-    layout1_title_style = defaultFontStyle{font_size=15, font_weight=C.FontWeightBold},
+    layout1_title_ = "",
+    layout1_title_style_ = defaultFontStyle{font_size_=15, font_weight_=C.FontWeightBold},
 
-    layout1_horizontal_axis = (Axis defaultAxisStyle autoScaledAxis),
-    layout1_horizontal_axis_mode = AM_Both,
-    layout1_vertical_axes = LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledAxis),
+    layout1_horizontal_axis_ = (Axis defaultAxisStyle autoScaledAxis),
+    layout1_horizontal_axis_mode_ = AM_Both,
+    layout1_vertical_axes_ = LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledAxis),
 
-    layout1_left_axis_title = (defaultFontStyle{font_size=10},""),
-    layout1_right_axis_title = (defaultFontStyle{font_size=10},""),
-    layout1_bottom_axis_title = (defaultFontStyle{font_size=10},""),
-    layout1_top_axis_title = (defaultFontStyle{font_size=10},""),
+    layout1_left_axis_title_ = (defaultFontStyle{font_size_=10},""),
+    layout1_right_axis_title_ = (defaultFontStyle{font_size_=10},""),
+    layout1_bottom_axis_title_ = (defaultFontStyle{font_size_=10},""),
+    layout1_top_axis_title_ = (defaultFontStyle{font_size_=10},""),
 
-    layout1_margin = 10,
-    layout1_plots = [],
-    layout1_legend = Just defaultLegendStyle,
-    layout1_grid_last = False
+    layout1_margin_ = 10,
+    layout1_plots_ = [],
+    layout1_legend_ = Just defaultLegendStyle,
+    layout1_grid_last_ = False
 }
 

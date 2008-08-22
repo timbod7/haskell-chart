@@ -79,7 +79,94 @@ module Graphics.Rendering.Chart(
     renderableToSVGFile,
     CairoLineStyle(..),
     CairoFillStyle(..),
-    CairoFontStyle(..)
+    CairoFontStyle(..),
+
+    line_width,
+    line_color,
+    line_dashes,
+    line_cap,
+    line_join,
+
+    font_name,
+    font_size,
+    font_slant,
+    font_weight,
+    font_color,
+
+    layout1_background,
+    layout1_title,
+    layout1_title_style,
+    layout1_horizontal_axis,
+    layout1_horizontal_axis_mode,
+    layout1_vertical_axes,
+    layout1_left_axis_title,
+    layout1_right_axis_title,
+    layout1_bottom_axis_title,
+    layout1_top_axis_title,
+    layout1_margin,
+    layout1_plots,
+    layout1_legend,
+    layout1_grid_last,
+
+    rect_minsize,
+    rect_fillStyle,
+    rect_lineStyle,
+    rect_cornerStyle,
+
+    axis_viewport,
+    axis_ticks,
+    axis_labels,
+    axis_grid,
+
+    axis_line_style,
+    axis_label_style,
+    axis_grid_style,
+    axis_label_gap,
+
+    axis_style,
+    axis_data,
+
+    la_labelf,
+    la_nLabels,
+    la_nTicks,
+    la_gridMode,
+
+    plot_render,
+    plot_render_legend,
+    plot_all_points,
+
+    plot_lines_style,
+    plot_lines_values,
+
+    plot_points_style,
+    plot_points_values,
+
+    plot_fillbetween_style,
+    plot_fillbetween_values,
+
+    plot_errbars_line_style,
+    plot_errbars_tick_length,
+    plot_errbars_overhang,
+    plot_errbars_values,
+
+    legend_label_style,
+    legend_margin,
+    legend_plot_size,
+
+    pie_title,
+    pie_title_style,
+    pie_plot,
+    pie_background,
+    pie_margin,
+    pie_data,
+    pie_colors,
+    pie_label_style,
+    pie_label_line_style,
+    pie_start_angle,
+    pitem_label,
+    pitem_offset,
+    pitem_value,
+
 ) where
 
 import Graphics.Rendering.Chart.Types

@@ -9,6 +9,7 @@ module Graphics.Rendering.Chart.Types where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad.Reader
+import Data.Accessor
 
 -- | A point in two dimensions
 data Point = Point {
@@ -94,12 +95,27 @@ newtype CairoPointStyle = CairoPointStyle (Point -> CRender ())
 
 -- | Data type for the style of a line
 data CairoLineStyle = CairoLineStyle {
-   line_width :: Double,
-   line_color :: Color,
-   line_dashes :: [Double],
-   line_cap :: C.LineCap,
-   line_join :: C.LineJoin
+   line_width_ :: Double,
+   line_color_ :: Color,
+   line_dashes_ :: [Double],
+   line_cap_ :: C.LineCap,
+   line_join_ :: C.LineJoin
 }
+
+-- | Accessor for field line_width_
+line_width = accessor (\v->line_width_ v) (\a v -> v{line_width_=a})
+
+-- | Accessor for field line_color_
+line_color = accessor (\v->line_color_ v) (\a v -> v{line_color_=a})
+
+-- | Accessor for field line_dashes_
+line_dashes = accessor (\v->line_dashes_ v) (\a v -> v{line_dashes_=a})
+
+-- | Accessor for field line_cap_
+line_cap = accessor (\v->line_cap_ v) (\a v -> v{line_cap_=a})
+
+-- | Accessor for field line_join_
+line_join = accessor (\v->line_join_ v) (\a v -> v{line_join_=a})
    
 -- | Abstract data type for a fill style
 --
@@ -109,12 +125,28 @@ newtype CairoFillStyle = CairoFillStyle (CRender ())
 
 -- | Data type for a font
 data CairoFontStyle = CairoFontStyle {
-      font_name :: String,
-      font_size :: Double,
-      font_slant :: C.FontSlant,
-      font_weight :: C.FontWeight,
-      font_color :: Color
+      font_name_ :: String,
+      font_size_ :: Double,
+      font_slant_ :: C.FontSlant,
+      font_weight_ :: C.FontWeight,
+      font_color_ :: Color
 }
+
+-- | Accessor for field font_name_
+font_name = accessor (\v->font_name_ v) (\a v -> v{font_name_=a})
+
+-- | Accessor for field font_size_
+font_size = accessor (\v->font_size_ v) (\a v -> v{font_size_=a})
+
+-- | Accessor for field font_slant_
+font_slant = accessor (\v->font_slant_ v) (\a v -> v{font_slant_=a})
+
+-- | Accessor for field font_weight_
+font_weight = accessor (\v->font_weight_ v) (\a v -> v{font_weight_=a})
+
+-- | Accessor for field font_color_
+font_color = accessor (\v->font_color_ v) (\a v -> v{font_color_=a})
+
 
 type Range = (Double,Double)
 type RectSize = (Double,Double)
@@ -172,16 +204,16 @@ rectPath (Rect (Point x1 y1) (Point x2 y2)) = c $ do
    C.lineTo x1 y1
 
 setFontStyle f = do
-    c $ C.selectFontFace (font_name f) (font_slant f) (font_weight f)
-    c $ C.setFontSize (font_size f)
-    c $ setSourceColor (font_color f)
+    c $ C.selectFontFace (font_name_ f) (font_slant_ f) (font_weight_ f)
+    c $ C.setFontSize (font_size_ f)
+    c $ setSourceColor (font_color_ f)
 
 setLineStyle ls = do
-    c $ C.setLineWidth (line_width ls)
-    c $ setSourceColor (line_color ls)
-    c $ C.setLineCap (line_cap ls)
-    c $ C.setLineJoin (line_join ls)
-    case line_dashes ls of
+    c $ C.setLineWidth (line_width_ ls)
+    c $ setSourceColor (line_color_ ls)
+    c $ C.setLineCap (line_cap_ ls)
+    c $ C.setLineJoin (line_join_ ls)
+    case line_dashes_ ls of
       [] -> return ()
       ds -> c $ C.setDash ds 0
 
@@ -374,11 +406,11 @@ solidFillStyle cl = CairoFillStyle fn
 defaultPointStyle = filledCircles 1 white
 
 defaultFontStyle = CairoFontStyle {
-   font_name = "sans",
-   font_size = 10,
-   font_slant = C.FontSlantNormal,
-   font_weight = C.FontWeightNormal,
-   font_color = black
+   font_name_ = "sans",
+   font_size_ = 10,
+   font_slant_ = C.FontSlantNormal,
+   font_weight_ = C.FontWeightNormal,
+   font_color_ = black
 }
 
 isValidNumber v = not (isNaN v) && not (isInfinite v)

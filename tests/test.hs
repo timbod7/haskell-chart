@@ -10,6 +10,8 @@ import System.Time
 import System.Random
 import Data.Time.Calendar
 import Data.Time.LocalTime
+import Data.Accessor
+import Data.Accessor.Tuple
 import Prices
 
 data OutputType = Window | PNG | PS | PDF | SVG
@@ -30,23 +32,20 @@ test1 otype = toRenderable layout
     am :: Double -> Double
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
 
-    sinusoid1 = defaultPlotLines {
-	plot_lines_values = [[ (x,(am x)) | x <- [0,(0.5)..400]]],
-        plot_lines_style = solidLine lineWidth blue
-    }
+    sinusoid1 = plot_lines_values ^= [[ (x,(am x)) | x <- [0,(0.5)..400]]]
+              $ plot_lines_style  ^= solidLine lineWidth blue
+              $ defaultPlotLines
 
-    sinusoid2 = defaultPlotPoints {
-        plot_points_style=filledCircles 2 red,
-	plot_points_values = [ (x,(am x)) | x <- [0,7..400]]
-    }
+    sinusoid2 = plot_points_style ^= filledCircles 2 red
+              $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
+              $ defaultPlotPoints
 
-    layout = defaultLayout1 {
-        layout1_title = "Amplitude Modulation",			   
-	layout1_plots = [("am",Left (toPlot sinusoid1)),
-			 ("am points", Left (toPlot sinusoid2))],
-        layout1_horizontal_axis = Axis defaultAxisStyle autoScaledAxis,
-        layout1_vertical_axes = LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledAxis)
-    }
+    layout = layout1_title ^= "Amplitude Modulation"
+	   $ layout1_plots ^= [("am",Left (toPlot sinusoid1)),
+			      ("am points", Left (toPlot sinusoid2))]
+           $ layout1_horizontal_axis ^= Axis defaultAxisStyle autoScaledAxis
+           $ layout1_vertical_axes ^= LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledAxis)
+           $ defaultLayout1
 
     lineWidth = chooseLineWidth otype
 
@@ -57,25 +56,25 @@ test1a otype = toRenderable layout
     am :: Double -> Double
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
 
-    sinusoid1 = defaultPlotLines {
-	plot_lines_values = [[ (x,(am x)) | x <- [0,(0.5)..400]]],
-        plot_lines_style = solidLine lineWidth blue
-    }
+    sinusoid1 = plot_lines_values ^= [[ (x,(am x)) | x <- [0,(0.5)..400]]]
+              $ plot_lines_style ^= solidLine lineWidth blue
+              $ defaultPlotLines
 
-    sinusoid2 = defaultPlotPoints {
-        plot_points_style=filledCircles 2 red,
-	plot_points_values = [ (x,(am x)) | x <- [0,7..400]]
-    }
+    sinusoid2 = plot_points_style ^= filledCircles 2 red
+              $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
+              $ defaultPlotPoints
 
-    lap = defaultLinearAxis{la_nLabels=2,la_nTicks=20,la_gridMode=GridAtMinor}
+    lap = la_nLabels ^= 2 
+        $ la_nTicks ^= 20
+        $ la_gridMode ^= GridAtMinor
+        $ defaultLinearAxis
 
-    layout = defaultLayout1 {
-        layout1_title="Amplitude Modulation",			   
-        layout1_horizontal_axis=Axis defaultAxisStyle  (autoScaledAxis' lap),
-	layout1_vertical_axes=LinkedAxes AM_Both (Axis defaultAxisStyle (autoScaledAxis' lap)),
-	layout1_plots = [("am",Left (toPlot sinusoid1)),
-			 ("am points", Left (toPlot sinusoid2))]
-    }
+    layout = layout1_title ^= "Amplitude Modulation"
+           $ layout1_horizontal_axis ^= Axis defaultAxisStyle  (autoScaledAxis' lap)
+	   $ layout1_vertical_axes ^= LinkedAxes AM_Both (Axis defaultAxisStyle (autoScaledAxis' lap))
+	   $ layout1_plots ^= [("am",Left (toPlot sinusoid1)),
+			       ("am points", Left (toPlot sinusoid2))]
+           $ defaultLayout1
 
     lineWidth = chooseLineWidth otype
 
@@ -84,44 +83,43 @@ test2 :: [(Int,Int,Int,Double,Double)] -> OutputType -> Renderable ()
 test2 prices otype = toRenderable layout
   where
 
-    lineStyle c = (plot_lines_style defaultPlotLines){
-                   line_width=3 * chooseLineWidth otype,
-                   line_color = c
-                  }
+    lineStyle c = line_width ^= 3 * chooseLineWidth otype
+                $ line_color ^= c
+                $ defaultPlotLines ^. plot_lines_style
 
-    price1 = defaultPlotLines {
-        plot_lines_style = lineStyle blue,
-	plot_lines_values = [[ ((date d m y), v) | (d,m,y,v,_) <- prices]]
-    }
+    price1 = plot_lines_style ^= lineStyle blue
+           $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,v,_) <- prices]]
+           $ defaultPlotLines
 
-    price2 = defaultPlotLines {
-        plot_lines_style = lineStyle green,
-	plot_lines_values = [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
-    }
+    price2 = plot_lines_style ^= lineStyle green
+	   $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
+           $ defaultPlotLines
 
-    axisStyle = defaultAxisStyle{
-        axis_line_style=solidLine 1 fg,
-        axis_grid_style=solidLine 1 fg1,
-        axis_label_style=(axis_label_style defaultAxisStyle){font_color=fg}
-    }
+    axisStyle = axis_line_style ^= solidLine 1 fg
+              $ axis_grid_style ^= solidLine 1 fg1
+              $ axis_label_style ^: (font_color ^= fg)
+              $ defaultAxisStyle
 
-    vaxis = Axis axisStyle (autoScaledAxis' defaultLinearAxis{la_gridMode=GridNone})
+    vaxis = Axis axisStyle (autoScaledAxis' (la_gridMode ^= GridNone $ defaultLinearAxis))
     bg = Color 0 0 0.25
     fg = Color 1 1 1
     fg1 = Color 0.0 0.0 0.15
 
-    layout = defaultLayout1 {
-        layout1_title="Price History",
-        layout1_title_style=(layout1_title_style defaultLayout1){font_color=fg},
-        layout1_background=solidFillStyle bg,
-        layout1_horizontal_axis=Axis axisStyle autoTimeAxis,
-	layout1_vertical_axes=IndependentAxes vaxis vaxis,
- 	layout1_plots = [("price 1", Left (toPlot price1)),
-                         ("price 2", Right (toPlot price2))],
-        layout1_legend = Just (defaultLegendStyle{
-            legend_label_style=(legend_label_style defaultLegendStyle){font_color=fg}
-        } ),
-        layout1_grid_last=False
+    layout = layout1_title ^="Price History"
+           $ layout1_title_style ^: (font_color ^= fg)
+           $ layout1_background ^= solidFillStyle bg
+           $ layout1_horizontal_axis ^= Axis axisStyle autoTimeAxis
+	   $ layout1_vertical_axes ^= IndependentAxes vaxis vaxis
+ 	   $ layout1_plots ^= [("price 1", Left (toPlot price1)),
+                               ("price 2", Right (toPlot price2))]
+           $ layout1_legend ^= Just ( legend_label_style ^: (font_color ^= fg) $ defaultLegendStyle )
+           $ layout1_grid_last ^= False
+           $ anyLayout1
+
+anyLayout1 = defaultLayout1 {
+    layout1_horizontal_axis_=undefined,
+    layout1_vertical_axes_=undefined,
+    layout1_plots_ = []
     }
 
 date dd mm yyyy = (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
@@ -131,46 +129,41 @@ test3 :: OutputType -> Renderable ()
 test3 otype = toRenderable layout
   where
 
-    price1 = defaultPlotFillBetween {
-        plot_fillbetween_style = solidFillStyle green1,
-	plot_fillbetween_values = [ (date d m y,(0,v2)) | (d,m,y,v1,v2) <- prices]
-    }
+    price1 = plot_fillbetween_style ^= solidFillStyle green1
+           $ plot_fillbetween_values ^= [ (date d m y,(0,v2)) | (d,m,y,v1,v2) <- prices]
+           $ defaultPlotFillBetween 
 
-    price2 = defaultPlotFillBetween {
-        plot_fillbetween_style = solidFillStyle red1,
-	plot_fillbetween_values = [ (date d m y,(0,v1)) | (d,m,y,v1,v2) <- prices]
-    }
+    price2 = plot_fillbetween_style ^= solidFillStyle red1
+           $ plot_fillbetween_values ^= [ (date d m y,(0,v1)) | (d,m,y,v1,v2) <- prices]
+           $ defaultPlotFillBetween
 
-    layout = defaultLayout1 {
-        layout1_title="Price History",			   
-        layout1_horizontal_axis= Axis defaultAxisStyle autoTimeAxis,
- 	layout1_plots = [("price 1", Left (toPlot price1)),
-                         ("price 2", Left (toPlot price2))]
-    }
+    layout = layout1_title ^= "Price History"
+           $ layout1_horizontal_axis ^= Axis defaultAxisStyle autoTimeAxis
+	   $ layout1_vertical_axes ^= LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledAxis)
+ 	   $ layout1_plots ^= [("price 1", Left (toPlot price1)),
+                               ("price 2", Left (toPlot price2))]
+           $ anyLayout1
 
 ----------------------------------------------------------------------        
 test4 :: OutputType -> Renderable ()
 test4 otype = toRenderable layout
   where
 
-    points = defaultPlotPoints {
-        plot_points_style=filledCircles 3 red,
-	plot_points_values = [ (x, LogValue (10**x)) | x <- [0.5,1,1.5,2,2.5] ]
-    }
+    points = plot_points_style ^= filledCircles 3 red
+           $ plot_points_values ^= [ (x, LogValue (10**x)) | x <- [0.5,1,1.5,2,2.5] ]
+           $ defaultPlotPoints
 
-    lines = defaultPlotLines {
-	plot_lines_values = [ [(x, LogValue (10**x)) | x <- [0,3]] ]
-    }
+    lines = plot_lines_values ^= [ [(x, LogValue (10**x)) | x <- [0,3]] ]
+          $ defaultPlotLines
 
-    layout = defaultLayout1 {
-        layout1_title="Log/Linear Example",			   
-        layout1_left_axis_title=(defaultFontStyle,"horizontal"),
-        layout1_bottom_axis_title=(defaultFontStyle,"vertical"),
-	layout1_vertical_axes=LinkedAxes AM_Both' (Axis defaultAxisStyle autoScaledLogAxis),
-	layout1_plots = [("values",Left (toPlot points)),
-			 ("values",Left (toPlot lines)) ]
-    }
-
+    layout = layout1_title ^= "Log/Linear Example"
+           $ layout1_left_axis_title ^: second ^= "horizontal"
+           $ layout1_bottom_axis_title ^: second ^= "vertical"
+           $ layout1_horizontal_axis ^= Axis defaultAxisStyle autoScaledAxis
+	   $ layout1_vertical_axes ^= LinkedAxes AM_Both' (Axis defaultAxisStyle autoScaledLogAxis)
+	   $ layout1_plots ^= [("values",Left (toPlot points)),
+			       ("values",Left (toPlot lines)) ]
+           $ anyLayout1
 
 ----------------------------------------------------------------------
 -- Example thanks to Russell O'Connor
@@ -179,20 +172,19 @@ test5 :: OutputType -> Renderable ()
 test5 otype = toRenderable (layout 1001 (trial bits))
   where
     bits = randoms $ mkStdGen 0
-    layout n t = defaultLayout1 {
-           layout1_title="Simulation of betting on a biased coin",			   
-           layout1_vertical_axes=LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledLogAxis),
-           layout1_plots = [
-             ("f=0.05", Left (toPlot (plot s1 n 0 (t 0.05)))),
-             ("f=0.1", Left (toPlot (plot s2 n 0 (t 0.1))))]
-        }
+    layout n t = layout1_title ^= "Simulation of betting on a biased coin"
+               $ layout1_horizontal_axis ^= Axis defaultAxisStyle autoScaledAxis
+               $ layout1_vertical_axes ^= LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledLogAxis)
+               $ layout1_plots ^= [
+                      ("f=0.05", Left (toPlot (plot s1 n 0 (t 0.05)))),
+                      ("f=0.1", Left (toPlot (plot s2 n 0 (t 0.1))))]
+               $ anyLayout1
 
-    plot s n m t = defaultPlotLines {
-            plot_lines_style = s,
-            plot_lines_values =
-             [[(fromIntegral x, LogValue y) | (x,y) <-
-                          filter (\(x,_)->x `mod` (m+1)==0) $ take n $ zip [0..] t]]
-        }
+    plot s n m t = plot_lines_style ^= s
+                 $  plot_lines_values ^=
+                       [[(fromIntegral x, LogValue y) | (x,y) <-
+                         filter (\(x,_)->x `mod` (m+1)==0) $ take n $ zip [0..] t]]
+                 $ defaultPlotLines 
 
     b = 0.1
 
@@ -211,7 +203,7 @@ test5 otype = toRenderable (layout 1001 (trial bits))
 -- Test the Simple interface
 
 test6 :: OutputType -> Renderable ()
-test6 otype = toRenderable (plotLayout pp){layout1_title="Graphics.Rendering.Chart.Simple example"}
+test6 otype = toRenderable (plotLayout pp){layout1_title_="Graphics.Rendering.Chart.Simple example"}
   where
     pp = plot xs sin "sin"
                  cos "cos" "o"
@@ -226,19 +218,17 @@ test7 :: OutputType -> Renderable ()
 test7 otype = toRenderable layout
   where
     vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
-    bars = defaultPlotErrBars {
-	plot_errbars_values = [symErrPoint x y dx dy | (x,y,dx,dy) <- vals]
-    }
-    points = defaultPlotPoints {
-        plot_points_style=filledCircles 2 red,
-	plot_points_values = [(x,y) |  (x,y,dx,dy) <- vals]
-    }
+    bars = plot_errbars_values ^= [symErrPoint x y dx dy | (x,y,dx,dy) <- vals]
+         $ defaultPlotErrBars
 
-    layout = defaultLayout1 {
-        layout1_title= "errorbars example",
-	layout1_plots = [("test",Left (toPlot bars)),
-                         ("test",Left (toPlot points))]
-    }
+    points = plot_points_style ^= filledCircles 2 red
+	   $ plot_points_values ^= [(x,y) |  (x,y,dx,dy) <- vals]
+           $ defaultPlotPoints
+
+    layout = layout1_title ^= "errorbars example"
+           $ layout1_plots ^= [("test",Left (toPlot bars)),
+                               ("test",Left (toPlot points))]
+           $ defaultLayout1
 
 ----------------------------------------------------------------------
 test8 :: OutputType -> Renderable ()
@@ -247,13 +237,10 @@ test8 otype = toRenderable layout
     values = [ ("eggs",38,e), ("milk",45,e), ("bread",11,e1), ("salmon",8,e) ]
     e = 0
     e1 = 25
-    layout = defaultPieLayout {
-        pie_title = "Pie Chart Example",
-        pie_plot = defaultPieChart {
-            pie_data = [ defaultPieItem{pitem_value=v,pitem_label=s,pitem_offset=o} 
-                         | (s,v,o) <- values ]
-        }
-    }
+    layout = pie_title ^= "Pie Chart Example"
+           $ pie_plot ^: pie_data ^= [ defaultPieItem{pitem_value_=v,pitem_label_=s,pitem_offset_=o} 
+                                       | (s,v,o) <- values ]
+           $ defaultPieLayout
 
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
@@ -267,7 +254,7 @@ misc1 rot otype = fillBackground fwhite $ (renderGrid t)
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]
     fwhite = solidFillStyle white
     fblue = solidFillStyle (Color 0.8 0.8 1)
-    fs = defaultFontStyle{font_size=20,font_weight=C.FontWeightBold}
+    fs = defaultFontStyle{font_size_=20,font_weight_=C.FontWeightBold}
     crossHairs r =Renderable {
       minsize = minsize r,
       render = \sz@(w,h) -> do

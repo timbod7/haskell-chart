@@ -5,6 +5,7 @@ import qualified Graphics.Rendering.Cairo as C
 
 import Data.List
 import Data.Bits
+import Data.Accessor
 import Control.Monad 
 
 import Graphics.Rendering.Chart.Types
@@ -13,55 +14,95 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
 
 data PieLayout = PieLayout {
-   pie_title :: String,
-   pie_title_style :: CairoFontStyle,
-   pie_plot :: PieChart,
-   pie_background :: CairoFillStyle,
-   pie_margin :: Double
+   pie_title_ :: String,
+   pie_title_style_ :: CairoFontStyle,
+   pie_plot_ :: PieChart,
+   pie_background_ :: CairoFillStyle,
+   pie_margin_ :: Double
 }
+
+-- | Accessor for field pie_title_
+pie_title = accessor (\v->pie_title_ v) (\a v -> v{pie_title_=a})
+
+-- | Accessor for field pie_title_style_
+pie_title_style = accessor (\v->pie_title_style_ v) (\a v -> v{pie_title_style_=a})
+
+-- | Accessor for field pie_plot_
+pie_plot = accessor (\v->pie_plot_ v) (\a v -> v{pie_plot_=a})
+
+-- | Accessor for field pie_background_
+pie_background = accessor (\v->pie_background_ v) (\a v -> v{pie_background_=a})
+
+-- | Accessor for field pie_margin_
+pie_margin = accessor (\v->pie_margin_ v) (\a v -> v{pie_margin_=a})
+
 
 data PieChart = PieChart {
-   pie_data  :: [PieItem],
-   pie_colors :: [Color],
-   pie_label_style :: CairoFontStyle,
-   pie_label_line_style :: CairoLineStyle, 
-   pie_start_angle :: Double
+   pie_data_  :: [PieItem],
+   pie_colors_ :: [Color],
+   pie_label_style_ :: CairoFontStyle,
+   pie_label_line_style_ :: CairoLineStyle, 
+   pie_start_angle_ :: Double
 
 }
+
+-- | Accessor for field pie_data_
+pie_data = accessor (\v->pie_data_ v) (\a v -> v{pie_data_=a})
+
+-- | Accessor for field pie_colors_
+pie_colors = accessor (\v->pie_colors_ v) (\a v -> v{pie_colors_=a})
+
+-- | Accessor for field pie_label_style_
+pie_label_style = accessor (\v->pie_label_style_ v) (\a v -> v{pie_label_style_=a})
+
+-- | Accessor for field pie_label_line_style_
+pie_label_line_style = accessor (\v->pie_label_line_style_ v) (\a v -> v{pie_label_line_style_=a})
+
+-- | Accessor for field pie_start_angle_
+pie_start_angle = accessor (\v->pie_start_angle_ v) (\a v -> v{pie_start_angle_=a})
 
 data PieItem = PieItem {
-   pitem_label :: String,
-   pitem_offset :: Double,
-   pitem_value :: Double
+   pitem_label_ :: String,
+   pitem_offset_ :: Double,
+   pitem_value_ :: Double
 }
 
+-- | Accessor for field pitem_label_
+pitem_label = accessor (\v->pitem_label_ v) (\a v -> v{pitem_label_=a})
+
+-- | Accessor for field pitem_offset_
+pitem_offset = accessor (\v->pitem_offset_ v) (\a v -> v{pitem_offset_=a})
+
+-- | Accessor for field pitem_value_
+pitem_value = accessor (\v->pitem_value_ v) (\a v -> v{pitem_value_=a})
+
 defaultPieChart = PieChart {
-    pie_data = [], 
-    pie_colors = defaultColorSeq,
-    pie_label_style = defaultFontStyle,
-    pie_label_line_style = solidLine 1 black,
-    pie_start_angle = 0
+    pie_data_ = [], 
+    pie_colors_ = defaultColorSeq,
+    pie_label_style_ = defaultFontStyle,
+    pie_label_line_style_ = solidLine 1 black,
+    pie_start_angle_ = 0
 }
 
 defaultPieItem = PieItem "" 0 0
 
 defaultPieLayout = PieLayout {
-    pie_background = solidFillStyle white,
-    pie_title = "",
-    pie_title_style = defaultFontStyle{font_size=15, font_weight=C.FontWeightBold},
-    pie_plot = defaultPieChart,
-    pie_margin = 10
+    pie_background_ = solidFillStyle white,
+    pie_title_ = "",
+    pie_title_style_ = defaultFontStyle{font_size_=15, font_weight_=C.FontWeightBold},
+    pie_plot_ = defaultPieChart,
+    pie_margin_ = 10
 }
 
 instance ToRenderable PieLayout where
-    toRenderable p = fillBackground (pie_background p) (
+    toRenderable p = fillBackground (pie_background_ p) (
        renderGrid $ aboveN [
        tval $ addMargins (lm/2,0,0,0) () title,
-       weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) () (toRenderable $ pie_plot p)
+       weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) () (toRenderable $ pie_plot_ p)
        ] )
       where
-        title = label (pie_title_style p) HTA_Centre VTA_Top (pie_title p)
-        lm = pie_margin p
+        title = label (pie_title_style_ p) HTA_Centre VTA_Top (pie_title_ p)
+        lm = pie_margin_ p
 
 instance ToRenderable PieChart where
     toRenderable p = Renderable {
@@ -70,10 +111,10 @@ instance ToRenderable PieChart where
     }
 
 extraSpace p = do
-    textSizes <- mapM textSize (map pitem_label (pie_data p))
+    textSizes <- mapM textSize (map pitem_label_ (pie_data_ p))
     let maxw = foldr (max.fst) 0 textSizes
     let maxh = foldr (max.snd) 0 textSizes
-    let maxo = foldr (max.pitem_offset) 0 (pie_data p)
+    let maxo = foldr (max.pitem_offset_) 0 (pie_data_ p)
     let extra = label_rgap + label_rlength + maxo
     return (extra + maxw, extra + maxh )
 
@@ -87,32 +128,32 @@ renderPie p (w,h) = do
     let center = Point (p_x p1 + w/2)  (p_y p1 + h/2)
     let radius = (min (w - 2*extraw) (h - 2*extrah)) / 2
 
-    foldM_ (paint center radius) (pie_start_angle p) (zip (pie_colors p) content)
+    foldM_ (paint center radius) (pie_start_angle_ p) (zip (pie_colors_ p) content)
     return (const ())
  
     where
         p1 = Point 0 0 
         p2 = Point w h 
-        content = let total = sum (map pitem_value (pie_data p))
-                  in [ pi{pitem_value=pitem_value pi/total} | pi <- pie_data p ]
+        content = let total = sum (map pitem_value_ (pie_data_ p))
+                  in [ pi{pitem_value_=pitem_value_ pi/total} | pi <- pie_data_ p ]
 
         paint :: Point -> Double -> Double -> (Color,PieItem) -> CRender Double
         paint center radius a1 (color,pitem) = do
-            let ax = 360.0 * (pitem_value pitem)
+            let ax = 360.0 * (pitem_value_ pitem)
             let a2 = a1 + (ax / 2)
             let a3 = a1 + ax
-            let offset = pitem_offset pitem
+            let offset = pitem_offset_ pitem
 
             pieSlice (ray a2 offset) a1 a3 color
-            pieLabel (pitem_label pitem) a2 offset
+            pieLabel (pitem_label_ pitem) a2 offset
 
             return a3
 
             where
                 pieLabel :: String -> Double -> Double -> CRender ()
                 pieLabel name angle offset = do
-                    setFontStyle (pie_label_style p)
-                    setLineStyle (pie_label_line_style p)
+                    setFontStyle (pie_label_style_ p)
+                    setLineStyle (pie_label_line_style_ p)
 
                     moveTo (ray angle (radius + label_rgap+offset))
                     let p1 = (ray angle (radius + label_rgap + label_rlength+offset))

@@ -11,6 +11,7 @@ import Data.Time
 import System.Locale (defaultTimeLocale)
 import Control.Monad
 import Data.List
+import Data.Accessor
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
@@ -18,9 +19,9 @@ import Graphics.Rendering.Chart.Renderable
 -- | The basic data associated with an axis showing values of type x
 data AxisData x = AxisData {
 
-    -- | The axis_viewport function maps values into device
+    -- | The axis_viewport_ function maps values into device
     -- cordinates.
-    axis_viewport :: Range -> x -> Double,
+    axis_viewport_ :: Range -> x -> Double,
 
     -- | The tick marks on the axis as pairs.
     -- The first element is the position on the axis
@@ -28,36 +29,69 @@ data AxisData x = AxisData {
     -- length of the tick in output coordinates.
     -- The tick starts on the axis, and positive number are drawn
     -- towards the plot area.
-    axis_ticks :: [(x,Double)],
+    axis_ticks_ :: [(x,Double)],
 
     -- | The labels on an axis as pairs. The first element 
     -- is the position on the axis (in viewport units) and
     -- the second is the label text string.
-    axis_labels :: [ (x, String) ],
+    axis_labels_ :: [ (x, String) ],
 
     -- | The positions on the axis (in viewport units) where
     -- we want to show grid lines.
-    axis_grid :: [ x ]
+    axis_grid_ :: [ x ]
 }
+
+-- | Accessor for field axis_viewport_
+axis_viewport = accessor (\v->axis_viewport_ v) (\a v -> v{axis_viewport_=a})
+
+-- | Accessor for field axis_ticks_
+axis_ticks = accessor (\v->axis_ticks_ v) (\a v -> v{axis_ticks_=a})
+
+-- | Accessor for field axis_labels_
+axis_labels = accessor (\v->axis_labels_ v) (\a v -> v{axis_labels_=a})
+
+-- | Accessor for field axis_grid_
+axis_grid = accessor (\v->axis_grid_ v) (\a v -> v{axis_grid_=a})
+
 
 -- | Control values for how an axis gets displayed
 data AxisStyle = AxisStyle {
-    axis_line_style :: CairoLineStyle,
-    axis_label_style :: CairoFontStyle,
-    axis_grid_style :: CairoLineStyle,
+    axis_line_style_ :: CairoLineStyle,
+    axis_label_style_ :: CairoFontStyle,
+    axis_grid_style_ :: CairoLineStyle,
 
     -- | How far the labels are to be drawn from the axis.
-    axis_label_gap :: Double
+    axis_label_gap_ :: Double
 }
+
+-- | Accessor for field axis_line_style_
+axis_line_style = accessor (\v->axis_line_style_ v) (\a v -> v{axis_line_style_=a})
+
+-- | Accessor for field axis_label_style_
+axis_label_style = accessor (\v->axis_label_style_ v) (\a v -> v{axis_label_style_=a})
+
+-- | Accessor for field axis_grid_style_
+axis_grid_style = accessor (\v->axis_grid_style_ v) (\a v -> v{axis_grid_style_=a})
+
+-- | Accessor for field axis_label_gap_
+axis_label_gap = accessor (\v->axis_label_gap_ v) (\a v -> v{axis_label_gap_=a})
+
 
 -- | A function to generate the axis data given the data values
 -- to be plotted against it.
 type AxisFn x = [x] -> AxisData x
 
 data Axis x = Axis {
-   axis_style :: AxisStyle,
-   axis_data  :: AxisFn x
+   axis_style_ :: AxisStyle,
+   axis_data_  :: AxisFn x
    }
+
+-- | Accessor for field axis_style_
+axis_style = accessor (\v->axis_style_ v) (\a v -> v{axis_style_=a})
+
+-- | Accessor for field axis_data_
+axis_data = accessor (\v->axis_data_ v) (\a v -> v{axis_data_=a})
+
 
 data AxisT x = AxisT RectEdge AxisStyle (AxisData x)
 
@@ -69,13 +103,13 @@ instance ToRenderable (AxisT x) where
 
 minsizeAxis :: AxisT x -> CRender RectSize
 minsizeAxis (AxisT at as ad) = do
-    let labels = map snd (axis_labels ad)
+    let labels = map snd (axis_labels_ ad)
     labelSizes <- preserveCState $ do
-        setFontStyle (axis_label_style as)
+        setFontStyle (axis_label_style_ as)
         mapM textSize labels
     let (lw,lh) = foldl maxsz (0,0) labelSizes
-    let ag = axis_label_gap as
-    let tsize = maximum [ max 0 (-l) | (v,l) <- axis_ticks ad ]
+    let ag = axis_label_gap_ as
+    let tsize = maximum [ max 0 (-l) | (v,l) <- axis_ticks_ ad ]
     let sz = case at of
 		     E_Top    -> (lw,max (addIfNZ lh ag) tsize)
 		     E_Bottom -> (lw,max (addIfNZ lh ag) tsize)
@@ -93,9 +127,9 @@ minsizeAxis (AxisT at as ad) = do
 -- the ends of the axis
 axisOverhang :: Ord x => AxisT x -> CRender (Double,Double)
 axisOverhang (AxisT at as ad) = do
-    let labels = map snd (sort (axis_labels ad))
+    let labels = map snd (sort (axis_labels_ ad))
     labelSizes <- preserveCState $ do
-        setFontStyle (axis_label_style as)
+        setFontStyle (axis_label_style_ as)
         mapM textSize labels
     case labelSizes of
         [] -> return (0,0)
@@ -112,16 +146,16 @@ axisOverhang (AxisT at as ad) = do
 
 renderAxis :: AxisT x -> RectSize -> CRender (PickFn ())
 renderAxis at@(AxisT et as ad) sz = do
-   let ls = axis_line_style as
+   let ls = axis_line_style_ as
    preserveCState $ do
-       setLineStyle ls{line_cap=C.LineCapSquare}
+       setLineStyle ls{line_cap_=C.LineCapSquare}
        strokeLines [Point sx sy,Point ex ey]
    preserveCState $ do
-       setLineStyle ls{line_cap=C.LineCapButt}
-       mapM_ drawTick (axis_ticks ad)
+       setLineStyle ls{line_cap_=C.LineCapButt}
+       mapM_ drawTick (axis_ticks_ ad)
    preserveCState $ do
-       setFontStyle (axis_label_style as)
-       mapM_ drawLabel (axis_labels ad)
+       setFontStyle (axis_label_style_ as)
+       mapM_ drawLabel (axis_labels_ ad)
    return (const ())
  where
    (sx,sy,ex,ey,tp,axisPoint) = axisMapping at sz
@@ -132,7 +166,7 @@ renderAxis at@(AxisT et as ad) sz = do
        in strokeLines [t1,t2]
 
    (hta,vta,lp) = 
-       let g = axis_label_gap as
+       let g = axis_label_gap_ as
        in case et of
 		  E_Top    -> (HTA_Centre,VTA_Bottom,(Vector 0 (-g)))
 		  E_Bottom -> (HTA_Centre,VTA_Top,(Vector 0 g))
@@ -151,14 +185,14 @@ axisMapping (AxisT et as ad) (x2,y2) = case et of
   where
     (x1,y1) = (0,0)
 
-    mapx xr y x = Point (axis_viewport ad xr x) y
-    mapy (yr0,yr1) x y = Point x (axis_viewport ad (yr1,yr0) y)
+    mapx xr y x = Point (axis_viewport_ ad xr x) y
+    mapy (yr0,yr1) x y = Point x (axis_viewport_ ad (yr1,yr0) y)
 
 renderAxisGrid :: RectSize -> AxisT z -> CRender ()
 renderAxisGrid sz@(w,h) at@(AxisT re as ad) = do
     preserveCState $ do
-        setLineStyle (axis_grid_style as)
-        mapM_ (drawGridLine re) (axis_grid ad)
+        setLineStyle (axis_grid_style_ as)
+        mapM_ (drawGridLine re) (axis_grid_ ad)
   where
     (sx,sy,ex,ey,tp,axisPoint) = axisMapping at sz
 
@@ -193,10 +227,10 @@ chooseStep nsteps (min,max) = s
 
 makeAxis :: PlotValue x => (x -> String) -> ([x],[x],[x]) -> AxisData x
 makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
-    axis_viewport=newViewport,
-    axis_ticks=newTicks,
-    axis_grid=gridvs,
-    axis_labels=newLabels
+    axis_viewport_=newViewport,
+    axis_ticks_=newTicks,
+    axis_grid_=gridvs,
+    axis_labels_=newLabels
     }
   where
     newViewport = vmap (min',max')
@@ -209,23 +243,36 @@ data GridMode = GridNone | GridAtMajor | GridAtMinor
 
 data LinearAxisParams = LinearAxisParams {
     -- | The function used to show the axes labels
-    la_labelf :: Double -> String,
+    la_labelf_ :: Double -> String,
 
     -- | The target number of labels to be shown
-    la_nLabels :: Int,
+    la_nLabels_ :: Int,
 
     -- | The target number of ticks to be shown
-    la_nTicks :: Int,
+    la_nTicks_ :: Int,
 
     -- | If/Where grid lines should be shown
-    la_gridMode :: GridMode
+    la_gridMode_ :: GridMode
 }
 
+-- | Accessor for field la_labelf_
+la_labelf = accessor (\v->la_labelf_ v) (\a v -> v{la_labelf_=a})
+
+-- | Accessor for field la_nLabels_
+la_nLabels = accessor (\v->la_nLabels_ v) (\a v -> v{la_nLabels_=a})
+
+-- | Accessor for field la_nTicks_
+la_nTicks = accessor (\v->la_nTicks_ v) (\a v -> v{la_nTicks_=a})
+
+-- | Accessor for field la_gridMode_
+la_gridMode = accessor (\v->la_gridMode_ v) (\a v -> v{la_gridMode_=a})
+
+
 defaultLinearAxis = LinearAxisParams {
-    la_labelf = showD,
-    la_nLabels = 5,
-    la_nTicks = 50,
-    la_gridMode = GridAtMajor
+    la_labelf_ = showD,
+    la_nLabels_ = 5,
+    la_nTicks_ = 50,
+    la_gridMode_ = GridAtMajor
 }
 
 -- | Generate a linear axis automatically.
@@ -234,16 +281,16 @@ defaultLinearAxis = LinearAxisParams {
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
 autoScaledAxis' :: LinearAxisParams -> AxisFn Double
-autoScaledAxis' lap ps0 = makeAxis (la_labelf lap) (labelvs,tickvs,gridvs)
+autoScaledAxis' lap ps0 = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
   where
     ps = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
     range [] = (0,1)
     range _  | min == max = (min-0.5,min+0.5)
 	     | otherwise = (min,max)
-    labelvs = map fromRational $ steps (fromIntegral (la_nLabels lap)) r
-    tickvs = map fromRational $ steps (fromIntegral (la_nTicks lap)) (minimum labelvs,maximum labelvs)
-    gridvs = case la_gridMode lap of
+    labelvs = map fromRational $ steps (fromIntegral (la_nLabels_ lap)) r
+    tickvs = map fromRational $ steps (fromIntegral (la_nTicks_ lap)) (minimum labelvs,maximum labelvs)
+    gridvs = case la_gridMode_ lap of
         GridNone -> []
         GridAtMajor -> labelvs
         GridAtMinor -> tickvs
@@ -342,10 +389,10 @@ defaultAxisLineStyle = solidLine 1 black
 defaultGridLineStyle = dashedLine 1 [5,5] grey8
 
 defaultAxisStyle = AxisStyle {
-    axis_line_style = defaultAxisLineStyle,
-    axis_label_style = defaultFontStyle,
-    axis_grid_style = defaultGridLineStyle,
-    axis_label_gap = 10
+    axis_line_style_ = defaultAxisLineStyle,
+    axis_label_style_ = defaultFontStyle,
+    axis_grid_style_ = defaultGridLineStyle,
+    axis_label_gap_ = 10
 }
 
 ----------------------------------------------------------------------
@@ -391,10 +438,10 @@ type TimeLabelFn = LocalTime -> String
 -- The values to be plotted against this axis can be created with 'doubleFromLocalTime'
 timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> AxisFn LocalTime
 timeAxis tseq lseq labelf pts = AxisData {
-    axis_viewport=vmap(min', max'),
-    axis_ticks=[ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
-    axis_labels=[ (t,l) | (t,l) <- labels, visible t],
-    axis_grid=[ t | t <- ltimes, visible t]
+    axis_viewport_=vmap(min', max'),
+    axis_ticks_=[ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
+    axis_labels_=[ (t,l) | (t,l) <- labels, visible t],
+    axis_grid_=[ t | t <- ltimes, visible t]
     }
   where
     (min,max) = case pts of

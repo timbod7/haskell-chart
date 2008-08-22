@@ -8,6 +8,7 @@ module Graphics.Rendering.Chart.Renderable where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
+import Data.Accessor
 import Data.List ( nub, transpose, sort )
 
 import Graphics.Rendering.Chart.Types
@@ -173,36 +174,49 @@ data RectCornerStyle = RCornerSquare
                      | RCornerRounded Double
 
 data Rectangle = Rectangle {
-  rect_minsize :: RectSize,
-  rect_fillStyle :: Maybe CairoFillStyle,
-  rect_lineStyle :: Maybe CairoLineStyle,
-  rect_cornerStyle :: RectCornerStyle
+  rect_minsize_ :: RectSize,
+  rect_fillStyle_ :: Maybe CairoFillStyle,
+  rect_lineStyle_ :: Maybe CairoLineStyle,
+  rect_cornerStyle_ :: RectCornerStyle
 }
 
+-- | Accessor for field rect_minsize_
+rect_minsize = accessor (\v->rect_minsize_ v) (\a v -> v{rect_minsize_=a})
+
+-- | Accessor for field rect_fillStyle_
+rect_fillStyle = accessor (\v->rect_fillStyle_ v) (\a v -> v{rect_fillStyle_=a})
+
+-- | Accessor for field rect_lineStyle_
+rect_lineStyle = accessor (\v->rect_lineStyle_ v) (\a v -> v{rect_lineStyle_=a})
+
+-- | Accessor for field rect_cornerStyle_
+rect_cornerStyle = accessor (\v->rect_cornerStyle_ v) (\a v -> v{rect_cornerStyle_=a})
+
+
 defaultRectangle = Rectangle {
-  rect_minsize = (0,0),
-  rect_fillStyle = Nothing,
-  rect_lineStyle = Nothing,
-  rect_cornerStyle = RCornerSquare
+  rect_minsize_ = (0,0),
+  rect_fillStyle_ = Nothing,
+  rect_lineStyle_ = Nothing,
+  rect_cornerStyle_ = RCornerSquare
 }
 
 instance ToRenderable Rectangle where
    toRenderable rectangle = Renderable mf rf
      where
-      mf = return (rect_minsize rectangle)
+      mf = return (rect_minsize_ rectangle)
       rf sz = preserveCState $ do
-        maybeM () (fill sz) (rect_fillStyle rectangle)
-        maybeM () (stroke sz) (rect_lineStyle rectangle)
+        maybeM () (fill sz) (rect_fillStyle_ rectangle)
+        maybeM () (stroke sz) (rect_lineStyle_ rectangle)
         return (const ())
 
       fill sz fs = do
           setFillStyle fs
-          strokeRectangle sz (rect_cornerStyle rectangle)
+          strokeRectangle sz (rect_cornerStyle_ rectangle)
           c $ C.fill
 
       stroke sz ls = do
           setLineStyle ls
-          strokeRectangle sz (rect_cornerStyle rectangle)
+          strokeRectangle sz (rect_cornerStyle_ rectangle)
           c $ C.stroke
 
       strokeRectangle (x2,y2) RCornerSquare = c $ do

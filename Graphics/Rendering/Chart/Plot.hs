@@ -18,29 +18,57 @@ module Graphics.Rendering.Chart.Plot(
     defaultPlotPoints,
     defaultPlotErrBars,
     defaultPlotFillBetween,
-    defaultPlotLines
-    
+    defaultPlotLines,
+
+    plot_lines_style,
+    plot_lines_values,
+
+    plot_render,
+    plot_render_legend,
+    plot_all_points,
+
+    plot_points_style,
+    plot_points_values,
+
+    plot_fillbetween_style,
+    plot_fillbetween_values,
+
+    plot_errbars_line_style,
+    plot_errbars_tick_length,
+    plot_errbars_overhang,
+    plot_errbars_values,
+
     ) where
 
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Types
 import Control.Monad
+import Data.Accessor
 
 -- | Interface to control plotting on a 2D area.
 data Plot x y = Plot {
 
     -- | Given the mapping between model space coordinates and device coordinates,
     -- render this plot into a chart.
-    plot_render :: PointMapFn x y -> CRender (),
+    plot_render_ :: PointMapFn x y -> CRender (),
 
     -- | Render a small sample of this plot into the given rectangle.
     -- This is for used to generate a the legend a chart.
-    plot_render_legend :: Rect -> CRender (),
+    plot_render_legend_ :: Rect -> CRender (),
 
     -- | All of the model space coordinates to be plotted. These are
     -- used to autoscale the axes where necessary.
-    plot_all_points :: [(x,y)]
+    plot_all_points_ :: [(x,y)]
 };
+
+-- | Accessor for field plot_render_
+plot_render = accessor (\v->plot_render_ v) (\a v -> v{plot_render_=a})
+
+-- | Accessor for field plot_render_legend_
+plot_render_legend = accessor (\v->plot_render_legend_ v) (\a v -> v{plot_render_legend_=a})
+
+-- | Accessor for field plot_all_points_
+plot_all_points = accessor (\v->plot_all_points_ v) (\a v -> v{plot_all_points_=a})
 
 -- | a type class abstracting the conversion of a value to a Plot.
 class ToPlot a where
@@ -51,21 +79,28 @@ class ToPlot a where
 -- | Value defining a series of (possibly disjointed) lines,
 -- and a style in which to render them
 data PlotLines x y = PlotLines {
-    plot_lines_style :: CairoLineStyle,
-    plot_lines_values :: [[(x,y)]]
+    plot_lines_style_ :: CairoLineStyle,
+    plot_lines_values_ :: [[(x,y)]]
 }
+
+-- | Accessor for field plot_lines_style_
+plot_lines_style = accessor (\v->plot_lines_style_ v) (\a v -> v{plot_lines_style_=a})
+
+-- | Accessor for field plot_lines_values_
+plot_lines_values = accessor (\v->plot_lines_values_ v) (\a v -> v{plot_lines_values_=a})
+
 
 instance ToPlot PlotLines where
     toPlot p = Plot {
-        plot_render = renderPlotLines p,
-	plot_render_legend = renderPlotLegendLines p,
-	plot_all_points = concat (plot_lines_values p)
+        plot_render_ = renderPlotLines p,
+	plot_render_legend_ = renderPlotLegendLines p,
+	plot_all_points_ = concat (plot_lines_values_ p)
     }
 
 renderPlotLines :: PlotLines x y -> PointMapFn x y -> CRender ()
 renderPlotLines p pmap = preserveCState $ do
-    setLineStyle (plot_lines_style p)
-    mapM_ drawLines (plot_lines_values p)
+    setLineStyle (plot_lines_style_ p)
+    mapM_ drawLines (plot_lines_values_ p)
   where
     drawLines (p:ps) = do
 	moveTo (pmap p)
@@ -74,42 +109,48 @@ renderPlotLines p pmap = preserveCState $ do
 
 renderPlotLegendLines :: PlotLines x y -> Rect -> CRender ()
 renderPlotLegendLines p r@(Rect p1 p2) = preserveCState $ do
-    setLineStyle (plot_lines_style p)
+    setLineStyle (plot_lines_style_ p)
     let y = (p_y p1 + p_y p2) / 2
     moveTo (Point (p_x p1) y)
     lineTo (Point (p_x p2) y)
     c $ C.stroke
 
 defaultPlotLineStyle = (solidLine 1 blue){ 
-     line_cap = C.LineCapRound,
-     line_join = C.LineJoinRound
+     line_cap_ = C.LineCapRound,
+     line_join_ = C.LineJoinRound
  }
 
 defaultPlotLines = PlotLines {
-    plot_lines_style = defaultPlotLineStyle,
-    plot_lines_values = []
+    plot_lines_style_ = defaultPlotLineStyle,
+    plot_lines_values_ = []
 }
 ----------------------------------------------------------------------
 
 -- | Value defining a series of datapoints, and a style in
 -- which to render them
 data PlotPoints x y = PlotPoints {
-    plot_points_style :: CairoPointStyle,
-    plot_points_values :: [(x,y)]
+    plot_points_style_ :: CairoPointStyle,
+    plot_points_values_ :: [(x,y)]
 }
+
+-- | Accessor for field plot_points_style_
+plot_points_style = accessor (\v->plot_points_style_ v) (\a v -> v{plot_points_style_=a})
+
+-- | Accessor for field plot_points_values_
+plot_points_values = accessor (\v->plot_points_values_ v) (\a v -> v{plot_points_values_=a})
 
 instance ToPlot PlotPoints where
     toPlot p = Plot {
-        plot_render = renderPlotPoints p,
-	plot_render_legend = renderPlotLegendPoints p,
-	plot_all_points = plot_points_values p
+        plot_render_ = renderPlotPoints p,
+	plot_render_legend_ = renderPlotLegendPoints p,
+	plot_all_points_ = plot_points_values_ p
     }
 
 renderPlotPoints :: PlotPoints x y -> PointMapFn x y -> CRender ()
 renderPlotPoints p pmap = preserveCState $ do
-    mapM_ (drawPoint.pmap) (plot_points_values p)
+    mapM_ (drawPoint.pmap) (plot_points_values_ p)
   where
-    (CairoPointStyle drawPoint) = (plot_points_style p)
+    (CairoPointStyle drawPoint) = (plot_points_style_ p)
 
 
 renderPlotLegendPoints :: PlotPoints x y -> Rect -> CRender ()
@@ -119,34 +160,41 @@ renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
     drawPoint (Point (p_x p2) ((p_y p1 + p_y p2)/2))
 
   where
-    (CairoPointStyle drawPoint) = (plot_points_style p)
+    (CairoPointStyle drawPoint) = (plot_points_style_ p)
 
 defaultPlotPoints = PlotPoints {
-    plot_points_style =defaultPointStyle,
-    plot_points_values = []
+    plot_points_style_ =defaultPointStyle,
+    plot_points_values_ = []
 }
 ----------------------------------------------------------------------
 -- | Value specifying a plot filling the area between two sets of Y
 -- coordinates, given common X coordinates.
 
 data PlotFillBetween x y = PlotFillBetween {
-    plot_fillbetween_style :: CairoFillStyle,
-    plot_fillbetween_values :: [ (x, (y,y))]
+    plot_fillbetween_style_ :: CairoFillStyle,
+    plot_fillbetween_values_ :: [ (x, (y,y))]
 }
+
+-- | Accessor for field plot_fillbetween_style_
+plot_fillbetween_style = accessor (\v->plot_fillbetween_style_ v) (\a v -> v{plot_fillbetween_style_=a})
+
+-- | Accessor for field plot_fillbetween_values_
+plot_fillbetween_values = accessor (\v->plot_fillbetween_values_ v) (\a v -> v{plot_fillbetween_values_=a})
+
 
 instance ToPlot PlotFillBetween where
     toPlot p = Plot {
-        plot_render = renderPlotFillBetween p,
-	plot_render_legend = renderPlotLegendFill p,
-	plot_all_points = plotAllPointsFillBetween p
+        plot_render_ = renderPlotFillBetween p,
+	plot_render_legend_ = renderPlotLegendFill p,
+	plot_all_points_ = plotAllPointsFillBetween p
     }
 
 renderPlotFillBetween :: PlotFillBetween x y -> PointMapFn x y -> CRender ()
-renderPlotFillBetween p pmap = renderPlotFillBetween' p (plot_fillbetween_values p) pmap
+renderPlotFillBetween p pmap = renderPlotFillBetween' p (plot_fillbetween_values_ p) pmap
 
 renderPlotFillBetween' p [] _ = return ()
 renderPlotFillBetween' p vs pmap  = preserveCState $ do
-    setFillStyle (plot_fillbetween_style p)
+    setFillStyle (plot_fillbetween_style_ p)
     moveTo p0
     mapM_ lineTo p1s
     mapM_ lineTo (reverse p2s)
@@ -158,18 +206,18 @@ renderPlotFillBetween' p vs pmap  = preserveCState $ do
 
 renderPlotLegendFill :: PlotFillBetween x y -> Rect -> CRender ()
 renderPlotLegendFill p r = preserveCState $ do
-    setFillStyle (plot_fillbetween_style p)
+    setFillStyle (plot_fillbetween_style_ p)
     rectPath r
     c $ C.fill
 
 plotAllPointsFillBetween :: PlotFillBetween x y -> [(x,y)]
 plotAllPointsFillBetween p = concat [ [(x, y1), (x, y2)]
-				      | (x,(y1,y2)) <- plot_fillbetween_values p]
+				      | (x,(y1,y2)) <- plot_fillbetween_values_ p]
 
 
 defaultPlotFillBetween = PlotFillBetween {
-    plot_fillbetween_style=solidFillStyle (Color 0.5 0.5 1.0),
-    plot_fillbetween_values=[]
+    plot_fillbetween_style_=solidFillStyle (Color 0.5 0.5 1.0),
+    plot_fillbetween_values_=[]
 }
 
 ----------------------------------------------------------------------
@@ -195,24 +243,36 @@ symErrPoint x y dx dy = ErrPoint (ErrValue (x-dx) x (x+dx))
 -- | Value defining a series of error intervals, and a style in
 -- which to render them
 data PlotErrBars x y = PlotErrBars {
-    plot_errbars_line_style :: CairoLineStyle,
-    plot_errbars_tick_length :: Double,
-    plot_errbars_overhang :: Double,
-    plot_errbars_values :: [ErrPoint x y]
+    plot_errbars_line_style_ :: CairoLineStyle,
+    plot_errbars_tick_length_ :: Double,
+    plot_errbars_overhang_ :: Double,
+    plot_errbars_values_ :: [ErrPoint x y]
 }
+
+-- | Accessor for field plot_errbars_line_style_
+plot_errbars_line_style = accessor (\v->plot_errbars_line_style_ v) (\a v -> v{plot_errbars_line_style_=a})
+
+-- | Accessor for field plot_errbars_tick_length_
+plot_errbars_tick_length = accessor (\v->plot_errbars_tick_length_ v) (\a v -> v{plot_errbars_tick_length_=a})
+
+-- | Accessor for field plot_errbars_overhang_
+plot_errbars_overhang = accessor (\v->plot_errbars_overhang_ v) (\a v -> v{plot_errbars_overhang_=a})
+
+-- | Accessor for field plot_errbars_values_
+plot_errbars_values = accessor (\v->plot_errbars_values_ v) (\a v -> v{plot_errbars_values_=a})
 
 instance ToPlot PlotErrBars where
     toPlot p = Plot {
-        plot_render = renderPlotErrBars p,
-	plot_render_legend = renderPlotLegendErrBars p,
-	plot_all_points = concat
+        plot_render_ = renderPlotErrBars p,
+	plot_render_legend_ = renderPlotLegendErrBars p,
+	plot_all_points_ = concat
          [[((ev_low x),(ev_low y)), ((ev_high x),(ev_high y))]
-         | ErrPoint x y <- plot_errbars_values p]
+         | ErrPoint x y <- plot_errbars_values_ p]
     }
 
 renderPlotErrBars :: PlotErrBars x y -> PointMapFn x y -> CRender ()
 renderPlotErrBars p pmap = preserveCState $ do
-    mapM_ (drawErrBar.epmap) (plot_errbars_values p)
+    mapM_ (drawErrBar.epmap) (plot_errbars_values_ p)
   where
     epmap (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) =
         ErrPoint (ErrValue xl' x' xh') (ErrValue yl' y' yh')
@@ -222,9 +282,9 @@ renderPlotErrBars p pmap = preserveCState $ do
     drawErrBar = drawErrBar0 p
 
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
-        let tl = plot_errbars_tick_length ps
-        let oh = plot_errbars_overhang ps
-        setLineStyle (plot_errbars_line_style ps)
+        let tl = plot_errbars_tick_length_ ps
+        let oh = plot_errbars_overhang_ ps
+        setLineStyle (plot_errbars_line_style_ ps)
         c $ C.newPath
         c $ C.moveTo (xl-oh) y
         c $ C.lineTo (xh+oh) y
@@ -251,8 +311,8 @@ renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
     dx = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
 
 defaultPlotErrBars = PlotErrBars {
-    plot_errbars_line_style = solidLine 1 blue,
-    plot_errbars_tick_length = 3,
-    plot_errbars_overhang = 0,
-    plot_errbars_values = []
+    plot_errbars_line_style_ = solidLine 1 blue,
+    plot_errbars_tick_length_ = 3,
+    plot_errbars_overhang_ = 0,
+    plot_errbars_values_ = []
 }
