@@ -4,12 +4,14 @@
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
 
+{-# OPTIONS_GHC -XTemplateHaskell #-}
+
 module Graphics.Rendering.Chart.Legend where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
 import Data.List (nub, partition)
-import Data.Accessor
+import Data.Accessor.Template
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
@@ -23,16 +25,6 @@ data LegendStyle = LegendStyle {
    legend_margin_ :: Double,
    legend_plot_size_ :: Double
 }
-
--- | Accessor for field legend_label_style_
-legend_label_style = accessor (\v->legend_label_style_ v) (\a v -> v{legend_label_style_=a})
-
--- | Accessor for field legend_margin_
-legend_margin = accessor (\v->legend_margin_ v) (\a v -> v{legend_margin_=a})
-
--- | Accessor for field legend_plot_size_
-legend_plot_size = accessor (\v->legend_plot_size_ v) (\a v -> v{legend_plot_size_=a})
-
 
 data Legend x y = Legend Bool LegendStyle [(String,Plot x y)]
 
@@ -88,3 +80,8 @@ defaultLegendStyle = LegendStyle {
     legend_margin_=20,
     legend_plot_size_=20
 }
+
+----------------------------------------------------------------------
+-- Template haskell to derive an instance of Data.Accessor.Accessor for each field
+$( deriveAccessors ''LegendStyle )
+

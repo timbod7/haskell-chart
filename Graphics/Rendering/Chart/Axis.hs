@@ -4,6 +4,8 @@
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
 
+{-# OPTIONS_GHC -XTemplateHaskell #-}
+
 module Graphics.Rendering.Chart.Axis where
 
 import qualified Graphics.Rendering.Cairo as C
@@ -11,7 +13,7 @@ import Data.Time
 import System.Locale (defaultTimeLocale)
 import Control.Monad
 import Data.List
-import Data.Accessor
+import Data.Accessor.Template
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
@@ -41,19 +43,6 @@ data AxisData x = AxisData {
     axis_grid_ :: [ x ]
 }
 
--- | Accessor for field axis_viewport_
-axis_viewport = accessor (\v->axis_viewport_ v) (\a v -> v{axis_viewport_=a})
-
--- | Accessor for field axis_ticks_
-axis_ticks = accessor (\v->axis_ticks_ v) (\a v -> v{axis_ticks_=a})
-
--- | Accessor for field axis_labels_
-axis_labels = accessor (\v->axis_labels_ v) (\a v -> v{axis_labels_=a})
-
--- | Accessor for field axis_grid_
-axis_grid = accessor (\v->axis_grid_ v) (\a v -> v{axis_grid_=a})
-
-
 -- | Control values for how an axis gets displayed
 data AxisStyle = AxisStyle {
     axis_line_style_ :: CairoLineStyle,
@@ -64,18 +53,6 @@ data AxisStyle = AxisStyle {
     axis_label_gap_ :: Double
 }
 
--- | Accessor for field axis_line_style_
-axis_line_style = accessor (\v->axis_line_style_ v) (\a v -> v{axis_line_style_=a})
-
--- | Accessor for field axis_label_style_
-axis_label_style = accessor (\v->axis_label_style_ v) (\a v -> v{axis_label_style_=a})
-
--- | Accessor for field axis_grid_style_
-axis_grid_style = accessor (\v->axis_grid_style_ v) (\a v -> v{axis_grid_style_=a})
-
--- | Accessor for field axis_label_gap_
-axis_label_gap = accessor (\v->axis_label_gap_ v) (\a v -> v{axis_label_gap_=a})
-
 
 -- | A function to generate the axis data given the data values
 -- to be plotted against it.
@@ -85,13 +62,6 @@ data Axis x = Axis {
    axis_style_ :: AxisStyle,
    axis_data_  :: AxisFn x
    }
-
--- | Accessor for field axis_style_
-axis_style = accessor (\v->axis_style_ v) (\a v -> v{axis_style_=a})
-
--- | Accessor for field axis_data_
-axis_data = accessor (\v->axis_data_ v) (\a v -> v{axis_data_=a})
-
 
 data AxisT x = AxisT RectEdge AxisStyle (AxisData x)
 
@@ -254,18 +224,6 @@ data LinearAxisParams = LinearAxisParams {
     -- | If/Where grid lines should be shown
     la_gridMode_ :: GridMode
 }
-
--- | Accessor for field la_labelf_
-la_labelf = accessor (\v->la_labelf_ v) (\a v -> v{la_labelf_=a})
-
--- | Accessor for field la_nLabels_
-la_nLabels = accessor (\v->la_nLabels_ v) (\a v -> v{la_nLabels_=a})
-
--- | Accessor for field la_nTicks_
-la_nTicks = accessor (\v->la_nTicks_ v) (\a v -> v{la_nTicks_=a})
-
--- | Accessor for field la_gridMode_
-la_gridMode = accessor (\v->la_gridMode_ v) (\a v -> v{la_gridMode_=a})
 
 
 defaultLinearAxis = LinearAxisParams {
@@ -533,3 +491,11 @@ instance PlotValue LocalTime where
 -- | A linear mapping of points in one range to another
 vmap :: PlotValue x => (x,x) -> Range -> x -> Double
 vmap (v1,v2) (v3,v4) v = v3 + (toValue v - toValue v1) * (v4-v3) / (toValue v2 - toValue v1)
+
+----------------------------------------------------------------------
+-- Template haskell to derive an instance of Data.Accessor.Accessor for each field
+$( deriveAccessors ''AxisData )
+$( deriveAccessors ''Axis )
+$( deriveAccessors ''AxisStyle )
+$( deriveAccessors ''LinearAxisParams )
+

@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -XTemplateHaskell #-}
+
 module Graphics.Rendering.Chart.Pie where
 -- original code thanks to Neal Alexander
 
@@ -5,7 +7,7 @@ import qualified Graphics.Rendering.Cairo as C
 
 import Data.List
 import Data.Bits
-import Data.Accessor
+import Data.Accessor.Template
 import Control.Monad 
 
 import Graphics.Rendering.Chart.Types
@@ -21,22 +23,6 @@ data PieLayout = PieLayout {
    pie_margin_ :: Double
 }
 
--- | Accessor for field pie_title_
-pie_title = accessor (\v->pie_title_ v) (\a v -> v{pie_title_=a})
-
--- | Accessor for field pie_title_style_
-pie_title_style = accessor (\v->pie_title_style_ v) (\a v -> v{pie_title_style_=a})
-
--- | Accessor for field pie_plot_
-pie_plot = accessor (\v->pie_plot_ v) (\a v -> v{pie_plot_=a})
-
--- | Accessor for field pie_background_
-pie_background = accessor (\v->pie_background_ v) (\a v -> v{pie_background_=a})
-
--- | Accessor for field pie_margin_
-pie_margin = accessor (\v->pie_margin_ v) (\a v -> v{pie_margin_=a})
-
-
 data PieChart = PieChart {
    pie_data_  :: [PieItem],
    pie_colors_ :: [Color],
@@ -46,35 +32,11 @@ data PieChart = PieChart {
 
 }
 
--- | Accessor for field pie_data_
-pie_data = accessor (\v->pie_data_ v) (\a v -> v{pie_data_=a})
-
--- | Accessor for field pie_colors_
-pie_colors = accessor (\v->pie_colors_ v) (\a v -> v{pie_colors_=a})
-
--- | Accessor for field pie_label_style_
-pie_label_style = accessor (\v->pie_label_style_ v) (\a v -> v{pie_label_style_=a})
-
--- | Accessor for field pie_label_line_style_
-pie_label_line_style = accessor (\v->pie_label_line_style_ v) (\a v -> v{pie_label_line_style_=a})
-
--- | Accessor for field pie_start_angle_
-pie_start_angle = accessor (\v->pie_start_angle_ v) (\a v -> v{pie_start_angle_=a})
-
 data PieItem = PieItem {
    pitem_label_ :: String,
    pitem_offset_ :: Double,
    pitem_value_ :: Double
 }
-
--- | Accessor for field pitem_label_
-pitem_label = accessor (\v->pitem_label_ v) (\a v -> v{pitem_label_=a})
-
--- | Accessor for field pitem_offset_
-pitem_offset = accessor (\v->pitem_offset_ v) (\a v -> v{pitem_offset_=a})
-
--- | Accessor for field pitem_value_
-pitem_value = accessor (\v->pitem_value_ v) (\a v -> v{pitem_value_=a})
 
 defaultPieChart = PieChart {
     pie_data_ = [], 
@@ -198,3 +160,10 @@ renderPie p (w,h) = do
 
 label_rgap = 5
 label_rlength = 15
+
+----------------------------------------------------------------------
+-- Template haskell to derive an instance of Data.Accessor.Accessor for each field
+$( deriveAccessors ''PieLayout )
+$( deriveAccessors ''PieChart )
+$( deriveAccessors ''PieItem )
+

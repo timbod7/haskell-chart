@@ -4,6 +4,8 @@
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
 
+{-# OPTIONS_GHC -XTemplateHaskell #-}
+
 module Graphics.Rendering.Chart.Layout where
 
 import qualified Graphics.Rendering.Cairo as C
@@ -16,7 +18,7 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
 import Control.Monad
 import Control.Monad.Reader (local)
-import Data.Accessor
+import Data.Accessor.Template
 
 data AxisPair x = IndependentAxes (Axis x) (Axis x)
                 | LinkedAxes AxisMode (Axis x)
@@ -46,49 +48,6 @@ data Layout1 x y = Layout1 {
     layout1_legend_ :: Maybe(LegendStyle),
     layout1_grid_last_ :: Bool
 }
-
--- | Accessor for field layout1_background_
-layout1_background = accessor (\v->layout1_background_ v) (\a v -> v{layout1_background_=a})
-
--- | Accessor for field layout1_title_
-layout1_title = accessor (\v->layout1_title_ v) (\a v -> v{layout1_title_=a})
-
--- | Accessor for field layout1_title_style_
-layout1_title_style = accessor (\v->layout1_title_style_ v) (\a v -> v{layout1_title_style_=a})
-
--- | Accessor for field layout1_horizontal_axis_
-layout1_horizontal_axis = accessor (\v->layout1_horizontal_axis_ v) (\a v -> v{layout1_horizontal_axis_=a})
-
--- | Accessor for field layout1_horizontal_axis_mode_
-layout1_horizontal_axis_mode = accessor (\v->layout1_horizontal_axis_mode_ v) (\a v -> v{layout1_horizontal_axis_mode_=a})
-
--- | Accessor for field layout1_vertical_axes_
-layout1_vertical_axes = accessor (\v->layout1_vertical_axes_ v) (\a v -> v{layout1_vertical_axes_=a})
-
--- | Accessor for field layout1_left_axis_title_
-layout1_left_axis_title = accessor (\v->layout1_left_axis_title_ v) (\a v -> v{layout1_left_axis_title_=a})
-
--- | Accessor for field layout1_right_axis_title_
-layout1_right_axis_title = accessor (\v->layout1_right_axis_title_ v) (\a v -> v{layout1_right_axis_title_=a})
-
--- | Accessor for field layout1_bottom_axis_title_
-layout1_bottom_axis_title = accessor (\v->layout1_bottom_axis_title_ v) (\a v -> v{layout1_bottom_axis_title_=a})
-
--- | Accessor for field layout1_top_axis_title_
-layout1_top_axis_title = accessor (\v->layout1_top_axis_title_ v) (\a v -> v{layout1_top_axis_title_=a})
-
--- | Accessor for field layout1_margin_
-layout1_margin = accessor (\v->layout1_margin_ v) (\a v -> v{layout1_margin_=a})
-
--- | Accessor for field layout1_plots_
-layout1_plots = accessor (\v->layout1_plots_ v) (\a v -> v{layout1_plots_=a})
-
--- | Accessor for field layout1_legend_
-layout1_legend = accessor (\v->layout1_legend_ v) (\a v -> v{layout1_legend_=a})
-
--- | Accessor for field layout1_grid_last_
-layout1_grid_last = accessor (\v->layout1_grid_last_ v) (\a v -> v{layout1_grid_last_=a})
-
 
 instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
     toRenderable = layout1ToRenderable
@@ -245,4 +204,8 @@ defaultLayout1 = Layout1 {
     layout1_legend_ = Just defaultLegendStyle,
     layout1_grid_last_ = False
 }
+
+----------------------------------------------------------------------
+-- Template haskell to derive an instance of Data.Accessor.Accessor for each field
+$( deriveAccessors ''Layout1 )
 

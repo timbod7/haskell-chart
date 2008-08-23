@@ -1,4 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# OPTIONS_GHC -XTemplateHaskell #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Types
@@ -10,6 +12,7 @@ module Graphics.Rendering.Chart.Types where
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad.Reader
 import Data.Accessor
+import Data.Accessor.Template
 
 -- | A point in two dimensions
 data Point = Point {
@@ -102,21 +105,6 @@ data CairoLineStyle = CairoLineStyle {
    line_join_ :: C.LineJoin
 }
 
--- | Accessor for field line_width_
-line_width = accessor (\v->line_width_ v) (\a v -> v{line_width_=a})
-
--- | Accessor for field line_color_
-line_color = accessor (\v->line_color_ v) (\a v -> v{line_color_=a})
-
--- | Accessor for field line_dashes_
-line_dashes = accessor (\v->line_dashes_ v) (\a v -> v{line_dashes_=a})
-
--- | Accessor for field line_cap_
-line_cap = accessor (\v->line_cap_ v) (\a v -> v{line_cap_=a})
-
--- | Accessor for field line_join_
-line_join = accessor (\v->line_join_ v) (\a v -> v{line_join_=a})
-   
 -- | Abstract data type for a fill style
 --
 -- The contained Cairo action sets the required fill
@@ -131,22 +119,6 @@ data CairoFontStyle = CairoFontStyle {
       font_weight_ :: C.FontWeight,
       font_color_ :: Color
 }
-
--- | Accessor for field font_name_
-font_name = accessor (\v->font_name_ v) (\a v -> v{font_name_=a})
-
--- | Accessor for field font_size_
-font_size = accessor (\v->font_size_ v) (\a v -> v{font_size_=a})
-
--- | Accessor for field font_slant_
-font_slant = accessor (\v->font_slant_ v) (\a v -> v{font_slant_=a})
-
--- | Accessor for field font_weight_
-font_weight = accessor (\v->font_weight_ v) (\a v -> v{font_weight_=a})
-
--- | Accessor for field font_color_
-font_color = accessor (\v->font_color_ v) (\a v -> v{font_color_=a})
-
 
 type Range = (Double,Double)
 type RectSize = (Double,Double)
@@ -414,3 +386,10 @@ defaultFontStyle = CairoFontStyle {
 }
 
 isValidNumber v = not (isNaN v) && not (isInfinite v)
+
+----------------------------------------------------------------------
+-- Template haskell to derive an instance of Data.Accessor.Accessor for each field
+$( deriveAccessors ''CairoLineStyle )
+$( deriveAccessors ''CairoFontStyle )
+
+

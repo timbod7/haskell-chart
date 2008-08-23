@@ -4,6 +4,8 @@
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
 
+{-# OPTIONS_GHC -XTemplateHaskell #-}
+
 module Graphics.Rendering.Chart.Plot(
     Plot(..),
     ToPlot(..),
@@ -43,7 +45,7 @@ module Graphics.Rendering.Chart.Plot(
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Types
 import Control.Monad
-import Data.Accessor
+import Data.Accessor.Template
 
 -- | Interface to control plotting on a 2D area.
 data Plot x y = Plot {
@@ -59,16 +61,7 @@ data Plot x y = Plot {
     -- | All of the model space coordinates to be plotted. These are
     -- used to autoscale the axes where necessary.
     plot_all_points_ :: [(x,y)]
-};
-
--- | Accessor for field plot_render_
-plot_render = accessor (\v->plot_render_ v) (\a v -> v{plot_render_=a})
-
--- | Accessor for field plot_render_legend_
-plot_render_legend = accessor (\v->plot_render_legend_ v) (\a v -> v{plot_render_legend_=a})
-
--- | Accessor for field plot_all_points_
-plot_all_points = accessor (\v->plot_all_points_ v) (\a v -> v{plot_all_points_=a})
+}
 
 -- | a type class abstracting the conversion of a value to a Plot.
 class ToPlot a where
@@ -82,12 +75,6 @@ data PlotLines x y = PlotLines {
     plot_lines_style_ :: CairoLineStyle,
     plot_lines_values_ :: [[(x,y)]]
 }
-
--- | Accessor for field plot_lines_style_
-plot_lines_style = accessor (\v->plot_lines_style_ v) (\a v -> v{plot_lines_style_=a})
-
--- | Accessor for field plot_lines_values_
-plot_lines_values = accessor (\v->plot_lines_values_ v) (\a v -> v{plot_lines_values_=a})
 
 
 instance ToPlot PlotLines where
@@ -133,11 +120,6 @@ data PlotPoints x y = PlotPoints {
     plot_points_values_ :: [(x,y)]
 }
 
--- | Accessor for field plot_points_style_
-plot_points_style = accessor (\v->plot_points_style_ v) (\a v -> v{plot_points_style_=a})
-
--- | Accessor for field plot_points_values_
-plot_points_values = accessor (\v->plot_points_values_ v) (\a v -> v{plot_points_values_=a})
 
 instance ToPlot PlotPoints where
     toPlot p = Plot {
@@ -174,12 +156,6 @@ data PlotFillBetween x y = PlotFillBetween {
     plot_fillbetween_style_ :: CairoFillStyle,
     plot_fillbetween_values_ :: [ (x, (y,y))]
 }
-
--- | Accessor for field plot_fillbetween_style_
-plot_fillbetween_style = accessor (\v->plot_fillbetween_style_ v) (\a v -> v{plot_fillbetween_style_=a})
-
--- | Accessor for field plot_fillbetween_values_
-plot_fillbetween_values = accessor (\v->plot_fillbetween_values_ v) (\a v -> v{plot_fillbetween_values_=a})
 
 
 instance ToPlot PlotFillBetween where
@@ -249,17 +225,6 @@ data PlotErrBars x y = PlotErrBars {
     plot_errbars_values_ :: [ErrPoint x y]
 }
 
--- | Accessor for field plot_errbars_line_style_
-plot_errbars_line_style = accessor (\v->plot_errbars_line_style_ v) (\a v -> v{plot_errbars_line_style_=a})
-
--- | Accessor for field plot_errbars_tick_length_
-plot_errbars_tick_length = accessor (\v->plot_errbars_tick_length_ v) (\a v -> v{plot_errbars_tick_length_=a})
-
--- | Accessor for field plot_errbars_overhang_
-plot_errbars_overhang = accessor (\v->plot_errbars_overhang_ v) (\a v -> v{plot_errbars_overhang_=a})
-
--- | Accessor for field plot_errbars_values_
-plot_errbars_values = accessor (\v->plot_errbars_values_ v) (\a v -> v{plot_errbars_values_=a})
 
 instance ToPlot PlotErrBars where
     toPlot p = Plot {
@@ -316,3 +281,11 @@ defaultPlotErrBars = PlotErrBars {
     plot_errbars_overhang_ = 0,
     plot_errbars_values_ = []
 }
+
+----------------------------------------------------------------------
+-- Template haskell to derive an instance of Data.Accessor.Accessor for each field
+$( deriveAccessors ''Plot )
+$( deriveAccessors ''PlotLines )
+$( deriveAccessors ''PlotPoints )
+$( deriveAccessors ''PlotFillBetween )
+$( deriveAccessors ''PlotErrBars )
