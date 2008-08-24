@@ -184,15 +184,16 @@ allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
     xvals1 = [ x | (_, Right p) <- plots, (x,_) <- plot_all_points_ p]
     yvals1 = [ y | (_, Right p) <- plots, (_,y) <- plot_all_points_ p]
 
+defaultLayout1 :: (PlotValue x,PlotValue y) => Layout1 x y
 defaultLayout1 = Layout1 {
     layout1_background_ = solidFillStyle white,
 
     layout1_title_ = "",
     layout1_title_style_ = defaultFontStyle{font_size_=15, font_weight_=C.FontWeightBold},
 
-    layout1_horizontal_axis_ = (Axis defaultAxisStyle autoScaledAxis),
+    layout1_horizontal_axis_ = (Axis defaultAxisStyle autoAxis),
     layout1_horizontal_axis_mode_ = AM_Both,
-    layout1_vertical_axes_ = LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledAxis),
+    layout1_vertical_axes_ = LinkedAxes AM_Both (Axis defaultAxisStyle autoAxis),
 
     layout1_left_axis_title_ = (defaultFontStyle{font_size_=10},""),
     layout1_right_axis_title_ = (defaultFontStyle{font_size_=10},""),

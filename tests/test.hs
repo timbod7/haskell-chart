@@ -43,8 +43,6 @@ test1 otype = toRenderable layout
     layout = layout1_title ^= "Amplitude Modulation"
 	   $ layout1_plots ^= [("am",Left (toPlot sinusoid1)),
 			      ("am points", Left (toPlot sinusoid2))]
-           $ layout1_horizontal_axis ^= Axis defaultAxisStyle autoScaledAxis
-           $ layout1_vertical_axes ^= LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledAxis)
            $ defaultLayout1
 
     lineWidth = chooseLineWidth otype
@@ -70,7 +68,7 @@ test1a otype = toRenderable layout
         $ defaultLinearAxis
 
     layout = layout1_title ^= "Amplitude Modulation"
-           $ layout1_horizontal_axis ^= Axis defaultAxisStyle  (autoScaledAxis' lap)
+           $ layout1_horizontal_axis ^: axis_data ^= autoScaledAxis' lap
 	   $ layout1_vertical_axes ^= LinkedAxes AM_Both (Axis defaultAxisStyle (autoScaledAxis' lap))
 	   $ layout1_plots ^= [("am",Left (toPlot sinusoid1)),
 			       ("am points", Left (toPlot sinusoid2))]
@@ -106,21 +104,15 @@ test2 prices otype = toRenderable layout
     fg1 = Color 0.0 0.0 0.15
 
     layout = layout1_title ^="Price History"
-           $ layout1_title_style ^: (font_color ^= fg)
+           $ layout1_title_style ^: font_color ^= fg
            $ layout1_background ^= solidFillStyle bg
-           $ layout1_horizontal_axis ^= Axis axisStyle autoTimeAxis
+           $ layout1_horizontal_axis ^: axis_style ^= axisStyle
 	   $ layout1_vertical_axes ^= IndependentAxes vaxis vaxis
  	   $ layout1_plots ^= [("price 1", Left (toPlot price1)),
                                ("price 2", Right (toPlot price2))]
            $ layout1_legend ^= Just ( legend_label_style ^: (font_color ^= fg) $ defaultLegendStyle )
            $ layout1_grid_last ^= False
-           $ anyLayout1
-
-anyLayout1 = defaultLayout1 {
-    layout1_horizontal_axis_=undefined,
-    layout1_vertical_axes_=undefined,
-    layout1_plots_ = []
-    }
+           $ defaultLayout1
 
 date dd mm yyyy = (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
 
@@ -138,11 +130,9 @@ test3 otype = toRenderable layout
            $ defaultPlotFillBetween
 
     layout = layout1_title ^= "Price History"
-           $ layout1_horizontal_axis ^= Axis defaultAxisStyle autoTimeAxis
-	   $ layout1_vertical_axes ^= LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledAxis)
  	   $ layout1_plots ^= [("price 1", Left (toPlot price1)),
                                ("price 2", Left (toPlot price2))]
-           $ anyLayout1
+           $ defaultLayout1
 
 ----------------------------------------------------------------------        
 test4 :: OutputType -> Renderable ()
@@ -159,26 +149,23 @@ test4 otype = toRenderable layout
     layout = layout1_title ^= "Log/Linear Example"
            $ layout1_left_axis_title ^: second ^= "horizontal"
            $ layout1_bottom_axis_title ^: second ^= "vertical"
-           $ layout1_horizontal_axis ^= Axis defaultAxisStyle autoScaledAxis
-	   $ layout1_vertical_axes ^= LinkedAxes AM_Both' (Axis defaultAxisStyle autoScaledLogAxis)
 	   $ layout1_plots ^= [("values",Left (toPlot points)),
 			       ("values",Left (toPlot lines)) ]
-           $ anyLayout1
+           $ defaultLayout1
 
 ----------------------------------------------------------------------
 -- Example thanks to Russell O'Connor
 
 test5 :: OutputType -> Renderable ()
-test5 otype = toRenderable (layout 1001 (trial bits))
+test5 otype = toRenderable (layout 1001 (trial bits) :: Layout1 Double LogValue)
   where
     bits = randoms $ mkStdGen 0
+
     layout n t = layout1_title ^= "Simulation of betting on a biased coin"
-               $ layout1_horizontal_axis ^= Axis defaultAxisStyle autoScaledAxis
-               $ layout1_vertical_axes ^= LinkedAxes AM_Both (Axis defaultAxisStyle autoScaledLogAxis)
                $ layout1_plots ^= [
                       ("f=0.05", Left (toPlot (plot s1 n 0 (t 0.05)))),
                       ("f=0.1", Left (toPlot (plot s2 n 0 (t 0.1))))]
-               $ anyLayout1
+               $ defaultLayout1
 
     plot s n m t = plot_lines_style ^= s
                  $  plot_lines_values ^=
@@ -217,6 +204,7 @@ test6 otype = toRenderable (plotLayout pp){layout1_title_="Graphics.Rendering.Ch
 test7 :: OutputType -> Renderable ()
 test7 otype = toRenderable layout
   where
+    vals :: [(Double,Double,Double,Double)]
     vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
     bars = plot_errbars_values ^= [symErrPoint x y dx dy | (x,y,dx,dy) <- vals]
          $ defaultPlotErrBars
