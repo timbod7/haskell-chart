@@ -20,10 +20,14 @@ import Control.Monad
 import Control.Monad.Reader (local)
 import Data.Accessor.Template
 
-data AxisPair x = IndependentAxes (Axis x) (Axis x)
-                | LinkedAxes AxisMode (Axis x)
+type MAxisFn t = [t] -> Maybe (AxisData t)
 
-data AxisMode = AM_First | AM_Second | AM_Both | AM_Both'
+data LayoutAxis x = LayoutAxis {
+   laxis_title_style_ :: CairoFontStyle,
+   laxis_title_ :: String,
+   laxis_style_ :: AxisStyle,
+   laxis_data_ :: MAxisFn x
+}
 
 -- | A Layout1 value is a single plot area, with optional: axes on
 -- each of the 4 sides; title at the top; legend at the bottom.
@@ -34,14 +38,11 @@ data Layout1 x y = Layout1 {
     layout1_title_ :: String,
     layout1_title_style_ :: CairoFontStyle,
 
-    layout1_horizontal_axis_ :: Axis x,
-    layout1_horizontal_axis_mode_ :: AxisMode,
-    layout1_vertical_axes_ :: AxisPair y,
-
-    layout1_left_axis_title_ :: (CairoFontStyle,String),
-    layout1_right_axis_title_ :: (CairoFontStyle,String),
-    layout1_bottom_axis_title_ :: (CairoFontStyle,String),
-    layout1_top_axis_title_ :: (CairoFontStyle,String),
+    layout1_bottom_axis_ :: LayoutAxis x,
+    layout1_top_axis_ :: LayoutAxis x,
+    layout1_left_axis_ :: LayoutAxis y,
+    layout1_right_axis_ :: LayoutAxis y,
+    layout1_link_vertical_axes_ :: Bool,
 
     layout1_margin_ :: Double,
     layout1_plots_ :: [(String,Either (Plot x y) (Plot x y))],
@@ -89,16 +90,17 @@ layout1ToRenderable l =
          ]
 
     plotArea = renderGrid (layer2 `overlay` layer1)
-    ttitle = atitle HTA_Centre VTA_Bottom  0 layout1_top_axis_title_
-    btitle = atitle HTA_Centre VTA_Top     0 layout1_bottom_axis_title_
-    ltitle = atitle HTA_Right  VTA_Centre 90 layout1_left_axis_title_
-    rtitle = atitle HTA_Left   VTA_Centre 90 layout1_right_axis_title_
+    ttitle = atitle HTA_Centre VTA_Bottom  0 layout1_top_axis_
+    btitle = atitle HTA_Centre VTA_Top     0 layout1_bottom_axis_
+    ltitle = atitle HTA_Right  VTA_Centre 90 layout1_left_axis_
+    rtitle = atitle HTA_Left   VTA_Centre 90 layout1_right_axis_
 
     er = tval $ emptyRenderable
 
     atitle ha va rot af = if ttext == "" then er else tval $ rlabel tstyle ha va rot ttext
       where
-        (tstyle,ttext) = af l
+        tstyle = laxis_title_style_ (af l)
+        ttext = laxis_title_ (af l)
 
     plots = tval $Renderable {
         minsize=return (0,0),
@@ -155,26 +157,21 @@ getAxes :: Layout1 x y -> (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Ma
 getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where 
     (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots_ l)
-    (bAxis,tAxis) = mkLinked E_Bottom E_Top (layout1_horizontal_axis_mode_ l) (layout1_horizontal_axis_ l) (xvals0++xvals1)
-    (lAxis,rAxis) = case (layout1_vertical_axes_ l) of
-        IndependentAxes a1 a2 -> (mk E_Left (axis_style_ a1) (axis_data_ a1 yvals0),
-                                  mk E_Right (axis_style_ a2) (axis_data_ a2 yvals1))
+    xvals = xvals0 ++ xvals1
+    yvals = yvals0 ++ yvals1
 
-        LinkedAxes am a -> mkLinked E_Left E_Right am a (yvals0++yvals1)
-
-    mkLinked t1 t2 AM_First  a vs = (mk t1 (axis_style_ a) (axis_data_ a vs), Nothing)
-    mkLinked t1 t2 AM_Second a vs = (Nothing, mk t2 (axis_style_ a) (axis_data_ a vs))
-    mkLinked t1 t2 AM_Both a vs = (mk t1 as ad, mk t2 as ad)
+    bAxis = mkAxis E_Bottom (layout1_bottom_axis_ l) xvals
+    tAxis = mkAxis E_Top (layout1_top_axis_ l) xvals
+    lAxis = mkAxis E_Left (layout1_left_axis_ l) ys
       where
-        as = axis_style_ a
-        ad = axis_data_ a vs
-    mkLinked t1 t2 AM_Both' a vs = (mk t1 as ad, mk t2 as ad2)
+        ys = if (layout1_link_vertical_axes_ l) then yvals else yvals0
+    rAxis = mkAxis E_Right (layout1_right_axis_ l) ys
       where
-        as = axis_style_ a
-        ad = axis_data_ a vs
-        ad2 = (axis_data_ a vs){axis_labels_=[],axis_grid_=[]}
+        ys = if (layout1_link_vertical_axes_ l) then yvals else yvals1
 
-    mk t as ad = Just (AxisT t as ad)
+    mkAxis t laxis vals = do
+        adata <- laxis_data_ laxis vals
+        return (AxisT t (laxis_style_ laxis) adata)
 
 allPlottedValues :: [(String,Either (Plot x y) (Plot x' y'))] -> ( [x], [x'], [y], [y'] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
@@ -191,14 +188,11 @@ defaultLayout1 = Layout1 {
     layout1_title_ = "",
     layout1_title_style_ = defaultFontStyle{font_size_=15, font_weight_=C.FontWeightBold},
 
-    layout1_horizontal_axis_ = (Axis defaultAxisStyle autoAxis),
-    layout1_horizontal_axis_mode_ = AM_Both,
-    layout1_vertical_axes_ = LinkedAxes AM_Both (Axis defaultAxisStyle autoAxis),
-
-    layout1_left_axis_title_ = (defaultFontStyle{font_size_=10},""),
-    layout1_right_axis_title_ = (defaultFontStyle{font_size_=10},""),
-    layout1_bottom_axis_title_ = (defaultFontStyle{font_size_=10},""),
-    layout1_top_axis_title_ = (defaultFontStyle{font_size_=10},""),
+    layout1_top_axis_ = noAxis,
+    layout1_bottom_axis_ = defaultLayoutAxis,
+    layout1_left_axis_ = defaultLayoutAxis,
+    layout1_right_axis_ = defaultLayoutAxis,
+    layout1_link_vertical_axes_ = True,
 
     layout1_margin_ = 10,
     layout1_plots_ = [],
@@ -206,7 +200,28 @@ defaultLayout1 = Layout1 {
     layout1_grid_last_ = False
 }
 
+defaultLayoutAxis :: PlotValue t => LayoutAxis t
+defaultLayoutAxis = LayoutAxis {
+   laxis_title_style_ = defaultFontStyle{font_size_=10},
+   laxis_title_ = "",
+   laxis_style_ = defaultAxisStyle,
+   laxis_data_ = mAxis autoAxis
+}
+
+mAxis :: PlotValue t => AxisFn t -> MAxisFn t
+mAxis axisfn [] = Nothing
+mAxis axisfn ps = Just (axisfn ps)
+
+noAxis :: PlotValue t => LayoutAxis t
+noAxis =  LayoutAxis {
+   laxis_title_style_ = defaultFontStyle{font_size_=10},
+   laxis_title_ = "",
+   laxis_style_ = defaultAxisStyle,
+   laxis_data_ = const Nothing
+}
+
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor for each field
 $( deriveAccessors ''Layout1 )
+$( deriveAccessors ''LayoutAxis )
 

@@ -230,7 +230,7 @@ defaultLinearAxis = LinearAxisParams {
     la_labelf_ = showD,
     la_nLabels_ = 5,
     la_nTicks_ = 50,
-    la_gridMode_ = GridAtMajor
+    la_gridMode_ = GridNone
 }
 
 -- | Generate a linear axis automatically.

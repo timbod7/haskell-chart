@@ -48,6 +48,29 @@ test1 otype = toRenderable layout
     lineWidth = chooseLineWidth otype
 
 
+updateAllAxesStyles :: (AxisStyle -> AxisStyle) -> Layout1 x y -> Layout1 x y
+updateAllAxesStyles uf = (layout1_top_axis .> laxis_style ^: uf) .
+                         (layout1_bottom_axis .> laxis_style ^: uf) .
+                         (layout1_left_axis .> laxis_style ^: uf) .
+                         (layout1_right_axis .> laxis_style ^: uf)
+
+updateHAxesData :: (MAxisFn x -> MAxisFn x) -> Layout1 x y -> Layout1 x y
+updateHAxesData uf = (layout1_top_axis .> laxis_data ^: uf) .
+                     (layout1_bottom_axis .> laxis_data ^: uf)
+
+updateVAxesData :: (MAxisFn y -> MAxisFn y) -> Layout1 x y -> Layout1 x y
+updateVAxesData uf = (layout1_left_axis .> laxis_data ^: uf) .
+                     (layout1_right_axis .> laxis_data ^: uf)
+                         
+
+setForeground :: Color -> Layout1 x y -> Layout1 x y
+setForeground fg = updateAllAxesStyles  (
+                       (axis_line_style .> line_color ^= fg).
+                       (axis_label_style .> font_color ^= fg)
+                       )
+                 . (layout1_title_style .> font_color ^= fg)
+                 . (layout1_legend ^: fmap (legend_label_style .> font_color ^= fg))
+
 test1a :: OutputType -> Renderable ()
 test1a otype = toRenderable layout
   where
@@ -62,14 +85,16 @@ test1a otype = toRenderable layout
               $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
               $ defaultPlotPoints
 
-    lap = la_nLabels ^= 2 
+    axis = mAxis $ autoScaledAxis' (
+          la_nLabels ^= 2 
         $ la_nTicks ^= 20
         $ la_gridMode ^= GridAtMinor
         $ defaultLinearAxis
+        )
 
     layout = layout1_title ^= "Amplitude Modulation"
-           $ layout1_horizontal_axis ^: axis_data ^= autoScaledAxis' lap
-	   $ layout1_vertical_axes ^= LinkedAxes AM_Both (Axis defaultAxisStyle (autoScaledAxis' lap))
+           $ updateHAxesData (const axis)
+           $ updateVAxesData (const axis)
 	   $ layout1_plots ^= [("am",Left (toPlot sinusoid1)),
 			       ("am points", Left (toPlot sinusoid2))]
            $ defaultLayout1
@@ -93,25 +118,21 @@ test2 prices otype = toRenderable layout
 	   $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
            $ defaultPlotLines
 
-    axisStyle = axis_line_style ^= solidLine 1 fg
-              $ axis_grid_style ^= solidLine 1 fg1
-              $ axis_label_style ^: (font_color ^= fg)
-              $ defaultAxisStyle
-
-    vaxis = Axis axisStyle (autoScaledAxis' (la_gridMode ^= GridNone $ defaultLinearAxis))
+    vaxis = mAxis (autoScaledAxis' (la_gridMode ^= GridNone $ defaultLinearAxis))
     bg = Color 0 0 0.25
     fg = Color 1 1 1
     fg1 = Color 0.0 0.0 0.15
 
     layout = layout1_title ^="Price History"
-           $ layout1_title_style ^: font_color ^= fg
            $ layout1_background ^= solidFillStyle bg
-           $ layout1_horizontal_axis ^: axis_style ^= axisStyle
-	   $ layout1_vertical_axes ^= IndependentAxes vaxis vaxis
+           $ updateAllAxesStyles (axis_grid_style ^= solidLine 1 fg1)
+           $ layout1_left_axis ^: laxis_data ^= vaxis
+           $ layout1_right_axis ^: laxis_data ^= vaxis
  	   $ layout1_plots ^= [("price 1", Left (toPlot price1)),
                                ("price 2", Right (toPlot price2))]
-           $ layout1_legend ^= Just ( legend_label_style ^: (font_color ^= fg) $ defaultLegendStyle )
+           $ layout1_link_vertical_axes ^= False
            $ layout1_grid_last ^= False
+           $ setForeground fg
            $ defaultLayout1
 
 date dd mm yyyy = (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
@@ -147,8 +168,8 @@ test4 otype = toRenderable layout
           $ defaultPlotLines
 
     layout = layout1_title ^= "Log/Linear Example"
-           $ layout1_left_axis_title ^: second ^= "horizontal"
-           $ layout1_bottom_axis_title ^: second ^= "vertical"
+           $ layout1_bottom_axis ^: laxis_title ^= "horizontal"
+           $ layout1_left_axis ^: laxis_title ^= "vertical"
 	   $ layout1_plots ^= [("values",Left (toPlot points)),
 			       ("values",Left (toPlot lines)) ]
            $ defaultLayout1
