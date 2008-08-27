@@ -35,6 +35,11 @@ module Graphics.Rendering.Chart.Layout(
     mAxis,
     noAxis,
 
+    updateAllAxesStyles,
+    updateXAxesData,
+    updateYAxesData,
+    setForeground,
+
     laxis_title_style,
     laxis_title,
     laxis_style,
@@ -47,7 +52,6 @@ module Graphics.Rendering.Chart.Layout(
     layout1_right_axis,
     layout1_top_axis,
     layout1_bottom_axis,
-    layout1_link_vertical_axes,
     layout1_margin,
     layout1_plots,
     layout1_legend,
@@ -65,6 +69,7 @@ import Graphics.Rendering.Chart.Grid
 import Control.Monad
 import Control.Monad.Reader (local)
 import Data.Accessor.Template
+import Data.Accessor
 
 -- | A @MAxisFn@ is a function that generates an (optional) axis
 -- given the points plotted against that axis.
@@ -92,7 +97,6 @@ data Layout1 x y = Layout1 {
     layout1_top_axis_ :: LayoutAxis x,
     layout1_left_axis_ :: LayoutAxis y,
     layout1_right_axis_ :: LayoutAxis y,
-    layout1_link_vertical_axes_ :: Bool,
 
     layout1_margin_ :: Double,
     layout1_plots_ :: [(String,Either (Plot x y) (Plot x y))],
@@ -210,14 +214,16 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
     xvals = xvals0 ++ xvals1
     yvals = yvals0 ++ yvals1
 
+    linkYAxes = (null yvals0) || (null yvals1)
+
     bAxis = mkAxis E_Bottom (layout1_bottom_axis_ l) xvals
     tAxis = mkAxis E_Top (layout1_top_axis_ l) xvals
     lAxis = mkAxis E_Left (layout1_left_axis_ l) ys
       where
-        ys = if (layout1_link_vertical_axes_ l) then yvals else yvals0
+        ys = if linkYAxes then yvals else yvals0
     rAxis = mkAxis E_Right (layout1_right_axis_ l) ys
       where
-        ys = if (layout1_link_vertical_axes_ l) then yvals else yvals1
+        ys = if linkYAxes then yvals else yvals1
 
     mkAxis t laxis vals = do
         adata <- laxis_data_ laxis vals
@@ -238,11 +244,10 @@ defaultLayout1 = Layout1 {
     layout1_title_ = "",
     layout1_title_style_ = defaultFontStyle{font_size_=15, font_weight_=C.FontWeightBold},
 
-    layout1_top_axis_ = noAxis,
+    layout1_top_axis_ = defaultLayoutAxis,
     layout1_bottom_axis_ = defaultLayoutAxis,
     layout1_left_axis_ = defaultLayoutAxis,
     layout1_right_axis_ = defaultLayoutAxis,
-    layout1_link_vertical_axes_ = True,
 
     layout1_margin_ = 10,
     layout1_plots_ = [],
@@ -274,4 +279,28 @@ noAxis =  LayoutAxis {
 -- Template haskell to derive an instance of Data.Accessor.Accessor for each field
 $( deriveAccessors ''Layout1 )
 $( deriveAccessors ''LayoutAxis )
+
+updateAllAxesStyles :: (AxisStyle -> AxisStyle) -> Layout1 x y -> Layout1 x y
+updateAllAxesStyles uf = (layout1_top_axis .> laxis_style ^: uf) .
+                         (layout1_bottom_axis .> laxis_style ^: uf) .
+                         (layout1_left_axis .> laxis_style ^: uf) .
+                         (layout1_right_axis .> laxis_style ^: uf)
+
+updateXAxesData :: (MAxisFn x -> MAxisFn x) -> Layout1 x y -> Layout1 x y
+updateXAxesData uf = (layout1_top_axis .> laxis_data ^: uf) .
+                     (layout1_bottom_axis .> laxis_data ^: uf)
+
+updateYAxesData :: (MAxisFn y -> MAxisFn y) -> Layout1 x y -> Layout1 x y
+updateYAxesData uf = (layout1_left_axis .> laxis_data ^: uf) .
+                     (layout1_right_axis .> laxis_data ^: uf)
+                         
+
+setForeground :: Color -> Layout1 x y -> Layout1 x y
+setForeground fg = updateAllAxesStyles  (
+                       (axis_line_style .> line_color ^= fg).
+                       (axis_label_style .> font_color ^= fg)
+                       )
+                 . (layout1_title_style .> font_color ^= fg)
+                 . (layout1_legend ^: fmap (legend_label_style .> font_color ^= fg))
+
 

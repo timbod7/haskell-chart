@@ -46,30 +46,6 @@ test1 otype = toRenderable layout
 
     lineWidth = chooseLineWidth otype
 
-
-updateAllAxesStyles :: (AxisStyle -> AxisStyle) -> Layout1 x y -> Layout1 x y
-updateAllAxesStyles uf = (layout1_top_axis .> laxis_style ^: uf) .
-                         (layout1_bottom_axis .> laxis_style ^: uf) .
-                         (layout1_left_axis .> laxis_style ^: uf) .
-                         (layout1_right_axis .> laxis_style ^: uf)
-
-updateHAxesData :: (MAxisFn x -> MAxisFn x) -> Layout1 x y -> Layout1 x y
-updateHAxesData uf = (layout1_top_axis .> laxis_data ^: uf) .
-                     (layout1_bottom_axis .> laxis_data ^: uf)
-
-updateVAxesData :: (MAxisFn y -> MAxisFn y) -> Layout1 x y -> Layout1 x y
-updateVAxesData uf = (layout1_left_axis .> laxis_data ^: uf) .
-                     (layout1_right_axis .> laxis_data ^: uf)
-                         
-
-setForeground :: Color -> Layout1 x y -> Layout1 x y
-setForeground fg = updateAllAxesStyles  (
-                       (axis_line_style .> line_color ^= fg).
-                       (axis_label_style .> font_color ^= fg)
-                       )
-                 . (layout1_title_style .> font_color ^= fg)
-                 . (layout1_legend ^: fmap (legend_label_style .> font_color ^= fg))
-
 test1a :: OutputType -> Renderable ()
 test1a otype = toRenderable layout
   where
@@ -91,8 +67,8 @@ test1a otype = toRenderable layout
         )
 
     layout = layout1_title ^= "Amplitude Modulation"
-           $ updateHAxesData (const axis)
-           $ updateVAxesData (const axis)
+           $ updateXAxesData (const axis)
+           $ updateYAxesData (const axis)
 	   $ layout1_plots ^= [("am",Left (toPlot sinusoid1)),
 			       ("am points", Left (toPlot sinusoid2))]
            $ defaultLayout1
@@ -128,7 +104,6 @@ test2 prices otype = toRenderable layout
            $ layout1_right_axis ^: laxis_data ^= vaxis
  	   $ layout1_plots ^= [("price 1", Left (toPlot price1)),
                                ("price 2", Right (toPlot price2))]
-           $ layout1_link_vertical_axes ^= False
            $ layout1_grid_last ^= False
            $ setForeground fg
            $ defaultLayout1
