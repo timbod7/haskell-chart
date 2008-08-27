@@ -7,7 +7,76 @@
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
 
-module Graphics.Rendering.Chart.Types where
+module Graphics.Rendering.Chart.Types(
+    CRender(..),
+                                      
+    Rect(..),
+    Point(..),
+    Vector(..),
+    Color(..),
+    HTextAnchor(..),
+    VTextAnchor(..),
+    RectEdge(..),
+    RectSize,
+    Range,
+    PointMapFn,
+
+    CEnv(..),
+    c,
+    preserveCState,
+    runCRender,
+    setClipRegion,
+    within,
+    mkrect,
+    textSize,
+    filledPolygon,
+    hollowPolygon,
+    solidLine,
+    dashedLine,
+    solidFillStyle,
+    strokeLines,
+    isValidNumber,
+    pvadd,
+    vscale,
+    drawText,
+    moveTo,
+    lineTo,
+    rectPath,
+    maybeM,
+    filledCircles,
+    hollowCircles,
+    plusses,
+    exes,
+    stars,
+
+    black, grey8, white, red, green, blue,
+    defaultColorSeq,
+           
+    CairoLineStyle(..),
+    CairoFillStyle(..),
+    CairoFontStyle(..),
+    CairoPointStyle(..),
+
+    setLineStyle,
+    setFontStyle,
+    setFillStyle,
+    setSourceColor,
+    defaultFontStyle,
+    defaultPointStyle,
+
+    line_width,
+    line_color,
+    line_dashes,
+    line_cap,
+    line_join,
+
+    font_name,
+    font_size,
+    font_slant,
+    font_weight,
+    font_color,
+
+) where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad.Reader
@@ -387,9 +456,10 @@ defaultFontStyle = CairoFontStyle {
 
 isValidNumber v = not (isNaN v) && not (isInfinite v)
 
+maybeM v = maybe (return v)
+
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor for each field
 $( deriveAccessors ''CairoLineStyle )
 $( deriveAccessors ''CairoFontStyle )
-
 

@@ -4,7 +4,32 @@
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
 
-module Graphics.Rendering.Chart.Renderable where
+module Graphics.Rendering.Chart.Renderable(
+    Renderable(..),
+    ToRenderable(..),
+    PickFn,
+
+    renderableToPNGFile,
+    renderableToPDFFile,
+    renderableToPSFile,
+    renderableToSVGFile,
+
+    vectorEnv,
+    bitmapEnv,
+
+    fillBackground,
+    addMargins,
+    emptyRenderable,
+    embedRenderable,
+    label,
+    rlabel,
+    spacer,
+
+    rect_minsize,
+    rect_fillStyle,
+    rect_lineStyle,
+    rect_cornerStyle,
+) where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
@@ -251,4 +276,3 @@ instance ToRenderable Rectangle where
 
       pi2 = pi / 2
 
-maybeM v = maybe (return v)

@@ -6,7 +6,52 @@
 
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
-module Graphics.Rendering.Chart.Axis where
+module Graphics.Rendering.Chart.Axis(
+    Axis(..),
+    AxisData(..),
+    AxisT(..),
+    LinearAxisParams(..),
+    AxisStyle(..),
+    PlotValue(..),
+    LogValue(..),
+    AxisFn,
+
+    defaultAxisLineStyle, 
+    defaultLinearAxis,
+    defaultAxisStyle,
+    autoScaledAxis,
+    autoScaledAxis',
+    autoScaledLogAxis,
+    autoScaledLogAxis',
+    timeAxis,
+    autoTimeAxis,
+    days, months, years,
+
+    renderAxisGrid,
+    axisOverhang,
+
+    axisGridNone,
+    axisGridAtTicks,
+    axisGridAtLabels,
+
+    axis_viewport,
+    axis_ticks,
+    axis_labels,
+    axis_grid,
+
+    axis_line_style,
+    axis_label_style,
+    axis_grid_style,
+    axis_label_gap,
+
+    axis_style,
+    axis_data,
+
+    la_labelf,
+    la_nLabels,
+    la_nTicks,
+
+) where
 
 import qualified Graphics.Rendering.Cairo as C
 import Data.Time
@@ -63,6 +108,7 @@ data Axis x = Axis {
    axis_data_  :: AxisFn x
    }
 
+-- | Colletively the information we need to render an axis
 data AxisT x = AxisT RectEdge AxisStyle (AxisData x)
 
 instance ToRenderable (AxisT x) where

@@ -6,7 +6,14 @@
 
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
-module Graphics.Rendering.Chart.Legend where
+module Graphics.Rendering.Chart.Legend(
+    Legend(..),
+    LegendStyle(..),
+    defaultLegendStyle,
+    legend_label_style,
+    legend_margin,
+    legend_plot_size,
+) where
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad

@@ -38,7 +38,6 @@ module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
 import Data.Maybe ( catMaybes )
 
 import Graphics.Rendering.Chart
-import Graphics.Rendering.Chart.Types (isValidNumber)
 import Graphics.Rendering.Chart.Gtk
 
 styleColor :: Int -> Color

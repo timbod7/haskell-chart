@@ -1,6 +1,28 @@
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
-module Graphics.Rendering.Chart.Pie where
+module Graphics.Rendering.Chart.Pie(
+    PieChart(..),
+    PieLayout(..),
+    PieItem(..),
+    defaultPieLayout,
+    defaultPieChart,
+    defaultPieItem,
+
+    pie_title,
+    pie_title_style,
+    pie_plot,
+    pie_background,
+    pie_margin,
+    pie_data,
+    pie_colors,
+    pie_label_style,
+    pie_label_line_style,
+    pie_start_angle,
+    pitem_label,
+    pitem_offset,
+    pitem_value,
+
+) where
 -- original code thanks to Neal Alexander
 
 import qualified Graphics.Rendering.Cairo as C

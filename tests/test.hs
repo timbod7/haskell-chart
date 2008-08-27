@@ -1,10 +1,9 @@
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Simple
-import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Gtk
 import Graphics.Rendering.Chart.Grid
+
 import System.Environment(getArgs)
 import System.Time
 import System.Random

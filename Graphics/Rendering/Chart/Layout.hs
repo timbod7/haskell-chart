@@ -6,7 +6,33 @@
 
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
-module Graphics.Rendering.Chart.Layout where
+module Graphics.Rendering.Chart.Layout(
+    Layout1(..),
+    MAxisFn,
+
+    defaultLayout1,
+
+    mAxis,
+    noAxis,
+
+    laxis_title_style,
+    laxis_title,
+    laxis_style,
+    laxis_data,
+
+    layout1_background,
+    layout1_title,
+    layout1_title_style,
+    layout1_left_axis,
+    layout1_right_axis,
+    layout1_top_axis,
+    layout1_bottom_axis,
+    layout1_link_vertical_axes,
+    layout1_margin,
+    layout1_plots,
+    layout1_legend,
+    layout1_grid_last,
+  ) where
 
 import qualified Graphics.Rendering.Cairo as C
 
