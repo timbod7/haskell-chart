@@ -85,10 +85,9 @@ test1a otype = toRenderable layout
               $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
               $ defaultPlotPoints
 
-    axis = mAxis $ autoScaledAxis' (
+    axis = mAxis $ axisGridAtTicks.autoScaledAxis' (
           la_nLabels ^= 2 
         $ la_nTicks ^= 20
-        $ la_gridMode ^= GridAtMinor
         $ defaultLinearAxis
         )
 
@@ -118,7 +117,7 @@ test2 prices otype = toRenderable layout
 	   $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
            $ defaultPlotLines
 
-    vaxis = mAxis (autoScaledAxis' (la_gridMode ^= GridNone $ defaultLinearAxis))
+    vaxis = mAxis $ axisGridNone.autoAxis
     bg = Color 0 0 0.25
     fg = Color 1 1 1
     fg1 = Color 0.0 0.0 0.15

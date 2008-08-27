@@ -71,6 +71,15 @@ instance ToRenderable (AxisT x) where
      render=renderAxis at
   }
 
+axisGridNone :: AxisData x -> AxisData x
+axisGridNone ad = ad{axis_grid_=[]}
+
+axisGridAtTicks :: AxisData x -> AxisData x
+axisGridAtTicks ad = ad{axis_grid_=map fst (axis_ticks_ ad)}
+
+axisGridAtLabels :: AxisData x -> AxisData x
+axisGridAtLabels ad = ad{axis_grid_=map fst (axis_labels_ ad)}
+
 minsizeAxis :: AxisT x -> CRender RectSize
 minsizeAxis (AxisT at as ad) = do
     let labels = map snd (axis_labels_ ad)
@@ -219,18 +228,14 @@ data LinearAxisParams = LinearAxisParams {
     la_nLabels_ :: Int,
 
     -- | The target number of ticks to be shown
-    la_nTicks_ :: Int,
-
-    -- | If/Where grid lines should be shown
-    la_gridMode_ :: GridMode
+    la_nTicks_ :: Int
 }
 
 
 defaultLinearAxis = LinearAxisParams {
     la_labelf_ = showD,
     la_nLabels_ = 5,
-    la_nTicks_ = 50,
-    la_gridMode_ = GridNone
+    la_nTicks_ = 50
 }
 
 -- | Generate a linear axis automatically.
@@ -248,10 +253,7 @@ autoScaledAxis' lap ps0 = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
 	     | otherwise = (min,max)
     labelvs = map fromRational $ steps (fromIntegral (la_nLabels_ lap)) r
     tickvs = map fromRational $ steps (fromIntegral (la_nTicks_ lap)) (minimum labelvs,maximum labelvs)
-    gridvs = case la_gridMode_ lap of
-        GridNone -> []
-        GridAtMajor -> labelvs
-        GridAtMinor -> tickvs
+    gridvs = labelvs
     r = range ps
 
 -- | Generate a linear axis automatically.

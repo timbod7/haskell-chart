@@ -62,7 +62,6 @@ module Graphics.Rendering.Chart(
     solidLine,
     dashedLine,
     solidFillStyle,
-    GridMode(..),
     AxisStyle(..),
     defaultAxisStyle,
     autoScaledAxis,
@@ -79,6 +78,7 @@ module Graphics.Rendering.Chart(
     CairoLineStyle(..),
     CairoFillStyle(..),
     CairoFontStyle(..),
+    PlotValue(..),
     mAxis,
     noAxis,
 
@@ -117,6 +117,10 @@ module Graphics.Rendering.Chart(
     rect_lineStyle,
     rect_cornerStyle,
 
+    axisGridNone,
+    axisGridAtTicks,
+    axisGridAtLabels,
+
     axis_viewport,
     axis_ticks,
     axis_labels,
@@ -133,7 +137,6 @@ module Graphics.Rendering.Chart(
     la_labelf,
     la_nLabels,
     la_nTicks,
-    la_gridMode,
 
     plot_render,
     plot_render_legend,
