@@ -6,64 +6,92 @@
 -- Module      :  Graphics.Rendering.Chart.Types
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
+--
+-- This module contains basic types and functions used for drawing.
+--
+-- Note that template haskell is used to derive accessor functions
+-- (see 'Data.Accessor') for each field of the following data types:
+--
+--    * 'CairoLineStyle'
+--
+--    * 'CairoFontStyle'
+--
+-- These accessors are not shown in this API documentation.  They have
+-- the same name as the field, but with the trailing underscore
+-- dropped. Hence for data field f_::F in type D, they have type
+--
+-- @
+--   f :: Data.Accessor.Accessor D F
+-- @
+--
 
 module Graphics.Rendering.Chart.Types(
-    CRender(..),
-                                      
     Rect(..),
     Point(..),
     Vector(..),
-    Color(..),
-    HTextAnchor(..),
-    VTextAnchor(..),
-    RectEdge(..),
+
     RectSize,
     Range,
+
+    mkrect,
+    pvadd,
+    pvsub,
+    psub,
+    vscale,
+    within,
+
+    RectEdge(..),
     PointMapFn,
 
-    CEnv(..),
-    c,
     preserveCState,
-    runCRender,
     setClipRegion,
-    within,
-    mkrect,
-    textSize,
-    filledPolygon,
-    hollowPolygon,
-    solidLine,
-    dashedLine,
-    solidFillStyle,
     strokeLines,
-    isValidNumber,
-    pvadd,
-    vscale,
-    drawText,
     moveTo,
     lineTo,
     rectPath,
+
+    isValidNumber,
     maybeM,
+
+    black, grey8, white, red, green, blue,
+    defaultColorSeq,
+           
+    Color(..),
+    setSourceColor,
+
+    CairoLineStyle(..),
+    solidLine,
+    dashedLine,
+    setLineStyle,
+
+    CairoFillStyle(..),
+    defaultPointStyle,
+    solidFillStyle,
+    setFillStyle,
+
+    CairoFontStyle(..),
+    defaultFontStyle,
+    setFontStyle,
+
+    CairoPointStyle(..),
+    filledPolygon,
+    hollowPolygon,
     filledCircles,
     hollowCircles,
     plusses,
     exes,
     stars,
 
-    black, grey8, white, red, green, blue,
-    defaultColorSeq,
-           
-    CairoLineStyle(..),
-    CairoFillStyle(..),
-    CairoFontStyle(..),
-    CairoPointStyle(..),
+    HTextAnchor(..),
+    VTextAnchor(..),
+    drawText,
+    textSize,
 
-    setLineStyle,
-    setFontStyle,
-    setFillStyle,
-    setSourceColor,
-    defaultFontStyle,
-    defaultPointStyle,
-
+    CRender(..),
+    CEnv(..),
+    runCRender,
+    c,
+    
     line_width,
     line_color,
     line_dashes,
@@ -126,9 +154,11 @@ data Rect = Rect Point Point
 data RectEdge = E_Top | E_Bottom | E_Left | E_Right
 
 -- | Create a rectangle based upon the coordinates of 4 points
+mkrect :: Point -> Point -> Point -> Point -> Rect
 mkrect (Point x1 _) (Point _ y2) (Point x3 _) (Point _ y4) =
     Rect (Point x1 y2) (Point x3 y4)
 
+-- | Test if a point is within a rectangle
 within :: Point -> Rect -> Bool
 within (Point x y) (Rect (Point x1 y1) (Point x2 y2)) =
     x >= x1 && x <= x2 && y >= y1 && y <= y2
@@ -148,6 +178,8 @@ data CEnv = CEnv {
     cenv_point_alignfn :: Point -> Point
 }
 
+-- | The reader monad containing context information to control
+-- the rendering process.
 newtype CRender a = DR (ReaderT CEnv C.Render a)
   deriving (Functor, Monad, MonadReader CEnv)
 
@@ -262,6 +294,8 @@ setFillStyle (CairoFillStyle s) = s
 
 setSourceColor (Color r g b) = C.setSourceRGB r g b
 
+-- | Return the bounding rectancgle for a text string rendered
+-- in the current context.
 textSize :: String -> CRender RectSize
 textSize s = c $ do
     te <- C.textExtents s

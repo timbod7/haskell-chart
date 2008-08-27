@@ -1,8 +1,34 @@
 {-# OPTIONS_GHC -XTemplateHaskell #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.Chart.Layout
+-- Copyright   :  (c) Tim Docker 2008
+-- License     :  BSD-style (see chart/COPYRIGHT)
+--
+-- A  basic pie chart.
+--
+-- Note that template haskell is used to derive accessor functions
+-- (see 'Data.Accessor') for each field of the following data types:
+--
+--     * 'PieLayout'
+--
+--     * 'PieChart'
+--
+--     * 'PieItem'
+--
+-- These accessors are not shown in this API documentation.  They have
+-- the same name as the field, but with the trailing underscore
+-- dropped. Hence for data field f_::F in type D, they have type
+--
+-- @
+--   f :: Data.Accessor.Accessor D F
+-- @
+--
+
 
 module Graphics.Rendering.Chart.Pie(
-    PieChart(..),
     PieLayout(..),
+    PieChart(..),
     PieItem(..),
     defaultPieLayout,
     defaultPieChart,

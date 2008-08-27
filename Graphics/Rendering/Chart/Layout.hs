@@ -3,11 +3,31 @@
 -- Module      :  Graphics.Rendering.Chart.Layout
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
+--
+-- This module glues together axes and plots to actually create a renderable
+-- for a chart.
+--
+-- Note that template haskell is used to derive accessor functions
+-- (see 'Data.Accessor') for each field of the following data types:
+--
+--     * 'Layout1'
+--
+--     * 'LayoutAxis'
+--
+-- These accessors are not shown in this API documentation.  They have
+-- the same name as the field, but with the trailing underscore
+-- dropped. Hence for data field f_::F in type D, they have type
+--
+-- @
+--   f :: Data.Accessor.Accessor D F
+-- @
+--
 
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Layout(
     Layout1(..),
+    LayoutAxis(..),
     MAxisFn,
 
     defaultLayout1,
@@ -46,6 +66,8 @@ import Control.Monad
 import Control.Monad.Reader (local)
 import Data.Accessor.Template
 
+-- | A @MAxisFn@ is a function that generates an (optional) axis
+-- given the points plotted against that axis.
 type MAxisFn t = [t] -> Maybe (AxisData t)
 
 data LayoutAxis x = LayoutAxis {
@@ -56,7 +78,9 @@ data LayoutAxis x = LayoutAxis {
 }
 
 -- | A Layout1 value is a single plot area, with optional: axes on
--- each of the 4 sides; title at the top; legend at the bottom.
+-- each of the 4 sides; title at the top; legend at the bottom. It's
+-- parameterised by the types of values to be plotted the horizonal
+-- and vertical axes.
 data Layout1 x y = Layout1 {
 
     layout1_background_ :: CairoFillStyle,

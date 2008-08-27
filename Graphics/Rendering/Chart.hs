@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart
 -- Copyright   :  (c) Tim Docker 2006
@@ -11,9 +11,15 @@
 -- 'Renderable' is then actually displayed or output by calling either
 -- 'renderableToPNGFile', or 'Graphics.Rendering.Chart.Gtk.renderableToWindow'.
 --
--- Currently, the only useful 'Renderable' for displaying charts
--- is created by applying 'toRenderable' to a value of type
--- 'Graphics.Rendering.Chart.Layout.Layout1'
+-- Currently, there are two kinds of 'Renderable' for displaying charts:
+--
+--     * a standard two axes chart can be is created by applying
+--      'toRenderable' to a value of type 'Graphics.Rendering.Chart.Layout.Layout1'
+--
+--     *  a pie chart can be is created by applying
+--      'toRenderable' to a value of type 'Graphics.Rendering.Chart.Pie.PieLayout'
+--
+-- Multiple Renderables can be composed using the "Graphics.Rendering.Chart.Grid" module.
 --
 -- For a simpler though less flexible API, see "Graphics.Rendering.Chart.Simple".
 --

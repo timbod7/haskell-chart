@@ -3,6 +3,11 @@
 -- Module      :  Graphics.Rendering.Chart.Renderable
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
+--
+-- This module contains the definition of the 'Renderable' type, which
+-- is a composable drawing element, along with assorted functions to
+-- them.
+--
 
 module Graphics.Rendering.Chart.Renderable(
     Renderable(..),
@@ -75,7 +80,11 @@ setPickFn pickfn r = Renderable {
     render = \sz -> do { render r sz; return pickfn; }
     }
 
-addMargins :: (Double,Double,Double,Double) -> a -> Renderable a -> Renderable a
+-- | Add some spacing at the edges of a renderable.
+addMargins :: (Double,Double,Double,Double) -- ^ The spacing to be added
+           -> a                             -- ^ The picked value for the spacing
+           -> Renderable a                  -- ^ The source renderable
+           -> Renderable a
 addMargins (t,b,l,r) a rd = Renderable { minsize = mf, render = rf }
   where
     mf = do
@@ -98,6 +107,7 @@ addMargins (t,b,l,r) a rd = Renderable { minsize = mf, render = rf }
 transform :: C.Matrix -> Point -> Point
 transform = undefined
 
+-- | Overlay a renderable over a solid background fill.
 fillBackground :: CairoFillStyle -> Renderable a -> Renderable a
 fillBackground fs r = Renderable { minsize = minsize r, render = rf }
   where
@@ -150,6 +160,8 @@ bitmapEnv = CEnv adjfn
 
 vectorEnv = CEnv id
 
+-- | Helper function for using a renderable, when we generate it
+-- in the CRender monad.
 embedRenderable :: CRender (Renderable a) -> Renderable a
 embedRenderable ca = Renderable {
    minsize = do { a <- ca; minsize a },
@@ -160,9 +172,12 @@ embedRenderable ca = Renderable {
 ----------------------------------------------------------------------
 -- Labels
 
+-- | Construct a renderable from a text string, aligned with the axes
 label :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> String -> Renderable ()
 label fs hta vta = rlabel fs hta vta 0
 
+-- | Construct a renderable from a text string, rotated wrt to axes. The angle
+-- of rotation is in degrees.
 rlabel :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> Double -> String -> Renderable ()
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
