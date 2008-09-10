@@ -107,12 +107,14 @@ data Layout1 x y = Layout1 {
 instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
     toRenderable = layout1ToRenderable
 
+
+layout1ToRenderable :: (Ord x, Ord y) => Layout1 x y -> Renderable a
 layout1ToRenderable l =
    fillBackground (layout1_background_ l) (
        renderGrid $ aboveN [
-          tval $ addMargins (lm/2,0,0,0) () title,
-          weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) () plotArea,
-          tval $ renderGrid $ besideN [ tval $ mkLegend lefts, tval $ emptyRenderable, tval $ mkLegend rights ]
+          tval $ addMargins (lm/2,0,0,0) title,
+          weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) plotArea,
+          tval $ renderGrid (besideN [ tval $ mkLegend lefts, tval $ emptyRenderable, tval $ mkLegend rights ])
        ] )
   where
     lefts xs = [x | Left x <- xs]
@@ -127,7 +129,7 @@ layout1ToRenderable l =
         Nothing -> emptyRenderable
         (Just ls) -> case [(s,p) | (s,p) <- side (map distrib (layout1_plots_ l)), not (null s)] of
  	    [] -> emptyRenderable
-	    ps -> addMargins (0,lm,lm,0) () (toRenderable (Legend True ls ps))
+	    ps -> addMargins (0,lm,lm,0) (toRenderable (Legend True ls ps))
 
     layer1 = aboveN [
          besideN [er,        er,    er   ],
@@ -181,7 +183,7 @@ renderPlots l sz@(w,h) = preserveCState $ do
     local (const vectorEnv) $ do
       mapM_ rPlot (layout1_plots_ l)
     when (layout1_grid_last_ l) renderGrids
-    return (const ())
+    return (const Nothing)
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l

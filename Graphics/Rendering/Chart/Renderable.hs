@@ -29,6 +29,7 @@ module Graphics.Rendering.Chart.Renderable(
     label,
     rlabel,
     spacer,
+    setPickFn,
 
     rect_minsize,
     rect_fillStyle,
@@ -43,7 +44,13 @@ import Data.List ( nub, transpose, sort )
 
 import Graphics.Rendering.Chart.Types
 
-type PickFn a = Point -> a
+-- | A function that maps a point in device coordinates
+-- to some value.
+--
+-- Perhaps it might be generalised from Maybe a to
+-- (MonadPlus m ) => m a in the future.
+type PickFn a = Point -> (Maybe a)
+
 
 -- | A Renderable is a record of functions required to layout a
 -- graphic element.
@@ -64,13 +71,13 @@ data Renderable a = Renderable {
 -- Renderable.
 
 class ToRenderable a where
-   toRenderable :: a -> Renderable ()
+   toRenderable :: a -> Renderable b
 
 emptyRenderable = spacer (0,0)
 
 spacer sz = Renderable {
    minsize = return sz,
-   render  = \_ -> return (const ())
+   render  = \_ -> return (const Nothing)
 }
 
 -- | Replace the pick function of a renderable with another
@@ -82,10 +89,9 @@ setPickFn pickfn r = Renderable {
 
 -- | Add some spacing at the edges of a renderable.
 addMargins :: (Double,Double,Double,Double) -- ^ The spacing to be added
-           -> a                             -- ^ The picked value for the spacing
            -> Renderable a                  -- ^ The source renderable
            -> Renderable a
-addMargins (t,b,l,r) a rd = Renderable { minsize = mf, render = rf }
+addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
   where
     mf = do
         (w,h) <- minsize rd
@@ -99,7 +105,7 @@ addMargins (t,b,l,r) a rd = Renderable { minsize = mf, render = rf }
             return (mkpickf pickf (w,h) mtx)
 
     mkpickf pickf (w,h) mtx pt | within pt' rect = pickf pt'
-                               | otherwise = a
+                               | otherwise = Nothing
       where
         pt' = transform mtx pt
         rect = (Rect (Point 0 0) (Point w h))
@@ -173,12 +179,12 @@ embedRenderable ca = Renderable {
 -- Labels
 
 -- | Construct a renderable from a text string, aligned with the axes
-label :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> String -> Renderable ()
+label :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> String -> Renderable a
 label fs hta vta = rlabel fs hta vta 0
 
 -- | Construct a renderable from a text string, rotated wrt to axes. The angle
 -- of rotation is in degrees.
-rlabel :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> Double -> String -> Renderable ()
+rlabel :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> Double -> String -> Renderable a
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
     mf = preserveCState $ do
@@ -194,7 +200,7 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
        c $ C.rotate rot'
        c $ C.moveTo (-w/2) (h/2)
        c $ C.showText s
-       return (const ())
+       return (const Nothing)
     xadj (w,h) HTA_Left x1 x2 =  x1 +(w*acr+h*asr)/2
     xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
     xadj (w,h) HTA_Right x1 x2 =  x2 -(w*acr+h*asr)/2
@@ -247,7 +253,7 @@ instance ToRenderable Rectangle where
       rf sz = preserveCState $ do
         maybeM () (fill sz) (rect_fillStyle_ rectangle)
         maybeM () (stroke sz) (rect_lineStyle_ rectangle)
-        return (const ())
+        return (const Nothing)
 
       fill sz fs = do
           setFillStyle fs

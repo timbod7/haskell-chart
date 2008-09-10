@@ -230,7 +230,7 @@ test8 otype = toRenderable layout
 misc1 rot otype = fillBackground fwhite $ (renderGrid t)
   where
     t = weights (1,1) $ aboveN [ besideN [tval (lb h v) | h <- hs] | v <- vs ]
-    lb h v = addMargins (20,20,20,20) () $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s
+    lb h v = addMargins (20,20,20,20) $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s
     s = "Labelling"
     hs = [HTA_Left, HTA_Centre, HTA_Right]
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]

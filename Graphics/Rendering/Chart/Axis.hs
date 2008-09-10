@@ -191,7 +191,7 @@ axisOverhang (AxisT at as ad) = do
 		       E_Left -> ohangv
 		       E_Right -> ohangh
 
-renderAxis :: AxisT x -> RectSize -> CRender (PickFn ())
+renderAxis :: AxisT x -> RectSize -> CRender (PickFn a)
 renderAxis at@(AxisT et as ad) sz = do
    let ls = axis_line_style_ as
    preserveCState $ do
@@ -203,7 +203,7 @@ renderAxis at@(AxisT et as ad) sz = do
    preserveCState $ do
        setFontStyle (axis_label_style_ as)
        mapM_ drawLabel (axis_labels_ ad)
-   return (const ())
+   return (const Nothing)
  where
    (sx,sy,ex,ey,tp,axisPoint) = axisMapping at sz
 

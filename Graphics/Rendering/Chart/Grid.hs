@@ -159,7 +159,7 @@ foldT f iv ft = foldr f' iv (assocs ft)
 ----------------------------------------------------------------------
 type DArray = Array Int Double
 
-renderGrid :: Grid (Renderable a) -> Renderable ()
+renderGrid :: Grid (Renderable a) -> Renderable a
 renderGrid t = Renderable minsizef renderf
   where
     getSizes :: CRender (DArray, DArray, DArray, DArray)
@@ -192,21 +192,30 @@ renderGrid t = Renderable minsizef renderf
         rf1 csizes (0,0) t
 
     rf1 csizes loc@(i,j) t = case t of
-        Null -> return (const ())
-        Empty -> return (const ())
+        Null -> return (const Nothing)
+        Empty -> return (const Nothing)
         (Value (r,span,_)) -> do
             let (Rect (Point x0 y0) (Point x1 y1)) = mkRect csizes loc span
             preserveCState $ do
                 c $ C.translate x0 y0
                 render r (x1-x0,y1-y0)
-            return (const ())
-        (Above t1 t2 _) -> rf2 t1 (0,height t1) t2
-        (Beside t1 t2 _) -> rf2 t1 (width t1,0) t2
-        (Overlay t1 t2 _) ->  rf2 t2 (0,0) t1
-      where
-         rf2 t1 (cs,rs) t2 = do
-             rf1 csizes (i,j) t1
-             rf1 csizes (i+cs,j+rs) t2
+        (Above t1 t2 _) -> do
+             pf1 <- rf1 csizes (i,j) t1
+             pf2 <- rf1 csizes (i,j+height t1) t2
+             let pf p@(Point x y) = if y < (snd csizes ! (j + height t1)) then pf1 p
+                                                                          else pf2 p
+             return pf
+        (Beside t1 t2 _) -> do
+             pf1 <- rf1 csizes (i,j) t1
+             pf2 <- rf1 csizes (i+width t1,j) t2
+             let pf p@(Point x y) = if x < (fst csizes ! (i + width t1)) then pf1 p
+                                                                         else pf2 p
+             return pf
+        (Overlay t1 t2 _) ->  do
+             pf1 <- rf1 csizes (i,j) t1
+             pf2 <- rf1 csizes (i,j) t2
+             let pf p = pf1 p `mplus` pf2 p
+             return pf
 
     mkRect :: (DArray, DArray) -> (Int,Int) -> (Int,Int) -> Rect
     mkRect (cwidths,cheights) (x,y) (w,h) = Rect (Point x1 y1) (Point x2 y2)

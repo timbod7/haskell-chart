@@ -107,8 +107,8 @@ defaultPieLayout = PieLayout {
 instance ToRenderable PieLayout where
     toRenderable p = fillBackground (pie_background_ p) (
        renderGrid $ aboveN [
-       tval $ addMargins (lm/2,0,0,0) () title,
-       weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) () (toRenderable $ pie_plot_ p)
+       tval $ addMargins (lm/2,0,0,0) title,
+       weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) (toRenderable $ pie_plot_ p)
        ] )
       where
         title = label (pie_title_style_ p) HTA_Centre VTA_Top (pie_title_ p)
@@ -139,7 +139,7 @@ renderPie p (w,h) = do
     let radius = (min (w - 2*extraw) (h - 2*extrah)) / 2
 
     foldM_ (paint center radius) (pie_start_angle_ p) (zip (pie_colors_ p) content)
-    return (const ())
+    return (const Nothing)
  
     where
         p1 = Point 0 0 
