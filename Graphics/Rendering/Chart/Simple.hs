@@ -22,13 +22,13 @@
 --
 -- Examples:
 --
--- @renderableToWindow (toRenderable $ plotLayout $ plot [0,0.1..10] sin "sin(x)") 640 480@
+-- @renderableToWindow (toRenderable $ plot [0,0.1..10] sin "sin(x)") 640 480@
 --
--- @plotWindow [0,1,3,4,8]] [12,15,1,5,8] "o" "points"@
+-- > plotWindow [0,1,3,4,8] [12,15,1,5,8] "o" "points"
 --
--- @plotPDF "foo.pdf" [0,0.1..10] sin "- " cos ". " cos "o"@
+-- > plotPDF "foo.pdf" [0,0.1..10] sin "- " cos ". " cos "o"
 --
--- @plotPS "foo.ps" [0,0.1..10] (sin.exp) "- " (sin.exp) "o-"@
+-- > plotPS "foo.ps" [0,0.1..10] (sin . exp) "- " (sin . exp) "o-"
 -----------------------------------------------------------------------------
 module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                         plotWindow, plotPDF, plotPS,
