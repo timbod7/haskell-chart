@@ -212,8 +212,8 @@ renderGrid t = Renderable minsizef renderf
                                                                          else pf2 p
              return pf
         (Overlay t1 t2 _) ->  do
-             pf1 <- rf1 csizes (i,j) t1
              pf2 <- rf1 csizes (i,j) t2
+             pf1 <- rf1 csizes (i,j) t1
              let pf p = pf1 p `mplus` pf2 p
              return pf
 
