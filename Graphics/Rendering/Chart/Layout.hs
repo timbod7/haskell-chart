@@ -108,13 +108,13 @@ instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
     toRenderable = layout1ToRenderable
 
 
-layout1ToRenderable :: (Ord x, Ord y) => Layout1 x y -> Renderable a
+layout1ToRenderable :: (Ord x, Ord y) => Layout1 x y -> Renderable ()
 layout1ToRenderable l =
    fillBackground (layout1_background_ l) (
-       renderGrid $ aboveN [
+       gridToRenderable $ aboveN [
           tval $ addMargins (lm/2,0,0,0) title,
           weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) plotArea,
-          tval $ renderGrid (besideN [ tval $ mkLegend lefts, tval $ emptyRenderable, tval $ mkLegend rights ])
+          tval $ gridToRenderable (besideN [ tval $ mkLegend lefts, tval $ emptyRenderable, tval $ mkLegend rights ])
        ] )
   where
     lefts xs = [x | Left x <- xs]
@@ -145,7 +145,7 @@ layout1ToRenderable l =
          besideN [er,     er,    btitle, er,    er       ]
          ]
 
-    plotArea = renderGrid (layer2 `overlay` layer1)
+    plotArea = gridToRenderable (layer2 `overlay` layer1)
     ttitle = atitle HTA_Centre VTA_Bottom  0 layout1_top_axis_
     btitle = atitle HTA_Centre VTA_Top     0 layout1_bottom_axis_
     ltitle = atitle HTA_Right  VTA_Centre 90 layout1_left_axis_

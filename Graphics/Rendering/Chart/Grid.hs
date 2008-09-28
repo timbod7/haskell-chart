@@ -7,7 +7,7 @@ module Graphics.Rendering.Chart.Grid (
     beside, besideN,
     overlay,
     width, height,
-    renderGrid,
+    gridToRenderable,
     weights
 ) where
 
@@ -159,8 +159,8 @@ foldT f iv ft = foldr f' iv (assocs ft)
 ----------------------------------------------------------------------
 type DArray = Array Int Double
 
-renderGrid :: Grid (Renderable a) -> Renderable a
-renderGrid t = Renderable minsizef renderf
+gridToRenderable :: Grid (Renderable a) -> Renderable a
+gridToRenderable t = Renderable minsizef renderf
   where
     getSizes :: CRender (DArray, DArray, DArray, DArray)
     getSizes = do

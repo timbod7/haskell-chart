@@ -227,7 +227,7 @@ test8 otype = toRenderable layout
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
-misc1 rot otype = fillBackground fwhite $ (renderGrid t)
+misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [tval (lb h v) | h <- hs] | v <- vs ]
     lb h v = addMargins (20,20,20,20) $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s

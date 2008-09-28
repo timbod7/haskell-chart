@@ -29,7 +29,9 @@ module Graphics.Rendering.Chart.Renderable(
     label,
     rlabel,
     spacer,
+    spacer1,
     setPickFn,
+    nullPickFn,
 
     rect_minsize,
     rect_fillStyle,
@@ -51,6 +53,8 @@ import Graphics.Rendering.Chart.Types
 -- (MonadPlus m ) => m a in the future.
 type PickFn a = Point -> (Maybe a)
 
+nullPickFn :: PickFn a
+nullPickFn = const Nothing
 
 -- | A Renderable is a record of functions required to layout a
 -- graphic element.
@@ -71,12 +75,23 @@ data Renderable a = Renderable {
 -- Renderable.
 
 class ToRenderable a where
-   toRenderable :: a -> Renderable b
+   toRenderable :: a -> Renderable ()
 
 emptyRenderable = spacer (0,0)
 
+-- | Create a blank renderable with a specified minimum size
+spacer :: RectSize -> Renderable a 
 spacer sz = Renderable {
    minsize = return sz,
+   render  = \_ -> return (const Nothing)
+}
+
+
+-- | Create a blank renderable with a minimum size the same as
+-- some other renderable.
+spacer1 :: Renderable a -> Renderable b
+spacer1 r = Renderable {
+   minsize = minsize r,
    render  = \_ -> return (const Nothing)
 }
 

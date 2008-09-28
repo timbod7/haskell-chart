@@ -10,6 +10,7 @@ module Graphics.Rendering.Chart.Legend(
     Legend(..),
     LegendStyle(..),
     defaultLegendStyle,
+    legendToRenderable,
     legend_label_style,
     legend_margin,
     legend_plot_size,
@@ -17,12 +18,13 @@ module Graphics.Rendering.Chart.Legend(
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
-import Data.List (nub, partition)
+import Data.List (nub, partition,intersperse)
 import Data.Accessor.Template
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot
 import Graphics.Rendering.Chart.Renderable
+import Graphics.Rendering.Chart.Grid
 
 ----------------------------------------------------------------------
 -- Legend
@@ -36,51 +38,30 @@ data LegendStyle = LegendStyle {
 data Legend x y = Legend Bool LegendStyle [(String,Plot x y)]
 
 instance ToRenderable (Legend x y) where
-  toRenderable l = Renderable {
-    minsize=minsizeLegend l,
-    render=renderLegend l
-  }
+  toRenderable = setPickFn nullPickFn.legendToRenderable
 
-minsizeLegend :: Legend x y -> CRender RectSize
-minsizeLegend (Legend _ ls plots) = do
-    let labels = nub $ map fst plots
-    setFontStyle $ legend_label_style_ ls
-    lsizes <- mapM textSize labels
-    lgap <- legendSpacer
-    let lm = legend_margin_ ls
-    let pw = legend_plot_size_ ls
-    let h = maximum  [h | (w,h) <- lsizes]
-    let n = fromIntegral (length lsizes)
-    let w = sum [w + lgap | (w,h) <- lsizes] + pw * (n+1) + lm * (n-1)
-    return (w,h)
-
-renderLegend :: Legend x y -> RectSize -> CRender (PickFn a)
-renderLegend (Legend _ ls plots) (w,h) = do
-    foldM_ rf rp1 $ join_nub plots
-    return (const Nothing)
+legendToRenderable :: Legend x y -> Renderable String
+legendToRenderable (Legend _ ls plots) = gridToRenderable grid
   where
-    rp1 = (Point 0 0)
-    rp2 = (Point w h)
-    lm = legend_margin_ ls
-    lps = legend_plot_size_ ls
+    grid = besideN $ intersperse ggap1 (map (tval.rf) (join_nub plots))
+    rf (title,ps) = setPickFn (const (Just title)) (gridToRenderable grid1)
+      where
+        grid1 = besideN $ intersperse ggap2 (map rp ps) ++ [ggap2,gtitle]
+        gtitle = tval $ lbl title
+        rp p = tval $ Renderable {
+               minsize = return (legend_plot_size_ ls, 0),
+               render = \(w,h) -> do 
+                 plot_render_legend_ p (Rect (Point 0 0) (Point w h))
+                 return nullPickFn
+             }
+    ggap1 = tval $ spacer (legend_margin_ ls,0)
+    ggap2 = tval $ spacer1 (lbl "X")
+    lbl s = label (legend_label_style_ ls) HTA_Centre VTA_Centre s
 
-    rf p1 (label,theseplots) = do
-        setFontStyle $ legend_label_style_ ls
-        (w,h) <- textSize label
-	lgap <- legendSpacer
-	let p2 = (p1 `pvadd` Vector lps 0)
-        mapM_ (\p -> plot_render_legend_ p (mkrect p1 rp1 p2 rp2)) theseplots
-	let p3 = Point (p_x p2 + lgap) (p_y rp1)
-	drawText HTA_Left VTA_Top p3 label
-        return (p3 `pvadd` Vector (w+lm) 0)
-    join_nub :: [(String, a)] -> [(String, [a])]
-    join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
-                           (xs, rest) -> (x, a1:map snd xs) : join_nub rest
-    join_nub [] = []
-
-legendSpacer = do
-    (lgap,_) <- textSize "X"
-    return lgap
+join_nub :: [(String, a)] -> [(String, [a])]
+join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
+                         (xs, rest) -> (x, a1:map snd xs) : join_nub rest
+join_nub [] = []
 
 defaultLegendStyle = LegendStyle {
     legend_label_style_=defaultFontStyle,
