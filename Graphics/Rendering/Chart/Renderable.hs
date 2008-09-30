@@ -31,6 +31,7 @@ module Graphics.Rendering.Chart.Renderable(
     spacer,
     spacer1,
     setPickFn,
+    mapPickFn,
     nullPickFn,
 
     rect_minsize,
@@ -83,7 +84,7 @@ emptyRenderable = spacer (0,0)
 spacer :: RectSize -> Renderable a 
 spacer sz = Renderable {
    minsize = return sz,
-   render  = \_ -> return (const Nothing)
+   render  = \_ -> return nullPickFn
 }
 
 
@@ -92,7 +93,7 @@ spacer sz = Renderable {
 spacer1 :: Renderable a -> Renderable b
 spacer1 r = Renderable {
    minsize = minsize r,
-   render  = \_ -> return (const Nothing)
+   render  = \_ -> return nullPickFn
 }
 
 -- | Replace the pick function of a renderable with another
@@ -100,6 +101,16 @@ setPickFn :: PickFn b -> Renderable a -> Renderable b
 setPickFn pickfn r = Renderable {
     minsize=minsize r,
     render = \sz -> do { render r sz; return pickfn; }
+    }
+
+-- | Map a function over result of a renderables pickfunction.
+mapPickFn :: (a -> b) -> Renderable a -> Renderable b
+mapPickFn f r = Renderable {
+    minsize=minsize r,
+    render = \sz -> do {
+        pf <- render r sz;
+        return (\p -> fmap f (pf p));
+        }
     }
 
 -- | Add some spacing at the edges of a renderable.
@@ -215,7 +226,7 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
        c $ C.rotate rot'
        c $ C.moveTo (-w/2) (h/2)
        c $ C.showText s
-       return (const Nothing)
+       return nullPickFn
     xadj (w,h) HTA_Left x1 x2 =  x1 +(w*acr+h*asr)/2
     xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
     xadj (w,h) HTA_Right x1 x2 =  x2 -(w*acr+h*asr)/2
@@ -268,7 +279,7 @@ instance ToRenderable Rectangle where
       rf sz = preserveCState $ do
         maybeM () (fill sz) (rect_fillStyle_ rectangle)
         maybeM () (stroke sz) (rect_lineStyle_ rectangle)
-        return (const Nothing)
+        return nullPickFn
 
       fill sz fs = do
           setFillStyle fs

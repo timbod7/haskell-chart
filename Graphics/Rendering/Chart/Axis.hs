@@ -49,6 +49,7 @@ module Graphics.Rendering.Chart.Axis(
     autoTimeAxis,
     days, months, years,
 
+    axisToRenderable,
     renderAxisGrid,
     axisOverhang,
 
@@ -134,7 +135,10 @@ data Axis x = Axis {
 data AxisT x = AxisT RectEdge AxisStyle (AxisData x)
 
 instance ToRenderable (AxisT x) where
-  toRenderable at = Renderable {
+  toRenderable = setPickFn nullPickFn.axisToRenderable
+
+axisToRenderable :: AxisT x -> Renderable x
+axisToRenderable at = Renderable {
      minsize=minsizeAxis at,
      render=renderAxis at
   }
@@ -191,7 +195,7 @@ axisOverhang (AxisT at as ad) = do
 		       E_Left -> ohangv
 		       E_Right -> ohangh
 
-renderAxis :: AxisT x -> RectSize -> CRender (PickFn a)
+renderAxis :: AxisT x -> RectSize -> CRender (PickFn x)
 renderAxis at@(AxisT et as ad) sz = do
    let ls = axis_line_style_ as
    preserveCState $ do
@@ -203,7 +207,7 @@ renderAxis at@(AxisT et as ad) sz = do
    preserveCState $ do
        setFontStyle (axis_label_style_ as)
        mapM_ drawLabel (axis_labels_ ad)
-   return (const Nothing)
+   return nullPickFn
  where
    (sx,sy,ex,ey,tp,axisPoint) = axisMapping at sz
 

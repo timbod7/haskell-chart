@@ -192,8 +192,8 @@ gridToRenderable t = Renderable minsizef renderf
         rf1 csizes (0,0) t
 
     rf1 csizes loc@(i,j) t = case t of
-        Null -> return (const Nothing)
-        Empty -> return (const Nothing)
+        Null -> return nullPickFn
+        Empty -> return nullPickFn
         (Value (r,span,_)) -> do
             let (Rect (Point x0 y0) (Point x1 y1)) = mkRect csizes loc span
             preserveCState $ do

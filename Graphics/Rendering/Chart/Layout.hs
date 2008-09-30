@@ -104,37 +104,33 @@ data Layout1 x y = Layout1 {
     layout1_grid_last_ :: Bool
 }
 
+data Layout1Pick x y = L1P_Legend String
+                     | L1P_PlotArea x y y
+                     | L1P_BottomAxis x
+                     | L1P_TopAxis x
+                     | L1P_LeftAxis y
+                     | L1P_RightAxis y
+
 instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
-    toRenderable = layout1ToRenderable
+    toRenderable = setPickFn nullPickFn.layout1ToRenderable
 
-
-layout1ToRenderable :: (Ord x, Ord y) => Layout1 x y -> Renderable ()
+layout1ToRenderable :: (Ord x, Ord y) => Layout1 x y -> Renderable (Layout1Pick x y)
 layout1ToRenderable l =
    fillBackground (layout1_background_ l) (
        gridToRenderable $ aboveN [
           tval $ addMargins (lm/2,0,0,0) title,
           weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) plotArea,
-          tval $ gridToRenderable (besideN [ tval $ mkLegend lefts, tval $ emptyRenderable, tval $ mkLegend rights ])
+          tval $ legends
        ] )
   where
-    lefts xs = [x | Left x <- xs]
-    rights xs = [x | Right x <- xs]
-    distrib (a,Left b) = Left (a,b)
-    distrib (a,Right b) = Right (a,b)
-    lm = layout1_margin_ l
-
     title = label (layout1_title_style_ l) HTA_Centre VTA_Centre (layout1_title_ l)
 
-    mkLegend side = case (layout1_legend_ l) of
-        Nothing -> emptyRenderable
-        (Just ls) -> case [(s,p) | (s,p) <- side (map distrib (layout1_plots_ l)), not (null s)] of
- 	    [] -> emptyRenderable
-	    ps -> addMargins (0,lm,lm,0) (toRenderable (Legend True ls ps))
+    plotArea = gridToRenderable (layer2 `overlay` layer1)
 
     layer1 = aboveN [
-         besideN [er,        er,    er   ],
-         besideN [er,        er,    er   ],
-         besideN [er,        er,    weights (1,1) plots ]
+         besideN [er,     er,    er   ],
+         besideN [er,     er,    er   ],
+         besideN [er,     er,    weights (1,1) plots ]
          ]
 
     layer2 = aboveN [
@@ -145,7 +141,6 @@ layout1ToRenderable l =
          besideN [er,     er,    btitle, er,    er       ]
          ]
 
-    plotArea = gridToRenderable (layer2 `overlay` layer1)
     ttitle = atitle HTA_Centre VTA_Bottom  0 layout1_top_axis_
     btitle = atitle HTA_Centre VTA_Top     0 layout1_bottom_axis_
     ltitle = atitle HTA_Right  VTA_Centre 90 layout1_left_axis_
@@ -158,23 +153,41 @@ layout1ToRenderable l =
         tstyle = laxis_title_style_ (af l)
         ttext = laxis_title_ (af l)
 
-    plots = tval $Renderable {
-        minsize=return (0,0),
-        render= renderPlots l
-    }
+    plots = tval $ plotsToRenderable l
 
     (ba,la,ta,ra) = getAxes l
-    baxis = tval $ maybe emptyRenderable toRenderable ba
-    taxis = tval $ maybe emptyRenderable toRenderable ta
-    laxis = tval $ maybe emptyRenderable toRenderable la
-    raxis = tval $ maybe emptyRenderable toRenderable ra
+    baxis = tval $ maybe emptyRenderable (mapPickFn L1P_BottomAxis . axisToRenderable) ba
+    taxis = tval $ maybe emptyRenderable (mapPickFn L1P_TopAxis . axisToRenderable)   ta
+    laxis = tval $ maybe emptyRenderable (mapPickFn L1P_LeftAxis . axisToRenderable)  la
+    raxis = tval $ maybe emptyRenderable (mapPickFn L1P_RightAxis . axisToRenderable) ra
 
     tl = tval $ axesSpacer fst ta fst la
     bl = tval $ axesSpacer fst ba snd la
     tr = tval $ axesSpacer snd ta fst ra
     br = tval $ axesSpacer snd ba snd ra
 
+    legends = gridToRenderable (besideN [ tval $ mkLegend lefts,
+                                          weights (1,1) $ tval $ emptyRenderable,
+                                          tval $ mkLegend rights ])
+    lefts = [ (s,p) | (s,Left p) <- (layout1_plots_ l) ] 
+    rights = [ (s,p) | (s,Right p) <- (layout1_plots_ l) ] 
 
+    mkLegend plots = case (layout1_legend_ l) of
+        Nothing -> emptyRenderable
+        (Just ls) ->  case plots of
+             [] -> emptyRenderable
+	     ps -> addMargins (0,lm,lm,lm)
+                      (mapPickFn  L1P_Legend $ legendToRenderable (Legend True ls ps))
+
+    lm = layout1_margin_ l
+
+plotsToRenderable :: Layout1 x y -> Renderable (Layout1Pick x y)
+plotsToRenderable l = Renderable {
+        minsize=return (0,0),
+        render= renderPlots l
+    }
+
+renderPlots :: Layout1 x y -> RectSize -> CRender (PickFn (Layout1Pick x y))
 renderPlots l sz@(w,h) = preserveCState $ do
     -- render the plots
     setClipRegion (Point 0 0) (Point w h)
@@ -183,7 +196,7 @@ renderPlots l sz@(w,h) = preserveCState $ do
     local (const vectorEnv) $ do
       mapM_ rPlot (layout1_plots_ l)
     when (layout1_grid_last_ l) renderGrids
-    return (const Nothing)
+    return nullPickFn
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l

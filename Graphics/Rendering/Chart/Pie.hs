@@ -139,7 +139,7 @@ renderPie p (w,h) = do
     let radius = (min (w - 2*extraw) (h - 2*extrah)) / 2
 
     foldM_ (paint center radius) (pie_start_angle_ p) (zip (pie_colors_ p) content)
-    return (const Nothing)
+    return nullPickFn
  
     where
         p1 = Point 0 0 
