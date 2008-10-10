@@ -60,7 +60,7 @@ test1a otype = toRenderable layout
               $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
               $ defaultPlotPoints
 
-    axis = mAxis $ axisGridAtTicks.autoScaledAxis' (
+    axis = mAxis $ axisGridAtTicks.autoScaledAxis (
           la_nLabels ^= 2 
         $ la_nTicks ^= 20
         $ defaultLinearAxis

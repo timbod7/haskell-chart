@@ -17,6 +17,8 @@
 --
 --     * 'LinearAxisParams'
 --
+--     * 'LogAxisParams'
+--
 -- These accessors are not shown in this API documentation.  They have
 -- the same name as the field, but with the trailing underscore
 -- dropped. Hence for data field f_::F in type D, they have type
@@ -29,10 +31,10 @@
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Axis(
-    Axis(..),
     AxisData(..),
     AxisT(..),
     LinearAxisParams(..),
+    LogAxisParams(..),
     AxisStyle(..),
     PlotValue(..),
     LogValue(..),
@@ -40,11 +42,10 @@ module Graphics.Rendering.Chart.Axis(
 
     defaultAxisLineStyle, 
     defaultLinearAxis,
+    defaultLogAxis,
     defaultAxisStyle,
     autoScaledAxis,
-    autoScaledAxis',
     autoScaledLogAxis,
-    autoScaledLogAxis',
     timeAxis,
     autoTimeAxis,
     days, months, years,
@@ -67,12 +68,11 @@ module Graphics.Rendering.Chart.Axis(
     axis_grid_style,
     axis_label_gap,
 
-    axis_style,
-    axis_data,
-
     la_labelf,
     la_nLabels,
     la_nTicks,
+
+    loga_labelf,
 
 ) where
 
@@ -125,11 +125,6 @@ data AxisStyle = AxisStyle {
 -- | A function to generate the axis data given the data values
 -- to be plotted against it.
 type AxisFn x = [x] -> AxisData x
-
-data Axis x = Axis {
-   axis_style_ :: AxisStyle,
-   axis_data_  :: AxisFn x
-   }
 
 -- | Colletively the information we need to render an axis
 data AxisT x = AxisT RectEdge AxisStyle (AxisData x)
@@ -315,8 +310,8 @@ defaultLinearAxis = LinearAxisParams {
 -- and grid set appropriately for the data displayed against that axies.
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
-autoScaledAxis' :: LinearAxisParams -> AxisFn Double
-autoScaledAxis' lap ps0 = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
+autoScaledAxis :: LinearAxisParams -> AxisFn Double
+autoScaledAxis lap ps0 = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
   where
     ps = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
@@ -327,12 +322,6 @@ autoScaledAxis' lap ps0 = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
     tickvs = map fromRational $ steps (fromIntegral (la_nTicks_ lap)) (minimum labelvs,maximum labelvs)
     gridvs = labelvs
     r = range ps
-
--- | Generate a linear axis automatically.
--- Same as autoScaledAxis', but with labels generated with "showD"
--- (showD is show for doubles, but with any trailing ".0" removed)
-autoScaledAxis :: AxisFn Double
-autoScaledAxis = autoScaledAxis' defaultLinearAxis
 
 showD x = case reverse $ show x of
             '0':'.':r -> reverse r
@@ -397,8 +386,8 @@ logTicks (low,high) = (major,minor,major)
 -- and grid set appropriately for the data displayed against that axies.
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
-autoScaledLogAxis' :: (LogValue->String) -> AxisFn LogValue
-autoScaledLogAxis' labelf ps0 = makeAxis labelf (wrap rlabelvs, wrap rtickvs, wrap rgridvs)
+autoScaledLogAxis :: LogAxisParams -> AxisFn LogValue
+autoScaledLogAxis lap ps0 = makeAxis labelf (wrap rlabelvs, wrap rtickvs, wrap rgridvs)
   where
     ps = filter (\(LogValue x) -> isValidNumber x && 0 < x) ps0
     (min, max) = (minimum ps,maximum ps)
@@ -408,12 +397,17 @@ autoScaledLogAxis' labelf ps0 = makeAxis labelf (wrap rlabelvs, wrap rtickvs, wr
     (rlabelvs, rtickvs, rgridvs) = logTicks (range ps)
     wrap = map (LogValue . fromRational)
     unLogValue (LogValue x) = x
+    labelf = loga_labelf_ lap
 
--- | Generate a log axis automatically.
--- Same as autoScaledLogAxis', but with labels generated with "showD"
--- (showD is show for doubles, but with any trailing ".0" removed)
-autoScaledLogAxis :: AxisFn LogValue
-autoScaledLogAxis = autoScaledLogAxis' (\(LogValue x) -> showD x)
+
+data LogAxisParams = LogAxisParams {
+    -- | The function used to show the axes labels
+    loga_labelf_ :: LogValue -> String
+}
+
+defaultLogAxis = LogAxisParams {
+    loga_labelf_ = \(LogValue x) -> showD x
+}
 
 ----------------------------------------------------------------------
 
@@ -546,7 +540,7 @@ class Ord a => PlotValue a where
 
 instance PlotValue Double where
     toValue = id
-    autoAxis = autoScaledAxis
+    autoAxis = autoScaledAxis defaultLinearAxis
 
 newtype LogValue = LogValue Double
                     deriving (Eq, Ord)
@@ -556,7 +550,7 @@ instance Show LogValue where
 
 instance PlotValue LogValue where
     toValue (LogValue x) = log x
-    autoAxis = autoScaledLogAxis
+    autoAxis = autoScaledLogAxis defaultLogAxis
 
 instance PlotValue LocalTime where
     toValue = doubleFromLocalTime
@@ -569,7 +563,7 @@ vmap (v1,v2) (v3,v4) v = v3 + (toValue v - toValue v1) * (v4-v3) / (toValue v2 -
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor for each field
 $( deriveAccessors ''AxisData )
-$( deriveAccessors ''Axis )
 $( deriveAccessors ''AxisStyle )
 $( deriveAccessors ''LinearAxisParams )
+$( deriveAccessors ''LogAxisParams )
 
