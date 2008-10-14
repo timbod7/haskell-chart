@@ -126,8 +126,9 @@ data AxisStyle = AxisStyle {
 -- to be plotted against it.
 type AxisFn x = [x] -> AxisData x
 
--- | Colletively the information we need to render an axis
-data AxisT x = AxisT RectEdge AxisStyle (AxisData x)
+-- | Collect the information we need to render an axis. The
+-- bool is true if the axis direction is reversed
+data AxisT x = AxisT RectEdge AxisStyle Bool (AxisData x)
 
 instance ToRenderable (AxisT x) where
   toRenderable = setPickFn nullPickFn.axisToRenderable
@@ -148,7 +149,7 @@ axisGridAtLabels :: AxisData x -> AxisData x
 axisGridAtLabels ad = ad{axis_grid_=map fst (axis_labels_ ad)}
 
 minsizeAxis :: AxisT x -> CRender RectSize
-minsizeAxis (AxisT at as ad) = do
+minsizeAxis (AxisT at as rev ad) = do
     let labels = map snd (axis_labels_ ad)
     labelSizes <- preserveCState $ do
         setFontStyle (axis_label_style_ as)
@@ -172,7 +173,7 @@ minsizeAxis (AxisT at as ad) = do
 -- | Calculate the amount by which the labels extend beyond
 -- the ends of the axis
 axisOverhang :: Ord x => AxisT x -> CRender (Double,Double)
-axisOverhang (AxisT at as ad) = do
+axisOverhang (AxisT at as rev ad) = do
     let labels = map snd (sort (axis_labels_ ad))
     labelSizes <- preserveCState $ do
         setFontStyle (axis_label_style_ as)
@@ -191,7 +192,7 @@ axisOverhang (AxisT at as ad) = do
 		       E_Right -> ohangh
 
 renderAxis :: AxisT x -> RectSize -> CRender (PickFn x)
-renderAxis at@(AxisT et as ad) sz = do
+renderAxis at@(AxisT et as rev ad) sz = do
    let ls = axis_line_style_ as
    preserveCState $ do
        setLineStyle ls{line_cap_=C.LineCapSquare}
@@ -223,7 +224,7 @@ renderAxis at@(AxisT et as ad) sz = do
        drawText hta vta (axisPoint value `pvadd` lp) s
 
 axisMapping :: AxisT z -> RectSize -> (Double,Double,Double,Double,Vector,z->Point)
-axisMapping (AxisT et as ad) (x2,y2) = case et of
+axisMapping (AxisT et as rev ad) (x2,y2) = case et of
     E_Top    -> (x1,y2,x2,y2, (Vector 0 1),    mapx (x1,x2) y2) 
     E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)), mapx (x1,x2) y1)
     E_Left   -> (x2,y2,x2,y1, (Vector (1) 0),  mapy (y1,y2) x2)		
@@ -231,11 +232,12 @@ axisMapping (AxisT et as ad) (x2,y2) = case et of
   where
     (x1,y1) = (0,0)
 
-    mapx xr y x = Point (axis_viewport_ ad xr x) y
-    mapy (yr0,yr1) x y = Point x (axis_viewport_ ad (yr1,yr0) y)
+    mapx xr y x = Point (axis_viewport_ ad (reverse xr) x) y
+    mapy (yr0,yr1) x y = Point x (axis_viewport_ ad (reverse (yr1,yr0)) y)
+    reverse r@(r0,r1) = if rev then (r1,r0) else r
 
 renderAxisGrid :: RectSize -> AxisT z -> CRender ()
-renderAxisGrid sz@(w,h) at@(AxisT re as ad) = do
+renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
     preserveCState $ do
         setLineStyle (axis_grid_style_ as)
         mapM_ (drawGridLine re) (axis_grid_ ad)

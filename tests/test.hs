@@ -129,8 +129,8 @@ test3 otype = toRenderable layout
            $ defaultLayout1
 
 ----------------------------------------------------------------------        
-test4 :: OutputType -> Renderable ()
-test4 otype = toRenderable layout
+test4 :: Bool -> Bool -> OutputType -> Renderable ()
+test4 xrev yrev otype = toRenderable layout
   where
 
     points = plot_points_style ^= filledCircles 3 red
@@ -142,7 +142,9 @@ test4 otype = toRenderable layout
 
     layout = layout1_title ^= "Log/Linear Example"
            $ layout1_bottom_axis ^: laxis_title ^= "horizontal"
+           $ layout1_bottom_axis ^: laxis_reverse ^= xrev
            $ layout1_left_axis ^: laxis_title ^= "vertical"
+           $ layout1_left_axis ^: laxis_reverse ^= yrev
 	   $ layout1_plots ^= [("values",Left (toPlot points)),
 			       ("values",Left (toPlot lines)) ]
            $ defaultLayout1
@@ -257,7 +259,9 @@ allTests =
      , ("test2c", test2 (filterPrices (date 1 5 2005) (date 1 7 2005)))
      , ("test2d", test2 (filterPrices (date 1 1 2006) (date 10 1 2006)))
      , ("test3", test3)
-     , ("test4", test4)
+     , ("test4a", test4 False False)
+     , ("test4b", test4 True False)
+     , ("test4c", test4 False True)
      , ("test5", test5)
      , ("test6", test6)
      , ("test7", test7)

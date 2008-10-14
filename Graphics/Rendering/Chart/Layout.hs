@@ -44,6 +44,7 @@ module Graphics.Rendering.Chart.Layout(
     laxis_title,
     laxis_style,
     laxis_data,
+    laxis_reverse,
 
     layout1_background,
     layout1_title,
@@ -55,7 +56,7 @@ module Graphics.Rendering.Chart.Layout(
     layout1_margin,
     layout1_plots,
     layout1_legend,
-    layout1_grid_last,
+    layout1_grid_last
   ) where
 
 import qualified Graphics.Rendering.Cairo as C
@@ -79,7 +80,11 @@ data LayoutAxis x = LayoutAxis {
    laxis_title_style_ :: CairoFontStyle,
    laxis_title_ :: String,
    laxis_style_ :: AxisStyle,
-   laxis_data_ :: MAxisFn x
+   laxis_data_ :: MAxisFn x,
+
+   -- | True if left to right is to show descending values
+   laxis_reverse_ :: Bool
+
 }
 
 -- | A Layout1 value is a single plot area, with optional: axes on
@@ -101,6 +106,8 @@ data Layout1 x y = Layout1 {
     layout1_margin_ :: Double,
     layout1_plots_ :: [(String,Either (Plot x y) (Plot x y))],
     layout1_legend_ :: Maybe(LegendStyle),
+
+    -- | True if the grid is to be rendered on top of the Plots
     layout1_grid_last_ :: Bool
 }
 
@@ -204,9 +211,9 @@ renderPlots l sz@(w,h) = preserveCState $ do
     rPlot (_,Left p) = rPlot1 bAxis lAxis p
     rPlot (_,Right p) = rPlot1 bAxis rAxis p
 
-    rPlot1 (Just (AxisT _ _ xaxis)) (Just (AxisT _ _ yaxis)) p = 
-	let xrange = (0, w)
-	    yrange = (h, 0)
+    rPlot1 (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p = 
+	let xrange = if xrev then (w, 0) else (0,w)
+	    yrange  = if yrev then (0, h) else (h, 0)
 	    pmfn (x,y) = Point (axis_viewport_ xaxis xrange x) (axis_viewport_ yaxis yrange y)
 	in plot_render_ p pmfn
     rPlot1 _ _ _ = return ()
@@ -227,22 +234,22 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where 
     (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots_ l)
     xvals = xvals0 ++ xvals1
-    yvals = yvals0 ++ yvals1
 
-    linkYAxes = (null yvals0) || (null yvals1)
+    -- Link the axes if either has no data, and use the axis that
+    -- actually has data to decide whether to reverse it
+    (yvals0',yrev0) = if null yvals0 then (yvals0++yvals1, layout1_right_axis_)
+                                     else (yvals0,         layout1_left_axis_)
+    (yvals1',yrev1) = if null yvals1 then (yvals0++yvals1, layout1_left_axis_)
+                                     else (yvals1,         layout1_right_axis_)
 
-    bAxis = mkAxis E_Bottom (layout1_bottom_axis_ l) xvals
-    tAxis = mkAxis E_Top (layout1_top_axis_ l) xvals
-    lAxis = mkAxis E_Left (layout1_left_axis_ l) ys
-      where
-        ys = if linkYAxes then yvals else yvals0
-    rAxis = mkAxis E_Right (layout1_right_axis_ l) ys
-      where
-        ys = if linkYAxes then yvals else yvals1
+    bAxis = mkAxis E_Bottom layout1_bottom_axis_ layout1_bottom_axis_ xvals
+    tAxis = mkAxis E_Top    layout1_top_axis_    layout1_bottom_axis_ xvals
+    lAxis = mkAxis E_Left   layout1_left_axis_   yrev0 yvals0'
+    rAxis = mkAxis E_Right  layout1_right_axis_  yrev1 yvals1'
 
-    mkAxis t laxis vals = do
-        adata <- laxis_data_ laxis vals
-        return (AxisT t (laxis_style_ laxis) adata)
+    mkAxis t axisf revf vals = do
+        adata <- laxis_data_ (axisf l) vals
+        return (AxisT t (laxis_style_ (axisf l)) (laxis_reverse_ (revf l)) adata)
 
 allPlottedValues :: [(String,Either (Plot x y) (Plot x' y'))] -> ( [x], [x'], [y], [y'] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
@@ -275,7 +282,8 @@ defaultLayoutAxis = LayoutAxis {
    laxis_title_style_ = defaultFontStyle{font_size_=10},
    laxis_title_ = "",
    laxis_style_ = defaultAxisStyle,
-   laxis_data_ = mAxis autoAxis
+   laxis_data_ = mAxis autoAxis,
+   laxis_reverse_ = False
 }
 
 mAxis :: PlotValue t => AxisFn t -> MAxisFn t
@@ -287,7 +295,8 @@ noAxis =  LayoutAxis {
    laxis_title_style_ = defaultFontStyle{font_size_=10},
    laxis_title_ = "",
    laxis_style_ = defaultAxisStyle,
-   laxis_data_ = const Nothing
+   laxis_data_ = const Nothing,
+   laxis_reverse_ = False
 }
 
 ----------------------------------------------------------------------
