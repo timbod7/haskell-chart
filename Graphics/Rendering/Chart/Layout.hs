@@ -82,14 +82,14 @@ data LayoutAxis x = LayoutAxis {
    laxis_style_ :: AxisStyle,
    laxis_data_ :: MAxisFn x,
 
-   -- | True if left to right is to show descending values
+   -- | True if left to right (bottom to top) is to show descending values
    laxis_reverse_ :: Bool
 
 }
 
 -- | A Layout1 value is a single plot area, with optional: axes on
 -- each of the 4 sides; title at the top; legend at the bottom. It's
--- parameterised by the types of values to be plotted the horizonal
+-- parameterised by the types of values to be plotted on the horizonal
 -- and vertical axes.
 data Layout1 x y = Layout1 {
 
@@ -286,10 +286,12 @@ defaultLayoutAxis = LayoutAxis {
    laxis_reverse_ = False
 }
 
+-- | Create an axis when there are points to be plotted against it.
 mAxis :: PlotValue t => AxisFn t -> MAxisFn t
 mAxis axisfn [] = Nothing
 mAxis axisfn ps = Just (axisfn ps)
 
+-- | Never create an axis
 noAxis :: PlotValue t => LayoutAxis t
 noAxis =  LayoutAxis {
    laxis_title_style_ = defaultFontStyle{font_size_=10},
@@ -304,21 +306,25 @@ noAxis =  LayoutAxis {
 $( deriveAccessors ''Layout1 )
 $( deriveAccessors ''LayoutAxis )
 
+-- | Helper to update all axis styles on a Layout1 simultaneously
 updateAllAxesStyles :: (AxisStyle -> AxisStyle) -> Layout1 x y -> Layout1 x y
 updateAllAxesStyles uf = (layout1_top_axis .> laxis_style ^: uf) .
                          (layout1_bottom_axis .> laxis_style ^: uf) .
                          (layout1_left_axis .> laxis_style ^: uf) .
                          (layout1_right_axis .> laxis_style ^: uf)
 
+-- | Helper to update data member of both horizontal axes in a Layout1
 updateXAxesData :: (MAxisFn x -> MAxisFn x) -> Layout1 x y -> Layout1 x y
 updateXAxesData uf = (layout1_top_axis .> laxis_data ^: uf) .
                      (layout1_bottom_axis .> laxis_data ^: uf)
 
+-- | Helper to update data member of both vertical axes in a Layout1
 updateYAxesData :: (MAxisFn y -> MAxisFn y) -> Layout1 x y -> Layout1 x y
 updateYAxesData uf = (layout1_left_axis .> laxis_data ^: uf) .
                      (layout1_right_axis .> laxis_data ^: uf)
                          
 
+-- | Helper to set the forground color uniformly on a Layout1
 setForeground :: Color -> Layout1 x y -> Layout1 x y
 setForeground fg = updateAllAxesStyles  (
                        (axis_line_style .> line_color ^= fg).
