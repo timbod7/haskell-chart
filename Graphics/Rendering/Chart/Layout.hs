@@ -195,13 +195,13 @@ plotsToRenderable l = Renderable {
     }
 
 renderPlots :: Layout1 x y -> RectSize -> CRender (PickFn (Layout1Pick x y))
-renderPlots l sz@(w,h) = preserveCState $ do
-    -- render the plots
-    setClipRegion (Point 0 0) (Point w h)
-
+renderPlots l sz@(w,h) = do
     when (not (layout1_grid_last_ l)) renderGrids
-    local (const vectorEnv) $ do
-      mapM_ rPlot (layout1_plots_ l)
+    preserveCState $ do
+      -- render the plots
+      setClipRegion (Point 0 0) (Point w h)
+      local (const vectorEnv) $ do
+        mapM_ rPlot (layout1_plots_ l)
     when (layout1_grid_last_ l) renderGrids
     return nullPickFn
 
