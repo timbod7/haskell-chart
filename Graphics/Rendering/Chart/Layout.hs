@@ -31,19 +31,18 @@ module Graphics.Rendering.Chart.Layout(
     MAxisFn,
 
     defaultLayout1,
-
-    mAxis,
-    noAxis,
+    linkAxes,
+    independentAxes,
 
     updateAllAxesStyles,
-    updateXAxesData,
-    updateYAxesData,
-    setForeground,
+    setLayout1Foreground,
 
     laxis_title_style,
     laxis_title,
     laxis_style,
-    laxis_data,
+    laxis_visible,
+    laxis_generate,
+    laxis_override,
     laxis_reverse,
 
     layout1_background,
@@ -53,6 +52,7 @@ module Graphics.Rendering.Chart.Layout(
     layout1_right_axis,
     layout1_top_axis,
     layout1_bottom_axis,
+    layout1_yaxes_control,
     layout1_margin,
     layout1_plots,
     layout1_legend,
@@ -80,7 +80,19 @@ data LayoutAxis x = LayoutAxis {
    laxis_title_style_ :: CairoFontStyle,
    laxis_title_ :: String,
    laxis_style_ :: AxisStyle,
-   laxis_data_ :: MAxisFn x,
+
+   -- | function that determines whether an axis should be visible,
+   -- based upon the points plotted on this axis. The default value
+   -- is 'not.null'
+   laxis_visible_ :: [x] -> Bool,
+
+   -- | function that generates the axis data, based upon the
+   -- points plotted. The default value is 'autoAxis'.
+   laxis_generate_ :: AxisFn x,
+
+   -- | function that can be used to override the generated axis data.
+   -- The default value is 'id'.
+   laxis_override_ :: AxisData x -> AxisData x,
 
    -- | True if left to right (bottom to top) is to show descending values
    laxis_reverse_ :: Bool
@@ -102,6 +114,10 @@ data Layout1 x y = Layout1 {
     layout1_top_axis_ :: LayoutAxis x,
     layout1_left_axis_ :: LayoutAxis y,
     layout1_right_axis_ :: LayoutAxis y,
+
+    -- | function to map points from the left/right plot
+    -- to the left/right axes. The default value is 'id'
+    layout1_yaxes_control_ :: ([y],[y]) -> ([y],[y]),
 
     layout1_margin_ :: Double,
     layout1_plots_ :: [(String,Either (Plot x y) (Plot x y))],
@@ -234,22 +250,20 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where 
     (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots_ l)
     xvals = xvals0 ++ xvals1
+    (yvals0',yvals1') = layout1_yaxes_control_ l (yvals0,yvals1)
 
-    -- Link the axes if either has no data, and use the axis that
-    -- actually has data to decide whether to reverse it
-    (yvals0',yrev0) = if null yvals0 then (yvals0++yvals1, layout1_right_axis_)
-                                     else (yvals0,         layout1_left_axis_)
-    (yvals1',yrev1) = if null yvals1 then (yvals0++yvals1, layout1_left_axis_)
-                                     else (yvals1,         layout1_right_axis_)
+    bAxis = mkAxis E_Bottom (layout1_bottom_axis_ l) xvals
+    tAxis = mkAxis E_Top    (layout1_top_axis_ l) xvals
+    lAxis = mkAxis E_Left   (layout1_left_axis_ l) yvals0'
+    rAxis = mkAxis E_Right  (layout1_right_axis_ l) yvals1'
 
-    bAxis = mkAxis E_Bottom layout1_bottom_axis_ layout1_bottom_axis_ xvals
-    tAxis = mkAxis E_Top    layout1_top_axis_    layout1_bottom_axis_ xvals
-    lAxis = mkAxis E_Left   layout1_left_axis_   yrev0 yvals0'
-    rAxis = mkAxis E_Right  layout1_right_axis_  yrev1 yvals1'
-
-    mkAxis t axisf revf vals = do
-        adata <- laxis_data_ (axisf l) vals
-        return (AxisT t (laxis_style_ (axisf l)) (laxis_reverse_ (revf l)) adata)
+    mkAxis t laxis vals = case laxis_visible_ laxis vals of
+        False -> Nothing
+        True -> Just (AxisT t style rev adata) 
+      where
+        style = laxis_style_ laxis
+        rev = laxis_reverse_ laxis
+        adata = (laxis_override_ laxis) (laxis_generate_ laxis vals)
 
 allPlottedValues :: [(String,Either (Plot x y) (Plot x' y'))] -> ( [x], [x'], [y], [y'] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
@@ -266,10 +280,14 @@ defaultLayout1 = Layout1 {
     layout1_title_ = "",
     layout1_title_style_ = defaultFontStyle{font_size_=15, font_weight_=C.FontWeightBold},
 
-    layout1_top_axis_ = defaultLayoutAxis,
+    layout1_top_axis_ = defaultLayoutAxis {
+                          laxis_visible_ = const False 
+                        },
     layout1_bottom_axis_ = defaultLayoutAxis,
     layout1_left_axis_ = defaultLayoutAxis,
     layout1_right_axis_ = defaultLayoutAxis,
+
+    layout1_yaxes_control_ = id,
 
     layout1_margin_ = 10,
     layout1_plots_ = [],
@@ -282,22 +300,9 @@ defaultLayoutAxis = LayoutAxis {
    laxis_title_style_ = defaultFontStyle{font_size_=10},
    laxis_title_ = "",
    laxis_style_ = defaultAxisStyle,
-   laxis_data_ = mAxis autoAxis,
-   laxis_reverse_ = False
-}
-
--- | Create an axis when there are points to be plotted against it.
-mAxis :: PlotValue t => AxisFn t -> MAxisFn t
-mAxis axisfn [] = Nothing
-mAxis axisfn ps = Just (axisfn ps)
-
--- | Never create an axis
-noAxis :: PlotValue t => LayoutAxis t
-noAxis =  LayoutAxis {
-   laxis_title_style_ = defaultFontStyle{font_size_=10},
-   laxis_title_ = "",
-   laxis_style_ = defaultAxisStyle,
-   laxis_data_ = const Nothing,
+   laxis_visible_ = not.null,               
+   laxis_generate_ = autoAxis,
+   laxis_override_ = id,
    laxis_reverse_ = False
 }
 
@@ -313,20 +318,9 @@ updateAllAxesStyles uf = (layout1_top_axis .> laxis_style ^: uf) .
                          (layout1_left_axis .> laxis_style ^: uf) .
                          (layout1_right_axis .> laxis_style ^: uf)
 
--- | Helper to update data member of both horizontal axes in a Layout1
-updateXAxesData :: (MAxisFn x -> MAxisFn x) -> Layout1 x y -> Layout1 x y
-updateXAxesData uf = (layout1_top_axis .> laxis_data ^: uf) .
-                     (layout1_bottom_axis .> laxis_data ^: uf)
-
--- | Helper to update data member of both vertical axes in a Layout1
-updateYAxesData :: (MAxisFn y -> MAxisFn y) -> Layout1 x y -> Layout1 x y
-updateYAxesData uf = (layout1_left_axis .> laxis_data ^: uf) .
-                     (layout1_right_axis .> laxis_data ^: uf)
-                         
-
 -- | Helper to set the forground color uniformly on a Layout1
-setForeground :: Color -> Layout1 x y -> Layout1 x y
-setForeground fg = updateAllAxesStyles  (
+setLayout1Foreground :: Color -> Layout1 x y -> Layout1 x y
+setLayout1Foreground fg = updateAllAxesStyles  (
                        (axis_line_style .> line_color ^= fg).
                        (axis_label_style .> font_color ^= fg)
                        )
@@ -334,3 +328,5 @@ setForeground fg = updateAllAxesStyles  (
                  . (layout1_legend ^: fmap (legend_label_style .> font_color ^= fg))
 
 
+linkAxes (ys1,ys2) = (ys1++ys2,ys1++ys2)
+independentAxes (ys1,ys2) = (ys1,ys2)

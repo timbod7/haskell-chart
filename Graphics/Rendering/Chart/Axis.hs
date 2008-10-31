@@ -54,9 +54,11 @@ module Graphics.Rendering.Chart.Axis(
     renderAxisGrid,
     axisOverhang,
 
-    axisGridNone,
     axisGridAtTicks,
     axisGridAtLabels,
+    axisGridHide,
+    axisTicksHide,
+    axisLabelsHide,
 
     axis_viewport,
     axis_ticks,
@@ -139,14 +141,20 @@ axisToRenderable at = Renderable {
      render=renderAxis at
   }
 
-axisGridNone :: AxisData x -> AxisData x
-axisGridNone ad = ad{axis_grid_=[]}
+axisGridHide :: AxisData x -> AxisData x
+axisGridHide ad = ad{axis_grid_=[]}
 
 axisGridAtTicks :: AxisData x -> AxisData x
 axisGridAtTicks ad = ad{axis_grid_=map fst (axis_ticks_ ad)}
 
 axisGridAtLabels :: AxisData x -> AxisData x
 axisGridAtLabels ad = ad{axis_grid_=map fst (axis_labels_ ad)}
+
+axisTicksHide :: AxisData x -> AxisData x
+axisTicksHide ad = ad{axis_ticks_=[]}
+
+axisLabelsHide :: AxisData x -> AxisData x
+axisLabelsHide ad = ad{axis_labels_=[]}
 
 minsizeAxis :: AxisT x -> CRender RectSize
 minsizeAxis (AxisT at as rev ad) = do
@@ -156,7 +164,7 @@ minsizeAxis (AxisT at as rev ad) = do
         mapM textSize labels
     let (lw,lh) = foldl maxsz (0,0) labelSizes
     let ag = axis_label_gap_ as
-    let tsize = maximum [ max 0 (-l) | (v,l) <- axis_ticks_ ad ]
+    let tsize = maximum ([0] ++ [ max 0 (-l) | (v,l) <- axis_ticks_ ad ])
     let sz = case at of
 		     E_Top    -> (lw,max (addIfNZ lh ag) tsize)
 		     E_Bottom -> (lw,max (addIfNZ lh ag) tsize)

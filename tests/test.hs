@@ -25,8 +25,7 @@ green1 = (Color 0.5 1 0.5)
 red1 = (Color 0.5 0.5 1)
 
 ----------------------------------------------------------------------
-test1 :: OutputType -> Renderable ()
-test1 otype = toRenderable layout
+test1Layout otype = layout
   where
     am :: Double -> Double
     am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
@@ -39,41 +38,67 @@ test1 otype = toRenderable layout
               $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
               $ defaultPlotPoints
 
-    layout = layout1_title ^= "Amplitude Modulation"
-	   $ layout1_plots ^= [("am",Left (toPlot sinusoid1)),
-			      ("am points", Left (toPlot sinusoid2))]
-           $ defaultLayout1
-
-    lineWidth = chooseLineWidth otype
-
-test1a :: OutputType -> Renderable ()
-test1a otype = toRenderable layout
-  where
-    am :: Double -> Double
-    am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
-
-    sinusoid1 = plot_lines_values ^= [[ (x,(am x)) | x <- [0,(0.5)..400]]]
-              $ plot_lines_style ^= solidLine lineWidth blue
-              $ defaultPlotLines
-
-    sinusoid2 = plot_points_style ^= filledCircles 2 red
-              $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
-              $ defaultPlotPoints
-
-    axis = mAxis $ axisGridAtTicks.autoScaledAxis (
-          la_nLabels ^= 2 
-        $ la_nTicks ^= 20
-        $ defaultLinearAxis
-        )
-
-    layout = layout1_title ^= "Amplitude Modulation"
-           $ updateXAxesData (const axis)
-           $ updateYAxesData (const axis)
-	   $ layout1_plots ^= [("am",Left (toPlot sinusoid1)),
+    layout = layout1_plots ^= [("am",Left (toPlot sinusoid1)),
 			       ("am points", Left (toPlot sinusoid2))]
            $ defaultLayout1
 
     lineWidth = chooseLineWidth otype
+
+test1 :: OutputType -> Renderable ()
+test1 otype = toRenderable layout
+  where
+    layout = layout1_title ^= "Amplitude Modulation"
+           $ (test1Layout otype)
+
+test1a :: OutputType -> Renderable ()
+test1a otype = fillBackground fwhite $ (gridToRenderable t)
+  where
+    t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3], 
+                                 besideN [rf g4, rf g5, rf g6] ]
+
+    g1 = layout1_title ^= "minimal"
+       $ layout1_bottom_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
+       $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
+       $ test1Layout otype
+
+    g2 = layout1_title ^= "with borders"
+       $ layout1_bottom_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
+       $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
+       $ layout1_top_axis ^: axisBorderOnly
+       $ layout1_right_axis ^: axisBorderOnly
+       $ test1Layout otype
+
+    g3 = layout1_title ^= "default"
+       $ test1Layout otype
+
+    g4 = layout1_title ^= "tight grid"
+       $ layout1_left_axis ^: laxis_generate ^= axis
+       $ layout1_left_axis ^: laxis_override ^= axisGridAtTicks
+       $ layout1_bottom_axis ^: laxis_generate ^= axis
+       $ layout1_bottom_axis ^: laxis_override ^= axisGridAtTicks
+       $ test1Layout otype
+      where
+        axis = autoScaledAxis (
+            la_nLabels ^= 5 
+          $ la_nTicks ^= 20
+          $ defaultLinearAxis
+          )
+
+    g5 = layout1_title ^= "y linked"
+       $ layout1_yaxes_control ^= linkAxes
+       $ test1Layout otype
+
+    g6 = layout1_title ^= "everything"
+       $ layout1_yaxes_control ^= linkAxes
+       $ layout1_top_axis ^: laxis_visible ^= const True
+       $ test1Layout otype
+
+    rf = tval.toRenderable
+
+    fwhite = solidFillStyle white
+
+    axisBorderOnly = (laxis_visible ^= const True)
+                   . (laxis_override ^=  (axisGridHide.axisTicksHide.axisLabelsHide))
 
 ----------------------------------------------------------------------
 test2 :: [(Int,Int,Int,Double,Double)] -> OutputType -> Renderable ()
@@ -92,7 +117,6 @@ test2 prices otype = toRenderable layout
 	   $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
            $ defaultPlotLines
 
-    vaxis = mAxis $ axisGridNone.autoAxis
     bg = Color 0 0 0.25
     fg = Color 1 1 1
     fg1 = Color 0.0 0.0 0.15
@@ -100,12 +124,13 @@ test2 prices otype = toRenderable layout
     layout = layout1_title ^="Price History"
            $ layout1_background ^= solidFillStyle bg
            $ updateAllAxesStyles (axis_grid_style ^= solidLine 1 fg1)
-           $ layout1_left_axis ^: laxis_data ^= vaxis
-           $ layout1_right_axis ^: laxis_data ^= vaxis
+           $ layout1_left_axis ^: laxis_override ^= axisGridHide
+           $ layout1_right_axis ^: laxis_override ^= axisGridHide
+           $ layout1_bottom_axis ^: laxis_override ^= axisGridHide
  	   $ layout1_plots ^= [("price 1", Left (toPlot price1)),
                                ("price 2", Right (toPlot price2))]
            $ layout1_grid_last ^= False
-           $ setForeground fg
+           $ setLayout1Foreground fg
            $ defaultLayout1
 
 date dd mm yyyy = (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
@@ -124,6 +149,7 @@ test3 otype = toRenderable layout
            $ defaultPlotFillBetween
 
     layout = layout1_title ^= "Price History"
+           $ layout1_grid_last ^= True
  	   $ layout1_plots ^= [("price 1", Left (toPlot price1)),
                                ("price 2", Left (toPlot price2))]
            $ defaultLayout1
