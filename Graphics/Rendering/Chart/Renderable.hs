@@ -185,12 +185,13 @@ renderableToPSFile = renderableToFile C.withPSSurface
 renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToSVGFile = renderableToFile C.withSVGSurface
 
-bitmapEnv = CEnv adjfn
+bitmapEnv = CEnv (adjfn 0.5) (adjfn 0.0)
   where
-    adjfn (Point x y)= Point (adj x) (adj y)
-    adj x = (fromIntegral.round) x + 0.5
+    adjfn offset (Point x y) = Point (adj x) (adj y)
+      where
+        adj v = (fromIntegral.round) v +offset
 
-vectorEnv = CEnv id
+vectorEnv = CEnv id id
 
 -- | Helper function for using a renderable, when we generate it
 -- in the CRender monad.

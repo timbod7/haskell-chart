@@ -91,6 +91,8 @@ module Graphics.Rendering.Chart.Types(
     CEnv(..),
     runCRender,
     c,
+    alignp,
+    alignc,
     
     line_width,
     line_color,
@@ -168,14 +170,18 @@ within (Point x y) (Rect (Point x1 y1) (Point x2 y2)) =
 
 -- | The environment present in the CRender Monad.
 data CEnv = CEnv {
-    -- | A transform applied immediately prior to values
+    -- | An adjustment applied immediately prior to points
     -- being displayed in device coordinates
     --
     -- When device coordinates correspond to pixels, a cleaner
     -- image is created if this transform rounds to the nearest
     -- pixel. With higher-resolution output, this transform can
     -- just be the identity function.
-    cenv_point_alignfn :: Point -> Point
+    cenv_point_alignfn :: Point -> Point,
+
+    -- | A adjustment applied immediately prior to coordinates
+    -- being transformed
+    cenv_coord_alignfn :: Point -> Point
 }
 
 -- | The reader monad containing context information to control
@@ -243,6 +249,11 @@ moveTo p  = do
 alignp :: Point -> CRender Point
 alignp p = do 
     alignfn <- fmap cenv_point_alignfn ask
+    return (alignfn p)
+
+alignc :: Point -> CRender Point
+alignc p = do 
+    alignfn <- fmap cenv_coord_alignfn ask
     return (alignfn p)
 
 lineTo p = do
