@@ -22,7 +22,7 @@
 --
 -- Examples:
 --
--- @renderableToWindow (toRenderable $ plot [0,0.1..10] sin "sin(x)") 640 480@
+-- > renderableToWindow (toRenderable $ plotLayout $ plot [0,0.1..10] sin "sin(x)") 640 480
 --
 -- > plotWindow [0,1,3,4,8] [12,15,1,5,8] "o" "points"
 --
