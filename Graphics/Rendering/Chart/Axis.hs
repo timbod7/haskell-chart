@@ -38,6 +38,7 @@ module Graphics.Rendering.Chart.Axis(
     AxisStyle(..),
     PlotValue(..),
     LogValue(..),
+    PlotIndex(..),
     AxisFn,
 
     defaultAxisLineStyle, 
@@ -49,10 +50,13 @@ module Graphics.Rendering.Chart.Axis(
     timeAxis,
     autoTimeAxis,
     days, months, years,
+    autoIndexAxis,
+    addIndexes,
 
     axisToRenderable,
     renderAxisGrid,
     axisOverhang,
+    vmap,
 
     axisGridAtTicks,
     axisGridAtLabels,
@@ -565,6 +569,39 @@ instance PlotValue LogValue where
 instance PlotValue LocalTime where
     toValue = doubleFromLocalTime
     autoAxis = autoTimeAxis
+
+----------------------------------------------------------------------
+
+-- | Type for capturing values plotted by index number
+-- (ie position in a list) rather than a numerical value
+newtype PlotIndex = PlotIndex { plotindex_i :: Int }
+  deriving (Eq,Ord)
+
+instance PlotValue PlotIndex where
+    toValue (PlotIndex i)= fromIntegral i
+    autoAxis = autoIndexAxis []
+
+-- | Create an axis for values indexed by position. The 
+-- list of strings are the labels to be used.
+autoIndexAxis :: [String] -> [PlotIndex] -> AxisData PlotIndex
+autoIndexAxis labels vs = AxisData {
+    axis_viewport_= vport,
+    axis_ticks_ = [],
+    axis_labels_ =  filter (\(i,l) -> i >= imin && i <= imax) (addIndexes labels),
+    axis_grid_ = []
+    }
+  where
+    vport r (PlotIndex i) = vmap (fi (plotindex_i imin) - 0.5,
+                                  fi (plotindex_i imax) + 0.5) r (fi i)
+    imin = minimum vs
+    imax = maximum vs
+    fi = fromIntegral :: Int -> Double
+
+
+-- | Augment a list of values with index numbers for plotting
+addIndexes :: [a] -> [(PlotIndex,a)]
+addIndexes as = map (\(i,a) -> (PlotIndex i,a))  (zip [0..] as)
+
 
 -- | A linear mapping of points in one range to another
 vmap :: PlotValue x => (x,x) -> Range -> x -> Double

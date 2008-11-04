@@ -252,6 +252,30 @@ test8 otype = toRenderable layout
                                        | (s,v,o) <- values ]
            $ defaultPieLayout
 
+test9 :: OutputType -> Renderable ()
+test9 otype = toRenderable layout
+  where
+    alabels = [ "Manly", "Bondi", "Curl Curl", "Freshwater" ]
+    pubs = [4, 5, 0, 1]
+    surf_clubs = [3, 2, 1, 1]
+
+    plots = [
+        (Left,"pubs",pubs,filledCircles 5 green),
+        (Left,"surf_clubs",surf_clubs,filledCircles 3 blue)
+        ]
+
+    layout = layout1_title ^= "Sydney Beaches"
+           $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
+           $ layout1_left_axis ^: laxis_override ^= axisGridHide
+           $ layout1_plots ^= map mkplot plots
+           $ defaultLayout1 :: Layout1 PlotIndex Double
+
+    mkplot (side,name,vs,style) = (name, side (toPlot p))
+      where
+        p = plot_points_style ^= style
+          $ plot_points_values ^= addIndexes vs
+          $ defaultPlotPoints
+
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
@@ -292,6 +316,7 @@ allTests =
      , ("test6", test6)
      , ("test7", test7)
      , ("test8", test8)
+     , ("test9", test9)
      , ("misc1", misc1 0)
      , ("misc1a", misc1 45)
      ]

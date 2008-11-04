@@ -37,6 +37,7 @@ module Graphics.Rendering.Chart.Layout(
     updateAllAxesStyles,
     setLayout1Foreground,
 
+    defaultLayoutAxis,
     laxis_title_style,
     laxis_title,
     laxis_style,
