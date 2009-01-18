@@ -13,6 +13,15 @@ import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Types
+import Data.List (isPrefixOf)
+
+-- do action m for any keypress (except meta keys)
+anyKey :: (Monad m) => m a -> G.Event -> m Bool
+anyKey m (G.Key {G.eventKeyName=key})
+    | any (`isPrefixOf` key) ignores = return True
+    | otherwise                      = m >> return True
+  where ignores = ["Shift","Control","Alt",
+                   "Super","Meta","Hyper"]
 
 renderableToWindow :: Renderable a -> Int -> Int -> IO ()
 renderableToWindow chart windowWidth windowHeight = do
@@ -24,7 +33,7 @@ renderableToWindow chart windowWidth windowHeight = do
     --   G.windowSetResizable window False
     G.widgetSetSizeRequest window windowWidth windowHeight
     -- press any key to quit
-    G.onKeyPress window $ const (do G.widgetDestroy window; return True)
+    G.onKeyPress window $ anyKey (G.widgetDestroy window)
     G.onDestroy window G.mainQuit
     G.onExpose canvas $ const (updateCanvas chart canvas)
     G.set window [G.containerChild G.:= canvas]
