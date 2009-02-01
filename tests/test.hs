@@ -28,6 +28,7 @@ chooseLineWidth SVG = 0.25
 green1 = (Color 0.5 1 0.5)
 red1 = (Color 0.5 0.5 1)
 fwhite = solidFillStyle white
+fparchment = solidFillStyle (color 255 250 230) 
 
 ----------------------------------------------------------------------
 test1Layout otype = layout
@@ -47,6 +48,8 @@ test1Layout otype = layout
 
     layout = layout1_plots ^= [Left (toPlot sinusoid1),
 			       Left (toPlot sinusoid2)]
+           $ layout1_background ^= fparchment
+           $ layout1_plot_background ^= Just fwhite
            $ defaultLayout1
 
     lineWidth = chooseLineWidth otype
@@ -285,7 +288,7 @@ test9 otype = fillBackground fwhite $ (gridToRenderable t)
 
     layout title bars = layout1_title ^= title
            $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
-           $ layout1_left_axis ^: laxis_override ^= axisGridHide
+           $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
            $ layout1_plots ^= [ Left (plotBars bars) ]
            $ defaultLayout1 :: Layout1 PlotIndex Double
 

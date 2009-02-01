@@ -57,6 +57,7 @@ module Graphics.Rendering.Chart.Types(
     defaultColorSeq,
            
     Color(..),
+    color,
     setSourceColor,
 
     CairoLineStyle(..),
@@ -129,6 +130,9 @@ data Color = Color {
     c_g :: Double,
     c_b :: Double
 }
+
+color :: Int -> Int -> Int -> Color
+color ri gi bi = Color (fromIntegral ri/255) (fromIntegral gi/255) (fromIntegral bi/255)
 
 -- | scale a vector by a constant
 vscale :: Double -> Vector -> Vector

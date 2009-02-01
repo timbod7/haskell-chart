@@ -47,6 +47,7 @@ module Graphics.Rendering.Chart.Layout(
     laxis_reverse,
 
     layout1_background,
+    layout1_plot_background,
     layout1_title,
     layout1_title_style,
     layout1_left_axis,
@@ -107,6 +108,7 @@ data LayoutAxis x = LayoutAxis {
 data Layout1 x y = Layout1 {
 
     layout1_background_ :: CairoFillStyle,
+    layout1_plot_background_ :: Maybe CairoFillStyle,
 
     layout1_title_ :: String,
     layout1_title_style_ :: CairoFontStyle,
@@ -177,7 +179,10 @@ layout1ToRenderable l =
         tstyle = laxis_title_style_ (af l)
         ttext = laxis_title_ (af l)
 
-    plots = tval $ plotsToRenderable l
+    plots = tval $ mfill (layout1_plot_background_ l) $ plotsToRenderable l
+      where
+        mfill Nothing = id
+        mfill (Just fs) = fillBackground fs
 
     (ba,la,ta,ra) = getAxes l
     baxis = tval $ maybe emptyRenderable (mapPickFn L1P_BottomAxis . axisToRenderable) ba
@@ -276,6 +281,7 @@ allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
 defaultLayout1 :: (PlotValue x,PlotValue y) => Layout1 x y
 defaultLayout1 = Layout1 {
     layout1_background_ = solidFillStyle white,
+    layout1_plot_background_ = Nothing,
 
     layout1_title_ = "",
     layout1_title_style_ = defaultFontStyle{font_size_=15, font_weight_=C.FontWeightBold},
