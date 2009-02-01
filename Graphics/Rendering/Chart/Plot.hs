@@ -39,6 +39,10 @@ module Graphics.Rendering.Chart.Plot(
     PlotLines(..),
     PlotFillBetween(..),
     ErrPoint(..),
+    PlotBars(..),
+    PlotBarsStyle(..),
+    PlotBarsSpacing(..),
+
     symErrPoint,
 
     defaultPlotLineStyle,
@@ -46,6 +50,7 @@ module Graphics.Rendering.Chart.Plot(
     defaultPlotErrBars,
     defaultPlotFillBetween,
     defaultPlotLines,
+    defaultPlotBars,
 
     plot_lines_title,
     plot_lines_style,
@@ -69,11 +74,22 @@ module Graphics.Rendering.Chart.Plot(
     plot_errbars_overhang,
     plot_errbars_values,
 
+    plotBars,
+    plot_bars_style,
+    plot_bars_horizontal,
+    plot_bars_item_styles,
+    plot_bars_titles,
+    plot_bars_spacing,
+    plot_bars_reference,
+    plot_bars_values,
+
     ) where
 
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Axis
 import Control.Monad
+import Data.List
 import Data.Accessor.Template
 
 -- | Interface to control plotting on a 2D area.
@@ -321,9 +337,124 @@ defaultPlotErrBars = PlotErrBars {
 }
 
 ----------------------------------------------------------------------
+
+class PlotValue a => BarsPlotValue a where
+    barsReference :: a
+    barsAdd :: a -> a -> a
+
+instance BarsPlotValue Double where
+    barsReference = 0
+    barsAdd = (+)
+
+data PlotBarsStyle = BarsStacked | BarsClustered
+data PlotBarsSpacing = PlotBarsFixWidth Double
+                     | PlotBarsFixGap Double
+
+data PlotBars x y = PlotBars {
+   plot_bars_style_ :: PlotBarsStyle,
+   plot_bars_horizontal_ :: Bool,
+   plot_bars_item_styles_ :: [ (CairoFillStyle,Maybe CairoLineStyle) ],
+   plot_bars_titles_ :: [String],
+   plot_bars_spacing_ :: PlotBarsSpacing,
+   plot_bars_reference_ :: y,
+   plot_bars_values_ :: [ (x,[y]) ]
+}
+
+defaultPlotBars :: BarsPlotValue y => PlotBars x y
+defaultPlotBars = PlotBars {
+   plot_bars_style_ = BarsClustered,
+   plot_bars_horizontal_ = False,
+   plot_bars_item_styles_ = cycle istyles,
+   plot_bars_titles_ = [],
+   plot_bars_spacing_ = PlotBarsFixGap 10,
+   plot_bars_values_ = [],
+   plot_bars_reference_ = barsReference
+   }
+  where
+    istyles = [ (solidFillStyle red,   Just (solidLine 1.0 black) ),
+                (solidFillStyle green, Just (solidLine 1.0 black) ),
+                (solidFillStyle blue,  Just (solidLine 1.0 black) ) ]
+
+plotBars :: (BarsPlotValue y) => PlotBars x y -> Plot x y
+plotBars p = Plot {
+        plot_render_ = renderPlotBars p,
+	plot_legend_ = zip (plot_bars_titles_ p) (map renderPlotLegendBars (plot_bars_item_styles_ p)),
+	plot_all_points_ = allBarPoints p
+    }
+
+renderPlotBars :: BarsPlotValue y => PlotBars x y -> PointMapFn x y -> CRender ()
+renderPlotBars p pmap = case (plot_bars_style_ p) of
+      BarsClustered -> do forM_ vals clusteredBars
+      BarsStacked -> forM_ vals stackedBars
+  where
+    clusteredBars (x,ys) = preserveCState $ do
+       forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
+           setFillStyle fstyle
+           barPath (offset i) x yref0 y
+           c $ C.fill
+       forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
+           whenJust mlstyle $ \lstyle -> do
+             setLineStyle lstyle
+             barPath (offset i) x yref0 y
+             c $ C.stroke
+
+    stackedBars (x,ys) =  preserveCState $ do
+       let y2s = zip (yref0:stack ys) (stack ys)
+       forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
+           setFillStyle fstyle
+           barPath (-width/2) x y0 y1
+           c $ C.fill
+       forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
+           whenJust mlstyle $ \lstyle -> do
+               setLineStyle lstyle
+               barPath (-width/2) x y0 y1
+               c $ C.stroke
+
+    barPath xos x y0 y1 = do
+      let (Point x' y') = pmap (x,y1)
+      let (Point _ y0') = pmap (x,y0)
+      rectPath (Rect (Point (x'+xos) y0') (Point (x'+xos+width) y'))
+
+    yref0 = plot_bars_reference_ p
+    vals = plot_bars_values_ p
+    width = case plot_bars_spacing_ p of
+        PlotBarsFixGap gap -> (minXInterval - gap) / fromIntegral nys
+        PlotBarsFixWidth width -> width
+    styles = plot_bars_item_styles_ p
+    offset i = fromIntegral (i - nys + 1) * width 
+
+    minXInterval = minimum $ zipWith (-) (tail xs) xs
+      where               
+        xs = nub $ sort $ map (p_x.pmap) (allBarPoints p)
+
+    nys = maximum [ length ys | (x,ys) <- vals ]
+
+whenJust :: (Monad m) => Maybe a -> (a -> m ()) -> m ()
+whenJust (Just a) f = f a
+whenJust _ _ = return ()
+
+allBarPoints :: (BarsPlotValue y) => PlotBars x y -> [(x,y)]
+allBarPoints p = case (plot_bars_style_ p) of
+    BarsClustered -> concat [ (x,y0):[(x,y) | y <- ys ] | (x,ys) <- plot_bars_values_ p ]
+    BarsStacked -> concat [ (x,y0):[(x,y) | y <- stack ys ] | (x,ys) <- plot_bars_values_ p ]
+  where
+    y0 = plot_bars_reference_ p
+
+stack :: (BarsPlotValue y) => [y] -> [y]
+stack ys = scanl1 barsAdd ys
+             
+
+renderPlotLegendBars :: (CairoFillStyle,Maybe CairoLineStyle) -> Rect -> CRender ()
+renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
+    setFillStyle fstyle
+    rectPath r
+    c $ C.fill
+
+----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor for each field
 $( deriveAccessors ''Plot )
 $( deriveAccessors ''PlotLines )
 $( deriveAccessors ''PlotPoints )
 $( deriveAccessors ''PlotFillBetween )
 $( deriveAccessors ''PlotErrBars )
+$( deriveAccessors ''PlotBars )
