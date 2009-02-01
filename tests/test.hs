@@ -37,14 +37,16 @@ test1Layout otype = layout
 
     sinusoid1 = plot_lines_values ^= [[ (x,(am x)) | x <- [0,(0.5)..400]]]
               $ plot_lines_style  ^= solidLine lineWidth blue
+              $ plot_lines_title ^="am"
               $ defaultPlotLines
 
     sinusoid2 = plot_points_style ^= filledCircles 2 red
               $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
+              $ plot_points_title ^="am points"
               $ defaultPlotPoints
 
-    layout = layout1_plots ^= [("am",Left (toPlot sinusoid1)),
-			       ("am points", Left (toPlot sinusoid2))]
+    layout = layout1_plots ^= [Left (toPlot sinusoid1),
+			       Left (toPlot sinusoid2)]
            $ defaultLayout1
 
     lineWidth = chooseLineWidth otype
@@ -114,10 +116,12 @@ test2 prices otype = toRenderable layout
 
     price1 = plot_lines_style ^= lineStyle blue
            $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,v,_) <- prices]]
+           $ plot_lines_title ^= "price 1"
            $ defaultPlotLines
 
     price2 = plot_lines_style ^= lineStyle green
 	   $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
+           $ plot_lines_title ^= "price 2"
            $ defaultPlotLines
 
     bg = Color 0 0 0.25
@@ -130,8 +134,7 @@ test2 prices otype = toRenderable layout
            $ layout1_left_axis ^: laxis_override ^= axisGridHide
            $ layout1_right_axis ^: laxis_override ^= axisGridHide
            $ layout1_bottom_axis ^: laxis_override ^= axisGridHide
- 	   $ layout1_plots ^= [("price 1", Left (toPlot price1)),
-                               ("price 2", Right (toPlot price2))]
+ 	   $ layout1_plots ^= [Left (toPlot price1), Right (toPlot price2)]
            $ layout1_grid_last ^= False
            $ setLayout1Foreground fg
            $ defaultLayout1
@@ -145,16 +148,18 @@ test3 otype = toRenderable layout
 
     price1 = plot_fillbetween_style ^= solidFillStyle green1
            $ plot_fillbetween_values ^= [ (date d m y,(0,v2)) | (d,m,y,v1,v2) <- prices]
+           $ plot_fillbetween_title ^= "price 1"
            $ defaultPlotFillBetween 
 
     price2 = plot_fillbetween_style ^= solidFillStyle red1
            $ plot_fillbetween_values ^= [ (date d m y,(0,v1)) | (d,m,y,v1,v2) <- prices]
+           $ plot_fillbetween_title ^= "price 2"
            $ defaultPlotFillBetween
 
     layout = layout1_title ^= "Price History"
            $ layout1_grid_last ^= True
- 	   $ layout1_plots ^= [("price 1", Left (toPlot price1)),
-                               ("price 2", Left (toPlot price2))]
+ 	   $ layout1_plots ^= [Left (toPlot price1),
+                               Left (toPlot price2)]
            $ defaultLayout1
 
 ----------------------------------------------------------------------        
@@ -164,9 +169,11 @@ test4 xrev yrev otype = toRenderable layout
 
     points = plot_points_style ^= filledCircles 3 red
            $ plot_points_values ^= [ (x, LogValue (10**x)) | x <- [0.5,1,1.5,2,2.5] ]
+           $ plot_points_title ^= "values"
            $ defaultPlotPoints
 
     lines = plot_lines_values ^= [ [(x, LogValue (10**x)) | x <- [0,3]] ]
+          $ plot_lines_title ^= "values"
           $ defaultPlotLines
 
     layout = layout1_title ^= "Log/Linear Example"
@@ -174,8 +181,7 @@ test4 xrev yrev otype = toRenderable layout
            $ layout1_bottom_axis ^: laxis_reverse ^= xrev
            $ layout1_left_axis ^: laxis_title ^= "vertical"
            $ layout1_left_axis ^: laxis_reverse ^= yrev
-	   $ layout1_plots ^= [("values",Left (toPlot points)),
-			       ("values",Left (toPlot lines)) ]
+	   $ layout1_plots ^= [Left (toPlot points), Left (toPlot lines) ]
            $ defaultLayout1
 
 ----------------------------------------------------------------------
@@ -188,14 +194,16 @@ test5 otype = toRenderable (layout 1001 (trial bits) :: Layout1 Double LogValue)
 
     layout n t = layout1_title ^= "Simulation of betting on a biased coin"
                $ layout1_plots ^= [
-                      ("f=0.05", Left (toPlot (plot s1 n 0 (t 0.05)))),
-                      ("f=0.1", Left (toPlot (plot s2 n 0 (t 0.1))))]
+                      Left (toPlot (plot "f=0.05" s1 n 0 (t 0.05))),
+                      Left (toPlot (plot "f=0.1" s2 n 0 (t 0.1)))
+                     ]
                $ defaultLayout1
 
-    plot s n m t = plot_lines_style ^= s
-                 $  plot_lines_values ^=
+    plot tt s n m t = plot_lines_style ^= s
+                 $ plot_lines_values ^=
                        [[(fromIntegral x, LogValue y) | (x,y) <-
                          filter (\(x,_)->x `mod` (m+1)==0) $ take n $ zip [0..] t]]
+                 $ plot_lines_title ^= tt
                  $ defaultPlotLines 
 
     b = 0.1
@@ -232,15 +240,17 @@ test7 otype = toRenderable layout
     vals :: [(Double,Double,Double,Double)]
     vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
     bars = plot_errbars_values ^= [symErrPoint x y dx dy | (x,y,dx,dy) <- vals]
+         $ plot_errbars_title ^="test"
          $ defaultPlotErrBars
 
     points = plot_points_style ^= filledCircles 2 red
 	   $ plot_points_values ^= [(x,y) |  (x,y,dx,dy) <- vals]
+           $ plot_points_title ^= "test"
            $ defaultPlotPoints
 
     layout = layout1_title ^= "errorbars example"
-           $ layout1_plots ^= [("test",Left (toPlot bars)),
-                               ("test",Left (toPlot points))]
+           $ layout1_plots ^= [Left (toPlot bars),
+                               Left (toPlot points)]
            $ defaultLayout1
 
 ----------------------------------------------------------------------
@@ -274,7 +284,7 @@ data PlotBars x y = PlotBars {
    plot_bars_style_ :: PlotBarsStyle,
    plot_bars_horizontal_ :: Bool,
    plot_bars_item_styles_ :: [ (CairoFillStyle,Maybe CairoLineStyle) ],
-   plot_bars_item_labels_ :: [String],
+   plot_bars_titles_ :: [String],
    plot_bars_spacing_ :: PlotBarsSpacing,
    plot_bars_reference_ :: y,
    plot_bars_values_ :: [ (x,[y]) ]
@@ -284,7 +294,7 @@ defaultPlotBars = PlotBars {
    plot_bars_style_ = BarsClustered,
    plot_bars_horizontal_ = False,
    plot_bars_item_styles_ = cycle istyles,
-   plot_bars_item_labels_ = [],
+   plot_bars_titles_ = [],
    plot_bars_spacing_ = PlotBarsFixGap 10,
    plot_bars_values_ = [],
    plot_bars_reference_ = barsReference
@@ -296,7 +306,7 @@ defaultPlotBars = PlotBars {
 
 plotBars p = Plot {
         plot_render_ = renderPlotBars p,
-	plot_render_legend_ = renderPlotLegendBars p,
+	plot_legend_ = zip (plot_bars_titles_ p) (map renderPlotLegendBars (plot_bars_item_styles_ p)),
 	plot_all_points_ = allBarPoints p
     }
 
@@ -361,8 +371,12 @@ allBarPoints p = case (plot_bars_style_ p) of
 stack ys = scanl1 (+) ys
              
 
-renderPlotLegendBars :: PlotBars x y -> Rect -> CRender ()
-renderPlotLegendBars p r@(Rect p1 p2) = return ()
+renderPlotLegendBars :: (CairoFillStyle,Maybe CairoLineStyle) -> Rect -> CRender ()
+renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
+    setFillStyle fstyle
+    rectPath r
+    c $ C.fill
+
 
 test9 :: OutputType -> Renderable ()
 test9 otype = fillBackground fwhite $ (gridToRenderable t)
@@ -375,17 +389,17 @@ test9 otype = fillBackground fwhite $ (gridToRenderable t)
     rf = tval.toRenderable
 
     alabels = [ "Manly", "Bondi", "Curl Curl", "Freshwater" ]
-    glabels = ["pubs","surf_clubs"]
+    titles = ["pubs","surf_clubs"]
     values =  [ [4,3], [6,2], [0,1], [1,1] ]
 
     layout title bars = layout1_title ^= title
            $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
            $ layout1_left_axis ^: laxis_override ^= axisGridHide
-           $ layout1_plots ^= [ ("?", Left (plotBars bars)) ]
+           $ layout1_plots ^= [ Left (plotBars bars) ]
            $ defaultLayout1 :: Layout1 PlotIndex Double
 
     bars0 = defaultPlotBars {
-        plot_bars_item_labels_ = glabels,
+        plot_bars_titles_ = titles,
         plot_bars_values_ = addIndexes values,
         plot_bars_spacing_ = PlotBarsFixWidth 50
         }

@@ -35,7 +35,7 @@ data LegendStyle = LegendStyle {
    legend_plot_size_ :: Double
 }
 
-data Legend x y = Legend Bool LegendStyle [(String,Plot x y)]
+data Legend x y = Legend Bool LegendStyle [Plot x y]
 
 instance ToRenderable (Legend x y) where
   toRenderable = setPickFn nullPickFn.legendToRenderable
@@ -43,17 +43,22 @@ instance ToRenderable (Legend x y) where
 legendToRenderable :: Legend x y -> Renderable String
 legendToRenderable (Legend _ ls plots) = gridToRenderable grid
   where
-    grid = besideN $ intersperse ggap1 (map (tval.rf) (join_nub plots))
-    rf (title,ps) = setPickFn (const (Just title)) (gridToRenderable grid1)
+    grid = besideN $ intersperse ggap1 (map (tval.rf) ps)
+
+    ps :: [(String, [Rect -> CRender ()])]
+    ps = join_nub (concatMap plot_legend_ plots)
+
+    rf (title,rfs) = gridToRenderable grid1
       where
-        grid1 = besideN $ intersperse ggap2 (map rp ps) ++ [ggap2,gtitle]
+        grid1 = besideN $ intersperse ggap2 (map rp rfs) ++ [ggap2,gtitle]
         gtitle = tval $ lbl title
-        rp p = tval $ Renderable {
+        rp rfn = tval $ Renderable {
                minsize = return (legend_plot_size_ ls, 0),
                render = \(w,h) -> do 
-                 plot_render_legend_ p (Rect (Point 0 0) (Point w h))
+                 rfn (Rect (Point 0 0) (Point w h))
                  return nullPickFn
              }
+
     ggap1 = tval $ spacer (legend_margin_ ls,0)
     ggap2 = tval $ spacer1 (lbl "X")
     lbl s = label (legend_label_style_ ls) HTA_Centre VTA_Centre s

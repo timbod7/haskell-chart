@@ -47,19 +47,23 @@ module Graphics.Rendering.Chart.Plot(
     defaultPlotFillBetween,
     defaultPlotLines,
 
+    plot_lines_title,
     plot_lines_style,
     plot_lines_values,
 
     plot_render,
-    plot_render_legend,
+    plot_legend,
     plot_all_points,
 
+    plot_points_title,
     plot_points_style,
     plot_points_values,
 
+    plot_fillbetween_title,
     plot_fillbetween_style,
     plot_fillbetween_values,
 
+    plot_errbars_title,
     plot_errbars_line_style,
     plot_errbars_tick_length,
     plot_errbars_overhang,
@@ -79,9 +83,10 @@ data Plot x y = Plot {
     -- render this plot into a chart.
     plot_render_ :: PointMapFn x y -> CRender (),
 
-    -- | Render a small sample of this plot into the given rectangle.
-    -- This is for used to generate a the legend a chart.
-    plot_render_legend_ :: Rect -> CRender (),
+    -- | Details for how to show this plot in a legend. For each item
+    -- the string is the text to show, and the function renders a
+    -- graphical sample of the plot
+    plot_legend_ :: [ (String, Rect -> CRender ()) ],
 
     -- | All of the model space coordinates to be plotted. These are
     -- used to autoscale the axes where necessary.
@@ -97,6 +102,7 @@ class ToPlot a where
 -- | Value defining a series of (possibly disjointed) lines,
 -- and a style in which to render them
 data PlotLines x y = PlotLines {
+    plot_lines_title_ :: String,
     plot_lines_style_ :: CairoLineStyle,
     plot_lines_values_ :: [[(x,y)]]
 }
@@ -105,7 +111,7 @@ data PlotLines x y = PlotLines {
 instance ToPlot PlotLines where
     toPlot p = Plot {
         plot_render_ = renderPlotLines p,
-	plot_render_legend_ = renderPlotLegendLines p,
+	plot_legend_ = [(plot_lines_title_ p, renderPlotLegendLines p)],
 	plot_all_points_ = concat (plot_lines_values_ p)
     }
 
@@ -133,6 +139,7 @@ defaultPlotLineStyle = (solidLine 1 blue){
  }
 
 defaultPlotLines = PlotLines {
+    plot_lines_title_ = "",
     plot_lines_style_ = defaultPlotLineStyle,
     plot_lines_values_ = []
 }
@@ -141,6 +148,7 @@ defaultPlotLines = PlotLines {
 -- | Value defining a series of datapoints, and a style in
 -- which to render them
 data PlotPoints x y = PlotPoints {
+    plot_points_title_ :: String,
     plot_points_style_ :: CairoPointStyle,
     plot_points_values_ :: [(x,y)]
 }
@@ -149,7 +157,7 @@ data PlotPoints x y = PlotPoints {
 instance ToPlot PlotPoints where
     toPlot p = Plot {
         plot_render_ = renderPlotPoints p,
-	plot_render_legend_ = renderPlotLegendPoints p,
+	plot_legend_ = [(plot_points_title_ p, renderPlotLegendPoints p)],
 	plot_all_points_ = plot_points_values_ p
     }
 
@@ -170,6 +178,7 @@ renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
     (CairoPointStyle drawPoint) = (plot_points_style_ p)
 
 defaultPlotPoints = PlotPoints {
+    plot_points_title_ = "",
     plot_points_style_ =defaultPointStyle,
     plot_points_values_ = []
 }
@@ -178,6 +187,7 @@ defaultPlotPoints = PlotPoints {
 -- coordinates, given common X coordinates.
 
 data PlotFillBetween x y = PlotFillBetween {
+    plot_fillbetween_title_ :: String,
     plot_fillbetween_style_ :: CairoFillStyle,
     plot_fillbetween_values_ :: [ (x, (y,y))]
 }
@@ -186,7 +196,7 @@ data PlotFillBetween x y = PlotFillBetween {
 instance ToPlot PlotFillBetween where
     toPlot p = Plot {
         plot_render_ = renderPlotFillBetween p,
-	plot_render_legend_ = renderPlotLegendFill p,
+	plot_legend_ = [(plot_fillbetween_title_ p, renderPlotLegendFill p)],
 	plot_all_points_ = plotAllPointsFillBetween p
     }
 
@@ -217,6 +227,7 @@ plotAllPointsFillBetween p = concat [ [(x, y1), (x, y2)]
 
 
 defaultPlotFillBetween = PlotFillBetween {
+    plot_fillbetween_title_ = "",
     plot_fillbetween_style_=solidFillStyle (Color 0.5 0.5 1.0),
     plot_fillbetween_values_=[]
 }
@@ -244,6 +255,7 @@ symErrPoint x y dx dy = ErrPoint (ErrValue (x-dx) x (x+dx))
 -- | Value defining a series of error intervals, and a style in
 -- which to render them
 data PlotErrBars x y = PlotErrBars {
+    plot_errbars_title_ :: String,
     plot_errbars_line_style_ :: CairoLineStyle,
     plot_errbars_tick_length_ :: Double,
     plot_errbars_overhang_ :: Double,
@@ -254,7 +266,7 @@ data PlotErrBars x y = PlotErrBars {
 instance ToPlot PlotErrBars where
     toPlot p = Plot {
         plot_render_ = renderPlotErrBars p,
-	plot_render_legend_ = renderPlotLegendErrBars p,
+	plot_legend_ = [(plot_errbars_title_ p,renderPlotLegendErrBars p)],
 	plot_all_points_ = concat
          [[((ev_low x),(ev_low y)), ((ev_high x),(ev_high y))]
          | ErrPoint x y <- plot_errbars_values_ p]
@@ -301,6 +313,7 @@ renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
     dx = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
 
 defaultPlotErrBars = PlotErrBars {
+    plot_errbars_title_ = "",
     plot_errbars_line_style_ = solidLine 1 blue,
     plot_errbars_tick_length_ = 3,
     plot_errbars_overhang_ = 0,

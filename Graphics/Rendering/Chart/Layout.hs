@@ -121,7 +121,7 @@ data Layout1 x y = Layout1 {
     layout1_yaxes_control_ :: ([y],[y]) -> ([y],[y]),
 
     layout1_margin_ :: Double,
-    layout1_plots_ :: [(String,Either (Plot x y) (Plot x y))],
+    layout1_plots_ :: [Either (Plot x y) (Plot x y)],
     layout1_legend_ :: Maybe(LegendStyle),
 
     -- | True if the grid is to be rendered on top of the Plots
@@ -193,8 +193,8 @@ layout1ToRenderable l =
     legends = gridToRenderable (besideN [ tval $ mkLegend lefts,
                                           weights (1,1) $ tval $ emptyRenderable,
                                           tval $ mkLegend rights ])
-    lefts = [ (s,p) | (s,Left p) <- (layout1_plots_ l) ] 
-    rights = [ (s,p) | (s,Right p) <- (layout1_plots_ l) ] 
+    lefts = [ p | (Left p) <- (layout1_plots_ l) ] 
+    rights = [ p | (Right p) <- (layout1_plots_ l) ] 
 
     mkLegend plots = case (layout1_legend_ l) of
         Nothing -> emptyRenderable
@@ -224,8 +224,8 @@ renderPlots l sz@(w,h) = do
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
 
-    rPlot (_,Left p) = rPlot1 bAxis lAxis p
-    rPlot (_,Right p) = rPlot1 bAxis rAxis p
+    rPlot (Left p) = rPlot1 bAxis lAxis p
+    rPlot (Right p) = rPlot1 bAxis rAxis p
 
     rPlot1 (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p = 
 	let xrange = if xrev then (w, 0) else (0,w)
@@ -265,13 +265,13 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
         rev = laxis_reverse_ laxis
         adata = (laxis_override_ laxis) (laxis_generate_ laxis vals)
 
-allPlottedValues :: [(String,Either (Plot x y) (Plot x' y'))] -> ( [x], [x'], [y], [y'] )
+allPlottedValues :: [(Either (Plot x y) (Plot x' y'))] -> ( [x], [x'], [y], [y'] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
   where
-    xvals0 = [ x | (_, Left p) <- plots, (x,_) <- plot_all_points_ p]
-    yvals0 = [ y | (_, Left p) <- plots, (_,y) <- plot_all_points_ p]
-    xvals1 = [ x | (_, Right p) <- plots, (x,_) <- plot_all_points_ p]
-    yvals1 = [ y | (_, Right p) <- plots, (_,y) <- plot_all_points_ p]
+    xvals0 = [ x | (Left p) <- plots, (x,_) <- plot_all_points_ p]
+    yvals0 = [ y | (Left p) <- plots, (_,y) <- plot_all_points_ p]
+    xvals1 = [ x | (Right p) <- plots, (x,_) <- plot_all_points_ p]
+    yvals1 = [ y | (Right p) <- plots, (_,y) <- plot_all_points_ p]
 
 defaultLayout1 :: (PlotValue x,PlotValue y) => Layout1 x y
 defaultLayout1 = Layout1 {
