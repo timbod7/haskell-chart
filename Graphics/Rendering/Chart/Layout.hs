@@ -217,8 +217,7 @@ renderPlots l sz@(w,h) = do
     preserveCState $ do
       -- render the plots
       setClipRegion (Point 0 0) (Point w h)
-      local (const vectorEnv) $ do
-        mapM_ rPlot (layout1_plots_ l)
+      mapM_ rPlot (layout1_plots_ l)
     when (layout1_grid_last_ l) renderGrids
     return nullPickFn
 

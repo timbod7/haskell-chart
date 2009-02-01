@@ -11,6 +11,10 @@ import Data.Time.Calendar
 import Data.Time.LocalTime
 import Data.Accessor
 import Data.Accessor.Tuple
+import Data.List(sort,nub,scanl1)
+import qualified Data.Map as Map
+import Debug.Trace
+import Control.Monad
 import Prices
 
 data OutputType = Window | PNG | PS | PDF | SVG
@@ -23,6 +27,7 @@ chooseLineWidth SVG = 0.25
 
 green1 = (Color 0.5 1 0.5)
 red1 = (Color 0.5 0.5 1)
+fwhite = solidFillStyle white
 
 ----------------------------------------------------------------------
 test1Layout otype = layout
@@ -94,8 +99,6 @@ test1a otype = fillBackground fwhite $ (gridToRenderable t)
        $ test1Layout otype
 
     rf = tval.toRenderable
-
-    fwhite = solidFillStyle white
 
     axisBorderOnly = (laxis_visible ^= const True)
                    . (laxis_override ^=  (axisGridHide.axisTicksHide.axisLabelsHide))
@@ -241,6 +244,7 @@ test7 otype = toRenderable layout
            $ defaultLayout1
 
 ----------------------------------------------------------------------
+
 test8 :: OutputType -> Renderable ()
 test8 otype = toRenderable layout
   where
@@ -252,29 +256,139 @@ test8 otype = toRenderable layout
                                        | (s,v,o) <- values ]
            $ defaultPieLayout
 
-test9 :: OutputType -> Renderable ()
-test9 otype = toRenderable layout
+----------------------------------------------------------------------
+
+class PlotValue a => BarsPlotValue a where
+    barsReference :: a
+    barsAdd :: a -> a -> a
+
+instance BarsPlotValue Double where
+    barsReference = 0
+    barsAdd = (+)
+
+data PlotBarsStyle = BarsStacked | BarsClustered
+data PlotBarsSpacing = PlotBarsFixWidth Double
+                     | PlotBarsFixGap Double
+
+data PlotBars x y = PlotBars {
+   plot_bars_style_ :: PlotBarsStyle,
+   plot_bars_horizontal_ :: Bool,
+   plot_bars_item_styles_ :: [ (CairoFillStyle,Maybe CairoLineStyle) ],
+   plot_bars_item_labels_ :: [String],
+   plot_bars_spacing_ :: PlotBarsSpacing,
+   plot_bars_reference_ :: y,
+   plot_bars_values_ :: [ (x,[y]) ]
+}
+
+defaultPlotBars = PlotBars {
+   plot_bars_style_ = BarsClustered,
+   plot_bars_horizontal_ = False,
+   plot_bars_item_styles_ = cycle istyles,
+   plot_bars_item_labels_ = [],
+   plot_bars_spacing_ = PlotBarsFixGap 10,
+   plot_bars_values_ = [],
+   plot_bars_reference_ = barsReference
+   }
   where
+    istyles = [ (solidFillStyle red,   Just (solidLine 1.0 black) ),
+                (solidFillStyle green, Just (solidLine 1.0 black) ),
+                (solidFillStyle blue,  Just (solidLine 1.0 black) ) ]
+
+plotBars p = Plot {
+        plot_render_ = renderPlotBars p,
+	plot_render_legend_ = renderPlotLegendBars p,
+	plot_all_points_ = allBarPoints p
+    }
+
+renderPlotBars :: Num y => PlotBars x y -> PointMapFn x y -> CRender ()
+renderPlotBars p pmap = case (plot_bars_style_ p) of
+      BarsClustered -> do forM_ vals clusteredBars
+      BarsStacked -> forM_ vals stackedBars
+  where
+    clusteredBars (x,ys) = preserveCState $ do
+       forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
+           setFillStyle fstyle
+           barPath (offset i) x yref0 y
+           c $ C.fill
+       forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
+           whenJust mlstyle $ \lstyle -> do
+             setLineStyle lstyle
+             barPath (offset i) x yref0 y
+             c $ C.stroke
+
+    stackedBars (x,ys) =  preserveCState $ do
+       let y2s = zip (yref0:stack ys) (stack ys)
+       forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
+           setFillStyle fstyle
+           barPath (-width/2) x y0 y1
+           c $ C.fill
+       forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
+           whenJust mlstyle $ \lstyle -> do
+               setLineStyle lstyle
+               barPath (-width/2) x y0 y1
+               c $ C.stroke
+
+    barPath xos x y0 y1 = do
+      let (Point x' y') = pmap (x,y1)
+      let (Point _ y0') = pmap (x,y0)
+      rectPath (Rect (Point (x'+xos) y0') (Point (x'+xos+width) y'))
+
+    yref0 = plot_bars_reference_ p
+    vals = plot_bars_values_ p
+    width = case plot_bars_spacing_ p of
+        PlotBarsFixGap gap -> (minXInterval - gap) / fromIntegral nys
+        PlotBarsFixWidth width -> width
+    styles = plot_bars_item_styles_ p
+    offset i = fromIntegral (i - nys + 1) * width 
+
+    minXInterval = minimum $ zipWith (-) (tail xs) xs
+      where               
+        xs = nub $ sort $ map (p_x.pmap) (allBarPoints p)
+
+    nys = maximum [ length ys | (x,ys) <- vals ]
+
+whenJust :: (Monad m) => Maybe a -> (a -> m ()) -> m ()
+whenJust (Just a) f = f a
+whenJust _ _ = return ()
+
+allBarPoints :: (Num y) => PlotBars x y -> [(x,y)]
+allBarPoints p = case (plot_bars_style_ p) of
+    BarsClustered -> concat [ (x,y0):[(x,y) | y <- ys ] | (x,ys) <- plot_bars_values_ p ]
+    BarsStacked -> concat [ (x,y0):[(x,y) | y <- stack ys ] | (x,ys) <- plot_bars_values_ p ]
+  where
+    y0 = plot_bars_reference_ p
+
+stack ys = scanl1 (+) ys
+             
+
+renderPlotLegendBars :: PlotBars x y -> Rect -> CRender ()
+renderPlotLegendBars p r@(Rect p1 p2) = return ()
+
+test9 :: OutputType -> Renderable ()
+test9 otype = fillBackground fwhite $ (gridToRenderable t)
+  where
+    t = weights (1,1) $ aboveN [ rf g1, rf g2 ]
+
+    g1 = layout "clustered" (bars0{plot_bars_style_=BarsClustered})
+    g2 = layout "stacked" (bars0{plot_bars_style_=BarsStacked})
+
+    rf = tval.toRenderable
+
     alabels = [ "Manly", "Bondi", "Curl Curl", "Freshwater" ]
-    pubs = [4, 5, 0, 1]
-    surf_clubs = [3, 2, 1, 1]
+    glabels = ["pubs","surf_clubs"]
+    values =  [ [4,3], [6,2], [0,1], [1,1] ]
 
-    plots = [
-        (Left,"pubs",pubs,filledCircles 5 green),
-        (Left,"surf_clubs",surf_clubs,filledCircles 3 blue)
-        ]
-
-    layout = layout1_title ^= "Sydney Beaches"
+    layout title bars = layout1_title ^= title
            $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
            $ layout1_left_axis ^: laxis_override ^= axisGridHide
-           $ layout1_plots ^= map mkplot plots
+           $ layout1_plots ^= [ ("?", Left (plotBars bars)) ]
            $ defaultLayout1 :: Layout1 PlotIndex Double
 
-    mkplot (side,name,vs,style) = (name, side (toPlot p))
-      where
-        p = plot_points_style ^= style
-          $ plot_points_values ^= addIndexes vs
-          $ defaultPlotPoints
+    bars0 = defaultPlotBars {
+        plot_bars_item_labels_ = glabels,
+        plot_bars_values_ = addIndexes values,
+        plot_bars_spacing_ = PlotBarsFixWidth 50
+        }
 
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations

@@ -277,15 +277,14 @@ strokeLines (p1:ps) = do
     c $ C.stroke
 strokeLines _ = return ()
 
--- | make a path from a rectable
+-- | make a path from a rectangle
 rectPath :: Rect -> CRender ()
-rectPath (Rect (Point x1 y1) (Point x2 y2)) = c $ do
-   C.newPath
-   C.moveTo x1 y1
-   C.lineTo x2 y1
-   C.lineTo x2 y2
-   C.lineTo x1 y2
-   C.lineTo x1 y1
+rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = do
+    c $ C.newPath
+    moveTo p1 >> lineTo p2 >> lineTo p3 >> lineTo p4 >> lineTo p1
+  where
+    p2 = (Point x1 y2)
+    p4 = (Point x2 y1)
 
 setFontStyle f = do
     c $ C.selectFontFace (font_name_ f) (font_slant_ f) (font_weight_ f)
