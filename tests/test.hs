@@ -300,9 +300,9 @@ test9 otype = fillBackground fwhite $ (gridToRenderable t)
 
     rf = tval.toRenderable
 
-    alabels = [ "Manly", "Bondi", "Curl Curl", "Freshwater" ]
-    titles = ["pubs","surf_clubs"]
-    values =  [ [4,3], [6,2], [0,1], [1,1] ]
+    alabels = [ "June", "July", "August", "September", "October" ]
+    titles = ["Cash","Equity"]
+    values =  [ [20,45], [45,30], [30,20], [70,25] ]
 
 
     layout title bars = layout1_title ^= title
