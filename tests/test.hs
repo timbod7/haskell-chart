@@ -275,10 +275,28 @@ test8 otype = toRenderable layout
 test9 :: OutputType -> Renderable ()
 test9 otype = fillBackground fwhite $ (gridToRenderable t)
   where
-    t = weights (1,1) $ aboveN [ rf g1, rf g2 ]
+    t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2],
+                                 besideN [rf g3, rf g4] ]
 
-    g1 = layout "clustered" (bars0{plot_bars_style_=BarsClustered})
-    g2 = layout "stacked" (bars0{plot_bars_style_=BarsStacked})
+    g1 = layout "clustered / fix width "
+       $ plot_bars_style ^= BarsClustered
+       $ plot_bars_spacing ^= BarsFixWidth 25
+       $ bars0
+
+    g2 = layout "clustered / fix gap "
+       $ plot_bars_style ^= BarsClustered
+       $ plot_bars_spacing ^= BarsFixGap 10
+       $ bars0
+
+    g3 = layout "stacked / fix width"
+       $ plot_bars_style ^= BarsStacked
+       $ plot_bars_spacing ^= BarsFixWidth 25
+       $ bars0
+
+    g4 = layout "stacked / fix gap"
+       $ plot_bars_style ^= BarsStacked
+       $ plot_bars_spacing ^= BarsFixGap 10
+       $ bars0
 
     rf = tval.toRenderable
 
@@ -286,17 +304,16 @@ test9 otype = fillBackground fwhite $ (gridToRenderable t)
     titles = ["pubs","surf_clubs"]
     values =  [ [4,3], [6,2], [0,1], [1,1] ]
 
+
     layout title bars = layout1_title ^= title
            $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
            $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
            $ layout1_plots ^= [ Left (plotBars bars) ]
            $ defaultLayout1 :: Layout1 PlotIndex Double
 
-    bars0 = defaultPlotBars {
-        plot_bars_titles_ = titles,
-        plot_bars_values_ = addIndexes values,
-        plot_bars_spacing_ = PlotBarsFixWidth 50
-        }
+    bars0 = plot_bars_titles ^= titles
+          $ plot_bars_values ^= addIndexes values
+          $ defaultPlotBars
 
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations

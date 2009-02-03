@@ -18,6 +18,8 @@
 --     * 'PlotFillBetween'
 --
 --     * 'PlotErrBars'
+--     
+--     * 'PlotBars'
 --
 -- These accessors are not shown in this API documentation.  They have
 -- the same name as the field, but with the trailing underscore
@@ -76,7 +78,6 @@ module Graphics.Rendering.Chart.Plot(
 
     plotBars,
     plot_bars_style,
-    plot_bars_horizontal,
     plot_bars_item_styles,
     plot_bars_titles,
     plot_bars_spacing,
@@ -347,33 +348,51 @@ instance BarsPlotValue Double where
     barsAdd = (+)
 
 data PlotBarsStyle = BarsStacked | BarsClustered
-data PlotBarsSpacing = PlotBarsFixWidth Double
-                     | PlotBarsFixGap Double
+data PlotBarsSpacing = BarsFixWidth Double
+                     | BarsFixGap Double
 
+-- | Value describing how to plot a set of bars.
+-- Note that the input data is typed [(x,[y])], ie for each x value
+-- we plot several y values. Typically the size of each [y] list would
+-- be the same.
 data PlotBars x y = PlotBars {
+   -- | This value specifies whether each value from [y] should be
+   -- shown beside or above the previous value.
    plot_bars_style_ :: PlotBarsStyle,
-   plot_bars_horizontal_ :: Bool,
+
+   -- | The style in which to draw each element of [y]. A fill style
+   -- is required, and if a linestyle is given, each bar will be
+   -- outlined.
    plot_bars_item_styles_ :: [ (CairoFillStyle,Maybe CairoLineStyle) ],
+
+   -- | The title of each element of [y]. These will be shown in the
+   -- legend.
    plot_bars_titles_ :: [String],
+
+   -- | This value controls how the widths of the bars are
+   -- calculated. Either the widths of the bars, or the gaps between
+   -- them can be fixed.
    plot_bars_spacing_ :: PlotBarsSpacing,
+
+   -- | The starting level for the chart (normally 0).
    plot_bars_reference_ :: y,
+
+   -- | The actual points to be plotted
    plot_bars_values_ :: [ (x,[y]) ]
 }
 
 defaultPlotBars :: BarsPlotValue y => PlotBars x y
 defaultPlotBars = PlotBars {
    plot_bars_style_ = BarsClustered,
-   plot_bars_horizontal_ = False,
    plot_bars_item_styles_ = cycle istyles,
    plot_bars_titles_ = [],
-   plot_bars_spacing_ = PlotBarsFixGap 10,
+   plot_bars_spacing_ = BarsFixGap 10,
    plot_bars_values_ = [],
    plot_bars_reference_ = barsReference
    }
   where
-    istyles = [ (solidFillStyle red,   Just (solidLine 1.0 black) ),
-                (solidFillStyle green, Just (solidLine 1.0 black) ),
-                (solidFillStyle blue,  Just (solidLine 1.0 black) ) ]
+    istyles = map mkstyle defaultColorSeq
+    mkstyle c = (solidFillStyle c,Just (solidLine 1.0 black))
 
 plotBars :: (BarsPlotValue y) => PlotBars x y -> Plot x y
 plotBars p = Plot {
@@ -418,8 +437,10 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
     yref0 = plot_bars_reference_ p
     vals = plot_bars_values_ p
     width = case plot_bars_spacing_ p of
-        PlotBarsFixGap gap -> (minXInterval - gap) / fromIntegral nys
-        PlotBarsFixWidth width -> width
+        BarsFixGap gap -> case (plot_bars_style_ p) of
+            BarsClustered -> (minXInterval - gap) / fromIntegral nys
+            BarsStacked -> (minXInterval - gap)
+        BarsFixWidth width -> width
     styles = plot_bars_item_styles_ p
     offset i = fromIntegral (i - nys + 1) * width 
 
