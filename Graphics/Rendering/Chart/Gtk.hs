@@ -9,6 +9,7 @@ module Graphics.Rendering.Chart.Gtk(
     ) where
 
 import qualified Graphics.UI.Gtk as G
+import qualified Graphics.UI.Gtk.Gdk.Events as G
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Renderable
