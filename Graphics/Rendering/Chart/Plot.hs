@@ -417,6 +417,8 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
              barPath (offset i) x yref0 y
              c $ C.stroke
 
+    offset i = fromIntegral (2*i-nys) * width/2
+
     stackedBars (x,ys) =  preserveCState $ do
        let y2s = zip (yref0:stack ys) (stack ys)
        forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
@@ -442,7 +444,6 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
             BarsStacked -> (minXInterval - gap)
         BarsFixWidth width -> width
     styles = plot_bars_item_styles_ p
-    offset i = fromIntegral (i - nys + 1) * width 
 
     minXInterval = minimum $ zipWith (-) (tail xs) xs
       where               

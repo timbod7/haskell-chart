@@ -275,34 +275,42 @@ test8 otype = toRenderable layout
 test9 :: OutputType -> Renderable ()
 test9 otype = fillBackground fwhite $ (gridToRenderable t)
   where
-    t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2],
-                                 besideN [rf g3, rf g4] ]
+    t = weights (1,1) $ aboveN [ besideN [rf g0, rf g1, rf g2],
+                                 besideN [rf g3, rf g4, rf g5] ]
+
+    g0 = layout "clustered 1"
+       $ plot_bars_style ^= BarsClustered
+       $ plot_bars_spacing ^= BarsFixWidth 25
+       $ bars1
 
     g1 = layout "clustered / fix width "
        $ plot_bars_style ^= BarsClustered
        $ plot_bars_spacing ^= BarsFixWidth 25
-       $ bars0
+       $ bars2
 
     g2 = layout "clustered / fix gap "
        $ plot_bars_style ^= BarsClustered
        $ plot_bars_spacing ^= BarsFixGap 10
-       $ bars0
+       $ bars2
 
-    g3 = layout "stacked / fix width"
+    g3 = layout "stacked 1"
        $ plot_bars_style ^= BarsStacked
        $ plot_bars_spacing ^= BarsFixWidth 25
-       $ bars0
+       $ bars1
 
-    g4 = layout "stacked / fix gap"
+    g4 = layout "stacked / fix width"
+       $ plot_bars_style ^= BarsStacked
+       $ plot_bars_spacing ^= BarsFixWidth 25
+       $ bars2
+
+    g5 = layout "stacked / fix gap"
        $ plot_bars_style ^= BarsStacked
        $ plot_bars_spacing ^= BarsFixGap 10
-       $ bars0
+       $ bars2
 
     rf = tval.toRenderable
 
-    alabels = [ "June", "July", "August", "September", "October" ]
-    titles = ["Cash","Equity"]
-    values =  [ [20,45], [45,30], [30,20], [70,25] ]
+    alabels = [ "Jun", "Jul", "Aug", "Sep", "Oct" ]
 
 
     layout title bars = layout1_title ^= title
@@ -311,9 +319,14 @@ test9 otype = fillBackground fwhite $ (gridToRenderable t)
            $ layout1_plots ^= [ Left (plotBars bars) ]
            $ defaultLayout1 :: Layout1 PlotIndex Double
 
-    bars0 = plot_bars_titles ^= titles
-          $ plot_bars_values ^= addIndexes values
+    bars1 = plot_bars_titles ^= ["Cash"]
+          $ plot_bars_values ^= addIndexes [[20],[45],[30],[70]]
           $ defaultPlotBars
+
+    bars2 = plot_bars_titles ^= ["Cash","Equity"]
+          $ plot_bars_values ^= addIndexes [[20,45],[45,30],[30,20],[70,25]]
+          $ defaultPlotBars
+
 
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
