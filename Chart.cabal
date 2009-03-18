@@ -1,5 +1,5 @@
 Name: Chart
-Version: 0.10
+Version: 0.10.1
 License: BSD3
 License-file: LICENSE
 Copyright: Tim Docker, 2006-2009
@@ -19,10 +19,10 @@ flag splitbase
 
 library
   if flag(splitbase)
-    Build-depends: base >= 3, old-locale, time, mtl, array, data-accessor, data-accessor-template
+    Build-depends: base >= 3, old-locale, time, mtl, array
   else
     Build-depends: base < 3
-  Build-depends: gtk >= 0.9.11, cairo >= 0.9.11, time, mtl, array, data-accessor, data-accessor-template
+  Build-depends: gtk >= 0.9.11, cairo >= 0.9.11, time, mtl, array, data-accessor >= 0.2, data-accessor-template == 0.2
 
   Exposed-modules:
         Graphics.Rendering.Chart,
