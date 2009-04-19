@@ -73,6 +73,8 @@ import Control.Monad
 import Control.Monad.Reader (local)
 import Data.Accessor.Template
 import Data.Accessor
+import Data.Colour
+import Data.Colour.Names (white)
 
 -- | A @MAxisFn@ is a function that generates an (optional) axis
 -- given the points plotted against that axis.
@@ -280,7 +282,7 @@ allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
 
 defaultLayout1 :: (PlotValue x,PlotValue y) => Layout1 x y
 defaultLayout1 = Layout1 {
-    layout1_background_ = solidFillStyle white,
+    layout1_background_ = solidFillStyle $ opaque white,
     layout1_plot_background_ = Nothing,
 
     layout1_title_ = "",
@@ -325,7 +327,7 @@ updateAllAxesStyles uf = (layout1_top_axis .> laxis_style ^: uf) .
                          (layout1_right_axis .> laxis_style ^: uf)
 
 -- | Helper to set the forground color uniformly on a Layout1
-setLayout1Foreground :: Color -> Layout1 x y -> Layout1 x y
+setLayout1Foreground :: AlphaColour Double -> Layout1 x y -> Layout1 x y
 setLayout1Foreground fg = updateAllAxesStyles  (
                        (axis_line_style .> line_color ^= fg).
                        (axis_label_style .> font_color ^= fg)

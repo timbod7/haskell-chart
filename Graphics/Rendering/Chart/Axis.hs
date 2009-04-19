@@ -88,6 +88,8 @@ import System.Locale (defaultTimeLocale)
 import Control.Monad
 import Data.List
 import Data.Accessor.Template
+import Data.Colour (opaque)
+import Data.Colour.Names (black, lightgrey)
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
@@ -425,8 +427,8 @@ defaultLogAxis = LogAxisParams {
 
 ----------------------------------------------------------------------
 
-defaultAxisLineStyle = solidLine 1 black
-defaultGridLineStyle = dashedLine 1 [5,5] grey8
+defaultAxisLineStyle = solidLine 1 $ opaque black
+defaultGridLineStyle = dashedLine 1 [5,5] $ opaque lightgrey
 
 defaultAxisStyle = AxisStyle {
     axis_line_style_ = defaultAxisLineStyle,

@@ -53,11 +53,8 @@ module Graphics.Rendering.Chart.Types(
     isValidNumber,
     maybeM,
 
-    black, grey8, white, red, green, blue,
     defaultColorSeq,
-           
-    Color(..),
-    color,
+
     setSourceColor,
 
     CairoLineStyle(..),
@@ -113,6 +110,9 @@ import qualified Graphics.Rendering.Cairo as C
 import Control.Monad.Reader
 import Data.Accessor
 import Data.Accessor.Template
+import Data.Colour
+import Data.Colour.SRGB
+import Data.Colour.Names
 
 -- | A point in two dimensions
 data Point = Point {
@@ -124,15 +124,6 @@ data Vector = Vector {
     v_x :: Double,
     v_y :: Double
 } deriving Show
-
-data Color = Color {
-    c_r :: Double,
-    c_g :: Double,
-    c_b :: Double
-}
-
-color :: Int -> Int -> Int -> Color
-color ri gi bi = Color (fromIntegral ri/255) (fromIntegral gi/255) (fromIntegral bi/255)
 
 -- | scale a vector by a constant
 vscale :: Double -> Vector -> Vector
@@ -210,7 +201,7 @@ newtype CairoPointStyle = CairoPointStyle (Point -> CRender ())
 -- | Data type for the style of a line
 data CairoLineStyle = CairoLineStyle {
    line_width_ :: Double,
-   line_color_ :: Color,
+   line_color_ :: AlphaColour Double,
    line_dashes_ :: [Double],
    line_cap_ :: C.LineCap,
    line_join_ :: C.LineJoin
@@ -228,20 +219,15 @@ data CairoFontStyle = CairoFontStyle {
       font_size_ :: Double,
       font_slant_ :: C.FontSlant,
       font_weight_ :: C.FontWeight,
-      font_color_ :: Color
+      font_color_ :: AlphaColour Double
 }
 
 type Range = (Double,Double)
 type RectSize = (Double,Double)
 
-black = Color 0 0 0
-grey8 = Color 0.8 0.8 0.8
-white = Color 1 1 1
-red = Color 1 0 0
-green = Color 0 1 0
-blue = Color 0 0 1
+defaultColorSeq :: [AlphaColour Double]
+defaultColorSeq = cycle $ map opaque [blue, red, green, yellow, cyan, magenta]
 
-defaultColorSeq = cycle [blue,red,green, Color 1 1 0,Color 0 1 1,Color 1 0 1 ]
 ----------------------------------------------------------------------
 -- Assorted helper functions in Cairo Usage
 
@@ -306,7 +292,11 @@ setLineStyle ls = do
 
 setFillStyle (CairoFillStyle s) = s
 
-setSourceColor (Color r g b) = C.setSourceRGB r g b
+colourChannel :: (Floating a, Ord a) => AlphaColour a -> Colour a
+colourChannel c = darken (recip (alphaChannel c)) (c `over` black)
+
+setSourceColor c = let (RGB r g b) = toSRGB $ colourChannel c
+                   in C.setSourceRGBA r g b (alphaChannel c)
 
 -- | Return the bounding rectancgle for a text string rendered
 -- in the current context.
@@ -351,7 +341,7 @@ preserveCState a = do
 
 filledCircles ::
      Double -- ^ radius of circle
-  -> Color -- ^ colour
+  -> AlphaColour Double -- ^ colour
   -> CairoPointStyle
 filledCircles radius cl = CairoPointStyle rf
   where
@@ -365,7 +355,7 @@ filledCircles radius cl = CairoPointStyle rf
 hollowCircles ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
-  -> Color
+  -> AlphaColour Double
   -> CairoPointStyle
 hollowCircles radius w cl = CairoPointStyle rf
   where
@@ -382,7 +372,7 @@ hollowPolygon ::
   -> Double -- ^ thickness of line
   -> Int    -- ^ Number of vertices
   -> Bool   -- ^ Is right-side-up?
-  -> Color
+  -> AlphaColour Double
   -> CairoPointStyle
 hollowPolygon radius w sides isrot cl = CairoPointStyle rf
   where rf p =
@@ -403,7 +393,7 @@ filledPolygon ::
      Double -- ^ radius of circle
   -> Int    -- ^ Number of vertices
   -> Bool   -- ^ Is right-side-up?
-  -> Color
+  -> AlphaColour Double
   -> CairoPointStyle
 filledPolygon radius sides isrot cl = CairoPointStyle rf
   where rf p =
@@ -422,7 +412,7 @@ filledPolygon radius sides isrot cl = CairoPointStyle rf
 plusses ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
-  -> Color
+  -> AlphaColour Double
   -> CairoPointStyle
 plusses radius w cl = CairoPointStyle rf
   where rf p = do (Point x y ) <- alignp p
@@ -438,7 +428,7 @@ plusses radius w cl = CairoPointStyle rf
 exes ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
-  -> Color
+  -> AlphaColour Double
   -> CairoPointStyle
 exes radius w cl = CairoPointStyle rf
   where rad = radius / sqrt 2
@@ -455,7 +445,7 @@ exes radius w cl = CairoPointStyle rf
 stars ::
      Double -- ^ radius of circle
   -> Double -- ^ thickness of line
-  -> Color 
+  -> AlphaColour Double
   -> CairoPointStyle
 stars radius w cl = CairoPointStyle rf
   where rad = radius / sqrt 2
@@ -475,31 +465,31 @@ stars radius w cl = CairoPointStyle rf
 
 solidLine ::
      Double -- ^ width of line
-  -> Color
+  -> AlphaColour Double
   -> CairoLineStyle
 solidLine w cl = CairoLineStyle w cl [] C.LineCapButt C.LineJoinMiter
 
 dashedLine ::
      Double   -- ^ width of line
   -> [Double] -- ^ the dash pattern in device coordinates
-  -> Color
+  -> AlphaColour Double
   -> CairoLineStyle
 dashedLine w ds cl = CairoLineStyle w cl ds C.LineCapButt C.LineJoinMiter
 
 solidFillStyle ::
-     Color
+     AlphaColour Double
   -> CairoFillStyle
 solidFillStyle cl = CairoFillStyle fn
    where fn = c $ setSourceColor cl
 
-defaultPointStyle = filledCircles 1 white
+defaultPointStyle = filledCircles 1 $ opaque white
 
 defaultFontStyle = CairoFontStyle {
    font_name_ = "sans",
    font_size_ = 10,
    font_slant_ = C.FontSlantNormal,
    font_weight_ = C.FontWeightNormal,
-   font_color_ = black
+   font_color_ = opaque black
 }
 
 isValidNumber v = not (isNaN v) && not (isInfinite v)

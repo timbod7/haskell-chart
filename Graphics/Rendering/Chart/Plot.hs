@@ -92,6 +92,9 @@ import Graphics.Rendering.Chart.Axis
 import Control.Monad
 import Data.List
 import Data.Accessor.Template
+import Data.Colour
+import Data.Colour.SRGB (sRGB)
+import Data.Colour.Names
 
 -- | Interface to control plotting on a 2D area.
 data Plot x y = Plot {
@@ -150,7 +153,7 @@ renderPlotLegendLines p r@(Rect p1 p2) = preserveCState $ do
     lineTo (Point (p_x p2) y)
     c $ C.stroke
 
-defaultPlotLineStyle = (solidLine 1 blue){ 
+defaultPlotLineStyle = (solidLine 1 $ opaque blue){
      line_cap_ = C.LineCapRound,
      line_join_ = C.LineJoinRound
  }
@@ -245,8 +248,8 @@ plotAllPointsFillBetween p = concat [ [(x, y1), (x, y2)]
 
 defaultPlotFillBetween = PlotFillBetween {
     plot_fillbetween_title_ = "",
-    plot_fillbetween_style_=solidFillStyle (Color 0.5 0.5 1.0),
-    plot_fillbetween_values_=[]
+    plot_fillbetween_style_ = solidFillStyle (opaque $ sRGB 0.5 0.5 1.0),
+    plot_fillbetween_values_= []
 }
 
 ----------------------------------------------------------------------
@@ -331,7 +334,7 @@ renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
 
 defaultPlotErrBars = PlotErrBars {
     plot_errbars_title_ = "",
-    plot_errbars_line_style_ = solidLine 1 blue,
+    plot_errbars_line_style_ = solidLine 1 $ opaque blue,
     plot_errbars_tick_length_ = 3,
     plot_errbars_overhang_ = 0,
     plot_errbars_values_ = []
@@ -392,7 +395,7 @@ defaultPlotBars = PlotBars {
    }
   where
     istyles = map mkstyle defaultColorSeq
-    mkstyle c = (solidFillStyle c,Just (solidLine 1.0 black))
+    mkstyle c = (solidFillStyle c,Just (solidLine 1.0 $ opaque black))
 
 plotBars :: (BarsPlotValue y) => PlotBars x y -> Plot x y
 plotBars p = Plot {

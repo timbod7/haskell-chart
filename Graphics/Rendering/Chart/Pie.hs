@@ -56,7 +56,9 @@ import qualified Graphics.Rendering.Cairo as C
 import Data.List
 import Data.Bits
 import Data.Accessor.Template
-import Control.Monad 
+import Data.Colour
+import Data.Colour.Names (black, white)
+import Control.Monad
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Legend
@@ -73,7 +75,7 @@ data PieLayout = PieLayout {
 
 data PieChart = PieChart {
    pie_data_  :: [PieItem],
-   pie_colors_ :: [Color],
+   pie_colors_ :: [AlphaColour Double],
    pie_label_style_ :: CairoFontStyle,
    pie_label_line_style_ :: CairoLineStyle, 
    pie_start_angle_ :: Double
@@ -90,14 +92,14 @@ defaultPieChart = PieChart {
     pie_data_ = [], 
     pie_colors_ = defaultColorSeq,
     pie_label_style_ = defaultFontStyle,
-    pie_label_line_style_ = solidLine 1 black,
+    pie_label_line_style_ = solidLine 1 $ opaque black,
     pie_start_angle_ = 0
 }
 
 defaultPieItem = PieItem "" 0 0
 
 defaultPieLayout = PieLayout {
-    pie_background_ = solidFillStyle white,
+    pie_background_ = solidFillStyle $ opaque white,
     pie_title_ = "",
     pie_title_style_ = defaultFontStyle{font_size_=15, font_weight_=C.FontWeightBold},
     pie_plot_ = defaultPieChart,
@@ -147,7 +149,7 @@ renderPie p (w,h) = do
         content = let total = sum (map pitem_value_ (pie_data_ p))
                   in [ pi{pitem_value_=pitem_value_ pi/total} | pi <- pie_data_ p ]
 
-        paint :: Point -> Double -> Double -> (Color,PieItem) -> CRender Double
+        paint :: Point -> Double -> Double -> (AlphaColour Double, PieItem) -> CRender Double
         paint center radius a1 (color,pitem) = do
             let ax = 360.0 * (pitem_value_ pitem)
             let a2 = a1 + (ax / 2)
@@ -178,8 +180,8 @@ renderPie p (w,h) = do
                     let p2 = p1 `pvadd` (Vector (offset label_rgap) 0)
                     drawText anchor VTA_Bottom p2 name
 
-                pieSlice :: Point -> Double -> Double -> Color -> CRender ()
-                pieSlice (Point x y) a1 a2 color = c $ do 
+                pieSlice :: Point -> Double -> Double -> AlphaColour Double -> CRender ()
+                pieSlice (Point x y) a1 a2 color = c $ do
                     C.newPath
                     C.arc x y radius (radian a1) (radian a2)
                     C.lineTo x y

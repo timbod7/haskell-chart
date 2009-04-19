@@ -11,6 +11,9 @@ import Data.Time.Calendar
 import Data.Time.LocalTime
 import Data.Accessor
 import Data.Accessor.Tuple
+import Data.Colour
+import Data.Colour.Names
+import Data.Colour.SRGB
 import Data.List(sort,nub,scanl1)
 import qualified Data.Map as Map
 import Debug.Trace
@@ -25,23 +28,23 @@ chooseLineWidth PDF = 0.25
 chooseLineWidth PS = 0.25
 chooseLineWidth SVG = 0.25
 
-green1 = (Color 0.5 1 0.5)
-red1 = (Color 0.5 0.5 1)
-fwhite = solidFillStyle white
-fparchment = solidFillStyle (color 255 250 230) 
+green1 = opaque $ sRGB 0.5 1 0.5
+red1 = opaque $ sRGB 0.5 0.5 1
+fwhite = solidFillStyle $ opaque white
+fparchment = solidFillStyle $ opaque $ sRGB 1.0 0.99 0.90
 
 ----------------------------------------------------------------------
 test1Layout otype = layout
   where
     am :: Double -> Double
-    am x = (sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))
+    am x = (sin (x*pi/45) + 1) / 2 * (sin (x*pi/5))
 
     sinusoid1 = plot_lines_values ^= [[ (x,(am x)) | x <- [0,(0.5)..400]]]
-              $ plot_lines_style  ^= solidLine lineWidth blue
+              $ plot_lines_style  ^= solidLine lineWidth (opaque blue)
               $ plot_lines_title ^="am"
               $ defaultPlotLines
 
-    sinusoid2 = plot_points_style ^= filledCircles 2 red
+    sinusoid2 = plot_points_style ^= filledCircles 2 (opaque red)
               $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
               $ plot_points_title ^="am points"
               $ defaultPlotPoints
@@ -117,19 +120,19 @@ test2 prices otype = toRenderable layout
                 $ line_color ^= c
                 $ defaultPlotLines ^. plot_lines_style
 
-    price1 = plot_lines_style ^= lineStyle blue
+    price1 = plot_lines_style ^= lineStyle (opaque blue)
            $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,v,_) <- prices]]
            $ plot_lines_title ^= "price 1"
            $ defaultPlotLines
 
-    price2 = plot_lines_style ^= lineStyle green
+    price2 = plot_lines_style ^= lineStyle (opaque green)
 	   $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
            $ plot_lines_title ^= "price 2"
            $ defaultPlotLines
 
-    bg = Color 0 0 0.25
-    fg = Color 1 1 1
-    fg1 = Color 0.0 0.0 0.15
+    bg = opaque $ sRGB 0 0 0.25
+    fg = opaque white
+    fg1 = opaque $ sRGB 0.0 0.0 0.15
 
     layout = layout1_title ^="Price History"
            $ layout1_background ^= solidFillStyle bg
@@ -170,7 +173,7 @@ test4 :: Bool -> Bool -> OutputType -> Renderable ()
 test4 xrev yrev otype = toRenderable layout
   where
 
-    points = plot_points_style ^= filledCircles 3 red
+    points = plot_points_style ^= filledCircles 3 (opaque red)
            $ plot_points_values ^= [ (x, LogValue (10**x)) | x <- [0.5,1,1.5,2,2.5] ]
            $ plot_points_title ^= "values"
            $ defaultPlotPoints
@@ -216,8 +219,8 @@ test5 otype = toRenderable (layout 1001 (trial bits) :: Layout1 Double LogValue)
         f True = (1+frac*(1+b))
         f False = (1-frac)
 
-    s1 = solidLine lineWidth green
-    s2 = solidLine lineWidth blue
+    s1 = solidLine lineWidth $ opaque green
+    s2 = solidLine lineWidth $ opaque blue
 
     lineWidth = chooseLineWidth otype
 
@@ -246,7 +249,7 @@ test7 otype = toRenderable layout
          $ plot_errbars_title ^="test"
          $ defaultPlotErrBars
 
-    points = plot_points_style ^= filledCircles 2 red
+    points = plot_points_style ^= filledCircles 2 (opaque red)
 	   $ plot_points_values ^= [(x,y) |  (x,y,dx,dy) <- vals]
            $ plot_points_title ^= "test"
            $ defaultPlotPoints
@@ -327,6 +330,45 @@ test9 otype = fillBackground fwhite $ (gridToRenderable t)
           $ plot_bars_values ^= addIndexes [[20,45],[45,30],[30,20],[70,25]]
           $ defaultPlotBars
 
+-------------------------------------------------------------------------------
+
+test10 :: [(Int,Int,Int,Double,Double)] -> OutputType -> Renderable ()
+test10 prices otype = toRenderable layout
+  where
+
+    lineStyle c = line_width ^= 3 * chooseLineWidth otype
+                $ line_color ^= c
+                $ defaultPlotLines ^. plot_lines_style
+
+    price1 = plot_lines_style ^= lineStyle (opaque blue)
+           $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,v,_) <- prices]]
+           $ plot_lines_title ^= "price 1"
+           $ defaultPlotLines
+
+    price1_area = plot_fillbetween_values ^= [((date d m y), (v * 0.95, v * 1.05)) | (d,m,y,v,_) <- prices]
+                $ plot_fillbetween_style  ^= solidFillStyle (withOpacity blue 0.2)
+                $ defaultPlotFillBetween
+
+    price2 = plot_lines_style ^= lineStyle (opaque red)
+	   $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
+           $ plot_lines_title ^= "price 2"
+           $ defaultPlotLines
+
+    price2_area = plot_fillbetween_values ^= [((date d m y), (v * 0.95, v * 1.05)) | (d,m,y,_,v) <- prices]
+                $ plot_fillbetween_style  ^= solidFillStyle (withOpacity red 0.2)
+                $ defaultPlotFillBetween
+
+    fg = opaque black
+    fg1 = opaque $ sRGB 0.0 0.0 0.15
+
+    layout = layout1_title ^="Price History"
+           $ layout1_background ^= solidFillStyle (opaque white)
+           $ layout1_right_axis ^: laxis_override ^= axisGridHide
+ 	   $ layout1_plots ^= [ Left (toPlot price1_area), Right (toPlot price2_area)
+                              , Left (toPlot price1),      Right (toPlot price2)
+                              ]
+           $ setLayout1Foreground fg
+           $ defaultLayout1
 
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
@@ -338,8 +380,8 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
     s = "Labelling"
     hs = [HTA_Left, HTA_Centre, HTA_Right]
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]
-    fwhite = solidFillStyle white
-    fblue = solidFillStyle (Color 0.8 0.8 1)
+    fwhite = solidFillStyle $ opaque white
+    fblue = solidFillStyle $ opaque $ sRGB 0.8 0.8 1
     fs = defaultFontStyle{font_size_=20,font_weight_=C.FontWeightBold}
     crossHairs r =Renderable {
       minsize = minsize r,
@@ -369,6 +411,7 @@ allTests =
      , ("test7", test7)
      , ("test8", test8)
      , ("test9", test9)
+     , ("test10", test10 (filterPrices (date 1 1 2005) (date 31 12 2005)))
      , ("misc1", misc1 0)
      , ("misc1a", misc1 45)
      ]

@@ -36,15 +36,15 @@ module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                       ) where
 
 import Data.Maybe ( catMaybes )
+import Data.Colour
+import Data.Colour.Names
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Gtk
 
-styleColor :: Int -> Color
+styleColor :: Int -> AlphaColour Double
 styleColor ind = colorSequence !! ind
-    where colorSequence = cycle [Color 0 0 1,Color 1 0 0,Color 0 1 0,
-                                 Color 1 1 0,Color 0 1 1,Color 1 0 1,
-                                 Color 0 0 0]
+    where colorSequence = cycle $ map opaque [blue, red, green, yellow, cyan, magenta, black]
 
 styleSymbol :: Int -> PlotKind
 styleSymbol ind = symbolSequence !! ind
