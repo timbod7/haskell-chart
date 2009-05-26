@@ -41,6 +41,7 @@ module Graphics.Rendering.Chart.Types(
     within,
 
     RectEdge(..),
+    Limit(..),
     PointMapFn,
 
     preserveCState,
@@ -141,8 +142,11 @@ pvsub (Point x1 y1) (Vector x2 y2) = (Point (x1-x2) (y1-y2))
 psub :: Point -> Point -> Vector
 psub (Point x1 y1) (Point x2 y2) = (Vector (x1-x2) (y1-y2))
 
+data Limit a = LMin | LValue a | LMax
+   deriving Show
+
 -- | a function mapping between points
-type PointMapFn x y = (x,y) -> Point
+type PointMapFn x y = (Limit x, Limit y) -> Point
 
 -- | A rectangle is defined by two points
 data Rect = Rect Point Point

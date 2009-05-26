@@ -237,7 +237,11 @@ renderPlots l sz@(w,h) = do
     rPlot1 (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p = 
 	let xrange = if xrev then (w, 0) else (0,w)
 	    yrange  = if yrev then (0, h) else (h, 0)
-	    pmfn (x,y) = Point (axis_viewport_ xaxis xrange x) (axis_viewport_ yaxis yrange y)
+	    pmfn (x,y) = Point (mapv xrange (axis_viewport_ xaxis xrange) x)
+                               (mapv yrange (axis_viewport_ yaxis yrange) y)
+            mapv (min,max) _ LMin = min
+            mapv (min,max) _ LMax = max
+            mapv _ f (LValue v) = f v
 	in plot_render_ p pmfn
     rPlot1 _ _ _ = return ()
 
@@ -275,10 +279,10 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
 allPlottedValues :: [(Either (Plot x y) (Plot x' y'))] -> ( [x], [x'], [y], [y'] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
   where
-    xvals0 = [ x | (Left p) <- plots, (x,_) <- plot_all_points_ p]
-    yvals0 = [ y | (Left p) <- plots, (_,y) <- plot_all_points_ p]
-    xvals1 = [ x | (Right p) <- plots, (x,_) <- plot_all_points_ p]
-    yvals1 = [ y | (Right p) <- plots, (_,y) <- plot_all_points_ p]
+    xvals0 = [ x | (Left p) <- plots, x <- fst $ plot_all_points_ p]
+    yvals0 = [ y | (Left p) <- plots, y <- snd $ plot_all_points_ p]
+    xvals1 = [ x | (Right p) <- plots, x <- fst $ plot_all_points_ p]
+    yvals1 = [ y | (Right p) <- plots, y <- snd $ plot_all_points_ p]
 
 defaultLayout1 :: (PlotValue x,PlotValue y) => Layout1 x y
 defaultLayout1 = Layout1 {

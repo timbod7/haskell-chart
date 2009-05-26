@@ -57,6 +57,10 @@ module Graphics.Rendering.Chart.Plot(
     plot_lines_title,
     plot_lines_style,
     plot_lines_values,
+    plot_lines_limit_values,
+
+    hlinePlot,
+    vlinePlot,
 
     plot_render,
     plot_legend,
@@ -110,7 +114,7 @@ data Plot x y = Plot {
 
     -- | All of the model space coordinates to be plotted. These are
     -- used to autoscale the axes where necessary.
-    plot_all_points_ :: [(x,y)]
+    plot_all_points_ :: ([x],[y])
 }
 
 -- | a type class abstracting the conversion of a value to a Plot.
@@ -119,12 +123,18 @@ class ToPlot a where
 
 ----------------------------------------------------------------------
 
+mapXY :: PointMapFn x y -> ((x,y) -> Point)
+mapXY f (x,y) = f (LValue x, LValue y)
+
+----------------------------------------------------------------------
+
 -- | Value defining a series of (possibly disjointed) lines,
 -- and a style in which to render them
 data PlotLines x y = PlotLines {
     plot_lines_title_ :: String,
     plot_lines_style_ :: CairoLineStyle,
-    plot_lines_values_ :: [[(x,y)]]
+    plot_lines_values_ :: [[(x,y)]],
+    plot_lines_limit_values_ :: [[(Limit x, Limit y)]]
 }
 
 
@@ -132,15 +142,20 @@ instance ToPlot PlotLines where
     toPlot p = Plot {
         plot_render_ = renderPlotLines p,
 	plot_legend_ = [(plot_lines_title_ p, renderPlotLegendLines p)],
-	plot_all_points_ = concat (plot_lines_values_ p)
+	plot_all_points_ = (map fst pts ++ xs , map snd pts ++ ys)
     }
+      where
+        pts = concat (plot_lines_values_ p)
+        xs = [ x | (LValue x,_) <- concat (plot_lines_limit_values_ p)]
+        ys = [ y | (_,LValue y) <- concat (plot_lines_limit_values_ p)]
 
 renderPlotLines :: PlotLines x y -> PointMapFn x y -> CRender ()
 renderPlotLines p pmap = preserveCState $ do
     setLineStyle (plot_lines_style_ p)
-    mapM_ drawLines (plot_lines_values_ p)
+    mapM_ (drawLines (mapXY pmap)) (plot_lines_values_ p)
+    mapM_ (drawLines pmap) (plot_lines_limit_values_ p)
   where
-    drawLines (p:ps) = do
+    drawLines pmap (p:ps) = do
 	moveTo (pmap p)
 	mapM_ (\p -> lineTo (pmap p)) ps
 	c $ C.stroke
@@ -161,8 +176,26 @@ defaultPlotLineStyle = (solidLine 1 $ opaque blue){
 defaultPlotLines = PlotLines {
     plot_lines_title_ = "",
     plot_lines_style_ = defaultPlotLineStyle,
-    plot_lines_values_ = []
+    plot_lines_values_ = [],
+    plot_lines_limit_values_ = []
 }
+
+-- | Helper function to plot a single horizontal line
+hlinePlot :: String -> CairoLineStyle -> b -> Plot a b
+hlinePlot t ls v = toPlot defaultPlotLines {
+    plot_lines_title_=t,
+    plot_lines_style_=ls,
+    plot_lines_limit_values_=[[(LMin, LValue v),(LMax, LValue v)]]
+    }
+
+-- | Helper function to plot a single vertical line
+vlinePlot :: String -> CairoLineStyle -> a -> Plot a b
+vlinePlot t ls v = toPlot defaultPlotLines {
+    plot_lines_title_=t,
+    plot_lines_style_=ls,
+    plot_lines_limit_values_=[[(LValue v,LMin),(LValue v,LMax)]]
+    }
+
 ----------------------------------------------------------------------
 
 -- | Value defining a series of datapoints, and a style in
@@ -178,13 +211,16 @@ instance ToPlot PlotPoints where
     toPlot p = Plot {
         plot_render_ = renderPlotPoints p,
 	plot_legend_ = [(plot_points_title_ p, renderPlotLegendPoints p)],
-	plot_all_points_ = plot_points_values_ p
+	plot_all_points_ = (map fst pts, map snd pts)
     }
+      where
+        pts = plot_points_values_ p
 
 renderPlotPoints :: PlotPoints x y -> PointMapFn x y -> CRender ()
 renderPlotPoints p pmap = preserveCState $ do
-    mapM_ (drawPoint.pmap) (plot_points_values_ p)
+    mapM_ (drawPoint.pmap') (plot_points_values_ p)
   where
+    pmap' = mapXY pmap
     (CairoPointStyle drawPoint) = (plot_points_style_ p)
 
 
@@ -232,8 +268,9 @@ renderPlotFillBetween' p vs pmap  = preserveCState $ do
     lineTo p0
     c $ C.fill
   where
-    (p0:p1s) = map pmap [ (x,y1) | (x,(y1,y2)) <- vs ]
-    p2s = map pmap [ (x,y2) | (x,(y1,y2)) <- vs ]
+    pmap' = mapXY pmap
+    (p0:p1s) = map pmap' [ (x,y1) | (x,(y1,y2)) <- vs ]
+    p2s = map pmap' [ (x,y2) | (x,(y1,y2)) <- vs ]
 
 renderPlotLegendFill :: PlotFillBetween x y -> Rect -> CRender ()
 renderPlotLegendFill p r = preserveCState $ do
@@ -241,9 +278,10 @@ renderPlotLegendFill p r = preserveCState $ do
     rectPath r
     c $ C.fill
 
-plotAllPointsFillBetween :: PlotFillBetween x y -> [(x,y)]
-plotAllPointsFillBetween p = concat [ [(x, y1), (x, y2)]
-				      | (x,(y1,y2)) <- plot_fillbetween_values_ p]
+plotAllPointsFillBetween :: PlotFillBetween x y -> ([x],[y])
+plotAllPointsFillBetween p = ([x|(x,(_,_)) <- pts], concat [[y1,y2]|(_,(y1,y2)) <- pts])
+  where
+    pts = plot_fillbetween_values_ p
 
 
 defaultPlotFillBetween = PlotFillBetween {
@@ -287,10 +325,11 @@ instance ToPlot PlotErrBars where
     toPlot p = Plot {
         plot_render_ = renderPlotErrBars p,
 	plot_legend_ = [(plot_errbars_title_ p,renderPlotLegendErrBars p)],
-	plot_all_points_ = concat
-         [[((ev_low x),(ev_low y)), ((ev_high x),(ev_high y))]
-         | ErrPoint x y <- plot_errbars_values_ p]
+	plot_all_points_ = ( concat [[ev_low x,ev_high x] |ErrPoint x _ <-pts ],
+                             concat [[ev_low y,ev_high y] |ErrPoint _ y <-pts ] )
     }
+      where
+        pts = plot_errbars_values_ p
 
 renderPlotErrBars :: PlotErrBars x y -> PointMapFn x y -> CRender ()
 renderPlotErrBars p pmap = preserveCState $ do
@@ -298,10 +337,11 @@ renderPlotErrBars p pmap = preserveCState $ do
   where
     epmap (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) =
         ErrPoint (ErrValue xl' x' xh') (ErrValue yl' y' yh')
-        where (Point x' y') = pmap (x,y)
-              (Point xl' yl') = pmap (xl,yl)
-              (Point xh' yh') = pmap (xh,yh)
+        where (Point x' y') = pmap' (x,y)
+              (Point xl' yl') = pmap' (xl,yl)
+              (Point xh' yh') = pmap' (xh,yh)
     drawErrBar = drawErrBar0 p
+    pmap' = mapXY pmap
 
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = plot_errbars_tick_length_ ps
@@ -435,8 +475,8 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
                c $ C.stroke
 
     barPath xos x y0 y1 = do
-      let (Point x' y') = pmap (x,y1)
-      let (Point _ y0') = pmap (x,y0)
+      let (Point x' y') = pmap' (x,y1)
+      let (Point _ y0') = pmap' (x,y0)
       rectPath (Rect (Point (x'+xos) y0') (Point (x'+xos+width) y'))
 
     yref0 = plot_bars_reference_ p
@@ -450,19 +490,22 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
 
     minXInterval = minimum $ zipWith (-) (tail xs) xs
       where               
-        xs = nub $ sort $ map (p_x.pmap) (allBarPoints p)
+        xs = nub $ sort $ map (\x-> p_x (pmap' (x,barsReference))) (fst (allBarPoints p))
 
     nys = maximum [ length ys | (x,ys) <- vals ]
+          
+    pmap' = mapXY pmap
 
 whenJust :: (Monad m) => Maybe a -> (a -> m ()) -> m ()
 whenJust (Just a) f = f a
 whenJust _ _ = return ()
 
-allBarPoints :: (BarsPlotValue y) => PlotBars x y -> [(x,y)]
+allBarPoints :: (BarsPlotValue y) => PlotBars x y -> ([x],[y])
 allBarPoints p = case (plot_bars_style_ p) of
-    BarsClustered -> concat [ (x,y0):[(x,y) | y <- ys ] | (x,ys) <- plot_bars_values_ p ]
-    BarsStacked -> concat [ (x,y0):[(x,y) | y <- stack ys ] | (x,ys) <- plot_bars_values_ p ]
+    BarsClustered -> ( [x| (x,_) <- pts], concat [ys| (_,ys) <- pts] )
+    BarsStacked -> ( [x| (x,_) <- pts], concat [stack ys | (_,ys) <- pts] )
   where
+    pts = plot_bars_values_ p
     y0 = plot_bars_reference_ p
 
 stack :: (BarsPlotValue y) => [y] -> [y]

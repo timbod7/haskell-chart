@@ -16,7 +16,6 @@ import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.List(sort,nub,scanl1)
 import qualified Data.Map as Map
-import Debug.Trace
 import Control.Monad
 import Prices
 
@@ -112,12 +111,17 @@ test1a otype = fillBackground fwhite $ (gridToRenderable t)
                    . (laxis_override ^=  (axisGridHide.axisTicksHide.axisLabelsHide))
 
 ----------------------------------------------------------------------
-test2 :: [(Int,Int,Int,Double,Double)] -> OutputType -> Renderable ()
-test2 prices otype = toRenderable layout
+test2 :: [(Int,Int,Int,Double,Double)] -> Bool -> OutputType -> Renderable ()
+test2 prices showMinMax otype = toRenderable layout
   where
 
     lineStyle c = line_width ^= 3 * chooseLineWidth otype
                 $ line_color ^= c
+                $ defaultPlotLines ^. plot_lines_style
+
+    limitLineStyle c = line_width ^= chooseLineWidth otype
+                $ line_color ^= opaque c
+                $ line_dashes ^= [5,10]
                 $ defaultPlotLines ^. plot_lines_style
 
     price1 = plot_lines_style ^= lineStyle (opaque blue)
@@ -130,6 +134,14 @@ test2 prices otype = toRenderable layout
            $ plot_lines_title ^= "price 2"
            $ defaultPlotLines
 
+    (min1,max1) = (minimum [v | (_,_,_,v,_) <- prices],maximum [v | (_,_,_,v,_) <- prices])
+    (min2,max2) = (minimum [v | (_,_,_,_,v) <- prices],maximum [v | (_,_,_,_,v) <- prices])
+    limits | showMinMax = [ Left $ hlinePlot "min/max" (limitLineStyle blue) min1,
+                            Left $ hlinePlot "" (limitLineStyle blue) max1,
+                            Right $ hlinePlot "min/max" (limitLineStyle green) min2,
+                            Right $ hlinePlot "" (limitLineStyle green) max2 ]
+           | otherwise  = []
+
     bg = opaque $ sRGB 0 0 0.25
     fg = opaque white
     fg1 = opaque $ sRGB 0.0 0.0 0.15
@@ -140,7 +152,7 @@ test2 prices otype = toRenderable layout
            $ layout1_left_axis ^: laxis_override ^= axisGridHide
            $ layout1_right_axis ^: laxis_override ^= axisGridHide
            $ layout1_bottom_axis ^: laxis_override ^= axisGridHide
- 	   $ layout1_plots ^= [Left (toPlot price1), Right (toPlot price2)]
+ 	   $ layout1_plots ^= ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
            $ layout1_grid_last ^= False
            $ setLayout1Foreground fg
            $ defaultLayout1
@@ -398,10 +410,11 @@ allTests :: [ (String, OutputType -> Renderable ()) ]
 allTests =
      [ ("test1",  test1)
      , ("test1a", test1a)
-     , ("test2a", test2 prices)
-     , ("test2b", test2 (filterPrices (date 1 1 2005) (date 31 12 2005)))
-     , ("test2c", test2 (filterPrices (date 1 5 2005) (date 1 7 2005)))
-     , ("test2d", test2 (filterPrices (date 1 1 2006) (date 10 1 2006)))
+     , ("test2a", test2 prices False)
+     , ("test2b", test2 (filterPrices (date 1 1 2005) (date 31 12 2005)) False)
+     , ("test2c", test2 (filterPrices (date 1 5 2005) (date 1 7 2005)) False)
+     , ("test2d", test2 (filterPrices (date 1 1 2006) (date 10 1 2006)) False)
+     , ("test2e", test2 (filterPrices (date 1 8 2005) (date 31 8 2005)) True)
      , ("test3", test3)
      , ("test4a", test4 False False)
      , ("test4b", test4 True False)
