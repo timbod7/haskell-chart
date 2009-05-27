@@ -35,18 +35,18 @@ data LegendStyle = LegendStyle {
    legend_plot_size_ :: Double
 }
 
-data Legend x y = Legend Bool LegendStyle [Plot x y]
+data Legend x y = Legend Bool LegendStyle [(String, Rect -> CRender ())]
 
 instance ToRenderable (Legend x y) where
   toRenderable = setPickFn nullPickFn.legendToRenderable
 
 legendToRenderable :: Legend x y -> Renderable String
-legendToRenderable (Legend _ ls plots) = gridToRenderable grid
+legendToRenderable (Legend _ ls lvs) = gridToRenderable grid
   where
     grid = besideN $ intersperse ggap1 (map (tval.rf) ps)
 
     ps :: [(String, [Rect -> CRender ()])]
-    ps = join_nub (concatMap plot_legend_ plots)
+    ps = join_nub lvs
 
     rf (title,rfs) = gridToRenderable grid1
       where

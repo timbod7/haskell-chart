@@ -200,15 +200,15 @@ layout1ToRenderable l =
     legends = gridToRenderable (besideN [ tval $ mkLegend lefts,
                                           weights (1,1) $ tval $ emptyRenderable,
                                           tval $ mkLegend rights ])
-    lefts = [ p | (Left p) <- (layout1_plots_ l) ] 
-    rights = [ p | (Right p) <- (layout1_plots_ l) ] 
+    lefts = concat [ plot_legend_ p | (Left p) <- (layout1_plots_ l) ] 
+    rights = concat [ plot_legend_ p | (Right p) <- (layout1_plots_ l) ] 
 
-    mkLegend plots = case (layout1_legend_ l) of
+    mkLegend vals = case (layout1_legend_ l) of
         Nothing -> emptyRenderable
-        (Just ls) ->  case plots of
+        (Just ls) ->  case filter ((/="").fst) vals of
              [] -> emptyRenderable
-	     ps -> addMargins (0,lm,lm,lm)
-                      (mapPickFn  L1P_Legend $ legendToRenderable (Legend True ls ps))
+	     lvs -> addMargins (0,lm,lm,lm)
+                      (mapPickFn  L1P_Legend $ legendToRenderable (Legend True ls lvs))
 
     lm = layout1_margin_ l
 
