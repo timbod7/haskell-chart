@@ -11,8 +11,6 @@
 --
 --     * 'AxisData'
 --
---     * 'Axis'
---
 --     * 'AxisStyle'
 --
 --     * 'LinearAxisParams'
@@ -52,6 +50,8 @@ module Graphics.Rendering.Chart.Axis(
     days, months, years,
     autoIndexAxis,
     addIndexes,
+
+    autoSteps,
 
     axisToRenderable,
     renderAxisGrid,
@@ -287,6 +287,19 @@ chooseStep nsteps (min,max) = s
     steps' =  sort [ (abs((max-min)/(fromRational s) - nsteps), s) | s <- steps ]
     s = snd (head steps')
 
+-- | Given a target number of values, and a list of input points,
+--  find evenly spaced values from the set {1*X, 2*X, 2.5*X, 5*X} (where
+--  X is some power of ten) that evenly cover the input points.
+autoSteps :: Int -> [Double] -> [Double]
+autoSteps nSteps vs = map fromRational $ steps (fromIntegral nSteps) r
+  where
+    range [] = (0,1)
+    range _  | min == max = (min-0.5,min+0.5)
+             | otherwise = (min,max)
+    (min,max) = (minimum ps,maximum ps)
+    ps = filter isValidNumber vs
+    r = range ps
+
 makeAxis :: PlotValue x => (x -> String) -> ([x],[x],[x]) -> AxisData x
 makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     axis_viewport_=newViewport,
@@ -300,6 +313,8 @@ makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     newLabels = [(v,labelf v) | v <- labelvs]
     min' = minimum labelvs
     max' = maximum labelvs
+
+
 
 data GridMode = GridNone | GridAtMajor | GridAtMinor
 
