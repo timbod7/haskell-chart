@@ -39,12 +39,14 @@ module Graphics.Rendering.Chart.Axis(
     PlotIndex(..),
     AxisFn,
 
-    defaultAxisLineStyle, 
+    defaultAxisLineStyle,
     defaultLinearAxis,
+    defaultIntLinearAxis,
     defaultLogAxis,
     defaultAxisStyle,
     autoScaledAxis,
     autoScaledLogAxis,
+    unitAxis,
     timeAxis,
     autoTimeAxis,
     days, months, years,
@@ -84,6 +86,7 @@ module Graphics.Rendering.Chart.Axis(
 
 import qualified Graphics.Rendering.Cairo as C
 import Data.Time
+import Data.Fixed
 import System.Locale (defaultTimeLocale)
 import Control.Monad
 import Data.List
@@ -109,7 +112,7 @@ data AxisData x = AxisData {
     -- towards the plot area.
     axis_ticks_ :: [(x,Double)],
 
-    -- | The labels on an axis as pairs. The first element 
+    -- | The labels on an axis as pairs. The first element
     -- is the position on the axis (in viewport units) and
     -- the second is the label text string.
     axis_labels_ :: [ (x, String) ],
@@ -128,7 +131,6 @@ data AxisStyle = AxisStyle {
     -- | How far the labels are to be drawn from the axis.
     axis_label_gap_ :: Double
 }
-
 
 -- | A function to generate the axis data given the data values
 -- to be plotted against it.
@@ -221,12 +223,12 @@ renderAxis at@(AxisT et as rev ad) sz = do
  where
    (sx,sy,ex,ey,tp,axisPoint) = axisMapping at sz
 
-   drawTick (value,length) = 
+   drawTick (value,length) =
        let t1 = axisPoint value
 	   t2 = t1 `pvadd` (vscale length tp)
        in strokeLines [t1,t2]
 
-   (hta,vta,lp) = 
+   (hta,vta,lp) =
        let g = axis_label_gap_ as
        in case et of
 		  E_Top    -> (HTA_Centre,VTA_Bottom,(Vector 0 (-g)))
@@ -239,7 +241,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
 
 axisMapping :: AxisT z -> RectSize -> (Double,Double,Double,Double,Vector,z->Point)
 axisMapping (AxisT et as rev ad) (x2,y2) = case et of
-    E_Top    -> (x1,y2,x2,y2, (Vector 0 1),    mapx (x1,x2) y2) 
+    E_Top    -> (x1,y2,x2,y2, (Vector 0 1),    mapx (x1,x2) y2)
     E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)), mapx (x1,x2) y1)
     E_Left   -> (x2,y2,x2,y1, (Vector (1) 0),  mapy (y1,y2) x2)		
     E_Right  -> (x1,y2,x1,y1, (Vector (-1) 0), mapy (y1,y2) x1)
@@ -271,7 +273,7 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
 
 
 
-steps:: Double -> Range -> [Rational]
+steps :: Double -> Range -> [Rational]
 steps nSteps (min,max) = [ (fromIntegral (min' + i)) * s | i <- [0..n] ]
   where
     min' = floor (min / fromRational s)
@@ -309,7 +311,7 @@ makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     }
   where
     newViewport = vmap (min',max')
-    newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,5) | v <- labelvs ] 
+    newTicks = [ (v,2) | v <- tickvs ] ++ [ (v,5) | v <- labelvs ]
     newLabels = [(v,labelf v) | v <- labelvs]
     min' = minimum labelvs
     max' = maximum labelvs
@@ -318,9 +320,9 @@ makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
 
 data GridMode = GridNone | GridAtMajor | GridAtMinor
 
-data LinearAxisParams = LinearAxisParams {
+data LinearAxisParams a = LinearAxisParams {
     -- | The function used to show the axes labels
-    la_labelf_ :: Double -> String,
+    la_labelf_ :: a -> String,
 
     -- | The target number of labels to be shown
     la_nLabels_ :: Int,
@@ -336,19 +338,25 @@ defaultLinearAxis = LinearAxisParams {
     la_nTicks_ = 50
 }
 
+defaultIntLinearAxis = LinearAxisParams {
+    la_labelf_ = show,
+    la_nLabels_ = 5,
+    la_nTicks_ = 10
+}
+
 -- | Generate a linear axis automatically.
 -- The supplied axis is used as a template, with the viewport, ticks, labels
 -- and grid set appropriately for the data displayed against that axies.
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
-autoScaledAxis :: LinearAxisParams -> AxisFn Double
-autoScaledAxis lap ps0 = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
+autoScaledAxis :: LinearAxisParams Double -> AxisFn Double
+autoScaledAxis lap ps0 = makeAxis (la_labelf_ lap . toValue) (labelvs,tickvs,gridvs)
   where
     ps = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
     range [] = (0,1)
     range _  | min == max = (min-0.5,min+0.5)
-	     | otherwise = (min,max)
+             | otherwise = (min,max)
     labelvs = map fromRational $ steps (fromIntegral (la_nLabels_ lap)) r
     tickvs = map fromRational $ steps (fromIntegral (la_nTicks_ lap)) (minimum labelvs,maximum labelvs)
     gridvs = labelvs
@@ -357,7 +365,21 @@ autoScaledAxis lap ps0 = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
 showD x = case reverse $ show x of
             '0':'.':r -> reverse r
             _ -> show x
-    
+
+autoScaledIntAxis :: LinearAxisParams Int -> AxisFn Int
+autoScaledIntAxis lap ps = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
+  where
+    (min,max) = (minimum ps,maximum ps)
+    range [] = (0,1)
+    range _  | min == max = (fromIntegral $ min-1, fromIntegral $ min+1)
+             | otherwise = (fromIntegral $ min,   fromIntegral $ max)
+    labelvs :: [Int]
+    labelvs = map floor $ steps (fromIntegral (la_nLabels_ lap)) r
+    tickvs = map floor $ steps (fromIntegral (la_nTicks_ lap)) $
+                           (fromIntegral $ minimum labelvs,fromIntegral $ maximum labelvs)
+    gridvs = labelvs
+    r = range ps
+
 
 log10 :: (Floating a) => a -> a
 log10 = logBase 10
@@ -367,11 +389,11 @@ frac x | 0 <= b = (a,b)
  where
   (a,b) = properFraction x
 
-{- 
+{-
  Rules: Do no subdivide between powers of 10 until all powers of 10
           get a major ticks.
         Do not subdivide between powers of ten as [1,2,4,6,8,10] when
-          5 gets a major ticks 
+          5 gets a major ticks
           (ie the major ticks need to be a subset of the minor tick)
 -}
 logTicks :: Range -> ([Rational],[Rational],[Rational])
@@ -384,7 +406,7 @@ logTicks (low,high) = (major,minor,major)
             (minimum (10:(filter (\x -> r <= log10 (fromRational x)) l)))*10^^i
   inRange (a,b) l x = (lower a l <= x) && (x <= upper b l)
   powers :: (Double,Double) -> [Rational] -> [Rational]
-  powers (x,y) l = [a*10^^p | p<-[(floor (log10 x))..(ceiling (log10 y))], a<-l]
+  powers (x,y) l = [a*10^^p | p<- [(floor (log10 x))..(ceiling (log10 y))], a<- l]
   midselection r l = filter (inRange r l) (powers r l)
   major | 17.5 < log10 ratio = map (\x -> 10^^(round x)) $
                          steps (min 5 (log10 ratio)) (log10 low, log10 high)
@@ -406,9 +428,9 @@ logTicks (low,high) = (major,minor,major)
                              powers (dl', dh') [1,10]
         | 3 < log10 ratio' = filter (\x -> l'<=x && x <=h') $
                              powers (dl',dh') [1,5,10]
-        | 6 < ratio' = filter (\x -> l'<=x && x <=h') $ 
+        | 6 < ratio' = filter (\x -> l'<=x && x <=h') $
                        powers (dl',dh') [1..10]
-        | 3 < ratio' = filter (\x -> l'<=x && x <=h') $ 
+        | 3 < ratio' = filter (\x -> l'<=x && x <=h') $
                        powers (dl',dh') [1,1.2..10]
         | otherwise = steps 50 (dl', dh')
 
@@ -456,12 +478,12 @@ defaultAxisStyle = AxisStyle {
 
 -- | Map a LocalTime value to a plot cordinate
 doubleFromLocalTime :: LocalTime -> Double
-doubleFromLocalTime lt = fromIntegral (toModifiedJulianDay (localDay lt)) 
+doubleFromLocalTime lt = fromIntegral (toModifiedJulianDay (localDay lt))
              + fromRational (timeOfDayToDayFraction (localTimeOfDay lt))
 
 -- | Map a plot cordinate to a LocalTime
 localTimeFromDouble :: Double -> LocalTime
-localTimeFromDouble v = 
+localTimeFromDouble v =
   LocalTime (ModifiedJulianDay i) (dayFractionToTimeOfDay (toRational d))
  where
    (i,d) = properFraction v
@@ -516,6 +538,51 @@ timeAxis tseq lseq labelf pts = AxisData {
       m1' = doubleFromLocalTime m1
       m2' = doubleFromLocalTime m2
 
+normalizeTimeOfDay :: LocalTime -> LocalTime
+normalizeTimeOfDay t@(LocalTime day (TimeOfDay h m s))
+  | s >= 60 = normalizeTimeOfDay (LocalTime day (TimeOfDay h (m+s`div'`60) (s`mod'`60)))
+  | m >= 60 = normalizeTimeOfDay (LocalTime day (TimeOfDay (h+m`div`60) (m`mod`60) s))
+  | h >= 24 = LocalTime (addDays (fromIntegral (h`div`24)) day) (TimeOfDay (h`mod`24) m s)
+  | otherwise = t
+
+addTod :: Int -> Int -> Int -> LocalTime -> LocalTime
+addTod dh dm ds (LocalTime day (TimeOfDay h m s)) = normalizeTimeOfDay t'
+  where t' = LocalTime day (TimeOfDay (h+dh) (m+dm) (s+fromIntegral ds))
+
+
+-- | A 'TimeSeq' for hours
+seconds :: TimeSeq
+seconds t = (iterate rev t1, tail (iterate fwd t1))
+  where h0 = todHour (localTimeOfDay t)
+        m0 = todMin  (localTimeOfDay t)
+        s0 = todSec  (localTimeOfDay t)
+        t0 = LocalTime (localDay t) (TimeOfDay h0 m0 s0)
+        t1 = if t0 < t then t0 else (rev t0)
+        rev = addTod 0 0 (-1)
+        fwd = addTod 0 0 1
+        toTime h = LocalTime
+
+-- | A 'TimeSeq' for hours
+minutes :: TimeSeq
+minutes t = (iterate rev t1, tail (iterate fwd t1))
+  where h0 = todHour (localTimeOfDay t)
+        m0 = todMin  (localTimeOfDay t)
+        t0 = LocalTime (localDay t) (TimeOfDay h0 m0 0)
+        t1 = if t0 < t then t0 else (rev t0)
+        rev = addTod 0 (-1)0
+        fwd = addTod 0 1   0
+        toTime h = LocalTime
+
+-- | A 'TimeSeq' for hours
+hours :: TimeSeq
+hours t = (iterate rev t1, tail (iterate fwd t1))
+  where h0 = todHour (localTimeOfDay t)
+        t0 = LocalTime (localDay t) (TimeOfDay h0 0 0)
+        t1 = if t0 < t then t0 else (rev t0)
+        rev = addTod (-1) 0 0
+        fwd = addTod 1    0 0
+        toTime h = LocalTime
+
 -- | A 'TimeSeq' for calendar days
 days :: TimeSeq
 days t = (map toTime $ iterate rev t1, map toTime $ tail (iterate fwd t1))
@@ -547,21 +614,33 @@ years t = (map toTime $ iterate rev t1, map toTime $ tail (iterate fwd t1))
 -- The values to be plotted against this axis can be created with 'doubleFromLocalTime'
 autoTimeAxis :: AxisFn LocalTime
 autoTimeAxis [] = timeAxis days days (formatTime defaultTimeLocale "%d-%b")  []
-autoTimeAxis pts = 
-    if tdiff < 15
-    then  timeAxis days days (ft "%d-%b")  pts
-    else if tdiff < 90
-         then timeAxis days months (ft "%b-%y") pts
-         else if tdiff < 450
-              then timeAxis months months (ft "%b-%y") pts
-              else if tdiff < 1800
-                   then timeAxis months years (ft "%Y") pts
-                   else timeAxis years years (ft "%Y") pts
+autoTimeAxis pts
+    | tdiff==0 && dsec<60   = timeAxis seconds seconds (ft "%H:%M:%S") pts
+    | tdiff==0 && dsec<3600 = timeAxis minutes minutes (ft "%H:%M") pts
+    | tdiff < 1    = timeAxis hours  hours (ft "%H:%M")     pts
+    | tdiff < 2    = timeAxis days   hours   (ft "%d-%b") pts
+    | tdiff < 15   = timeAxis days   days    (ft "%d-%b")     pts
+    | tdiff < 90   = timeAxis days   months  (ft "%b-%y")     pts
+    | tdiff < 450  = timeAxis months months  (ft "%b-%y")     pts
+    | tdiff < 1800 = timeAxis months years   (ft "%Y")        pts
+    | otherwise    = timeAxis years  years   (ft "%Y")        pts
   where
     tdiff = diffDays (localDay t1) (localDay t0)
+    dsec  = fromIntegral (3600*(h1-h0)+60*(m1-m0))+(s1-s0)
+      where (TimeOfDay h0 m0 s0) = localTimeOfDay t0
+            (TimeOfDay h1 m1 s1) = localTimeOfDay t1
     t1 = maximum pts
     t0 = minimum pts
     ft = formatTime defaultTimeLocale
+
+
+unitAxis :: AxisData ()
+unitAxis = AxisData {
+    axis_viewport_ = \(x0,x1) _ -> (x0+x1)/2,
+    axis_ticks_    = [((), 0)],
+    axis_labels_   = [((), "")],
+    axis_grid_     = []
+}
 
 -----------------------------------------------------------------------------
 
@@ -583,6 +662,14 @@ instance PlotValue LogValue where
     toValue (LogValue x) = log x
     autoAxis = autoScaledLogAxis defaultLogAxis
 
+instance PlotValue Int where
+    toValue = fromIntegral
+    autoAxis = autoScaledIntAxis defaultIntLinearAxis
+
+instance PlotValue () where
+    toValue () = 0
+    autoAxis   = const unitAxis
+
 instance PlotValue LocalTime where
     toValue = doubleFromLocalTime
     autoAxis = autoTimeAxis
@@ -598,7 +685,7 @@ instance PlotValue PlotIndex where
     toValue (PlotIndex i)= fromIntegral i
     autoAxis = autoIndexAxis []
 
--- | Create an axis for values indexed by position. The 
+-- | Create an axis for values indexed by position. The
 -- list of strings are the labels to be used.
 autoIndexAxis :: [String] -> [PlotIndex] -> AxisData PlotIndex
 autoIndexAxis labels vs = AxisData {

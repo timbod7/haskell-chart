@@ -18,7 +18,7 @@
 --     * 'PlotFillBetween'
 --
 --     * 'PlotErrBars'
---     
+--
 --     * 'PlotBars'
 --
 -- These accessors are not shown in this API documentation.  They have
@@ -44,6 +44,8 @@ module Graphics.Rendering.Chart.Plot(
     PlotBars(..),
     PlotBarsStyle(..),
     PlotBarsSpacing(..),
+    PlotBarsAlignment(..),
+    BarsPlotValue(..),
 
     symErrPoint,
 
@@ -85,13 +87,15 @@ module Graphics.Rendering.Chart.Plot(
     plot_bars_item_styles,
     plot_bars_titles,
     plot_bars_spacing,
+    plot_bars_alignment,
     plot_bars_reference,
-    plot_bars_values,
+    plot_bars_values
 
     ) where
 
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Axis
 import Control.Monad
 import Data.List
@@ -141,8 +145,8 @@ data PlotLines x y = PlotLines {
 instance ToPlot PlotLines where
     toPlot p = Plot {
         plot_render_ = renderPlotLines p,
-	plot_legend_ = [(plot_lines_title_ p, renderPlotLegendLines p)],
-	plot_all_points_ = (map fst pts ++ xs , map snd pts ++ ys)
+	    plot_legend_ = [(plot_lines_title_ p, renderPlotLegendLines p)],
+	    plot_all_points_ = (map fst pts ++ xs , map snd pts ++ ys)
     }
       where
         pts = concat (plot_lines_values_ p)
@@ -210,8 +214,8 @@ data PlotPoints x y = PlotPoints {
 instance ToPlot PlotPoints where
     toPlot p = Plot {
         plot_render_ = renderPlotPoints p,
-	plot_legend_ = [(plot_points_title_ p, renderPlotLegendPoints p)],
-	plot_all_points_ = (map fst pts, map snd pts)
+	    plot_legend_ = [(plot_points_title_ p, renderPlotLegendPoints p)],
+	    plot_all_points_ = (map fst pts, map snd pts)
     }
       where
         pts = plot_points_values_ p
@@ -252,14 +256,14 @@ data PlotFillBetween x y = PlotFillBetween {
 instance ToPlot PlotFillBetween where
     toPlot p = Plot {
         plot_render_ = renderPlotFillBetween p,
-	plot_legend_ = [(plot_fillbetween_title_ p, renderPlotLegendFill p)],
-	plot_all_points_ = plotAllPointsFillBetween p
+	    plot_legend_ = [(plot_fillbetween_title_ p, renderPlotLegendFill p)],
+	    plot_all_points_ = plotAllPointsFillBetween p
     }
 
 renderPlotFillBetween :: PlotFillBetween x y -> PointMapFn x y -> CRender ()
 renderPlotFillBetween p pmap = renderPlotFillBetween' p (plot_fillbetween_values_ p) pmap
 
-renderPlotFillBetween' p [] _ = return ()
+renderPlotFillBetween' p [] _     = return ()
 renderPlotFillBetween' p vs pmap  = preserveCState $ do
     setFillStyle (plot_fillbetween_style_ p)
     moveTo p0
@@ -324,9 +328,9 @@ data PlotErrBars x y = PlotErrBars {
 instance ToPlot PlotErrBars where
     toPlot p = Plot {
         plot_render_ = renderPlotErrBars p,
-	plot_legend_ = [(plot_errbars_title_ p,renderPlotLegendErrBars p)],
-	plot_all_points_ = ( concat [[ev_low x,ev_high x] |ErrPoint x _ <-pts ],
-                             concat [[ev_low y,ev_high y] |ErrPoint _ y <-pts ] )
+	    plot_legend_ = [(plot_errbars_title_ p,renderPlotLegendErrBars p)],
+	    plot_all_points_ = ( concat [[ev_low x,ev_high x] |ErrPoint x _ <- pts ],
+                             concat [[ev_low y,ev_high y] |ErrPoint _ y <- pts ] )
     }
       where
         pts = plot_errbars_values_ p
@@ -389,10 +393,27 @@ class PlotValue a => BarsPlotValue a where
 instance BarsPlotValue Double where
     barsReference = 0
     barsAdd = (+)
+instance BarsPlotValue Int where
+    barsReference = 0
+    barsAdd = (+)
 
-data PlotBarsStyle = BarsStacked | BarsClustered
-data PlotBarsSpacing = BarsFixWidth Double
-                     | BarsFixGap Double
+data PlotBarsStyle = BarsStacked   -- ^ Bars for a fixed x are stacked vertically
+                                   -- on top of each other
+                   | BarsClustered -- ^ Bars for a fixed x are put horizontally
+                                   -- beside each other
+     deriving (Show)
+
+data PlotBarsSpacing = BarsFixWidth Double -- ^ All bars have the same width in pixels
+                     | BarsFixGap Double   -- ^ There is the same interval in pixels
+                                           -- between adjacent bars
+     deriving (Show)
+
+-- | How bars for a given (x,[y]) are aligned with respect to screen
+-- coordinate corresponding to x (deviceX)
+data PlotBarsAlignment = BarsLeft      -- ^ The left edge of bars is at deviceX
+                       | BarsCentered  -- ^ The right edge of bars is at deviceX
+                       | BarsRight     -- ^ Bars are centered around deviceX
+     deriving (Show)
 
 -- | Value describing how to plot a set of bars.
 -- Note that the input data is typed [(x,[y])], ie for each x value
@@ -417,8 +438,14 @@ data PlotBars x y = PlotBars {
    -- them can be fixed.
    plot_bars_spacing_ :: PlotBarsSpacing,
 
+   -- | This value controls how bars for a fixed x are aligned with
+   -- respect to the device coordinate corresponding to x
+   plot_bars_alignment_ :: PlotBarsAlignment,
+
    -- | The starting level for the chart (normally 0).
    plot_bars_reference_ :: y,
+
+   plot_bars_singleton_width_ :: Double,
 
    -- | The actual points to be plotted
    plot_bars_values_ :: [ (x,[y]) ]
@@ -430,7 +457,9 @@ defaultPlotBars = PlotBars {
    plot_bars_item_styles_ = cycle istyles,
    plot_bars_titles_ = [],
    plot_bars_spacing_ = BarsFixGap 10,
+   plot_bars_alignment_ = BarsCentered,
    plot_bars_values_ = [],
+   plot_bars_singleton_width_ = 20,
    plot_bars_reference_ = barsReference
    }
   where
@@ -440,14 +469,14 @@ defaultPlotBars = PlotBars {
 plotBars :: (BarsPlotValue y) => PlotBars x y -> Plot x y
 plotBars p = Plot {
         plot_render_ = renderPlotBars p,
-	plot_legend_ = zip (plot_bars_titles_ p) (map renderPlotLegendBars (plot_bars_item_styles_ p)),
-	plot_all_points_ = allBarPoints p
+	    plot_legend_ = zip (plot_bars_titles_ p) (map renderPlotLegendBars (plot_bars_item_styles_ p)),
+	    plot_all_points_ = allBarPoints p
     }
 
-renderPlotBars :: BarsPlotValue y => PlotBars x y -> PointMapFn x y -> CRender ()
+renderPlotBars :: (BarsPlotValue y) => PlotBars x y -> PointMapFn x y -> CRender ()
 renderPlotBars p pmap = case (plot_bars_style_ p) of
-      BarsClustered -> do forM_ vals clusteredBars
-      BarsStacked -> forM_ vals stackedBars
+      BarsClustered -> forM_ vals clusteredBars
+      BarsStacked   -> forM_ vals stackedBars
   where
     clusteredBars (x,ys) = preserveCState $ do
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
@@ -460,18 +489,26 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
              barPath (offset i) x yref0 y
              c $ C.stroke
 
-    offset i = fromIntegral (2*i-nys) * width/2
+    offset = case (plot_bars_alignment_ p) of
+      BarsLeft     -> \i -> fromIntegral i * width
+      BarsRight    -> \i -> fromIntegral (i-nys) * width
+      BarsCentered -> \i -> fromIntegral (2*i-nys) * width/2
 
     stackedBars (x,ys) =  preserveCState $ do
        let y2s = zip (yref0:stack ys) (stack ys)
+       let ofs = case (plot_bars_alignment_ p) of {
+         BarsLeft     -> 0          ;
+         BarsRight    -> (-width)   ;
+         BarsCentered -> (-width/2)
+         }
        forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
            setFillStyle fstyle
-           barPath (-width/2) x y0 y1
+           barPath ofs x y0 y1
            c $ C.fill
        forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
                setLineStyle lstyle
-               barPath (-width/2) x y0 y1
+               barPath ofs x y0 y1
                c $ C.stroke
 
     barPath xos x y0 y1 = do
@@ -480,7 +517,7 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
       rectPath (Rect (Point (x'+xos) y0') (Point (x'+xos+width) y'))
 
     yref0 = plot_bars_reference_ p
-    vals = plot_bars_values_ p
+    vals  = plot_bars_values_ p
     width = case plot_bars_spacing_ p of
         BarsFixGap gap -> case (plot_bars_style_ p) of
             BarsClustered -> (minXInterval - gap) / fromIntegral nys
@@ -488,13 +525,18 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
         BarsFixWidth width -> width
     styles = plot_bars_item_styles_ p
 
-    minXInterval = minimum $ zipWith (-) (tail xs) xs
-      where               
-        xs = nub $ sort $ map (\x-> p_x (pmap' (x,barsReference))) (fst (allBarPoints p))
+    minXInterval = let diffs = zipWith (-) (tail mxs) mxs
+                   in if null diffs
+                        then plot_bars_singleton_width_ p
+                        else minimum diffs
+      where
+        xs = fst (allBarPoints p)
+        mxs = nub $ sort $ map mapX xs
 
     nys = maximum [ length ys | (x,ys) <- vals ]
-          
+
     pmap' = mapXY pmap
+    mapX x = p_x (pmap' (x,barsReference))
 
 whenJust :: (Monad m) => Maybe a -> (a -> m ()) -> m ()
 whenJust (Just a) f = f a
@@ -510,7 +552,7 @@ allBarPoints p = case (plot_bars_style_ p) of
 
 stack :: (BarsPlotValue y) => [y] -> [y]
 stack ys = scanl1 barsAdd ys
-             
+
 
 renderPlotLegendBars :: (CairoFillStyle,Maybe CairoLineStyle) -> Rect -> CRender ()
 renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do

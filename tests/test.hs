@@ -65,7 +65,7 @@ test1 otype = toRenderable layout
 test1a :: OutputType -> Renderable ()
 test1a otype = fillBackground fwhite $ (gridToRenderable t)
   where
-    t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3], 
+    t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3],
                                  besideN [rf g4, rf g5, rf g6] ]
 
     g1 = layout1_title ^= "minimal"
@@ -91,7 +91,7 @@ test1a otype = fillBackground fwhite $ (gridToRenderable t)
        $ test1Layout otype
       where
         axis = autoScaledAxis (
-            la_nLabels ^= 5 
+            la_nLabels ^= 5
           $ la_nTicks ^= 20
           $ defaultLinearAxis
           )
@@ -167,7 +167,7 @@ test3 otype = toRenderable layout
     price1 = plot_fillbetween_style ^= solidFillStyle green1
            $ plot_fillbetween_values ^= [ (date d m y,(0,v2)) | (d,m,y,v1,v2) <- prices]
            $ plot_fillbetween_title ^= "price 1"
-           $ defaultPlotFillBetween 
+           $ defaultPlotFillBetween
 
     price2 = plot_fillbetween_style ^= solidFillStyle red1
            $ plot_fillbetween_values ^= [ (date d m y,(0,v1)) | (d,m,y,v1,v2) <- prices]
@@ -180,7 +180,7 @@ test3 otype = toRenderable layout
                                Left (toPlot price2)]
            $ defaultLayout1
 
-----------------------------------------------------------------------        
+----------------------------------------------------------------------
 test4 :: Bool -> Bool -> OutputType -> Renderable ()
 test4 xrev yrev otype = toRenderable layout
   where
@@ -220,14 +220,14 @@ test5 otype = toRenderable (layout 1001 (trial bits) :: Layout1 Double LogValue)
     plot tt s n m t = plot_lines_style ^= s
                  $ plot_lines_values ^=
                        [[(fromIntegral x, LogValue y) | (x,y) <-
-                         filter (\(x,_)->x `mod` (m+1)==0) $ take n $ zip [0..] t]]
+                         filter (\(x,_)-> x `mod` (m+1)==0) $ take n $ zip [0..] t]]
                  $ plot_lines_title ^= tt
-                 $ defaultPlotLines 
+                 $ defaultPlotLines
 
     b = 0.1
 
     trial bits frac = scanl (*) 1 (map f bits)
-      where 
+      where
         f True = (1+frac*(1+b))
         f False = (1-frac)
 
@@ -237,7 +237,7 @@ test5 otype = toRenderable (layout 1001 (trial bits) :: Layout1 Double LogValue)
     lineWidth = chooseLineWidth otype
 
 
-----------------------------------------------------------------------        
+----------------------------------------------------------------------
 -- Test the Simple interface
 
 test6 :: OutputType -> Renderable ()
@@ -280,20 +280,20 @@ test8 otype = toRenderable layout
     e = 0
     e1 = 25
     layout = pie_title ^= "Pie Chart Example"
-           $ pie_plot ^: pie_data ^= [ defaultPieItem{pitem_value_=v,pitem_label_=s,pitem_offset_=o} 
+           $ pie_plot ^: pie_data ^= [ defaultPieItem{pitem_value_=v,pitem_label_=s,pitem_offset_=o}
                                        | (s,v,o) <- values ]
            $ defaultPieLayout
 
 ----------------------------------------------------------------------
 
 
-test9 :: OutputType -> Renderable ()
-test9 otype = fillBackground fwhite $ (gridToRenderable t)
+test9 :: PlotBarsAlignment -> OutputType -> Renderable ()
+test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g0, rf g1, rf g2],
                                  besideN [rf g3, rf g4, rf g5] ]
 
-    g0 = layout "clustered 1"
+    g0 = layout " / clustered 1"
        $ plot_bars_style ^= BarsClustered
        $ plot_bars_spacing ^= BarsFixWidth 25
        $ bars1
@@ -328,7 +328,7 @@ test9 otype = fillBackground fwhite $ (gridToRenderable t)
     alabels = [ "Jun", "Jul", "Aug", "Sep", "Oct" ]
 
 
-    layout title bars = layout1_title ^= title
+    layout title bars = layout1_title ^= (show alignment ++ "/ " ++ title)
            $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
            $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
            $ layout1_plots ^= [ Left (plotBars bars) ]
@@ -336,10 +336,12 @@ test9 otype = fillBackground fwhite $ (gridToRenderable t)
 
     bars1 = plot_bars_titles ^= ["Cash"]
           $ plot_bars_values ^= addIndexes [[20],[45],[30],[70]]
+          $ plot_bars_alignment ^= alignment
           $ defaultPlotBars
 
     bars2 = plot_bars_titles ^= ["Cash","Equity"]
           $ plot_bars_values ^= addIndexes [[20,45],[45,30],[30,20],[70,25]]
+          $ plot_bars_alignment ^= alignment
           $ defaultPlotBars
 
 -------------------------------------------------------------------------------
@@ -405,7 +407,7 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
           render r sz
     }
 
-----------------------------------------------------------------------        
+----------------------------------------------------------------------
 allTests :: [ (String, OutputType -> Renderable ()) ]
 allTests =
      [ ("test1",  test1)
@@ -423,7 +425,9 @@ allTests =
      , ("test6", test6)
      , ("test7", test7)
      , ("test8", test8)
-     , ("test9", test9)
+     , ("test9l", test9 BarsLeft)
+     , ("test9r", test9 BarsRight)
+     , ("test9c", test9 BarsCentered)
      , ("test10", test10 (filterPrices (date 1 1 2005) (date 31 12 2005)))
      , ("misc1", misc1 0)
      , ("misc1a", misc1 45)

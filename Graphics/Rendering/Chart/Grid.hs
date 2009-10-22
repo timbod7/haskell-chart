@@ -1,5 +1,5 @@
 module Graphics.Rendering.Chart.Grid (
-    Grid,
+    Grid, Span,
     tval, tspan,
     empty, nullt,
     (.|.), (./.),
@@ -13,26 +13,34 @@ module Graphics.Rendering.Chart.Grid (
 
 import Data.List
 import Data.Array
--- import qualified Data.Map as Map
 import Control.Monad
+import Control.Monad.Trans
 import Numeric
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Types
---import Graphics.Rendering.Chart.Gtk
 import qualified Graphics.Rendering.Cairo as C
+
+import Data.Colour
+import Data.Colour.Names
 
 type Span = (Int,Int)
 type Size = (Int,Int)
+-- | When more space is available for an item than the total width of items,
+-- extra added space is proportional to 'space weight'.
 type SpaceWeight = (Double,Double)
 
 type Cell a = (a,Span,SpaceWeight)
 
-data Grid a = Value (a,Span,SpaceWeight)
-             | Above (Grid a) (Grid a) Size 
-             | Beside (Grid a) (Grid a) Size
-             | Overlay (Grid a) (Grid a) Size
-	     | Empty
-	     | Null
+-- | Abstract datatype representing a grid.
+data Grid a = Value (a,Span,SpaceWeight)       -- ^ A singleton grid item "a" spanning a given
+                                               --   rectangle (measured in grid cells), with
+                                               --   given space weight.
+            | Above (Grid a) (Grid a) Size     -- ^ One grid above the other. "Size" is their cached
+                                               --   total size (so it is NOT specified manually).
+            | Beside (Grid a) (Grid a) Size    -- ^ One grid horizontally beside the other
+            | Overlay (Grid a) (Grid a) Size   -- ^ Two grids positioned one over the other
+	        | Empty                            -- ^ An empty 1x1 grid cell
+	        | Null                             -- ^ An empty 0x0 grid cell
    deriving (Show)
 
 width :: Grid a -> Int
@@ -51,14 +59,20 @@ height (Beside _ _ (w,h)) = h
 height (Above _ _ (w,h)) = h
 height (Overlay _ _ (w,h)) = h
 
+-- | A 1x1 grid from a given value, with no extra space.
 tval :: a -> Grid a
 tval a = Value (a,(1,1),(0,0))
 
+-- | A WxH (measured in cells) grid from a given value, with space weight (1,1).
 tspan :: a -> Span -> Grid a
 tspan a span = Value (a,span,(1,1))
 
-empty, nullt :: Grid a
+-- | A 1x1 empty grid.
+empty :: Grid a
 empty = Empty
+
+-- | A 0x0 empty grid.
+nullt :: Grid a
 nullt = Null
 
 above, beside :: Grid a -> Grid a -> Grid a
@@ -66,7 +80,7 @@ above Null t = t
 above t Null = t
 above t1 t2 = Above t1 t2 size
   where size = (max (width t1) (width t2), height t1 + height t2)
-	      
+	
 beside Null t = t
 beside t Null = t
 beside t1 t2 = Beside t1 t2 size
@@ -76,6 +90,7 @@ aboveN, besideN :: [Grid a] -> Grid a
 aboveN = foldl above nullt
 besideN = foldl beside nullt
 
+overlay :: Grid a -> Grid a -> Grid a
 overlay Null t = t
 overlay t Null = t
 overlay t1 t2 = Overlay t1 t2 size
@@ -104,7 +119,7 @@ instance Functor Grid where
     fmap f Null = Null
 
 mapGridM :: Monad m => (a -> m b) -> Grid a -> m (Grid b)
-mapGridM f (Value (a,span,ew)) = do 
+mapGridM f (Value (a,span,ew)) = do
     b <- f a
     return (Value (b,span,ew))
 mapGridM f (Above t1 t2 s) = do
@@ -154,7 +169,7 @@ flatten2 i@(x,y) (Overlay t1 t2 size) els = (f1.f2) els
 foldT :: ((Int,Int) -> Cell a -> r -> r) -> r -> FlatGrid a -> r
 foldT f iv ft = foldr f' iv (assocs ft)
   where
-    f' (i,vs) r = foldr (\cell -> f i cell) r vs  
+    f' (i,vs) r = foldr (\cell -> f i cell) r vs
 
 ----------------------------------------------------------------------
 type DArray = Array Int Double
@@ -179,7 +194,8 @@ gridToRenderable t = Renderable minsizef renderf
 
     ef f loc (size,span,ew) | span == (1,1) = (f loc size ew:)
                             | otherwise = id
-                                        
+
+    minsizef :: CRender RectSize
     minsizef = do
         (widths, heights, xweights, yweights) <- getSizes
         return (sum (elems widths), sum (elems heights))
@@ -188,10 +204,14 @@ gridToRenderable t = Renderable minsizef renderf
         (widths, heights, xweights, yweights) <- getSizes
         let widths' = addExtraSpace w widths xweights
         let heights' = addExtraSpace h heights yweights
-        let csizes = (ctotal widths',ctotal heights')
-        rf1 csizes (0,0) t
+        let borders = (ctotal widths',ctotal heights')
+--        setLineStyle $ solidLine 3 (opaque red)
+--        rectPath $ Rect (Point 0 0) (Point (sum (elems widths')) (sum (elems heights')))
+--        c $ C.stroke
+        rf1 borders (0,0) t
 
-    rf1 csizes loc@(i,j) t = case t of
+    -- (x borders, y borders) -> (x,y) -> grid -> drawing
+    rf1 borders loc@(i,j) t = case t of
         Null -> return nullPickFn
         Empty -> return nullPickFn
         (Value (r,span,_)) -> do
@@ -202,35 +222,38 @@ gridToRenderable t = Renderable minsizef renderf
                 c $ C.translate x0 y0
                 render r (x1-x0,y1-y0)
         (Above t1 t2 _) -> do
-             pf1 <- rf1 csizes (i,j) t1
-             pf2 <- rf1 csizes (i,j+height t1) t2
-             let pf p@(Point x y) = if y < (snd csizes ! (j + height t1)) then pf1 p
-                                                                          else pf2 p
+             pf1 <- rf1 borders (i,j) t1
+             pf2 <- rf1 borders (i,j+height t1) t2
+             let pf p@(Point x y) = if y < (snd borders ! (j + height t1)) then pf1 p
+                                                                           else pf2 p
              return pf
         (Beside t1 t2 _) -> do
-             pf1 <- rf1 csizes (i,j) t1
-             pf2 <- rf1 csizes (i+width t1,j) t2
-             let pf p@(Point x y) = if x < (fst csizes ! (i + width t1)) then pf1 p
-                                                                         else pf2 p
+             pf1 <- rf1 borders (i,j) t1
+             pf2 <- rf1 borders (i+width t1,j) t2
+             let pf p@(Point x y) = if x < (fst borders ! (i + width t1)) then pf1 p
+                                                                          else pf2 p
              return pf
         (Overlay t1 t2 _) ->  do
-             pf2 <- rf1 csizes (i,j) t2
-             pf1 <- rf1 csizes (i,j) t1
+             pf2 <- rf1 borders (i,j) t2
+             pf1 <- rf1 borders (i,j) t1
              let pf p = pf1 p `mplus` pf2 p
              return pf
 
+    -- (x borders, y borders) -> (x,y) -> (w,h) -> rectangle of grid[x..x+w, y..y+h]
     mkRect :: (DArray, DArray) -> (Int,Int) -> (Int,Int) -> Rect
     mkRect (cwidths,cheights) (x,y) (w,h) = Rect (Point x1 y1) (Point x2 y2)
       where
         x1 = cwidths ! x
         y1 = cheights ! y
-        x2 = cwidths ! min (x+w) (snd $ bounds cwidths) 
+        x2 = cwidths ! min (x+w) (snd $ bounds cwidths)
         y2 = cheights ! min (y+h) (snd $ bounds cheights)
         mx = fst (bounds cwidths)
         my = fst (bounds cheights)
 
+    -- total size -> item sizes -> item weights -> new item sizes such that
+    -- their sum == total size, and added size is proportional to weight
     addExtraSpace :: Double -> DArray -> DArray -> DArray
-    addExtraSpace size sizes weights = 
+    addExtraSpace size sizes weights =
         if totalws == 0 then sizes
                         else listArray (bounds sizes) sizes'
       where
@@ -240,5 +263,6 @@ gridToRenderable t = Renderable minsizef renderf
         extras =  map (*(extra/totalws)) ws
         sizes' = zipWith (+) extras (elems sizes)
 
+    -- [1,2,3] -> [0,1,3,6].
     ctotal :: DArray -> DArray
     ctotal a = listArray (let (i,j) = bounds a in (i,j+1)) (scanl (+) 0 (elems a))

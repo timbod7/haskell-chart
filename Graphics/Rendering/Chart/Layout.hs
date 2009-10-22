@@ -169,10 +169,10 @@ layout1ToRenderable l =
          besideN [er,     er,    btitle, er,    er       ]
          ]
 
-    ttitle = atitle HTA_Centre VTA_Bottom  0 layout1_top_axis_
-    btitle = atitle HTA_Centre VTA_Top     0 layout1_bottom_axis_
-    ltitle = atitle HTA_Right  VTA_Centre 90 layout1_left_axis_
-    rtitle = atitle HTA_Left   VTA_Centre 90 layout1_right_axis_
+    ttitle = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_
+    btitle = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_
+    ltitle = atitle HTA_Right  VTA_Centre 270 layout1_left_axis_
+    rtitle = atitle HTA_Left   VTA_Centre 270 layout1_right_axis_
 
     er = tval $ emptyRenderable
 
@@ -200,8 +200,8 @@ layout1ToRenderable l =
     legends = gridToRenderable (besideN [ tval $ mkLegend lefts,
                                           weights (1,1) $ tval $ emptyRenderable,
                                           tval $ mkLegend rights ])
-    lefts = concat [ plot_legend_ p | (Left p) <- (layout1_plots_ l) ] 
-    rights = concat [ plot_legend_ p | (Right p) <- (layout1_plots_ l) ] 
+    lefts  = concat [ plot_legend_ p | (Left p ) <- (layout1_plots_ l) ]
+    rights = concat [ plot_legend_ p | (Right p) <- (layout1_plots_ l) ]
 
     mkLegend vals = case (layout1_legend_ l) of
         Nothing -> emptyRenderable
@@ -215,7 +215,7 @@ layout1ToRenderable l =
 plotsToRenderable :: Layout1 x y -> Renderable (Layout1Pick x y)
 plotsToRenderable l = Renderable {
         minsize=return (0,0),
-        render= renderPlots l
+        render =renderPlots l
     }
 
 renderPlots :: Layout1 x y -> RectSize -> CRender (PickFn (Layout1Pick x y))
@@ -231,18 +231,18 @@ renderPlots l sz@(w,h) = do
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
 
-    rPlot (Left p) = rPlot1 bAxis lAxis p
+    rPlot (Left  p) = rPlot1 bAxis lAxis p
     rPlot (Right p) = rPlot1 bAxis rAxis p
 
-    rPlot1 (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p = 
-	let xrange = if xrev then (w, 0) else (0,w)
-	    yrange  = if yrev then (0, h) else (h, 0)
-	    pmfn (x,y) = Point (mapv xrange (axis_viewport_ xaxis xrange) x)
-                               (mapv yrange (axis_viewport_ yaxis yrange) y)
-            mapv (min,max) _ LMin = min
-            mapv (min,max) _ LMax = max
-            mapv _ f (LValue v) = f v
-	in plot_render_ p pmfn
+    rPlot1 (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p =
+      let xrange = if xrev then (w, 0) else (0, w)
+          yrange = if yrev then (0, h) else (h, 0)
+          pmfn (x,y) = Point (mapv xrange (axis_viewport_ xaxis xrange) x)
+                             (mapv yrange (axis_viewport_ yaxis yrange) y)
+          mapv (min,max) _ LMin = min
+          mapv (min,max) _ LMax = max
+          mapv _         f (LValue v) = f v
+	  in plot_render_ p pmfn
     rPlot1 _ _ _ = return ()
 
     renderGrids = do
@@ -258,7 +258,7 @@ axesSpacer f1 a1 f2 a2 = embedRenderable $ do
 
 getAxes :: Layout1 x y -> (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
 getAxes l = (bAxis,lAxis,tAxis,rAxis)
-  where 
+  where
     (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots_ l)
     xvals = xvals0 ++ xvals1
     (yvals0',yvals1') = layout1_yaxes_control_ l (yvals0,yvals1)
@@ -270,7 +270,7 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
 
     mkAxis t laxis vals = case laxis_visible_ laxis vals of
         False -> Nothing
-        True -> Just (AxisT t style rev adata) 
+        True -> Just (AxisT t style rev adata)
       where
         style = laxis_style_ laxis
         rev = laxis_reverse_ laxis
@@ -293,7 +293,7 @@ defaultLayout1 = Layout1 {
     layout1_title_style_ = defaultFontStyle{font_size_=15, font_weight_=C.FontWeightBold},
 
     layout1_top_axis_ = defaultLayoutAxis {
-                          laxis_visible_ = const False 
+                          laxis_visible_ = const False
                         },
     layout1_bottom_axis_ = defaultLayoutAxis,
     layout1_left_axis_ = defaultLayoutAxis,
@@ -312,7 +312,7 @@ defaultLayoutAxis = LayoutAxis {
    laxis_title_style_ = defaultFontStyle{font_size_=10},
    laxis_title_ = "",
    laxis_style_ = defaultAxisStyle,
-   laxis_visible_ = not.null,               
+   laxis_visible_ = not.null,
    laxis_generate_ = autoAxis,
    laxis_override_ = id,
    laxis_reverse_ = False
