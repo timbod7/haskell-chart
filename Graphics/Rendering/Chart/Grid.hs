@@ -8,7 +8,13 @@ module Graphics.Rendering.Chart.Grid (
     overlay,
     width, height,
     gridToRenderable,
-    weights
+    weights,
+    fullRowAbove,
+    fullRowBelow,
+    fullColLeft,
+    fullColRight,
+    fullOverlayUnder,
+    fullOverlayOver
 ) where
 
 import Data.List
@@ -80,7 +86,31 @@ above Null t = t
 above t Null = t
 above t1 t2 = Above t1 t2 size
   where size = (max (width t1) (width t2), height t1 + height t2)
-	
+
+-- | A value placed above the grid, occupying 1 row with the same horizontal span as the grid.
+fullRowAbove :: a -> Double -> Grid a -> Grid a
+fullRowAbove a w g = (weights (0,w) $ tspan a (width g,1)) `above` g
+
+-- | A value placed below the grid, occupying 1 row with the same horizontal span as the grid.
+fullRowBelow :: a -> Double -> Grid a -> Grid a
+fullRowBelow a w g = g `above` (weights (0,w) $ tspan a (width g,1))
+
+-- | A value placed to the left of the grid, occupying 1 column with the same vertical span as the grid.
+fullColLeft  :: a -> Double -> Grid a -> Grid a
+fullColLeft  a w g = (weights (w,0) $ tspan a (1,height g)) `beside` g
+
+-- | A value placed to the right of the grid, occupying 1 column with the same vertical span as the grid.
+fullColRight :: a -> Double -> Grid a -> Grid a
+fullColRight a w g = g `beside` (weights (w,0) $ tspan a (1,height g))
+
+-- | A value placed under a grid, with the same span as the grid.
+fullOverlayUnder :: a -> Grid a -> Grid a
+fullOverlayUnder a g = g `overlay` (tspan a (width g,height g))
+
+-- | A value placed over a grid, with the same span as the grid.
+fullOverlayOver :: a -> Grid a -> Grid a
+fullOverlayOver  a g = (tspan a (width g,height g)) `overlay` g
+
 beside Null t = t
 beside t Null = t
 beside t1 t2 = Beside t1 t2 size
@@ -90,6 +120,7 @@ aboveN, besideN :: [Grid a] -> Grid a
 aboveN = foldl above nullt
 besideN = foldl beside nullt
 
+-- | One grid over the other. The first argument is shallow, the second is deep.
 overlay :: Grid a -> Grid a -> Grid a
 overlay Null t = t
 overlay t Null = t
@@ -99,6 +130,7 @@ overlay t1 t2 = Overlay t1 t2 size
 (.|.) = beside
 (./.) = above
 
+-- | Sets the space weight of *every* cell of the grid to given value.
 weights :: SpaceWeight -> Grid a -> Grid a
 weights sw Null = Null
 weights sw Empty = Empty
@@ -174,40 +206,37 @@ foldT f iv ft = foldr f' iv (assocs ft)
 ----------------------------------------------------------------------
 type DArray = Array Int Double
 
+getSizes :: Grid (Renderable a) -> CRender (DArray, DArray, DArray, DArray)
+getSizes t = do
+    szs <- mapGridM minsize t :: CRender (Grid RectSize)
+    let szs' = flatten szs
+    let widths   = accumArray max 0 (0, width  t - 1) (foldT (ef wf  fst) [] szs')
+    let heights  = accumArray max 0 (0, height t - 1) (foldT (ef hf  snd) [] szs')
+    let xweights = accumArray max 0 (0, width  t - 1) (foldT (ef xwf fst) [] szs')
+    let yweights = accumArray max 0 (0, height t - 1) (foldT (ef ywf snd) [] szs')
+    return (widths,heights,xweights,yweights)
+  where
+      wf  (x,y) (w,h) (ww,wh) = (x,w)
+      hf  (x,y) (w,h) (ww,wh) = (y,h)
+      xwf (x,y) (w,h) (xw,yw) = (x,xw)
+      ywf (x,y) (w,h) (xw,yw) = (y,yw)
+
+      ef f ds loc (size,span,ew) r | ds span == 1 = (f loc size ew:r)
+                                   | otherwise = r
+
 gridToRenderable :: Grid (Renderable a) -> Renderable a
 gridToRenderable t = Renderable minsizef renderf
   where
-    getSizes :: CRender (DArray, DArray, DArray, DArray)
-    getSizes = do
-        szs <- mapGridM minsize t :: CRender (Grid RectSize)
-        let szs' = flatten szs
-        let widths = accumArray max 0 (0, width t - 1) (foldT (ef wf) [] szs')
-        let heights  = accumArray max 0 (0, height t - 1) (foldT (ef hf) [] szs')
-        let xweights = accumArray max 0 (0, width t - 1) (foldT (ef xwf) [] szs')
-        let yweights = accumArray max 0 (0, height t - 1) (foldT (ef ywf) [] szs')
-        return (widths,heights,xweights,yweights)
-
-    wf  (x,y) (w,h) (ww,wh) = (x,w)
-    hf  (x,y) (w,h) (ww,wh) = (y,h)
-    xwf (x,y) (w,h) (xw,yw) = (x,xw)
-    ywf (x,y) (w,h) (xw,yw) = (y,yw)
-
-    ef f loc (size,span,ew) | span == (1,1) = (f loc size ew:)
-                            | otherwise = id
-
     minsizef :: CRender RectSize
     minsizef = do
-        (widths, heights, xweights, yweights) <- getSizes
+        (widths, heights, xweights, yweights) <- getSizes t
         return (sum (elems widths), sum (elems heights))
 
     renderf (w,h)  = do
-        (widths, heights, xweights, yweights) <- getSizes
+        (widths, heights, xweights, yweights) <- getSizes t
         let widths' = addExtraSpace w widths xweights
         let heights' = addExtraSpace h heights yweights
         let borders = (ctotal widths',ctotal heights')
---        setLineStyle $ solidLine 3 (opaque red)
---        rectPath $ Rect (Point 0 0) (Point (sum (elems widths')) (sum (elems heights')))
---        c $ C.stroke
         rf1 borders (0,0) t
 
     -- (x borders, y borders) -> (x,y) -> grid -> drawing

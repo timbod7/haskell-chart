@@ -23,7 +23,7 @@
 -- @
 --
 
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# OPTIONS_GHC -XTemplateHaskell -XGADTs #-}
 
 module Graphics.Rendering.Chart.Layout(
     Layout1(..),
@@ -58,7 +58,10 @@ module Graphics.Rendering.Chart.Layout(
     layout1_margin,
     layout1_plots,
     layout1_legend,
-    layout1_grid_last
+    layout1_grid_last,
+
+    renderLayout1sStacked,
+    AnyLayout1(..)
   ) where
 
 import qualified Graphics.Rendering.Cairo as C
@@ -142,32 +145,85 @@ data Layout1Pick x y = L1P_Legend String
 instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
     toRenderable = setPickFn nullPickFn.layout1ToRenderable
 
+-- | Encapsulates a 'Layout1' with a fixed abscissa type but arbitrary ordinate type.
+data AnyLayout1 x where
+  AnyLayout1 :: (Ord x,Ord y) => Layout1 x y -> AnyLayout1 x
+
+-- | Render several layouts with the same abscissa type stacked so that their
+-- origins and axis titles are aligned horizontally with respect to each other.
+renderLayout1sStacked :: (Ord x) => [AnyLayout1 x] -> Renderable ()
+renderLayout1sStacked ls = gridToRenderable g
+  where
+    dropPickFn = fmap (mapPickFn (const ()))
+    g = aboveN [
+        (fillBackground (layout1_background_ l) emptyRenderable) `fullOverlayUnder`
+        fullRowAbove (layout1TitleToRenderable l) 0 (
+             fullRowBelow (mapPickFn (const ()) $ layout1LegendsToRenderable l) 0
+                          (dropPickFn $ layout1PlotAreaToGrid l))
+      | AnyLayout1 l <- ls]
+
+addMarginsToGrid :: (Double,Double,Double,Double) -> Grid (Renderable a) -> Grid (Renderable a)
+addMarginsToGrid (t,b,l,r) g = aboveN [
+     besideN [er, ts, er],
+     besideN [ls, g,  rs],
+     besideN [er, bs, er]
+  ]
+  where
+    er = empty
+    ts = tval $ spacer (0,t)
+    ls = tval $ spacer (l,0)
+    bs = tval $ spacer (0,b)
+    rs = tval $ spacer (r,0)
+
 layout1ToRenderable :: (Ord x, Ord y) => Layout1 x y -> Renderable (Layout1Pick x y)
 layout1ToRenderable l =
-   fillBackground (layout1_background_ l) (
-       gridToRenderable $ aboveN [
-          tval $ addMargins (lm/2,0,0,0) title,
-          weights (1,1) $ tval $ addMargins (lm,lm,lm,lm) plotArea,
-          tval $ legends
-       ] )
+   fillBackground (layout1_background_ l) $ gridToRenderable (layout1ToGrid l)
+
+layout1ToGrid :: (Ord x, Ord y) => Layout1 x y -> Grid (Renderable (Layout1Pick x y))
+layout1ToGrid l = aboveN [
+          tval $ layout1TitleToRenderable l,
+          weights (1,1) $ tval $ gridToRenderable $
+            addMarginsToGrid (lm,lm,lm,lm) (layout1PlotAreaToGrid l),
+          tval $ layout1LegendsToRenderable l
+       ]
+  where
+    lm = layout1_margin_ l
+
+layout1TitleToRenderable :: (Ord x, Ord y) => Layout1 x y -> Renderable a
+layout1TitleToRenderable l = addMargins (lm/2,0,0,0) title
   where
     title = label (layout1_title_style_ l) HTA_Centre VTA_Centre (layout1_title_ l)
+    lm = layout1_margin_ l
 
-    plotArea = gridToRenderable (layer2 `overlay` layer1)
+layout1LegendsToRenderable :: (Ord x, Ord y) => Layout1 x y -> Renderable (Layout1Pick x y)
+layout1LegendsToRenderable l = gridToRenderable g
+  where
+    g = besideN [ tval $ mkLegend lefts,
+                  weights (1,1) $ tval $ emptyRenderable,
+                  tval $ mkLegend rights ]
+    lefts  = concat [ plot_legend_ p | (Left p ) <- (layout1_plots_ l) ]
+    rights = concat [ plot_legend_ p | (Right p) <- (layout1_plots_ l) ]
 
-    layer1 = aboveN [
-         besideN [er,     er,    er   ],
-         besideN [er,     er,    er   ],
-         besideN [er,     er,    weights (1,1) plots ]
-         ]
+    lm = layout1_margin_ l
 
-    layer2 = aboveN [
+    mkLegend vals = case (layout1_legend_ l) of
+        Nothing -> emptyRenderable
+        (Just ls) ->  case filter ((/="").fst) vals of {
+             []  -> emptyRenderable ;
+	         lvs -> addMargins (0,lm,lm,lm)
+                      (mapPickFn  L1P_Legend $ legendToRenderable (Legend True ls lvs))
+         }
+
+layout1PlotAreaToGrid :: (Ord x, Ord y) => Layout1 x y -> Grid (Renderable (Layout1Pick x y))
+layout1PlotAreaToGrid l = aboveN [
          besideN [er,     er,    ttitle, er,    er       ],
          besideN [er,     tl,    taxis,  tr,    er       ],
-         besideN [ltitle, laxis, er,     raxis, rtitle   ],
+         besideN [ltitle, laxis, p,      raxis, rtitle   ],
          besideN [er,     bl,    baxis,  br,    er       ],
          besideN [er,     er,    btitle, er,    er       ]
          ]
+  where
+    p = weights (1,1) plots
 
     ttitle = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_
     btitle = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_
@@ -196,21 +252,6 @@ layout1ToRenderable l =
     bl = tval $ axesSpacer fst ba snd la
     tr = tval $ axesSpacer snd ta fst ra
     br = tval $ axesSpacer snd ba snd ra
-
-    legends = gridToRenderable (besideN [ tval $ mkLegend lefts,
-                                          weights (1,1) $ tval $ emptyRenderable,
-                                          tval $ mkLegend rights ])
-    lefts  = concat [ plot_legend_ p | (Left p ) <- (layout1_plots_ l) ]
-    rights = concat [ plot_legend_ p | (Right p) <- (layout1_plots_ l) ]
-
-    mkLegend vals = case (layout1_legend_ l) of
-        Nothing -> emptyRenderable
-        (Just ls) ->  case filter ((/="").fst) vals of
-             [] -> emptyRenderable
-	     lvs -> addMargins (0,lm,lm,lm)
-                      (mapPickFn  L1P_Legend $ legendToRenderable (Legend True ls lvs))
-
-    lm = layout1_margin_ l
 
 plotsToRenderable :: Layout1 x y -> Renderable (Layout1Pick x y)
 plotsToRenderable l = Renderable {
