@@ -244,7 +244,7 @@ gridToRenderable t = Renderable minsizef renderf
         Null -> return nullPickFn
         Empty -> return nullPickFn
         (Value (r,span,_)) -> do
-            let (Rect p0 p1) = mkRect csizes loc span
+            let (Rect p0 p1) = mkRect borders loc span
             p0'@(Point x0 y0) <- alignc p0
             p1'@(Point x1 y1) <- alignc p1
             preserveCState $ do

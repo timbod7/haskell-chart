@@ -293,17 +293,17 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
     t = weights (1,1) $ aboveN [ besideN [rf g0, rf g1, rf g2],
                                  besideN [rf g3, rf g4, rf g5] ]
 
-    g0 = layout " / clustered 1"
+    g0 = layout "clustered 1"
        $ plot_bars_style ^= BarsClustered
        $ plot_bars_spacing ^= BarsFixWidth 25
        $ bars1
 
-    g1 = layout "clustered / fix width "
+    g1 = layout "clustered/fix width "
        $ plot_bars_style ^= BarsClustered
        $ plot_bars_spacing ^= BarsFixWidth 25
        $ bars2
 
-    g2 = layout "clustered / fix gap "
+    g2 = layout "clustered/fix gap "
        $ plot_bars_style ^= BarsClustered
        $ plot_bars_spacing ^= BarsFixGap 10
        $ bars2
@@ -313,12 +313,12 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
        $ plot_bars_spacing ^= BarsFixWidth 25
        $ bars1
 
-    g4 = layout "stacked / fix width"
+    g4 = layout "stacked/fix width"
        $ plot_bars_style ^= BarsStacked
        $ plot_bars_spacing ^= BarsFixWidth 25
        $ bars2
 
-    g5 = layout "stacked / fix gap"
+    g5 = layout "stacked/fix gap"
        $ plot_bars_style ^= BarsStacked
        $ plot_bars_spacing ^= BarsFixGap 10
        $ bars2
@@ -328,7 +328,9 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
     alabels = [ "Jun", "Jul", "Aug", "Sep", "Oct" ]
 
 
-    layout title bars = layout1_title ^= (show alignment ++ "/ " ++ title)
+    layout title bars =
+             layout1_title ^= (show alignment ++ "/" ++ title)
+           $ layout1_title_style ^: font_size ^= 10
            $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
            $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
            $ layout1_plots ^= [ Left (plotBars bars) ]
@@ -425,9 +427,9 @@ allTests =
      , ("test6", test6)
      , ("test7", test7)
      , ("test8", test8)
+     , ("test9c", test9 BarsCentered)
      , ("test9l", test9 BarsLeft)
      , ("test9r", test9 BarsRight)
-     , ("test9c", test9 BarsCentered)
      , ("test10", test10 (filterPrices (date 1 1 2005) (date 31 12 2005)))
      , ("misc1", misc1 0)
      , ("misc1a", misc1 45)
