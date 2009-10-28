@@ -23,7 +23,7 @@
 -- @
 --
 
-{-# OPTIONS_GHC -XTemplateHaskell -XGADTs #-}
+{-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Layout(
     Layout1(..),
@@ -61,7 +61,8 @@ module Graphics.Rendering.Chart.Layout(
     layout1_grid_last,
 
     renderLayout1sStacked,
-    AnyLayout1(..)
+    AnyLayout1(),
+    withAnyOrdinate
   ) where
 
 import qualified Graphics.Rendering.Cairo as C
@@ -146,21 +147,33 @@ instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
     toRenderable = setPickFn nullPickFn.layout1ToRenderable
 
 -- | Encapsulates a 'Layout1' with a fixed abscissa type but arbitrary ordinate type.
-data AnyLayout1 x where
-  AnyLayout1 :: (Ord x,Ord y) => Layout1 x y -> AnyLayout1 x
+data AnyLayout1 x = AnyLayout1 {
+    background :: CairoFillStyle,
+    titleRenderable :: Renderable (),
+    plotAreaGrid :: Grid (Renderable ()),
+    legendRenderable :: Renderable ()
+  }
+
+withAnyOrdinate :: (Ord x,Ord y) => Layout1 x y -> AnyLayout1 x
+withAnyOrdinate l = AnyLayout1 {
+    background = layout1_background_ l,
+    titleRenderable = mapPickFn (const ()) $ layout1TitleToRenderable l,
+    plotAreaGrid = fmap (mapPickFn (const ())) $ layout1PlotAreaToGrid l,
+    legendRenderable = mapPickFn (const ()) $ layout1LegendsToRenderable l
+  }
+
 
 -- | Render several layouts with the same abscissa type stacked so that their
 -- origins and axis titles are aligned horizontally with respect to each other.
 renderLayout1sStacked :: (Ord x) => [AnyLayout1 x] -> Renderable ()
 renderLayout1sStacked ls = gridToRenderable g
   where
-    dropPickFn = fmap (mapPickFn (const ()))
     g = aboveN [
-        (fillBackground (layout1_background_ l) emptyRenderable) `fullOverlayUnder`
-        fullRowAbove (layout1TitleToRenderable l) 0 (
-             fullRowBelow (mapPickFn (const ()) $ layout1LegendsToRenderable l) 0
-                          (dropPickFn $ layout1PlotAreaToGrid l))
-      | AnyLayout1 l <- ls]
+        (fillBackground (background l) emptyRenderable) `fullOverlayUnder`
+        fullRowAbove (titleRenderable l) 0 (
+             fullRowBelow (legendRenderable l) 0
+                          (plotAreaGrid l))
+      | l <- ls]
 
 addMarginsToGrid :: (Double,Double,Double,Double) -> Grid (Renderable a) -> Grid (Renderable a)
 addMarginsToGrid (t,b,l,r) g = aboveN [
