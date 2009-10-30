@@ -272,6 +272,12 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
 	      in strokeLines [Point 0 v',Point w v']
 
 
+stepsInt :: Int -> Range -> [Int]
+stepsInt nSteps (min,max) = [a, a+step .. a+nSteps*step]
+  where
+    a = ceiling min
+    b = ceiling max
+    step = (if (b-a)`mod`nSteps==0 then 0 else 1) + (b-a)`div`nSteps
 
 steps :: Double -> Range -> [Rational]
 steps nSteps (min,max) = [ (fromIntegral (min' + i)) * s | i <- [0..n] ]
@@ -374,11 +380,11 @@ autoScaledIntAxis lap ps = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
     range _  | min == max = (fromIntegral $ min-1, fromIntegral $ min+1)
              | otherwise = (fromIntegral $ min,   fromIntegral $ max)
     labelvs :: [Int]
-    labelvs = map floor $ steps (fromIntegral (la_nLabels_ lap)) r
-    tickvs = map floor $ steps (fromIntegral (la_nTicks_ lap)) $
+    labelvs = stepsInt (la_nLabels_ lap) r
+    tickvs  = stepsInt (la_nTicks_ lap) $
                            (fromIntegral $ minimum labelvs,fromIntegral $ maximum labelvs)
-    gridvs = labelvs
-    r = range ps
+    gridvs  = labelvs
+    r       = range ps
 
 
 log10 :: (Floating a) => a -> a
