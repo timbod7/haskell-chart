@@ -41,7 +41,7 @@ module Graphics.Rendering.Chart.Axis(
 
     defaultAxisLineStyle,
     defaultLinearAxis,
-    defaultIntLinearAxis,
+    defaultIntAxis,
     defaultLogAxis,
     defaultAxisStyle,
     autoScaledAxis,
@@ -338,7 +338,7 @@ defaultLinearAxis = LinearAxisParams {
     la_nTicks_ = 50
 }
 
-defaultIntLinearAxis = LinearAxisParams {
+defaultIntAxis = LinearAxisParams {
     la_labelf_ = show,
     la_nLabels_ = 5,
     la_nTicks_ = 10
@@ -350,7 +350,7 @@ defaultIntLinearAxis = LinearAxisParams {
 -- The resulting axis will only show a grid if the template has some grid
 -- values.
 autoScaledAxis :: LinearAxisParams Double -> AxisFn Double
-autoScaledAxis lap ps0 = makeAxis (la_labelf_ lap . toValue) (labelvs,tickvs,gridvs)
+autoScaledAxis lap ps0 = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
   where
     ps = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
@@ -664,7 +664,7 @@ instance PlotValue LogValue where
 
 instance PlotValue Int where
     toValue = fromIntegral
-    autoAxis = autoScaledIntAxis defaultIntLinearAxis
+    autoAxis = autoScaledIntAxis defaultIntAxis
 
 instance PlotValue () where
     toValue () = 0

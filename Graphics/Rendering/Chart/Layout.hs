@@ -151,7 +151,8 @@ data AnyLayout1 x = AnyLayout1 {
     background :: CairoFillStyle,
     titleRenderable :: Renderable (),
     plotAreaGrid :: Grid (Renderable ()),
-    legendRenderable :: Renderable ()
+    legendRenderable :: Renderable (),
+    margin :: Double
   }
 
 withAnyOrdinate :: (Ord x,Ord y) => Layout1 x y -> AnyLayout1 x
@@ -159,21 +160,27 @@ withAnyOrdinate l = AnyLayout1 {
     background = layout1_background_ l,
     titleRenderable = mapPickFn (const ()) $ layout1TitleToRenderable l,
     plotAreaGrid = fmap (mapPickFn (const ())) $ layout1PlotAreaToGrid l,
-    legendRenderable = mapPickFn (const ()) $ layout1LegendsToRenderable l
+    legendRenderable = mapPickFn (const ()) $ layout1LegendsToRenderable l,
+    margin = layout1_margin_ l
   }
 
 
 -- | Render several layouts with the same abscissa type stacked so that their
 -- origins and axis titles are aligned horizontally with respect to each other.
+-- The exterior margins and background are taken from the first element.
 renderLayout1sStacked :: (Ord x) => [AnyLayout1 x] -> Renderable ()
-renderLayout1sStacked ls = gridToRenderable g
+renderLayout1sStacked [] = emptyRenderable
+renderLayout1sStacked ls@(l1:_) = gridToRenderable g
   where
-    g = aboveN [
-        (fillBackground (background l) emptyRenderable) `fullOverlayUnder`
+    g = fullOverlayUnder (fillBackground (background l1) emptyRenderable)
+      $ addMarginsToGrid (lm,lm,lm,lm)
+      $ aboveN [
         fullRowAbove (titleRenderable l) 0 (
              fullRowBelow (legendRenderable l) 0
                           (plotAreaGrid l))
       | l <- ls]
+
+    lm = margin l1
 
 addMarginsToGrid :: (Double,Double,Double,Double) -> Grid (Renderable a) -> Grid (Renderable a)
 addMarginsToGrid (t,b,l,r) g = aboveN [

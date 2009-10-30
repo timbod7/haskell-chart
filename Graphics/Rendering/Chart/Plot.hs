@@ -20,6 +20,8 @@
 --     * 'PlotErrBars'
 --
 --     * 'PlotBars'
+-- 
+--     * 'PlotHidden'
 --
 -- These accessors are not shown in this API documentation.  They have
 -- the same name as the field, but with the trailing underscore
@@ -46,6 +48,7 @@ module Graphics.Rendering.Chart.Plot(
     PlotBarsSpacing(..),
     PlotBarsAlignment(..),
     BarsPlotValue(..),
+    PlotHidden(..),
 
     symErrPoint,
 
@@ -561,6 +564,23 @@ renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
     c $ C.fill
 
 ----------------------------------------------------------------------
+
+-- | Value defining some hidden x and y values. The values don't
+-- get displayed, but still affect axis scaling.
+
+data PlotHidden x y = PlotHidden {
+    plot_hidden_x_values_ :: [x],
+    plot_hidden_y_values_ :: [y]
+}
+
+instance ToPlot PlotHidden where
+    toPlot ph = Plot {
+        plot_render_ = \_ -> return (),
+        plot_legend_ = [],
+        plot_all_points_ = (plot_hidden_x_values_ ph, plot_hidden_y_values_ ph)
+        }
+
+----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor for each field
 $( deriveAccessors ''Plot )
 $( deriveAccessors ''PlotLines )
@@ -568,3 +588,4 @@ $( deriveAccessors ''PlotPoints )
 $( deriveAccessors ''PlotFillBetween )
 $( deriveAccessors ''PlotErrBars )
 $( deriveAccessors ''PlotBars )
+$( deriveAccessors ''PlotHidden )

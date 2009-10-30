@@ -386,6 +386,36 @@ test10 prices otype = toRenderable layout
            $ setLayout1Foreground fg
            $ defaultLayout1
 
+-------------------------------------------------------------------------------
+-- A quick test of stacked layouts
+
+test11 :: OutputType -> Renderable ()
+test11 otype = renderLayout1sStacked [withAnyOrdinate layout1, withAnyOrdinate layout2]
+  where
+    vs1 :: [(Int,Int)]
+    vs1 = [ (2,2), (3,40), (8,400), (12,60) ]
+
+    vs2 :: [(Int,Double)]
+    vs2 = [ (0,0.7), (3,0.35), (4,0.25), (7, 0.6), (10,0.4) ]
+
+    allx = map fst vs1 ++ map fst vs2
+    extendRange = PlotHidden allx []
+
+    plot1 = plot_points_style ^= filledCircles 5 (opaque red)
+          $ plot_points_values ^= vs1
+          $ defaultPlotPoints
+
+    layout1 = layout1_title ^= "Integer Axis"
+ 	   $ layout1_plots ^= [Left (toPlot plot1), Left (toPlot extendRange)]
+           $ defaultLayout1
+
+    plot2 = plot_lines_values ^= [vs2]
+          $ defaultPlotLines
+
+    layout2 = layout1_title ^= "Float Axis"
+ 	   $ layout1_plots ^= [Left (toPlot plot2), Left (toPlot extendRange)]
+           $ defaultLayout1
+
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
@@ -431,6 +461,7 @@ allTests =
      , ("test9l", test9 BarsLeft)
      , ("test9r", test9 BarsRight)
      , ("test10", test10 (filterPrices (date 1 1 2005) (date 31 12 2005)))
+     , ("test11", test11)
      , ("misc1", misc1 0)
      , ("misc1a", misc1 45)
      ]
