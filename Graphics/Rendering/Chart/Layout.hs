@@ -235,15 +235,21 @@ layout1LegendsToRenderable l = gridToRenderable g
          }
 
 layout1PlotAreaToGrid :: (Ord x, Ord y) => Layout1 x y -> Grid (Renderable (Layout1Pick x y))
-layout1PlotAreaToGrid l = aboveN [
+layout1PlotAreaToGrid l = layer2 `overlay` layer1
+  where
+    layer1 = aboveN [
+         besideN [er,     er,    er   ],
+         besideN [er,     er,    er   ],
+         besideN [er,     er,    weights (1,1) plots ]
+         ]
+
+    layer2 = aboveN [
          besideN [er,     er,    ttitle, er,    er       ],
          besideN [er,     tl,    taxis,  tr,    er       ],
-         besideN [ltitle, laxis, p,      raxis, rtitle   ],
+         besideN [ltitle, laxis, er,     raxis, rtitle   ],
          besideN [er,     bl,    baxis,  br,    er       ],
          besideN [er,     er,    btitle, er,    er       ]
          ]
-  where
-    p = weights (1,1) plots
 
     ttitle = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_
     btitle = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_
