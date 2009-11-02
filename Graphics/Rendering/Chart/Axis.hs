@@ -273,11 +273,21 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
 
 
 stepsInt :: Int -> Range -> [Int]
-stepsInt nSteps (min,max) = [a, a+step .. a+nSteps*step]
+stepsInt nSteps range = bestSize (goodness alt0) alt0 alts
   where
-    a = ceiling min
-    b = ceiling max
-    step = (if (b-a)`mod`nSteps==0 then 0 else 1) + (b-a)`div`nSteps
+    bestSize n a (a':as) = let n' = goodness a' in if n' < n then bestSize n' a' as else a
+
+    goodness vs = abs (length vs - nSteps)
+
+    (alt0:alts) = map (\n -> steps n range) sampleSteps
+
+    sampleSteps = [1,2,5] ++ sampleSteps1
+    sampleSteps1 = [10,20,25,50] ++ map (*10) sampleSteps1
+
+    steps size (min,max) = takeWhile (<b) [a,a+size..] ++ [b]
+      where
+        a = (floor (min / fromIntegral size)) * size
+        b = (ceiling (max / fromIntegral size)) * size
 
 steps :: Double -> Range -> [Rational]
 steps nSteps (min,max) = [ (fromIntegral (min' + i)) * s | i <- [0..n] ]
