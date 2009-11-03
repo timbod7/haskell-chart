@@ -19,7 +19,7 @@ flag splitbase
 
 library
   if flag(splitbase)
-    Build-depends: base >= 3, old-locale, time, mtl, array
+    Build-depends: base >= 3 && < 5, old-locale, time, mtl, array
   else
     Build-depends: base < 3
   Build-depends: gtk >= 0.9.11, cairo >= 0.9.11, time, mtl, array, data-accessor == 0.2.*, 
