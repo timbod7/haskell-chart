@@ -38,6 +38,7 @@
 module Graphics.Rendering.Chart.Plot(
     Plot(..),
     ToPlot(..),
+    joinPlot,
     PlotPoints(..),
     PlotErrBars(..),
     PlotLines(..),
@@ -127,6 +128,21 @@ data Plot x y = Plot {
 -- | A type class abstracting the conversion of a value to a Plot.
 class ToPlot a where
    toPlot :: a x y -> Plot x y
+
+-- | Join any two plots together (they will share a legend).
+joinPlot :: Plot x y -> Plot x y -> Plot x y
+joinPlot Plot{ plot_render_     = renderP
+             , plot_legend_     = legendP
+             , plot_all_points_ = (xsP,ysP) }
+         Plot{ plot_render_     = renderQ
+             , plot_legend_     = legendQ
+             , plot_all_points_ = (xsQ,ysQ) }
+
+       = Plot{ plot_render_     = \a-> renderP a >> renderQ a
+             , plot_legend_     = legendP ++ legendQ
+             , plot_all_points_ = ( xsP++xsQ, ysP++ysQ )
+             }
+
 
 ----------------------------------------------------------------------
 
