@@ -110,21 +110,21 @@ import Data.Colour.Names
 -- | Interface to control plotting on a 2D area.
 data Plot x y = Plot {
 
-    -- | Given the mapping between model space coordinates and device coordinates,
-    -- render this plot into a chart.
-    plot_render_ :: PointMapFn x y -> CRender (),
+    -- | Given the mapping between model space coordinates and device
+    --   coordinates, render this plot into a chart.
+    plot_render_     :: PointMapFn x y -> CRender (),
 
     -- | Details for how to show this plot in a legend. For each item
-    -- the string is the text to show, and the function renders a
-    -- graphical sample of the plot
-    plot_legend_ :: [ (String, Rect -> CRender ()) ],
+    --   the string is the text to show, and the function renders a
+    --   graphical sample of the plot.
+    plot_legend_     :: [ (String, Rect -> CRender ()) ],
 
     -- | All of the model space coordinates to be plotted. These are
-    -- used to autoscale the axes where necessary.
+    --   used to autoscale the axes where necessary.
     plot_all_points_ :: ([x],[y])
 }
 
--- | a type class abstracting the conversion of a value to a Plot.
+-- | A type class abstracting the conversion of a value to a Plot.
 class ToPlot a where
    toPlot :: a x y -> Plot x y
 
@@ -136,20 +136,19 @@ mapXY f (x,y) = f (LValue x, LValue y)
 ----------------------------------------------------------------------
 
 -- | Value defining a series of (possibly disjointed) lines,
--- and a style in which to render them
+--   and a style in which to render them.
 data PlotLines x y = PlotLines {
-    plot_lines_title_ :: String,
-    plot_lines_style_ :: CairoLineStyle,
-    plot_lines_values_ :: [[(x,y)]],
+    plot_lines_title_        :: String,
+    plot_lines_style_        :: CairoLineStyle,
+    plot_lines_values_       :: [[(x,y)]],
     plot_lines_limit_values_ :: [[(Limit x, Limit y)]]
 }
 
-
 instance ToPlot PlotLines where
     toPlot p = Plot {
-        plot_render_ = renderPlotLines p,
-	    plot_legend_ = [(plot_lines_title_ p, renderPlotLegendLines p)],
-	    plot_all_points_ = (map fst pts ++ xs , map snd pts ++ ys)
+        plot_render_     = renderPlotLines p,
+        plot_legend_     = [(plot_lines_title_ p, renderPlotLegendLines p)],
+        plot_all_points_ = ( map fst pts ++ xs, map snd pts ++ ys )
     }
       where
         pts = concat (plot_lines_values_ p)
@@ -176,49 +175,49 @@ renderPlotLegendLines p r@(Rect p1 p2) = preserveCState $ do
     c $ C.stroke
 
 defaultPlotLineStyle = (solidLine 1 $ opaque blue){
-     line_cap_ = C.LineCapRound,
+     line_cap_  = C.LineCapRound,
      line_join_ = C.LineJoinRound
  }
 
 defaultPlotLines = PlotLines {
-    plot_lines_title_ = "",
-    plot_lines_style_ = defaultPlotLineStyle,
-    plot_lines_values_ = [],
+    plot_lines_title_        = "",
+    plot_lines_style_        = defaultPlotLineStyle,
+    plot_lines_values_       = [],
     plot_lines_limit_values_ = []
 }
 
--- | Helper function to plot a single horizontal line
+-- | Helper function to plot a single horizontal line.
 hlinePlot :: String -> CairoLineStyle -> b -> Plot a b
 hlinePlot t ls v = toPlot defaultPlotLines {
-    plot_lines_title_=t,
-    plot_lines_style_=ls,
-    plot_lines_limit_values_=[[(LMin, LValue v),(LMax, LValue v)]]
+    plot_lines_title_        = t,
+    plot_lines_style_        = ls,
+    plot_lines_limit_values_ = [[(LMin, LValue v),(LMax, LValue v)]]
     }
 
--- | Helper function to plot a single vertical line
+-- | Helper function to plot a single vertical line.
 vlinePlot :: String -> CairoLineStyle -> a -> Plot a b
 vlinePlot t ls v = toPlot defaultPlotLines {
-    plot_lines_title_=t,
-    plot_lines_style_=ls,
-    plot_lines_limit_values_=[[(LValue v,LMin),(LValue v,LMax)]]
+    plot_lines_title_        = t,
+    plot_lines_style_        = ls,
+    plot_lines_limit_values_ = [[(LValue v,LMin),(LValue v,LMax)]]
     }
 
 ----------------------------------------------------------------------
 
 -- | Value defining a series of datapoints, and a style in
--- which to render them
+--   which to render them.
 data PlotPoints x y = PlotPoints {
-    plot_points_title_ :: String,
-    plot_points_style_ :: CairoPointStyle,
+    plot_points_title_  :: String,
+    plot_points_style_  :: CairoPointStyle,
     plot_points_values_ :: [(x,y)]
 }
 
 
 instance ToPlot PlotPoints where
     toPlot p = Plot {
-        plot_render_ = renderPlotPoints p,
-	    plot_legend_ = [(plot_points_title_ p, renderPlotLegendPoints p)],
-	    plot_all_points_ = (map fst pts, map snd pts)
+        plot_render_     = renderPlotPoints p,
+        plot_legend_     = [(plot_points_title_ p, renderPlotLegendPoints p)],
+        plot_all_points_ = (map fst pts, map snd pts)
     }
       where
         pts = plot_points_values_ p
@@ -233,38 +232,39 @@ renderPlotPoints p pmap = preserveCState $ do
 
 renderPlotLegendPoints :: PlotPoints x y -> Rect -> CRender ()
 renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
-    drawPoint (Point (p_x p1) ((p_y p1 + p_y p2)/2))
+    drawPoint (Point (p_x p1)              ((p_y p1 + p_y p2)/2))
     drawPoint (Point ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2))
-    drawPoint (Point (p_x p2) ((p_y p1 + p_y p2)/2))
+    drawPoint (Point (p_x p2)              ((p_y p1 + p_y p2)/2))
 
   where
     (CairoPointStyle drawPoint) = (plot_points_style_ p)
 
 defaultPlotPoints = PlotPoints {
-    plot_points_title_ = "",
-    plot_points_style_ =defaultPointStyle,
+    plot_points_title_  = "",
+    plot_points_style_  = defaultPointStyle,
     plot_points_values_ = []
 }
 ----------------------------------------------------------------------
 -- | Value specifying a plot filling the area between two sets of Y
--- coordinates, given common X coordinates.
+--   coordinates, given common X coordinates.
 
 data PlotFillBetween x y = PlotFillBetween {
-    plot_fillbetween_title_ :: String,
-    plot_fillbetween_style_ :: CairoFillStyle,
+    plot_fillbetween_title_  :: String,
+    plot_fillbetween_style_  :: CairoFillStyle,
     plot_fillbetween_values_ :: [ (x, (y,y))]
 }
 
 
 instance ToPlot PlotFillBetween where
     toPlot p = Plot {
-        plot_render_ = renderPlotFillBetween p,
-	    plot_legend_ = [(plot_fillbetween_title_ p, renderPlotLegendFill p)],
-	    plot_all_points_ = plotAllPointsFillBetween p
+        plot_render_     = renderPlotFillBetween p,
+        plot_legend_     = [(plot_fillbetween_title_ p,renderPlotLegendFill p)],
+        plot_all_points_ = plotAllPointsFillBetween p
     }
 
 renderPlotFillBetween :: PlotFillBetween x y -> PointMapFn x y -> CRender ()
-renderPlotFillBetween p pmap = renderPlotFillBetween' p (plot_fillbetween_values_ p) pmap
+renderPlotFillBetween p pmap =
+    renderPlotFillBetween' p (plot_fillbetween_values_ p) pmap
 
 renderPlotFillBetween' p [] _     = return ()
 renderPlotFillBetween' p vs pmap  = preserveCState $ do
@@ -275,9 +275,9 @@ renderPlotFillBetween' p vs pmap  = preserveCState $ do
     lineTo p0
     c $ C.fill
   where
-    pmap' = mapXY pmap
+    pmap'    = mapXY pmap
     (p0:p1s) = map pmap' [ (x,y1) | (x,(y1,y2)) <- vs ]
-    p2s = map pmap' [ (x,y2) | (x,(y1,y2)) <- vs ]
+    p2s      = map pmap' [ (x,y2) | (x,(y1,y2)) <- vs ]
 
 renderPlotLegendFill :: PlotFillBetween x y -> Rect -> CRender ()
 renderPlotLegendFill p r = preserveCState $ do
@@ -286,24 +286,24 @@ renderPlotLegendFill p r = preserveCState $ do
     c $ C.fill
 
 plotAllPointsFillBetween :: PlotFillBetween x y -> ([x],[y])
-plotAllPointsFillBetween p = ([x|(x,(_,_)) <- pts], concat [[y1,y2]|(_,(y1,y2)) <- pts])
+plotAllPointsFillBetween p = ( [ x | (x,(_,_)) <- pts ]
+                             , concat [ [y1,y2] | (_,(y1,y2)) <- pts ] )
   where
     pts = plot_fillbetween_values_ p
 
 
 defaultPlotFillBetween = PlotFillBetween {
-    plot_fillbetween_title_ = "",
-    plot_fillbetween_style_ = solidFillStyle (opaque $ sRGB 0.5 0.5 1.0),
-    plot_fillbetween_values_= []
+    plot_fillbetween_title_  = "",
+    plot_fillbetween_style_  = solidFillStyle (opaque $ sRGB 0.5 0.5 1.0),
+    plot_fillbetween_values_ = []
 }
 
 ----------------------------------------------------------------------
 
--- | Value for holding a point with associated error bounds for
--- each axis.
+-- | Value for holding a point with associated error bounds for each axis.
 
 data ErrValue x = ErrValue {
-      ev_low :: x,
+      ev_low  :: x,
       ev_best :: x,
       ev_high :: x
 } deriving Show
@@ -313,27 +313,29 @@ data ErrPoint x y = ErrPoint {
       ep_y :: ErrValue y
 } deriving Show
 
--- | When the error is symetric, we can simply pass in dx for the error
+-- | When the error is symmetric, we can simply pass in dx for the error.
 symErrPoint x y dx dy = ErrPoint (ErrValue (x-dx) x (x+dx))
                                  (ErrValue (y-dy) y (y+dy))
 
 -- | Value defining a series of error intervals, and a style in
--- which to render them
+--   which to render them.
 data PlotErrBars x y = PlotErrBars {
-    plot_errbars_title_ :: String,
-    plot_errbars_line_style_ :: CairoLineStyle,
+    plot_errbars_title_       :: String,
+    plot_errbars_line_style_  :: CairoLineStyle,
     plot_errbars_tick_length_ :: Double,
-    plot_errbars_overhang_ :: Double,
-    plot_errbars_values_ :: [ErrPoint x y]
+    plot_errbars_overhang_    :: Double,
+    plot_errbars_values_      :: [ErrPoint x y]
 }
 
 
 instance ToPlot PlotErrBars where
     toPlot p = Plot {
-        plot_render_ = renderPlotErrBars p,
-	    plot_legend_ = [(plot_errbars_title_ p,renderPlotLegendErrBars p)],
-	    plot_all_points_ = ( concat [[ev_low x,ev_high x] |ErrPoint x _ <- pts ],
-                             concat [[ev_low y,ev_high y] |ErrPoint _ y <- pts ] )
+        plot_render_     = renderPlotErrBars p,
+        plot_legend_     = [(plot_errbars_title_ p, renderPlotLegendErrBars p)],
+        plot_all_points_ = ( concat [ [ev_low x,ev_high x]
+                                    | ErrPoint x _ <- pts ]
+                           , concat [ [ev_low y,ev_high y]
+                                    | ErrPoint _ y <- pts ] )
     }
       where
         pts = plot_errbars_values_ p
@@ -344,11 +346,11 @@ renderPlotErrBars p pmap = preserveCState $ do
   where
     epmap (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) =
         ErrPoint (ErrValue xl' x' xh') (ErrValue yl' y' yh')
-        where (Point x' y') = pmap' (x,y)
+        where (Point x' y')   = pmap' (x,y)
               (Point xl' yl') = pmap' (xl,yl)
               (Point xh' yh') = pmap' (xh,yh)
     drawErrBar = drawErrBar0 p
-    pmap' = mapXY pmap
+    pmap'      = mapXY pmap
 
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = plot_errbars_tick_length_ ps
@@ -371,112 +373,116 @@ drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
 
 renderPlotLegendErrBars :: PlotErrBars x y -> Rect -> CRender ()
 renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
-    drawErrBar (symErrPoint (p_x p1) ((p_y p1 + p_y p2)/2) dx dx )
+    drawErrBar (symErrPoint (p_x p1)              ((p_y p1 + p_y p2)/2) dx dx)
     drawErrBar (symErrPoint ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2) dx dx)
-    drawErrBar (symErrPoint (p_x p2) ((p_y p1 + p_y p2)/2) dx dx)
+    drawErrBar (symErrPoint (p_x p2)              ((p_y p1 + p_y p2)/2) dx dx)
 
   where
     drawErrBar = drawErrBar0 p
-    dx = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
+    dx         = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
 
 defaultPlotErrBars = PlotErrBars {
-    plot_errbars_title_ = "",
-    plot_errbars_line_style_ = solidLine 1 $ opaque blue,
+    plot_errbars_title_       = "",
+    plot_errbars_line_style_  = solidLine 1 $ opaque blue,
     plot_errbars_tick_length_ = 3,
-    plot_errbars_overhang_ = 0,
-    plot_errbars_values_ = []
+    plot_errbars_overhang_    = 0,
+    plot_errbars_values_      = []
 }
 
 ----------------------------------------------------------------------
 
 class PlotValue a => BarsPlotValue a where
     barsReference :: a
-    barsAdd :: a -> a -> a
+    barsAdd       :: a -> a -> a
 
 instance BarsPlotValue Double where
     barsReference = 0
-    barsAdd = (+)
+    barsAdd       = (+)
 instance BarsPlotValue Int where
     barsReference = 0
-    barsAdd = (+)
+    barsAdd       = (+)
 
-data PlotBarsStyle = BarsStacked   -- ^ Bars for a fixed x are stacked vertically
-                                   -- on top of each other
-                   | BarsClustered -- ^ Bars for a fixed x are put horizontally
-                                   -- beside each other
+data PlotBarsStyle
+    = BarsStacked   -- ^ Bars for a fixed x are stacked vertically
+                    --   on top of each other.
+    | BarsClustered -- ^ Bars for a fixed x are put horizontally
+                    --   beside each other.
      deriving (Show)
 
-data PlotBarsSpacing = BarsFixWidth Double -- ^ All bars have the same width in pixels
-                     | BarsFixGap Double   -- ^ There is the same interval in pixels
-                                           -- between adjacent bars
+data PlotBarsSpacing
+    = BarsFixWidth Double -- ^ All bars have the same width in pixels.
+    | BarsFixGap Double   -- ^ There is the same interval in pixels
+                          --   between adjacent bars.
      deriving (Show)
 
 -- | How bars for a given (x,[y]) are aligned with respect to screen
--- coordinate corresponding to x (deviceX)
+--   coordinate corresponding to x (deviceX).
 data PlotBarsAlignment = BarsLeft      -- ^ The left edge of bars is at deviceX
                        | BarsCentered  -- ^ The right edge of bars is at deviceX
                        | BarsRight     -- ^ Bars are centered around deviceX
      deriving (Show)
 
 -- | Value describing how to plot a set of bars.
--- Note that the input data is typed [(x,[y])], ie for each x value
--- we plot several y values. Typically the size of each [y] list would
--- be the same.
+--   Note that the input data is typed [(x,[y])], ie for each x value
+--   we plot several y values. Typically the size of each [y] list would
+--   be the same.
 data PlotBars x y = PlotBars {
    -- | This value specifies whether each value from [y] should be
-   -- shown beside or above the previous value.
-   plot_bars_style_ :: PlotBarsStyle,
+   --   shown beside or above the previous value.
+   plot_bars_style_           :: PlotBarsStyle,
 
    -- | The style in which to draw each element of [y]. A fill style
-   -- is required, and if a linestyle is given, each bar will be
-   -- outlined.
-   plot_bars_item_styles_ :: [ (CairoFillStyle,Maybe CairoLineStyle) ],
+   --   is required, and if a linestyle is given, each bar will be
+   --   outlined.
+   plot_bars_item_styles_     :: [ (CairoFillStyle,Maybe CairoLineStyle) ],
 
-   -- | The title of each element of [y]. These will be shown in the
-   -- legend.
-   plot_bars_titles_ :: [String],
+   -- | The title of each element of [y]. These will be shown in the legend.
+   plot_bars_titles_          :: [String],
 
    -- | This value controls how the widths of the bars are
-   -- calculated. Either the widths of the bars, or the gaps between
-   -- them can be fixed.
-   plot_bars_spacing_ :: PlotBarsSpacing,
+   --   calculated. Either the widths of the bars, or the gaps between
+   --   them can be fixed.
+   plot_bars_spacing_         :: PlotBarsSpacing,
 
    -- | This value controls how bars for a fixed x are aligned with
-   -- respect to the device coordinate corresponding to x
-   plot_bars_alignment_ :: PlotBarsAlignment,
+   --   respect to the device coordinate corresponding to x.
+   plot_bars_alignment_       :: PlotBarsAlignment,
 
    -- | The starting level for the chart (normally 0).
-   plot_bars_reference_ :: y,
+   plot_bars_reference_       :: y,
 
    plot_bars_singleton_width_ :: Double,
 
-   -- | The actual points to be plotted
-   plot_bars_values_ :: [ (x,[y]) ]
+   -- | The actual points to be plotted.
+   plot_bars_values_          :: [ (x,[y]) ]
 }
 
 defaultPlotBars :: BarsPlotValue y => PlotBars x y
 defaultPlotBars = PlotBars {
-   plot_bars_style_ = BarsClustered,
-   plot_bars_item_styles_ = cycle istyles,
-   plot_bars_titles_ = [],
-   plot_bars_spacing_ = BarsFixGap 10,
-   plot_bars_alignment_ = BarsCentered,
-   plot_bars_values_ = [],
+   plot_bars_style_           = BarsClustered,
+   plot_bars_item_styles_     = cycle istyles,
+   plot_bars_titles_          = [],
+   plot_bars_spacing_         = BarsFixGap 10,
+   plot_bars_alignment_       = BarsCentered,
+   plot_bars_values_          = [],
    plot_bars_singleton_width_ = 20,
-   plot_bars_reference_ = barsReference
+   plot_bars_reference_       = barsReference
    }
   where
-    istyles = map mkstyle defaultColorSeq
-    mkstyle c = (solidFillStyle c,Just (solidLine 1.0 $ opaque black))
+    istyles   = map mkstyle defaultColorSeq
+    mkstyle c = (solidFillStyle c, Just (solidLine 1.0 $ opaque black))
 
 plotBars :: (BarsPlotValue y) => PlotBars x y -> Plot x y
 plotBars p = Plot {
-        plot_render_ = renderPlotBars p,
-	    plot_legend_ = zip (plot_bars_titles_ p) (map renderPlotLegendBars (plot_bars_item_styles_ p)),
-	    plot_all_points_ = allBarPoints p
+        plot_render_     = renderPlotBars p,
+        plot_legend_     = zip (plot_bars_titles_ p)
+                               (map renderPlotLegendBars
+                                    (plot_bars_item_styles_ p)),
+        plot_all_points_ = allBarPoints p
     }
 
-renderPlotBars :: (BarsPlotValue y) => PlotBars x y -> PointMapFn x y -> CRender ()
+renderPlotBars :: (BarsPlotValue y) =>
+                  PlotBars x y -> PointMapFn x y -> CRender ()
 renderPlotBars p pmap = case (plot_bars_style_ p) of
       BarsClustered -> forM_ vals clusteredBars
       BarsStacked   -> forM_ vals stackedBars
@@ -533,31 +539,32 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
                         then plot_bars_singleton_width_ p
                         else minimum diffs
       where
-        xs = fst (allBarPoints p)
+        xs  = fst (allBarPoints p)
         mxs = nub $ sort $ map mapX xs
 
-    nys = maximum [ length ys | (x,ys) <- vals ]
+    nys    = maximum [ length ys | (x,ys) <- vals ]
 
-    pmap' = mapXY pmap
+    pmap'  = mapXY pmap
     mapX x = p_x (pmap' (x,barsReference))
 
 whenJust :: (Monad m) => Maybe a -> (a -> m ()) -> m ()
 whenJust (Just a) f = f a
-whenJust _ _ = return ()
+whenJust _        _ = return ()
 
 allBarPoints :: (BarsPlotValue y) => PlotBars x y -> ([x],[y])
 allBarPoints p = case (plot_bars_style_ p) of
     BarsClustered -> ( [x| (x,_) <- pts], concat [ys| (_,ys) <- pts] )
-    BarsStacked -> ( [x| (x,_) <- pts], concat [stack ys | (_,ys) <- pts] )
+    BarsStacked   -> ( [x| (x,_) <- pts], concat [stack ys | (_,ys) <- pts] )
   where
     pts = plot_bars_values_ p
-    y0 = plot_bars_reference_ p
+    y0  = plot_bars_reference_ p
 
 stack :: (BarsPlotValue y) => [y] -> [y]
 stack ys = scanl1 barsAdd ys
 
 
-renderPlotLegendBars :: (CairoFillStyle,Maybe CairoLineStyle) -> Rect -> CRender ()
+renderPlotLegendBars :: (CairoFillStyle,Maybe CairoLineStyle) -> Rect
+                        -> CRender ()
 renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
     setFillStyle fstyle
     rectPath r
@@ -566,8 +573,7 @@ renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
 ----------------------------------------------------------------------
 
 -- | Value defining some hidden x and y values. The values don't
--- get displayed, but still affect axis scaling.
-
+--   get displayed, but still affect axis scaling.
 data PlotHidden x y = PlotHidden {
     plot_hidden_x_values_ :: [x],
     plot_hidden_y_values_ :: [y]
@@ -575,13 +581,14 @@ data PlotHidden x y = PlotHidden {
 
 instance ToPlot PlotHidden where
     toPlot ph = Plot {
-        plot_render_ = \_ -> return (),
-        plot_legend_ = [],
+        plot_render_     = \_ -> return (),
+        plot_legend_     = [],
         plot_all_points_ = (plot_hidden_x_values_ ph, plot_hidden_y_values_ ph)
-        }
+    }
 
 ----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor for each field
+-- Template haskell to derive an instance of Data.Accessor.Accessor
+-- for each field.
 $( deriveAccessors ''Plot )
 $( deriveAccessors ''PlotLines )
 $( deriveAccessors ''PlotPoints )
