@@ -33,7 +33,7 @@
 -----------------------------------------------------------------------------
 module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                         plotWindow, plotPDF, plotPS,
-                                        plotLayout
+                                        plotLayout, plotPNG, Layout1DDD
                                       ) where
 
 import Data.Maybe ( catMaybes )
