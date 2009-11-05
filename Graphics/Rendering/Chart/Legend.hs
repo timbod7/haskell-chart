@@ -31,8 +31,8 @@ import Graphics.Rendering.Chart.Grid
 
 data LegendStyle = LegendStyle {
    legend_label_style_ :: CairoFontStyle,
-   legend_margin_ :: Double,
-   legend_plot_size_ :: Double
+   legend_margin_      :: Double,
+   legend_plot_size_   :: Double
 }
 
 data Legend x y = Legend Bool LegendStyle [(String, Rect -> CRender ())]
@@ -45,19 +45,19 @@ legendToRenderable (Legend _ ls lvs) = gridToRenderable grid
   where
     grid = besideN $ intersperse ggap1 (map (tval.rf) ps)
 
-    ps :: [(String, [Rect -> CRender ()])]
-    ps = join_nub lvs
+    ps  :: [(String, [Rect -> CRender ()])]
+    ps   = join_nub lvs
 
     rf (title,rfs) = gridToRenderable grid1
       where
-        grid1 = besideN $ intersperse ggap2 (map rp rfs) ++ [ggap2,gtitle]
+        grid1  = besideN $ intersperse ggap2 (map rp rfs) ++ [ggap2,gtitle]
         gtitle = tval $ lbl title
         rp rfn = tval $ Renderable {
-               minsize = return (legend_plot_size_ ls, 0),
-               render = \(w,h) -> do 
-                 rfn (Rect (Point 0 0) (Point w h))
-                 return nullPickFn
-             }
+                     minsize = return (legend_plot_size_ ls, 0),
+                     render  = \(w,h) -> do 
+                         rfn (Rect (Point 0 0) (Point w h))
+                         return nullPickFn
+                 }
 
     ggap1 = tval $ spacer (legend_margin_ ls,0)
     ggap2 = tval $ spacer1 (lbl "X")
@@ -66,15 +66,16 @@ legendToRenderable (Legend _ ls lvs) = gridToRenderable grid
 join_nub :: [(String, a)] -> [(String, [a])]
 join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
                          (xs, rest) -> (x, a1:map snd xs) : join_nub rest
-join_nub [] = []
+join_nub []          = []
 
 defaultLegendStyle = LegendStyle {
-    legend_label_style_=defaultFontStyle,
-    legend_margin_=20,
-    legend_plot_size_=20
+    legend_label_style_ = defaultFontStyle,
+    legend_margin_      = 20,
+    legend_plot_size_   = 20
 }
 
 ----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor for each field
+-- Template haskell to derive an instance of Data.Accessor.Accessor
+-- for each field.
 $( deriveAccessors ''LegendStyle )
 
