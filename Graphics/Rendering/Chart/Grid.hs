@@ -136,7 +136,12 @@ overlay t Null = t
 overlay t1 t2  = Overlay t1 t2 size
   where size   = (max (width t1) (width t2), max (height t1) (height t2))
 
+-- | A synonym for 'beside'.
+(.|.) :: Grid a -> Grid a -> Grid a
 (.|.) = beside
+
+-- | A synonym for 'above'.
+(./.) :: Grid a -> Grid a -> Grid a
 (./.) = above
 
 -- | Sets the space weight of *every* cell of the grid to given value.

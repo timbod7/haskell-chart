@@ -191,11 +191,13 @@ renderPlotLegendLines p r@(Rect p1 p2) = preserveCState $ do
     lineTo (Point (p_x p2) y)
     c $ C.stroke
 
+defaultPlotLineStyle :: CairoLineStyle
 defaultPlotLineStyle = (solidLine 1 $ opaque blue){
      line_cap_  = C.LineCapRound,
      line_join_ = C.LineJoinRound
  }
 
+defaultPlotLines :: PlotLines x y
 defaultPlotLines = PlotLines {
     plot_lines_title_        = "",
     plot_lines_style_        = defaultPlotLineStyle,
@@ -256,6 +258,7 @@ renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
   where
     (CairoPointStyle drawPoint) = (plot_points_style_ p)
 
+defaultPlotPoints :: PlotPoints x y
 defaultPlotPoints = PlotPoints {
     plot_points_title_  = "",
     plot_points_style_  = defaultPointStyle,
@@ -309,6 +312,7 @@ plotAllPointsFillBetween p = ( [ x | (x,(_,_)) <- pts ]
     pts = plot_fillbetween_values_ p
 
 
+defaultPlotFillBetween :: PlotFillBetween x y
 defaultPlotFillBetween = PlotFillBetween {
     plot_fillbetween_title_  = "",
     plot_fillbetween_style_  = solidFillStyle (opaque $ sRGB 0.5 0.5 1.0),
@@ -331,6 +335,7 @@ data ErrPoint x y = ErrPoint {
 } deriving Show
 
 -- | When the error is symmetric, we can simply pass in dx for the error.
+symErrPoint :: (Num a, Num b) => a -> b -> a -> b -> ErrPoint a b
 symErrPoint x y dx dy = ErrPoint (ErrValue (x-dx) x (x+dx))
                                  (ErrValue (y-dy) y (y+dy))
 
@@ -398,6 +403,7 @@ renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
     drawErrBar = drawErrBar0 p
     dx         = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
 
+defaultPlotErrBars :: PlotErrBars x y
 defaultPlotErrBars = PlotErrBars {
     plot_errbars_title_       = "",
     plot_errbars_line_style_  = solidLine 1 $ opaque blue,

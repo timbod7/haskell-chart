@@ -254,6 +254,7 @@ lineTo p = do
     p' <- alignp p
     c $ C.lineTo (p_x p') (p_y p')
 
+setClipRegion :: Point -> Point -> CRender ()
 setClipRegion p2 p3 = do    
     c $ C.moveTo (p_x p2) (p_y p2)
     c $ C.lineTo (p_x p2) (p_y p3)
@@ -280,11 +281,13 @@ rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = do
     p2 = (Point x1 y2)
     p4 = (Point x2 y1)
 
+setFontStyle :: CairoFontStyle -> CRender ()
 setFontStyle f = do
     c $ C.selectFontFace (font_name_ f) (font_slant_ f) (font_weight_ f)
     c $ C.setFontSize (font_size_ f)
     c $ setSourceColor (font_color_ f)
 
+setLineStyle :: CairoLineStyle -> CRender ()
 setLineStyle ls = do
     c $ C.setLineWidth (line_width_ ls)
     c $ setSourceColor (line_color_ ls)
@@ -294,11 +297,13 @@ setLineStyle ls = do
       [] -> return ()
       ds -> c $ C.setDash ds 0
 
+setFillStyle :: CairoFillStyle -> CRender ()
 setFillStyle (CairoFillStyle s) = s
 
 colourChannel :: (Floating a, Ord a) => AlphaColour a -> Colour a
 colourChannel c = darken (recip (alphaChannel c)) (c `over` black)
 
+setSourceColor :: AlphaColour Double -> C.Render ()
 setSourceColor c = let (RGB r g b) = toSRGB $ colourChannel c
                    in C.setSourceRGBA r g b (alphaChannel c)
 
@@ -491,8 +496,10 @@ solidFillStyle ::
 solidFillStyle cl = CairoFillStyle fn
    where fn = c $ setSourceColor cl
 
+defaultPointStyle :: CairoPointStyle
 defaultPointStyle = filledCircles 1 $ opaque white
 
+defaultFontStyle :: CairoFontStyle
 defaultFontStyle = CairoFontStyle {
    font_name_   = "sans",
    font_size_   = 10,
@@ -501,8 +508,10 @@ defaultFontStyle = CairoFontStyle {
    font_color_  = opaque black
 }
 
+isValidNumber :: (RealFloat a) => a -> Bool
 isValidNumber v = not (isNaN v) && not (isInfinite v)
 
+maybeM :: (Monad m) => b -> (a -> m b) -> Maybe a -> m b
 maybeM v = maybe (return v)
 
 ----------------------------------------------------------------------

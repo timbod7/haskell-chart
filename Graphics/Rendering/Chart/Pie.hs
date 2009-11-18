@@ -88,6 +88,7 @@ data PieItem = PieItem {
    pitem_value_  :: Double
 }
 
+defaultPieChart :: PieChart
 defaultPieChart = PieChart {
     pie_data_             = [], 
     pie_colors_           = defaultColorSeq,
@@ -96,8 +97,10 @@ defaultPieChart = PieChart {
     pie_start_angle_      = 0
 }
 
+defaultPieItem :: PieItem
 defaultPieItem = PieItem "" 0 0
 
+defaultPieLayout :: PieLayout
 defaultPieLayout = PieLayout {
     pie_background_  = solidFillStyle $ opaque white,
     pie_title_       = "",
@@ -223,4 +226,3 @@ label_rlength = 15
 $( deriveAccessors ''PieLayout )
 $( deriveAccessors ''PieChart )
 $( deriveAccessors ''PieItem )
-

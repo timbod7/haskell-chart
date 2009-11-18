@@ -68,6 +68,7 @@ join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
                          (xs, rest) -> (x, a1:map snd xs) : join_nub rest
 join_nub []          = []
 
+defaultLegendStyle :: LegendStyle
 defaultLegendStyle = LegendStyle {
     legend_label_style_ = defaultFontStyle,
     legend_margin_      = 20,

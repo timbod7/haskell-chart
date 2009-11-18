@@ -74,6 +74,7 @@ data Renderable a = Renderable {
 class ToRenderable a where
    toRenderable :: a -> Renderable ()
 
+emptyRenderable :: Renderable a
 emptyRenderable = spacer (0,0)
 
 -- | Create a blank renderable with a specified minimum size.
@@ -170,12 +171,14 @@ renderableToPSFile  = renderableToFile C.withPSSurface
 renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToSVGFile = renderableToFile C.withSVGSurface
 
+bitmapEnv :: CEnv
 bitmapEnv = CEnv (adjfn 0.5) (adjfn 0.0)
   where
     adjfn offset (Point x y) = Point (adj x) (adj y)
       where
         adj v = (fromIntegral.round) v +offset
 
+vectorEnv :: CEnv
 vectorEnv = CEnv id id
 
 -- | Helper function for using a renderable, when we generate it
@@ -240,22 +243,27 @@ data Rectangle = Rectangle {
 }
 
 -- | Accessor for field rect_minsize_.
+rect_minsize :: Accessor Rectangle RectSize
 rect_minsize     = accessor (\v->rect_minsize_ v)
                             (\a v -> v{rect_minsize_=a})
 
 -- | Accessor for field rect_fillStyle_.
+rect_fillStyle :: Accessor Rectangle (Maybe CairoFillStyle)
 rect_fillStyle   = accessor (\v->rect_fillStyle_ v)
                             (\a v -> v{rect_fillStyle_=a})
 
 -- | Accessor for field rect_lineStyle_.
+rect_lineStyle :: Accessor Rectangle (Maybe CairoLineStyle)
 rect_lineStyle   = accessor (\v->rect_lineStyle_ v)
                             (\a v -> v{rect_lineStyle_=a})
 
 -- | Accessor for field rect_cornerStyle_.
+rect_cornerStyle :: Accessor Rectangle RectCornerStyle
 rect_cornerStyle = accessor (\v->rect_cornerStyle_ v)
                             (\a v -> v{rect_cornerStyle_=a})
 
 
+defaultRectangle :: Rectangle
 defaultRectangle = Rectangle {
   rect_minsize_     = (0,0),
   rect_fillStyle_   = Nothing,

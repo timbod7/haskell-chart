@@ -420,5 +420,8 @@ setLayout1Foreground fg =
     . (layout1_legend ^: fmap (legend_label_style .> font_color ^= fg))
 
 
+linkAxes :: ([a], [a]) -> ([a], [a])
 linkAxes        (ys1,ys2) = (ys1++ys2,ys1++ys2)
+
+independentAxes :: (a, b) -> (a, b)
 independentAxes (ys1,ys2) = (ys1,ys2)

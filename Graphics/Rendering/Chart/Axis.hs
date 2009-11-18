@@ -349,12 +349,14 @@ data LinearAxisParams a = LinearAxisParams {
 }
 
 
+defaultLinearAxis :: (Show a) => LinearAxisParams a
 defaultLinearAxis = LinearAxisParams {
     la_labelf_    = showD,
     la_nLabels_   = 5,
     la_nTicks_    = 50
 }
 
+defaultIntAxis :: (Show a) => LinearAxisParams a
 defaultIntAxis  = LinearAxisParams {
     la_labelf_  = show,
     la_nLabels_ = 5,
@@ -479,15 +481,20 @@ data LogAxisParams = LogAxisParams {
     loga_labelf_ :: LogValue -> String
 }
 
+defaultLogAxis :: LogAxisParams
 defaultLogAxis = LogAxisParams {
     loga_labelf_ = \(LogValue x) -> showD x
 }
 
 ----------------------------------------------------------------------
 
+defaultAxisLineStyle :: CairoLineStyle
 defaultAxisLineStyle = solidLine 1 $ opaque black
+
+defaultGridLineStyle :: CairoLineStyle
 defaultGridLineStyle = dashedLine 1 [5,5] $ opaque lightgrey
 
+defaultAxisStyle :: AxisStyle
 defaultAxisStyle = AxisStyle {
     axis_line_style_  = defaultAxisLineStyle,
     axis_label_style_ = defaultFontStyle,
