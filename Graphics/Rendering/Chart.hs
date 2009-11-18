@@ -22,9 +22,9 @@
 -- Multiple Renderables can be composed using the "Graphics.Rendering.Chart.Grid" module.
 --
 -- Many of the record structure involved in the API have a large
--- number of fields For each record type X, there is generally a
--- default value called defaultX with sensibly initialised fields - eg
--- 'Layout1' has 'defaultLayout1' etc.
+-- number of fields.  For each record type X, there is generally a
+-- default value called defaultX with sensibly initialised fields.
+-- For example, 'Layout1' has 'defaultLayout1', etc.
 --
 -- For a simpler though less flexible API, see "Graphics.Rendering.Chart.Simple".
 --
