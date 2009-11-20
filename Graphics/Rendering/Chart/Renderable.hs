@@ -87,27 +87,16 @@ spacer sz  = Renderable {
 -- | Create a blank renderable with a minimum size the same as
 --   some other renderable.
 spacer1 :: Renderable a -> Renderable b
-spacer1 r  = Renderable {
-   minsize = minsize r,
-   render  = \_ -> return nullPickFn
-}
+spacer1 r  = r{ render  = \_ -> return nullPickFn }
 
 -- | Replace the pick function of a renderable with another.
 setPickFn :: PickFn b -> Renderable a -> Renderable b
-setPickFn pickfn r = Renderable {
-    minsize = minsize r,
-    render  = \sz -> do { render r sz; return pickfn; }
-    }
+setPickFn pickfn r = r{ render  = \sz -> do { render r sz; return pickfn; } }
 
 -- | Map a function over result of a renderable's pickfunction.
 mapPickFn :: (a -> b) -> Renderable a -> Renderable b
-mapPickFn f r = Renderable {
-    minsize = minsize r,
-    render  = \sz -> do {
-        pf <- render r sz;
-        return (\p -> fmap f (pf p));
-        }
-    }
+mapPickFn f r = r{ render  = \sz -> do pf <- render r sz
+                                       return (fmap f . pf) }
 
 -- | Add some spacing at the edges of a renderable.
 addMargins :: (Double,Double,Double,Double) -- ^ The spacing to be added.
@@ -137,7 +126,7 @@ transform = undefined
 
 -- | Overlay a renderable over a solid background fill.
 fillBackground :: CairoFillStyle -> Renderable a -> Renderable a
-fillBackground fs r = Renderable { minsize = minsize r, render = rf }
+fillBackground fs r = r{ render = rf }
   where
     rf rsize@(w,h) = do
         preserveCState $ do
