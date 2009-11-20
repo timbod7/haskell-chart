@@ -44,6 +44,7 @@ module Graphics.Rendering.Chart.Plot(
     PlotLines(..),
     PlotFillBetween(..),
     ErrPoint(..),
+    ErrValue(..),
     PlotBars(..),
     PlotBarsStyle(..),
     PlotBarsSpacing(..),
