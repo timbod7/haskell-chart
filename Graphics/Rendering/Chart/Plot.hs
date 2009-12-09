@@ -94,6 +94,7 @@ module Graphics.Rendering.Chart.Plot(
     plot_bars_spacing,
     plot_bars_alignment,
     plot_bars_reference,
+    plot_bars_singleton_width,
     plot_bars_values
 
     ) where
