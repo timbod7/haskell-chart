@@ -37,4 +37,5 @@ library
         Graphics.Rendering.Chart.Pie,
         Graphics.Rendering.Chart.Simple,
         Graphics.Rendering.Chart.Grid
+        Graphics.Rendering.Chart.AreaSpots
 
