@@ -416,6 +416,32 @@ test11 otype = renderLayout1sStacked [withAnyOrdinate layout1, withAnyOrdinate l
  	   $ layout1_plots ^= [Left (toPlot plot2), Left (toPlot extendRange)]
            $ defaultLayout1
 
+-------------------------------------------------------------------------------
+-- Plot annotations test
+
+test12  otype = fillBackground fwhite $ (gridToRenderable t)
+  where
+    t = weights (1,1) $ aboveN [ besideN [tval (annotated h v) | h <- hs] | v <- vs ]
+    hs = [HTA_Left, HTA_Centre, HTA_Right]
+    vs = [VTA_Top, VTA_Centre, VTA_Bottom]
+    points=[-2..2]
+    pointPlot :: PlotPoints Int Int
+    pointPlot = plot_points_style^= filledCircles 2 (opaque red)
+                $  plot_points_values ^= [(x,x)|x<-points]
+                $  defaultPlotPoints
+    p = Left (toPlot pointPlot)
+    annotated h v = toRenderable ( layout1_plots ^= [Left (toPlot labelPlot), Left (toPlot rotPlot), p] $ defaultLayout1 )
+      where labelPlot = plot_annotation_hanchor ^= h
+                      $ plot_annotation_vanchor ^= v
+                      $ plot_annotation_values  ^= [(x,x,"Hello World (plain)")|x<-points]
+                      $ defaultPlotAnnotation
+            rotPlot =   plot_annotation_angle ^= -45.0
+                      $ plot_annotation_style ^= defaultFontStyle{font_size_=10,font_weight_=C.FontWeightBold, font_color_ =(opaque blue) }
+                      $ plot_annotation_values  ^= [(x,x,"Hello World (fancy)")|x<-points]
+                      $ labelPlot
+
+
+
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
@@ -462,6 +488,7 @@ allTests =
      , ("test9r", test9 BarsRight)
      , ("test10", test10 (filterPrices (date 1 1 2005) (date 31 12 2005)))
      , ("test11", test11)
+     , ("test12", test12)
      , ("misc1", misc1 0)
      , ("misc1a", misc1 45)
      ]

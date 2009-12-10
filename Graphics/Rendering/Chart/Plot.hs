@@ -23,6 +23,8 @@
 -- 
 --     * 'PlotHidden'
 --
+--     * 'PlotAnnotation'
+--
 -- These accessors are not shown in this API documentation.  They have
 -- the same name as the field, but with the trailing underscore
 -- dropped. Hence for data field f_::F in type D, they have type
@@ -51,6 +53,7 @@ module Graphics.Rendering.Chart.Plot(
     PlotBarsAlignment(..),
     BarsPlotValue(..),
     PlotHidden(..),
+    PlotAnnotation(..),
 
     symErrPoint,
 
@@ -60,6 +63,7 @@ module Graphics.Rendering.Chart.Plot(
     defaultPlotFillBetween,
     defaultPlotLines,
     defaultPlotBars,
+    defaultPlotAnnotation,
 
     plot_lines_title,
     plot_lines_style,
@@ -94,7 +98,6 @@ module Graphics.Rendering.Chart.Plot(
     plot_bars_spacing,
     plot_bars_alignment,
     plot_bars_reference,
-    plot_bars_singleton_width,
     plot_bars_values
 
     ) where
@@ -611,6 +614,55 @@ instance ToPlot PlotHidden where
         plot_all_points_ = (plot_hidden_x_values_ ph, plot_hidden_y_values_ ph)
     }
 
+
+
+----------------------------------------------------------------------
+
+-- | Value for describing a series of text annotations
+--   to be placed at arbitrary points on the graph. Annotations
+--   can be rotated and styled. Rotation angle is given in degrees,
+--   rotation is performend around the anchor point.
+
+data PlotAnnotation  x y = PlotAnnotation {
+      plot_annotation_hanchor_ :: HTextAnchor,
+      plot_annotation_vanchor_ :: VTextAnchor,
+      plot_annotation_angle_   :: Double,
+      plot_annotation_style_   :: CairoFontStyle,
+      plot_annotation_values_  :: [(x,y,String)]
+}
+
+
+instance ToPlot PlotAnnotation where
+    toPlot p = Plot {
+        plot_render_ = renderAnnotation p,
+	plot_legend_ = [],
+	plot_all_points_ = (map (\(x,_,_)->x)  vs , map (\(_,y,_)->y) vs)
+    }
+      where
+        vs = plot_annotation_values_ p
+
+
+renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> CRender ()
+
+renderAnnotation p pMap = sequence_ . map drawOne $ values
+    where hta = plot_annotation_hanchor_ p
+          vta = plot_annotation_vanchor_ p
+          values = plot_annotation_values_ p
+          angle =  plot_annotation_angle_ p
+          style =  plot_annotation_style_ p
+          drawOne (x,y,s) = drawTextS hta vta angle style point s
+              where point = pMap (LValue x, LValue y)
+
+defaultPlotAnnotation = PlotAnnotation {
+                          plot_annotation_hanchor_ = HTA_Centre,
+                          plot_annotation_vanchor_ = VTA_Centre,
+                          plot_annotation_angle_   = 0,
+                          plot_annotation_style_   = defaultFontStyle,
+                          plot_annotation_values_  = []
+}
+
+
+
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
@@ -621,3 +673,4 @@ $( deriveAccessors ''PlotFillBetween )
 $( deriveAccessors ''PlotErrBars )
 $( deriveAccessors ''PlotBars )
 $( deriveAccessors ''PlotHidden )
+$( deriveAccessors ''PlotAnnotation )
