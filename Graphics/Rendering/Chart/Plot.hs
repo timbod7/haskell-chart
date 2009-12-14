@@ -179,6 +179,7 @@ renderPlotLines p pmap = preserveCState $ do
     mapM_ (drawLines (mapXY pmap)) (plot_lines_values_ p)
     mapM_ (drawLines pmap) (plot_lines_limit_values_ p)
   where
+    drawLines pmap []     = return ()
     drawLines pmap (p:ps) = do
 	moveTo (pmap p)
 	mapM_ (\p -> lineTo (pmap p)) ps
