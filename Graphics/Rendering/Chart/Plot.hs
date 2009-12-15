@@ -98,7 +98,14 @@ module Graphics.Rendering.Chart.Plot(
     plot_bars_spacing,
     plot_bars_alignment,
     plot_bars_reference,
-    plot_bars_values
+    plot_bars_singleton_width,
+    plot_bars_values,
+
+    plot_annotation_hanchor,
+    plot_annotation_vanchor,
+    plot_annotation_angle,
+    plot_annotation_style,
+    plot_annotation_values
 
     ) where
 
