@@ -1,0 +1,29 @@
+001: Fix legends with many items
+
+John Lato wrote:
+
+> I had a problem where the chart legend was only using one line, so
+> anything past about 6 elements got cut off (I have over 20).  I hacked
+> up a solution in my own copy of chart, but it's a little inelegant.  I
+> would like to see something like this in Chart, but with a better
+> implementation or more control than my own version.
+
+----------------------------------------------------------------------
+
+002: Work out a good means of display annotations near the plot edge
+
+Dimitris Karangelos wrote:
+
+> One thing to notice is that annotation text currently doesn't trigger
+> autoscaling, i.e. texts may be clipped outside of the plot area (but
+> anchor points will always be visible). Doing this differently would be
+> pretty hard, as text dimensions cannot be calculated before rendering
+> time - do you have any ideas ?
+
+Autoscalling here this might be difficult. One thing that might be
+easier would be to have a mode where the anchor is chosen
+automatically so as to position the text away from the plot edges? IE
+annotations near the top left would be anchored at the top left, etc.
+
+
+
