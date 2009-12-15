@@ -84,7 +84,7 @@ module Graphics.Rendering.Chart.Types(
     HTextAnchor(..),
     VTextAnchor(..),
     drawText,
-    drawTextS,
+    drawTextR,
     textSize,
 
     CRender(..),
@@ -321,32 +321,14 @@ data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine
 
 -- | Function to draw a textual label anchored by one of its corners
 --   or edges.
-
 drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> CRender ()
-drawText hta vta (Point x y) s = c $ do
-    te <- C.textExtents s
-    fe <- C.fontExtents
-    let lx = xadj hta (C.textExtentsWidth te)
-    let ly = yadj vta te fe
-    C.moveTo (x+lx) (y+ly)
-    C.showText s
-  where
-    xadj HTA_Left   w = 0
-    xadj HTA_Centre w = (-w/2)
-    xadj HTA_Right  w = (-w)
-    yadj VTA_Top      te fe = C.fontExtentsAscent fe
-    yadj VTA_Centre   te fe = - (C.textExtentsYbearing te) / 2
-    yadj VTA_BaseLine te fe = 0
-    yadj VTA_Bottom   te fe = -(C.fontExtentsDescent fe)
-
-
+drawText hta vta p s = drawTextR hta vta 0 p s
 
 -- | Function to draw a textual label anchored by one of its corners
---   or edges, with rotation and font styling. Rotation angle is given in
---   degrees, rotation is performed around anchor point.
-
-drawTextS :: HTextAnchor -> VTextAnchor -> Double -> CairoFontStyle -> Point -> String -> CRender ()
-drawTextS hta vta angle style (Point x y) s = preserveCState $ setFontStyle style >>  draw
+--   or edges, with rotation. Rotation angle is given in degrees,
+--   rotation is performed around anchor point.
+drawTextR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> CRender ()
+drawTextR hta vta angle (Point x y) s = preserveCState $ draw
     where
       draw =  c $ do te <- C.textExtents s
                      fe <- C.fontExtents

@@ -651,13 +651,15 @@ instance ToPlot PlotAnnotation where
 
 renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> CRender ()
 
-renderAnnotation p pMap = sequence_ . map drawOne $ values
+renderAnnotation p pMap = preserveCState $ do
+                            setFontStyle style                            
+                            mapM_ drawOne values
     where hta = plot_annotation_hanchor_ p
           vta = plot_annotation_vanchor_ p
           values = plot_annotation_values_ p
           angle =  plot_annotation_angle_ p
           style =  plot_annotation_style_ p
-          drawOne (x,y,s) = drawTextS hta vta angle style point s
+          drawOne (x,y,s) = drawTextR hta vta angle point s
               where point = pMap (LValue x, LValue y)
 
 defaultPlotAnnotation = PlotAnnotation {
