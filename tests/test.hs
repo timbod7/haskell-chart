@@ -417,9 +417,43 @@ test11 otype = renderLayout1sStacked [withAnyOrdinate layout1, withAnyOrdinate l
            $ defaultLayout1
 
 -------------------------------------------------------------------------------
+-- More of an example that a test:
+-- configuring axes explicitly configured axes
+
+test12 :: OutputType -> Renderable ()
+test12 otype = toRenderable layout
+  where
+    vs1 :: [(Int,Int)]
+    vs1 = [ (2,10), (3,40), (8,400), (12,60) ]
+
+    baxis = AxisData {
+        axis_viewport_ = vmap (0,15),
+        axis_ticks_    = [(v,3) | v <- [0,1..15]],
+        axis_grid_     = [0,5..15],
+        axis_labels_   = [(v,show v) | v <- [0,5..15]]
+    }    
+
+    laxis = AxisData {
+        axis_viewport_ = vmap (0,500),
+        axis_ticks_    = [(v,3) | v <- [0,25..500]],
+        axis_grid_     = [0,100..500],
+        axis_labels_   = [(v,show v) | v <- [0,100..500]]
+    }    
+
+    plot = plot_lines_values ^= [vs1]
+         $ defaultPlotLines
+
+    layout = layout1_plots ^= [Left (toPlot plot)]
+           $ layout1_bottom_axis ^: laxis_generate ^= const baxis
+           $ layout1_left_axis   ^: laxis_generate ^= const laxis
+           $ layout1_title ^= "Explicit Axes"
+           $ defaultLayout1
+
+
+-------------------------------------------------------------------------------
 -- Plot annotations test
 
-test12  otype = fillBackground fwhite $ (gridToRenderable t)
+test13 otype = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [tval (annotated h v) | h <- hs] | v <- vs ]
     hs = [HTA_Left, HTA_Centre, HTA_Right]
@@ -489,6 +523,7 @@ allTests =
      , ("test10", test10 (filterPrices (date 1 1 2005) (date 31 12 2005)))
      , ("test11", test11)
      , ("test12", test12)
+     , ("test13", test13)
      , ("misc1", misc1 0)
      , ("misc1a", misc1 45)
      ]
