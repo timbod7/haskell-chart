@@ -272,13 +272,13 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
 	      in strokeLines [Point 0 v',Point w v']
 
 
-stepsInt :: Int -> Range -> [Int]
+stepsInt :: Integral a => a -> Range -> [a]
 stepsInt nSteps range = bestSize (goodness alt0) alt0 alts
   where
     bestSize n a (a':as) = let n' = goodness a' in
                            if n' < n then bestSize n' a' as else a
 
-    goodness vs          = abs (length vs - nSteps)
+    goodness vs          = abs (genericLength vs - nSteps)
 
     (alt0:alts)          = map (\n -> steps n range) sampleSteps
 
@@ -386,17 +386,21 @@ showD x = case reverse $ show x of
             '0':'.':r -> reverse r
             _         -> show x
 
-autoScaledIntAxis :: LinearAxisParams Int -> AxisFn Int
-autoScaledIntAxis lap ps = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
+
+autoScaledIntAxis :: (Integral i, PlotValue i) =>
+                     LinearAxisParams i -> AxisFn i
+autoScaledIntAxis lap ps =
+    makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
   where
     (min,max) = (minimum ps,maximum ps)
     range []  = (0,1)
     range _   | min == max = (fromIntegral $ min-1, fromIntegral $ min+1)
               | otherwise  = (fromIntegral $ min,   fromIntegral $ max)
-    labelvs  :: [Int]
-    labelvs   = stepsInt (la_nLabels_ lap) r
-    tickvs    = stepsInt (la_nTicks_ lap) ( fromIntegral $ minimum labelvs
-                                          , fromIntegral $ maximum labelvs )
+--  labelvs  :: [i]
+    labelvs   = stepsInt (fromIntegral $ la_nLabels_ lap) r
+    tickvs    = stepsInt (fromIntegral $ la_nTicks_ lap)
+                                  ( fromIntegral $ minimum labelvs
+                                  , fromIntegral $ maximum labelvs )
     gridvs    = labelvs
     r         = range ps
 
@@ -698,6 +702,10 @@ instance PlotValue LogValue where
     autoAxis             = autoScaledLogAxis defaultLogAxis
 
 instance PlotValue Int where
+    toValue    = fromIntegral
+    autoAxis   = autoScaledIntAxis defaultIntAxis
+
+instance PlotValue Integer where
     toValue    = fromIntegral
     autoAxis   = autoScaledIntAxis defaultIntAxis
 
