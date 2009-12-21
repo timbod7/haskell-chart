@@ -497,6 +497,39 @@ test13 otype = fillBackground fwhite $ (gridToRenderable t)
                       $ labelPlot
 
 
+-------------------------------------------------------------------------------
+-- demonstrate AreaSpots
+
+test14 :: [(Int,Int,Int,Double,Double)] -> OutputType -> Renderable ()
+test14 prices otype = toRenderable layout
+  where
+    layout = layout1_title ^="Price History"
+           $ layout1_background ^= solidFillStyle (opaque white)
+           $ layout1_left_axis ^: laxis_override ^= axisTicksHide
+ 	   $ layout1_plots ^= [ Left (toPlot price1), Left (toPlot spots) ]
+           $ setLayout1Foreground fg
+           $ defaultLayout1
+
+    price1 = plot_lines_style ^= lineStyle (opaque blue)
+           $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,v,_) <- prices]]
+           $ plot_lines_title ^= "price 1"
+           $ defaultPlotLines
+
+    spots = area_spots_title ^= "random value"
+          $ area_spots_max_radius ^= 20
+          $ area_spots_values ^= values
+          $ defaultAreaSpots
+    
+    points = map (\ (d,v,z)-> (d,v) ) values
+    values = [ (date d m y, v, z) | ((d,m,y,v,_),z) <- zip prices zs ]
+    zs    :: [Int]
+    zs     = randoms $ mkStdGen 0
+
+    lineStyle c = line_width ^= 3 * chooseLineWidth otype
+                $ line_color ^= c
+                $ defaultPlotLines ^. plot_lines_style
+
+    fg = opaque black
 
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
@@ -547,6 +580,7 @@ allTests =
      , ("test11", test11)
      , ("test12", test12)
      , ("test13", test13)
+     , ("test14", test14 (filterPrices (date 1 1 2005) (date 31 12 2005)))
      , ("misc1", misc1 0)
      , ("misc1a", misc1 45)
      ]

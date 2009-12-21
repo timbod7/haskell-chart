@@ -12,6 +12,13 @@
 module Graphics.Rendering.Chart.AreaSpots
   ( AreaSpots(..)
   , defaultAreaSpots
+
+  , area_spots_title
+  , area_spots_linethick
+  , area_spots_linecolour
+  , area_spots_fillcolour
+  , area_spots_max_radius
+  , area_spots_values
   ) where
 
 import qualified Graphics.Rendering.Cairo as C
