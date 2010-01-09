@@ -94,6 +94,7 @@ import Data.List
 import Data.Accessor.Template
 import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
+import Data.Ord (comparing)
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
@@ -291,21 +292,23 @@ stepsInt nSteps range = bestSize (goodness alt0) alt0 alts
         a = (floor   (min / fromIntegral size)) * size
         b = (ceiling (max / fromIntegral size)) * size
 
-steps :: Double -> Range -> [Rational]
+steps :: Real a => a -> (a,a) -> [Rational]
 steps nSteps (min,max) = [ (fromIntegral (min' + i)) * s | i <- [0..n] ]
   where
-    min' = floor   (min / fromRational s)
-    max' = ceiling (max / fromRational s)
-    n    = (max' - min')
     s    = chooseStep nSteps (min,max)
+    min' = floor   (realToFrac min / realToFrac s)
+    max' = ceiling (realToFrac max / realToFrac s)
+    n    = (max' - min')
 
-chooseStep :: Double -> Range -> Rational
-chooseStep nsteps (min,max) = s
+
+chooseStep :: Real a => a -> (a,a) -> Rational
+chooseStep nsteps (x1,x2) = realToFrac $ minimumBy (comparing proximity) steps
   where
-    mult   = 10 ^^ (floor ((log (max-min) - log nsteps) / log 10))
-    steps  = map (mult*) [0.1,0.2,0.25,0.5,1.0,2.0,2.5,5.0,10,20,25,50]
-    steps' = sort [ (abs((max-min)/(fromRational s) - nsteps), s) | s <- steps ]
-    s      = snd (head steps')
+    delta = realToFrac $ x2 - x1 :: Double
+    n     = realToFrac nsteps    :: Double
+    mult  = 10 ^^ (floor $ log10 $ delta / n)
+    steps = map (mult*) [0.1,0.2,0.25,0.5,1.0,2.0,2.5,5.0,10,20,25,50]
+    proximity x = abs $ delta / x - n
 
 -- | Given a target number of values, and a list of input points,
 --   find evenly spaced values from the set {1*X, 2*X, 2.5*X, 5*X} (where
