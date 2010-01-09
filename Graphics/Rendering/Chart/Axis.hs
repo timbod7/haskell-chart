@@ -26,6 +26,7 @@
 -- @
 --
 
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Axis(
@@ -722,7 +723,7 @@ instance PlotValue LocalTime where
 -- | Type for capturing values plotted by index number
 --   (ie position in a list) rather than a numerical value.
 newtype PlotIndex = PlotIndex { plotindex_i :: Int }
-  deriving (Eq,Ord)
+  deriving (Eq,Ord,Enum,Num,Real,Integral,Show)
 
 instance PlotValue PlotIndex where
     toValue (PlotIndex i) = fromIntegral i
@@ -730,21 +731,19 @@ instance PlotValue PlotIndex where
 
 -- | Create an axis for values indexed by position. The
 --   list of strings are the labels to be used.
-autoIndexAxis :: [String] -> [PlotIndex] -> AxisData PlotIndex
+autoIndexAxis :: Integral i => [String] -> [i] -> AxisData i
 autoIndexAxis labels vs = AxisData {
     axis_viewport_ = vport,
     axis_ticks_    = [],
     axis_labels_   = filter (\(i,l) -> i >= imin && i <= imax)
-                            (addIndexes labels),
+                            (zip [1..] labels),
     axis_grid_     = []
     }
   where
-    vport r (PlotIndex i) = vmap (fi (plotindex_i imin) - 0.5,
-                                  fi (plotindex_i imax) + 0.5) r (fi i)
+    vport r i = linMap id ( fromIntegral imin - 0.5
+                          , fromIntegral imax + 0.5) r (fromIntegral i)
     imin = minimum vs
     imax = maximum vs
-    fi   = fromIntegral :: Int -> Double
-
 
 -- | Augment a list of values with index numbers for plotting.
 addIndexes :: [a] -> [(PlotIndex,a)]
@@ -755,6 +754,11 @@ addIndexes as = map (\(i,a) -> (PlotIndex i,a))  (zip [0..] as)
 vmap :: PlotValue x => (x,x) -> Range -> x -> Double
 vmap (v1,v2) (v3,v4) v = v3 + (toValue v - toValue v1) * (v4-v3)
                               / (toValue v2 - toValue v1)
+
+-- | A linear mapping of points in one range to another.
+linMap :: (a -> Double) -> (a,a) -> Range -> a -> Double
+linMap f (x1,x2) (d1,d2) x =
+    d1 + (d2 - d1) * (f x - f x1) / (f x2 - f x1)
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor for
