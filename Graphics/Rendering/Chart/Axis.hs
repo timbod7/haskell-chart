@@ -696,7 +696,7 @@ instance PlotValue Double where
     autoAxis = autoScaledAxis defaultLinearAxis
 
 newtype LogValue = LogValue Double
-                    deriving (Eq, Ord)
+                    deriving (Eq, Ord, Num, Real, Fractional, RealFrac, Floating, RealFloat)
 
 instance Show LogValue where
     show (LogValue x) = show x
