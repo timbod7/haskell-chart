@@ -337,9 +337,13 @@ makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     min'        = minimum labelvs
     max'        = maximum labelvs
 
-
-
-data GridMode = GridNone | GridAtMajor | GridAtMinor
+makeAxis' :: Ord x => (x -> Double) -> (x -> String) -> ([x],[x],[x]) -> AxisData x
+makeAxis' f labelf (labelvs, tickvs, gridvs) = AxisData {
+    axis_viewport_ = linMap f (minimum labelvs, maximum labelvs),
+    axis_ticks_    = zip tickvs (repeat 2)  ++  zip labelvs (repeat 5),
+    axis_grid_     = gridvs,
+    axis_labels_   = [ (v,labelf v) | v <- labelvs ]
+    }
 
 data LinearAxisParams a = LinearAxisParams {
     -- | The function used to show the axes labels.
