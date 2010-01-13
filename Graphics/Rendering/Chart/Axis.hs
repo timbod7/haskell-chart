@@ -292,23 +292,22 @@ stepsInt nSteps range = bestSize (goodness alt0) alt0 alts
         a = (floor   (min / fromIntegral size)) * size
         b = (ceiling (max / fromIntegral size)) * size
 
-steps :: Real a => a -> (a,a) -> [Rational]
-steps nSteps (min,max) = [ (fromIntegral (min' + i)) * s | i <- [0..n] ]
+steps :: RealFloat a => a -> (a,a) -> [Rational]
+steps nSteps (min,max) = map ((s*) . fromIntegral) [min' .. max']
   where
     s    = chooseStep nSteps (min,max)
-    min' = floor   (realToFrac min / realToFrac s)
-    max' = ceiling (realToFrac max / realToFrac s)
+    min' = floor   $ realToFrac min / s
+    max' = ceiling $ realToFrac max / s
     n    = (max' - min')
 
 
-chooseStep :: Real a => a -> (a,a) -> Rational
-chooseStep nsteps (x1,x2) = realToFrac $ minimumBy (comparing proximity) steps
+chooseStep :: RealFloat a => a -> (a,a) -> Rational
+chooseStep nsteps (x1,x2) = minimumBy (comparing proximity) steps
   where
-    delta = realToFrac $ x2 - x1 :: Double
-    n     = realToFrac nsteps    :: Double
-    mult  = 10 ^^ (floor $ log10 $ delta / n)
+    delta = x2 - x1
+    mult  = 10 ^^ (floor $ log10 $ delta / nsteps)
     steps = map (mult*) [0.1,0.2,0.25,0.5,1.0,2.0,2.5,5.0,10,20,25,50]
-    proximity x = abs $ delta / x - n
+    proximity x = abs $ delta / realToFrac x - nsteps
 
 -- | Given a target number of values, and a list of input points,
 --   find evenly spaced values from the set {1*X, 2*X, 2.5*X, 5*X} (where
