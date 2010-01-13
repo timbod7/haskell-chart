@@ -376,13 +376,13 @@ defaultIntAxis  = LinearAxisParams {
 --   and grid set appropriately for the data displayed against that axies.
 --   The resulting axis will only show a grid if the template has some grid
 --   values.
-autoScaledAxis :: LinearAxisParams Double -> AxisFn Double
-autoScaledAxis lap ps0 = makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
+autoScaledAxis :: RealFloat a => LinearAxisParams a -> AxisFn a
+autoScaledAxis lap ps0 = makeAxis' realToFrac (la_labelf_ lap) (labelvs,tickvs,gridvs)
   where
     ps        = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
     range []  = (0,1)
-    range _   | min == max = (min-0.5,min+0.5)
+    range _   | min == max = (min-1,min+1)
               | otherwise  = (min,max)
     labelvs   = map fromRational $ steps (fromIntegral (la_nLabels_ lap)) r
     tickvs    = map fromRational $ steps (fromIntegral (la_nTicks_ lap))
@@ -473,29 +473,27 @@ logTicks (low,high) = (major,minor,major)
 --   and grid set appropriately for the data displayed against that axis.
 --   The resulting axis will only show a grid if the template has some grid
 --   values.
-autoScaledLogAxis :: LogAxisParams -> AxisFn LogValue
+autoScaledLogAxis :: RealFloat a => LogAxisParams a -> AxisFn a
 autoScaledLogAxis lap ps0 =
-    makeAxis labelf (wrap rlabelvs, wrap rtickvs, wrap rgridvs)
-  where
-    ps        = filter (\(LogValue x) -> isValidNumber x && 0 < x) ps0
-    (min,max) = (minimum ps,maximum ps)
-    range []  = (3,30)
-    range _   | min == max = (unLogValue min/3,unLogValue max*3)
-              | otherwise  = (unLogValue min,unLogValue max)
-    (rlabelvs, rtickvs, rgridvs) = logTicks (range ps)
-    wrap                         = map (LogValue . fromRational)
-    unLogValue (LogValue x)      = x
-    labelf                       = loga_labelf_ lap
+    makeAxis' (realToFrac . log) (loga_labelf_ lap) (wrap rlabelvs, wrap rtickvs, wrap rgridvs)
+        where
+          ps        = filter (\x -> isValidNumber x && 0 < x) ps0
+          (min,max) = (minimum ps,maximum ps)
+          wrap      = map fromRational
+          range []  = (3,30)
+          range _   | min == max = (realToFrac $ min/3, realToFrac $ max*3)
+                    | otherwise  = (realToFrac $ min,   realToFrac $ max)
+          (rlabelvs, rtickvs, rgridvs) = logTicks (range ps)
 
 
-data LogAxisParams = LogAxisParams {
+data LogAxisParams a = LogAxisParams {
     -- | The function used to show the axes labels.
-    loga_labelf_ :: LogValue -> String
+    loga_labelf_ :: a -> String
 }
 
-defaultLogAxis :: LogAxisParams
+defaultLogAxis :: Show a => LogAxisParams a
 defaultLogAxis = LogAxisParams {
-    loga_labelf_ = \(LogValue x) -> showD x
+    loga_labelf_ = showD
 }
 
 ----------------------------------------------------------------------
