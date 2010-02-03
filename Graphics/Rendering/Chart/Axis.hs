@@ -740,7 +740,7 @@ autoIndexAxis labels vs = AxisData {
     axis_viewport_ = vport,
     axis_ticks_    = [],
     axis_labels_   = filter (\(i,l) -> i >= imin && i <= imax)
-                            (zip [1..] labels),
+                            (zip [0..] labels),
     axis_grid_     = []
     }
   where
