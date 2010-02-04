@@ -186,17 +186,18 @@ test4 xrev yrev otype = toRenderable layout
   where
 
     points = plot_points_style ^= filledCircles 3 (opaque red)
-           $ plot_points_values ^= [ (x, LogValue (10**x)) | x <- [0.5,1,1.5,2,2.5] ]
+           $ plot_points_values ^= [ (x, 10**x) | x <- [0.5,1,1.5,2,2.5 :: Double] ]
            $ plot_points_title ^= "values"
            $ defaultPlotPoints
 
-    lines = plot_lines_values ^= [ [(x, LogValue (10**x)) | x <- [0,3]] ]
+    lines = plot_lines_values ^= [ [(x, 10**x) | x <- [0,3]] ]
           $ plot_lines_title ^= "values"
           $ defaultPlotLines
 
     layout = layout1_title ^= "Log/Linear Example"
            $ layout1_bottom_axis ^: laxis_title ^= "horizontal"
            $ layout1_bottom_axis ^: laxis_reverse ^= xrev
+           $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis defaultLogAxis
            $ layout1_left_axis ^: laxis_title ^= "vertical"
            $ layout1_left_axis ^: laxis_reverse ^= yrev
 	   $ layout1_plots ^= [Left (toPlot points), Left (toPlot lines) ]
@@ -208,17 +209,18 @@ test4d otype = toRenderable layout
   where
 
     points = plot_points_style ^= filledCircles 3 (opaque red)
-           $ plot_points_values ^= [ (x, LogValue (10**x)) | x <- [0.5,1,1.5,2,2.5] ]
+           $ plot_points_values ^= [ (x, 10**x) | x <- [0.5,1,1.5,2,2.5::Double] ]
            $ plot_points_title ^= "values"
            $ defaultPlotPoints
 
-    lines = plot_lines_values ^= [ [(x, LogValue (10**x)) | x <- [0,3]] ]
+    lines = plot_lines_values ^= [ [(x, 10**x) | x <- [0,3]] ]
           $ plot_lines_title ^= "values"
           $ defaultPlotLines
 
     layout = layout1_title ^= "Log/Linear Example"
            $ layout1_bottom_axis ^: laxis_title ^= "horizontal"
            $ layout1_bottom_axis ^: laxis_reverse ^= False
+           $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis defaultLogAxis
            $ layout1_left_axis ^: laxis_title ^= "vertical"
            $ layout1_left_axis ^: laxis_reverse ^= False
 	   $ layout1_plots ^= [Left (toPlot points `joinPlot` toPlot lines) ]
