@@ -1,7 +1,9 @@
-module Prices where
+module Prices(prices,mkDate) where
 
-prices :: [(Int,Int,Int,Double,Double)]
-prices = [
+import Data.Time.Calendar
+import Data.Time.LocalTime
+
+rawPrices = [
     (03,05,2005, 16.18, 42.02),
     (04,05,2005, 16.25, 42.31),
     (05,05,2005, 16.50, 42.95),
@@ -294,3 +296,10 @@ prices = [
     (30,03,2007, 27.60, 77.96),
     (31,03,2007, 28.00, 78.85)
     ]
+
+prices :: [(LocalTime,Double,Double)]
+prices = [ (mkDate dd mm yyyy, p1, p2) | (dd,mm,yyyy,p1,p2) <- rawPrices ]
+
+mkDate dd mm yyyy = (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
+
+

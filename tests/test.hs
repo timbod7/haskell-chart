@@ -7,7 +7,6 @@ import Graphics.Rendering.Chart.Grid
 import System.Environment(getArgs)
 import System.Time
 import System.Random
-import Data.Time.Calendar
 import Data.Time.LocalTime
 import Data.Accessor
 import Data.Accessor.Tuple
@@ -111,7 +110,7 @@ test1a otype = fillBackground fwhite $ (gridToRenderable t)
                    . (laxis_override ^=  (axisGridHide.axisTicksHide.axisLabelsHide))
 
 ----------------------------------------------------------------------
-test2 :: [(Int,Int,Int,Double,Double)] -> Bool -> OutputType -> Renderable ()
+test2 :: [(LocalTime,Double,Double)] -> Bool -> OutputType -> Renderable ()
 test2 prices showMinMax otype = toRenderable layout
   where
 
@@ -125,17 +124,17 @@ test2 prices showMinMax otype = toRenderable layout
                 $ defaultPlotLines ^. plot_lines_style
 
     price1 = plot_lines_style ^= lineStyle (opaque blue)
-           $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,v,_) <- prices]]
+           $ plot_lines_values ^= [[ (d, v) | (d,v,_) <- prices]]
            $ plot_lines_title ^= "price 1"
            $ defaultPlotLines
 
     price2 = plot_lines_style ^= lineStyle (opaque green)
-	   $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
+	   $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
            $ plot_lines_title ^= "price 2"
            $ defaultPlotLines
 
-    (min1,max1) = (minimum [v | (_,_,_,v,_) <- prices],maximum [v | (_,_,_,v,_) <- prices])
-    (min2,max2) = (minimum [v | (_,_,_,_,v) <- prices],maximum [v | (_,_,_,_,v) <- prices])
+    (min1,max1) = (minimum [v | (_,v,_) <- prices],maximum [v | (_,v,_) <- prices])
+    (min2,max2) = (minimum [v | (_,_,v) <- prices],maximum [v | (_,_,v) <- prices])
     limits | showMinMax = [ Left $ hlinePlot "min/max" (limitLineStyle blue) min1,
                             Left $ hlinePlot "" (limitLineStyle blue) max1,
                             Right $ hlinePlot "min/max" (limitLineStyle green) min2,
@@ -157,20 +156,18 @@ test2 prices showMinMax otype = toRenderable layout
            $ setLayout1Foreground fg
            $ defaultLayout1
 
-date dd mm yyyy = (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
-
 ----------------------------------------------------------------------
 test3 :: OutputType -> Renderable ()
 test3 otype = toRenderable layout
   where
 
     price1 = plot_fillbetween_style ^= solidFillStyle green1
-           $ plot_fillbetween_values ^= [ (date d m y,(0,v2)) | (d,m,y,v1,v2) <- prices]
+           $ plot_fillbetween_values ^= [ (d,(0,v2)) | (d,v1,v2) <- prices]
            $ plot_fillbetween_title ^= "price 1"
            $ defaultPlotFillBetween
 
     price2 = plot_fillbetween_style ^= solidFillStyle red1
-           $ plot_fillbetween_values ^= [ (date d m y,(0,v1)) | (d,m,y,v1,v2) <- prices]
+           $ plot_fillbetween_values ^= [ (d,(0,v1)) | (d,v1,v2) <- prices]
            $ plot_fillbetween_title ^= "price 2"
            $ defaultPlotFillBetween
 
@@ -372,7 +369,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
 
 -------------------------------------------------------------------------------
 
-test10 :: [(Int,Int,Int,Double,Double)] -> OutputType -> Renderable ()
+test10 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable ()
 test10 prices otype = toRenderable layout
   where
 
@@ -381,20 +378,20 @@ test10 prices otype = toRenderable layout
                 $ defaultPlotLines ^. plot_lines_style
 
     price1 = plot_lines_style ^= lineStyle (opaque blue)
-           $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,v,_) <- prices]]
+           $ plot_lines_values ^= [[ (d,v) | (d,v,_) <- prices]]
            $ plot_lines_title ^= "price 1"
            $ defaultPlotLines
 
-    price1_area = plot_fillbetween_values ^= [((date d m y), (v * 0.95, v * 1.05)) | (d,m,y,v,_) <- prices]
+    price1_area = plot_fillbetween_values ^= [(d, (v * 0.95, v * 1.05)) | (d,v,_) <- prices]
                 $ plot_fillbetween_style  ^= solidFillStyle (withOpacity blue 0.2)
                 $ defaultPlotFillBetween
 
     price2 = plot_lines_style ^= lineStyle (opaque red)
-	   $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,_,v) <- prices]]
+	   $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
            $ plot_lines_title ^= "price 2"
            $ defaultPlotLines
 
-    price2_area = plot_fillbetween_values ^= [((date d m y), (v * 0.95, v * 1.05)) | (d,m,y,_,v) <- prices]
+    price2_area = plot_fillbetween_values ^= [(d, (v * 0.95, v * 1.05)) | (d,_,v) <- prices]
                 $ plot_fillbetween_style  ^= solidFillStyle (withOpacity red 0.2)
                 $ defaultPlotFillBetween
 
@@ -502,7 +499,7 @@ test13 otype = fillBackground fwhite $ (gridToRenderable t)
 -------------------------------------------------------------------------------
 -- demonstrate AreaSpots
 
-test14 :: [(Int,Int,Int,Double,Double)] -> OutputType -> Renderable ()
+test14 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable ()
 test14 prices otype = toRenderable layout
   where
     layout = layout1_title ^="Price History"
@@ -513,7 +510,7 @@ test14 prices otype = toRenderable layout
            $ defaultLayout1
 
     price1 = plot_lines_style ^= lineStyle (opaque blue)
-           $ plot_lines_values ^= [[ ((date d m y), v) | (d,m,y,v,_) <- prices]]
+           $ plot_lines_values ^= [[ (d, v) | (d,v,_) <- prices]]
            $ plot_lines_title ^= "price 1"
            $ defaultPlotLines
 
@@ -523,7 +520,7 @@ test14 prices otype = toRenderable layout
           $ defaultAreaSpots
     
     points = map (\ (d,v,z)-> (d,v) ) values
-    values = [ (date d m y, v, z) | ((d,m,y,v,_),z) <- zip prices zs ]
+    values = [ (d, v, z) | ((d,v,_),z) <- zip prices zs ]
     zs    :: [Int]
     zs     = randoms $ mkStdGen 0
 
@@ -562,10 +559,10 @@ allTests =
      [ ("test1",  test1)
      , ("test1a", test1a)
      , ("test2a", test2 prices False)
-     , ("test2b", test2 (filterPrices (date 1 1 2005) (date 31 12 2005)) False)
-     , ("test2c", test2 (filterPrices (date 1 5 2005) (date 1 7 2005)) False)
-     , ("test2d", test2 (filterPrices (date 1 1 2006) (date 10 1 2006)) False)
-     , ("test2e", test2 (filterPrices (date 1 8 2005) (date 31 8 2005)) True)
+     , ("test2b", test2 (filterPrices (mkDate 1 1 2005) (mkDate 31 12 2005)) False)
+     , ("test2c", test2 (filterPrices (mkDate 1 5 2005) (mkDate 1 7 2005)) False)
+     , ("test2d", test2 (filterPrices (mkDate 1 1 2006) (mkDate 10 1 2006)) False)
+     , ("test2e", test2 (filterPrices (mkDate 1 8 2005) (mkDate 31 8 2005)) True)
      , ("test3", test3)
      , ("test4a", test4 False False)
      , ("test4b", test4 True False)
@@ -578,16 +575,16 @@ allTests =
      , ("test9c", test9 BarsCentered)
      , ("test9l", test9 BarsLeft)
      , ("test9r", test9 BarsRight)
-     , ("test10", test10 (filterPrices (date 1 1 2005) (date 31 12 2005)))
+     , ("test10", test10 (filterPrices (mkDate 1 1 2005) (mkDate 31 12 2005)))
      , ("test11", test11)
      , ("test12", test12)
      , ("test13", test13)
-     , ("test14", test14 (filterPrices (date 1 1 2005) (date 31 12 2005)))
+     , ("test14", test14 (filterPrices (mkDate 1 1 2005) (mkDate 31 12 2005)))
      , ("misc1", misc1 0)
      , ("misc1a", misc1 45)
      ]
 
-filterPrices t1 t2 = [ v | v@(d,m,y,_,_) <- prices, let t = date d m y in t >= t1 && t <= t2]
+filterPrices t1 t2 = [ v | v@(d,_,_) <- prices, let t = d in t >= t1 && t <= t2]
 
 main = do
     args <- getArgs
