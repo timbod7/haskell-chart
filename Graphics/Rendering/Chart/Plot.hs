@@ -595,8 +595,8 @@ whenJust _        _ = return ()
 
 allBarPoints :: (BarsPlotValue y) => PlotBars x y -> ([x],[y])
 allBarPoints p = case (plot_bars_style_ p) of
-    BarsClustered -> ( [x| (x,_) <- pts], concat [ys| (_,ys) <- pts] )
-    BarsStacked   -> ( [x| (x,_) <- pts], concat [stack ys | (_,ys) <- pts] )
+    BarsClustered -> ( [x| (x,_) <- pts], y0:concat [ys| (_,ys) <- pts] )
+    BarsStacked   -> ( [x| (x,_) <- pts], y0:concat [stack ys | (_,ys) <- pts] )
   where
     pts = plot_bars_values_ p
     y0  = plot_bars_reference_ p
