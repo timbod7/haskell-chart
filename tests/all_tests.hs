@@ -17,6 +17,17 @@ import Data.List(sort,nub,scanl1)
 import qualified Data.Map as Map
 import Control.Monad
 import Prices
+import qualified Test1
+import qualified Test2
+import qualified Test3
+import qualified Test4
+import qualified Test5
+import qualified Test6
+import qualified Test7
+import qualified Test8
+import qualified Test9
+import qualified Test14
+import qualified TestParametric
 
 data OutputType = Window | PNG | PS | PDF | SVG
 
@@ -26,43 +37,10 @@ chooseLineWidth PDF = 0.25
 chooseLineWidth PS = 0.25
 chooseLineWidth SVG = 0.25
 
-green1 = opaque $ sRGB 0.5 1 0.5
-red1 = opaque $ sRGB 0.5 0.5 1
 fwhite = solidFillStyle $ opaque white
-fparchment = solidFillStyle $ opaque $ sRGB 1.0 0.99 0.90
 
-----------------------------------------------------------------------
-test1Layout otype = layout
-  where
-    am :: Double -> Double
-    am x = (sin (x*pi/45) + 1) / 2 * (sin (x*pi/5))
-
-    sinusoid1 = plot_lines_values ^= [[ (x,(am x)) | x <- [0,(0.5)..400]]]
-              $ plot_lines_style  ^= solidLine lineWidth (opaque blue)
-              $ plot_lines_title ^="am"
-              $ defaultPlotLines
-
-    sinusoid2 = plot_points_style ^= filledCircles 2 (opaque red)
-              $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
-              $ plot_points_title ^="am points"
-              $ defaultPlotPoints
-
-    layout = layout1_plots ^= [Left (toPlot sinusoid1),
-			       Left (toPlot sinusoid2)]
-           $ layout1_background ^= fparchment
-           $ layout1_plot_background ^= Just fwhite
-           $ defaultLayout1
-
-    lineWidth = chooseLineWidth otype
-
-test1 :: OutputType -> Renderable ()
-test1 otype = toRenderable layout
-  where
-    layout = layout1_title ^= "Amplitude Modulation"
-           $ (test1Layout otype)
-
-test1a :: OutputType -> Renderable ()
-test1a otype = fillBackground fwhite $ (gridToRenderable t)
+test1a :: Double -> Renderable ()
+test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3],
                                  besideN [rf g4, rf g5, rf g6] ]
@@ -70,24 +48,24 @@ test1a otype = fillBackground fwhite $ (gridToRenderable t)
     g1 = layout1_title ^= "minimal"
        $ layout1_bottom_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
        $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
-       $ test1Layout otype
+       $ Test1.layout lwidth
 
     g2 = layout1_title ^= "with borders"
        $ layout1_bottom_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
        $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
        $ layout1_top_axis ^: axisBorderOnly
        $ layout1_right_axis ^: axisBorderOnly
-       $ test1Layout otype
+       $ Test1.layout lwidth
 
     g3 = layout1_title ^= "default"
-       $ test1Layout otype
+       $ Test1.layout lwidth
 
     g4 = layout1_title ^= "tight grid"
        $ layout1_left_axis ^: laxis_generate ^= axis
        $ layout1_left_axis ^: laxis_override ^= axisGridAtTicks
        $ layout1_bottom_axis ^: laxis_generate ^= axis
        $ layout1_bottom_axis ^: laxis_override ^= axisGridAtTicks
-       $ test1Layout otype
+       $ Test1.layout lwidth
       where
         axis = autoScaledAxis (
             la_nLabels ^= 5
@@ -97,108 +75,17 @@ test1a otype = fillBackground fwhite $ (gridToRenderable t)
 
     g5 = layout1_title ^= "y linked"
        $ layout1_yaxes_control ^= linkAxes
-       $ test1Layout otype
+       $ Test1.layout lwidth
 
     g6 = layout1_title ^= "everything"
        $ layout1_yaxes_control ^= linkAxes
        $ layout1_top_axis ^: laxis_visible ^= const True
-       $ test1Layout otype
+       $ Test1.layout lwidth
 
     rf = tval.toRenderable
 
     axisBorderOnly = (laxis_visible ^= const True)
                    . (laxis_override ^=  (axisGridHide.axisTicksHide.axisLabelsHide))
-
-----------------------------------------------------------------------
-test2 :: [(LocalTime,Double,Double)] -> Bool -> OutputType -> Renderable ()
-test2 prices showMinMax otype = toRenderable layout
-  where
-
-    lineStyle c = line_width ^= 3 * chooseLineWidth otype
-                $ line_color ^= c
-                $ defaultPlotLines ^. plot_lines_style
-
-    limitLineStyle c = line_width ^= chooseLineWidth otype
-                $ line_color ^= opaque c
-                $ line_dashes ^= [5,10]
-                $ defaultPlotLines ^. plot_lines_style
-
-    price1 = plot_lines_style ^= lineStyle (opaque blue)
-           $ plot_lines_values ^= [[ (d, v) | (d,v,_) <- prices]]
-           $ plot_lines_title ^= "price 1"
-           $ defaultPlotLines
-
-    price2 = plot_lines_style ^= lineStyle (opaque green)
-	   $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
-           $ plot_lines_title ^= "price 2"
-           $ defaultPlotLines
-
-    (min1,max1) = (minimum [v | (_,v,_) <- prices],maximum [v | (_,v,_) <- prices])
-    (min2,max2) = (minimum [v | (_,_,v) <- prices],maximum [v | (_,_,v) <- prices])
-    limits | showMinMax = [ Left $ hlinePlot "min/max" (limitLineStyle blue) min1,
-                            Left $ hlinePlot "" (limitLineStyle blue) max1,
-                            Right $ hlinePlot "min/max" (limitLineStyle green) min2,
-                            Right $ hlinePlot "" (limitLineStyle green) max2 ]
-           | otherwise  = []
-
-    bg = opaque $ sRGB 0 0 0.25
-    fg = opaque white
-    fg1 = opaque $ sRGB 0.0 0.0 0.15
-
-    layout = layout1_title ^="Price History"
-           $ layout1_background ^= solidFillStyle bg
-           $ updateAllAxesStyles (axis_grid_style ^= solidLine 1 fg1)
-           $ layout1_left_axis ^: laxis_override ^= axisGridHide
-           $ layout1_right_axis ^: laxis_override ^= axisGridHide
-           $ layout1_bottom_axis ^: laxis_override ^= axisGridHide
- 	   $ layout1_plots ^= ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
-           $ layout1_grid_last ^= False
-           $ setLayout1Foreground fg
-           $ defaultLayout1
-
-----------------------------------------------------------------------
-test3 :: OutputType -> Renderable ()
-test3 otype = toRenderable layout
-  where
-
-    price1 = plot_fillbetween_style ^= solidFillStyle green1
-           $ plot_fillbetween_values ^= [ (d,(0,v2)) | (d,v1,v2) <- prices]
-           $ plot_fillbetween_title ^= "price 1"
-           $ defaultPlotFillBetween
-
-    price2 = plot_fillbetween_style ^= solidFillStyle red1
-           $ plot_fillbetween_values ^= [ (d,(0,v1)) | (d,v1,v2) <- prices]
-           $ plot_fillbetween_title ^= "price 2"
-           $ defaultPlotFillBetween
-
-    layout = layout1_title ^= "Price History"
-           $ layout1_grid_last ^= True
- 	   $ layout1_plots ^= [Left (toPlot price1),
-                               Left (toPlot price2)]
-           $ defaultLayout1
-
-----------------------------------------------------------------------
-test4 :: Bool -> Bool -> OutputType -> Renderable ()
-test4 xrev yrev otype = toRenderable layout
-  where
-
-    points = plot_points_style ^= filledCircles 3 (opaque red)
-           $ plot_points_values ^= [ (x, 10**x) | x <- [0.5,1,1.5,2,2.5 :: Double] ]
-           $ plot_points_title ^= "values"
-           $ defaultPlotPoints
-
-    lines = plot_lines_values ^= [ [(x, 10**x) | x <- [0,3]] ]
-          $ plot_lines_title ^= "values"
-          $ defaultPlotLines
-
-    layout = layout1_title ^= "Log/Linear Example"
-           $ layout1_bottom_axis ^: laxis_title ^= "horizontal"
-           $ layout1_bottom_axis ^: laxis_reverse ^= xrev
-           $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis defaultLogAxis
-           $ layout1_left_axis ^: laxis_title ^= "vertical"
-           $ layout1_left_axis ^: laxis_reverse ^= yrev
-	   $ layout1_plots ^= [Left (toPlot points), Left (toPlot lines) ]
-           $ defaultLayout1
 
 ----------------------------------------------------------------------
 test4d :: OutputType -> Renderable ()
@@ -224,89 +111,6 @@ test4d otype = toRenderable layout
            $ defaultLayout1
 
 ----------------------------------------------------------------------
--- Example thanks to Russell O'Connor
-
-test5 :: OutputType -> Renderable ()
-test5 otype = toRenderable (layout 1001 (trial bits) :: Layout1 Double LogValue)
-  where
-    bits = randoms $ mkStdGen 0
-
-    layout n t = layout1_title ^= "Simulation of betting on a biased coin"
-               $ layout1_plots ^= [
-                      Left (toPlot (plot "f=0.05" s1 n 0 (t 0.05))),
-                      Left (toPlot (plot "f=0.1" s2 n 0 (t 0.1)))
-                     ]
-               $ defaultLayout1
-
-    plot tt s n m t = plot_lines_style ^= s
-                 $ plot_lines_values ^=
-                       [[(fromIntegral x, LogValue y) | (x,y) <-
-                         filter (\(x,_)-> x `mod` (m+1)==0) $ take n $ zip [0..] t]]
-                 $ plot_lines_title ^= tt
-                 $ defaultPlotLines
-
-    b = 0.1
-
-    trial bits frac = scanl (*) 1 (map f bits)
-      where
-        f True = (1+frac*(1+b))
-        f False = (1-frac)
-
-    s1 = solidLine lineWidth $ opaque green
-    s2 = solidLine lineWidth $ opaque blue
-
-    lineWidth = chooseLineWidth otype
-
-
-----------------------------------------------------------------------
--- Test the Simple interface
-
-test6 :: OutputType -> Renderable ()
-test6 otype = toRenderable (plotLayout pp){layout1_title_="Graphics.Rendering.Chart.Simple example"}
-  where
-    pp = plot xs sin "sin"
-                 cos "cos" "o"
-                 (sin.sin.cos) "sin.sin.cos" "."
-                 (/3) "- "
-                 (const 0.5)
-                 [0.1,0.7,0.5::Double] "+"
-    xs = [0,0.3..3] :: [Double]
-
-----------------------------------------------------------------------
-test7 :: OutputType -> Renderable ()
-test7 otype = toRenderable layout
-  where
-    vals :: [(Double,Double,Double,Double)]
-    vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
-    bars = plot_errbars_values ^= [symErrPoint x y dx dy | (x,y,dx,dy) <- vals]
-         $ plot_errbars_title ^="test"
-         $ defaultPlotErrBars
-
-    points = plot_points_style ^= filledCircles 2 (opaque red)
-	   $ plot_points_values ^= [(x,y) |  (x,y,dx,dy) <- vals]
-           $ plot_points_title ^= "test"
-           $ defaultPlotPoints
-
-    layout = layout1_title ^= "errorbars example"
-           $ layout1_plots ^= [Left (toPlot bars),
-                               Left (toPlot points)]
-           $ defaultLayout1
-
-----------------------------------------------------------------------
-
-test8 :: OutputType -> Renderable ()
-test8 otype = toRenderable layout
-  where
-    values = [ ("eggs",38,e), ("milk",45,e), ("bread",11,e1), ("salmon",8,e) ]
-    e = 0
-    e1 = 25
-    layout = pie_title ^= "Pie Chart Example"
-           $ pie_plot ^: pie_data ^= [ defaultPieItem{pitem_value_=v,pitem_label_=s,pitem_offset_=o}
-                                       | (s,v,o) <- values ]
-           $ defaultPieLayout
-
-----------------------------------------------------------------------
-
 
 test9 :: PlotBarsAlignment -> OutputType -> Renderable ()
 test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
@@ -496,40 +300,6 @@ test13 otype = fillBackground fwhite $ (gridToRenderable t)
                       $ labelPlot
 
 
--------------------------------------------------------------------------------
--- demonstrate AreaSpots
-
-test14 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable ()
-test14 prices otype = toRenderable layout
-  where
-    layout = layout1_title ^="Price History"
-           $ layout1_background ^= solidFillStyle (opaque white)
-           $ layout1_left_axis ^: laxis_override ^= axisTicksHide
- 	   $ layout1_plots ^= [ Left (toPlot price1), Left (toPlot spots) ]
-           $ setLayout1Foreground fg
-           $ defaultLayout1
-
-    price1 = plot_lines_style ^= lineStyle (opaque blue)
-           $ plot_lines_values ^= [[ (d, v) | (d,v,_) <- prices]]
-           $ plot_lines_title ^= "price 1"
-           $ defaultPlotLines
-
-    spots = area_spots_title ^= "random value"
-          $ area_spots_max_radius ^= 20
-          $ area_spots_values ^= values
-          $ defaultAreaSpots
-    
-    points = map (\ (d,v,z)-> (d,v) ) values
-    values = [ (d, v, z) | ((d,v,_),z) <- zip prices zs ]
-    zs    :: [Int]
-    zs     = randoms $ mkStdGen 0
-
-    lineStyle c = line_width ^= 3 * chooseLineWidth otype
-                $ line_color ^= c
-                $ defaultPlotLines ^. plot_lines_style
-
-    fg = opaque black
-
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
@@ -556,35 +326,35 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
 ----------------------------------------------------------------------
 allTests :: [ (String, OutputType -> Renderable ()) ]
 allTests =
-     [ ("test1",  test1)
-     , ("test1a", test1a)
-     , ("test2a", test2 prices False)
-     , ("test2b", test2 (filterPrices (mkDate 1 1 2005) (mkDate 31 12 2005)) False)
-     , ("test2c", test2 (filterPrices (mkDate 1 5 2005) (mkDate 1 7 2005)) False)
-     , ("test2d", test2 (filterPrices (mkDate 1 1 2006) (mkDate 10 1 2006)) False)
-     , ("test2e", test2 (filterPrices (mkDate 1 8 2005) (mkDate 31 8 2005)) True)
-     , ("test3", test3)
-     , ("test4a", test4 False False)
-     , ("test4b", test4 True False)
-     , ("test4c", test4 False True)
+     [ ("test1",  \o -> Test1.chart (chooseLineWidth o) )
+     , ("test1a", \o -> test1a (chooseLineWidth o) )
+     , ("test2a", \o -> Test2.chart prices False (chooseLineWidth o))
+     , ("test2b", \o -> Test2.chart prices1 False (chooseLineWidth o))
+     , ("test2c", \o -> Test2.chart prices2 False (chooseLineWidth o))
+     , ("test2d", \o -> Test2.chart prices3 False (chooseLineWidth o))
+     , ("test2e", \o -> Test2.chart prices4 True (chooseLineWidth o))
+     , ("test3",  const Test3.chart)
+     , ("test4a", const (Test4.chart False False))
+     , ("test4b", const (Test4.chart True False))
+     , ("test4c", const (Test4.chart False True))
      , ("test4d", test4d)
-     , ("test5", test5)
-     , ("test6", test6)
-     , ("test7", test7)
-     , ("test8", test8)
+     , ("test5", \o -> Test5.chart (chooseLineWidth o))
+     , ("test6", const Test6.chart)
+     , ("test7", const Test7.chart)
+     , ("test8", const Test8.chart)
+     , ("test9", const Test9.chart)
      , ("test9c", test9 BarsCentered)
      , ("test9l", test9 BarsLeft)
      , ("test9r", test9 BarsRight)
-     , ("test10", test10 (filterPrices (mkDate 1 1 2005) (mkDate 31 12 2005)))
+     , ("test10", test10 prices1)
      , ("test11", test11)
      , ("test12", test12)
      , ("test13", test13)
-     , ("test14", test14 (filterPrices (mkDate 1 1 2005) (mkDate 31 12 2005)))
+     , ("test14", \o -> Test14.chart (chooseLineWidth o) )
      , ("misc1", misc1 0)
      , ("misc1a", misc1 45)
+     , ("parametric", \o -> TestParametric.chart (chooseLineWidth o) )
      ]
-
-filterPrices t1 t2 = [ v | v@(d,_,_) <- prices, let t = d in t >= t1 && t <= t2]
 
 main = do
     args <- getArgs

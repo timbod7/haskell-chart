@@ -1,4 +1,4 @@
-module Prices(prices,mkDate) where
+module Prices where
 
 import Data.Time.Calendar
 import Data.Time.LocalTime
@@ -299,6 +299,13 @@ rawPrices = [
 
 prices :: [(LocalTime,Double,Double)]
 prices = [ (mkDate dd mm yyyy, p1, p2) | (dd,mm,yyyy,p1,p2) <- rawPrices ]
+
+filterPrices t1 t2 = [ v | v@(d,_,_) <- prices, let t = d in t >= t1 && t <= t2]
+
+prices1 = filterPrices (mkDate 1 1 2005) (mkDate 31 12 2005)
+prices2 = filterPrices (mkDate 1 6 2005) (mkDate 1 9 2005)
+prices3 = filterPrices (mkDate 1 1 2006) (mkDate 10 1 2006)
+prices4 = filterPrices (mkDate 1 8 2005) (mkDate 31 8 2005)
 
 mkDate dd mm yyyy = (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
 
