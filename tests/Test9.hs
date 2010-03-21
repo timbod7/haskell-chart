@@ -20,7 +20,7 @@ chart = toRenderable layout
   bars2 = plot_bars_titles ^= ["Cash","Equity"]
       $ plot_bars_values ^= addIndexes [[20,45],[45,30],[30,20],[70,25]]
       $ plot_bars_style ^= BarsClustered
-      $ plot_bars_spacing ^= BarsFixGap 30
+      $ plot_bars_spacing ^= BarsFixGap 30 5
       $ defaultPlotBars
 
   alabels = [ "Jun", "Jul", "Aug", "Sep", "Oct" ]

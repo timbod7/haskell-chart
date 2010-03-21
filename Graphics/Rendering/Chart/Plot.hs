@@ -452,9 +452,10 @@ data PlotBarsStyle
      deriving (Show)
 
 data PlotBarsSpacing
-    = BarsFixWidth Double -- ^ All bars have the same width in pixels.
-    | BarsFixGap Double   -- ^ There is the same interval in pixels
-                          --   between adjacent bars.
+    = BarsFixWidth Double       -- ^ All bars have the same width in pixels.
+    | BarsFixGap Double Double  -- ^ (BarsFixGap g mw) means make the gaps between
+                                --   the bars equal to g, but with a minimum bar width
+                                --   of mw
      deriving (Show)
 
 -- | How bars for a given (x,[y]) are aligned with respect to screen
@@ -504,7 +505,7 @@ defaultPlotBars = PlotBars {
    plot_bars_style_           = BarsClustered,
    plot_bars_item_styles_     = cycle istyles,
    plot_bars_titles_          = [],
-   plot_bars_spacing_         = BarsFixGap 10,
+   plot_bars_spacing_         = BarsFixGap 10 2,
    plot_bars_alignment_       = BarsCentered,
    plot_bars_values_          = [],
    plot_bars_singleton_width_ = 20,
@@ -570,9 +571,10 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
     yref0 = plot_bars_reference_ p
     vals  = plot_bars_values_ p
     width = case plot_bars_spacing_ p of
-        BarsFixGap gap -> case (plot_bars_style_ p) of
-            BarsClustered -> (minXInterval - gap) / fromIntegral nys
-            BarsStacked -> (minXInterval - gap)
+        BarsFixGap gap minw -> let w = max (minXInterval - gap) minw in
+            case (plot_bars_style_ p) of
+                BarsClustered -> w / fromIntegral nys
+                BarsStacked -> w
         BarsFixWidth width -> width
     styles = plot_bars_item_styles_ p
 

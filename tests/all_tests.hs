@@ -130,7 +130,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
 
     g2 = layout "clustered/fix gap "
        $ plot_bars_style ^= BarsClustered
-       $ plot_bars_spacing ^= BarsFixGap 10
+       $ plot_bars_spacing ^= BarsFixGap 10 5
        $ bars2
 
     g3 = layout "stacked 1"
@@ -145,7 +145,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
 
     g5 = layout "stacked/fix gap"
        $ plot_bars_style ^= BarsStacked
-       $ plot_bars_spacing ^= BarsFixGap 10
+       $ plot_bars_spacing ^= BarsFixGap 10 5
        $ bars2
 
     rf = tval.toRenderable
