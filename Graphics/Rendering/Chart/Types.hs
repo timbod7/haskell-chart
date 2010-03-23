@@ -46,10 +46,11 @@ module Graphics.Rendering.Chart.Types(
 
     preserveCState,
     setClipRegion,
-    strokeLines,
     moveTo,
     lineTo,
     rectPath,
+    strokePath,
+    fillPath,
 
     isValidNumber,
     maybeM,
@@ -264,23 +265,41 @@ setClipRegion p2 p3 = do
     c $ C.lineTo (p_x p2) (p_y p2)
     c $ C.clip
 
--- | Stroke the lines between successive points.
-strokeLines :: [Point] -> CRender ()
-strokeLines (p1:ps) = do
-    c $ C.newPath
-    moveTo p1
-    mapM_ lineTo ps
-    c $ C.stroke
-strokeLines _ = return ()
-
 -- | Make a path from a rectangle.
-rectPath :: Rect -> CRender ()
-rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = do
-    c $ C.newPath
-    moveTo p1 >> lineTo p2 >> lineTo p3 >> lineTo p4 >> lineTo p1
-  where
+rectPath :: Rect -> [Point]
+rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = [p1,p2,p3,p4,p1]
+  where    
     p2 = (Point x1 y2)
     p4 = (Point x2 y1)
+
+stepPath :: [Point] -> CRender()
+stepPath (p:ps) = c $ do
+    C.newPath                    
+    C.moveTo (p_x p) (p_y p)
+    mapM_ (\p -> C.lineTo (p_x p) (p_y p)) ps
+stepPath _  = return ()
+
+-- | Draw lines between the specified points.
+--
+-- The points will be "corrected" by the cenv_point_alignfn, so that
+-- when drawing bitmaps, 1 pixel wide lines will be centred on the
+-- pixels.
+strokePath :: [Point] -> CRender()
+strokePath pts = do
+    alignfn <- fmap cenv_point_alignfn ask
+    stepPath (map alignfn pts)
+    c $ C.stroke
+
+-- | Fill the region with the given corners.
+--
+-- The points will be "corrected" by the cenv_coord_alignfn, so that
+-- when drawing bitmaps, the edges of the region will fall between
+-- pixels.
+fillPath ::  [Point] -> CRender()
+fillPath pts = do
+    alignfn <- fmap cenv_coord_alignfn ask
+    stepPath (map alignfn pts)
+    c $ C.fill
 
 setFontStyle :: CairoFontStyle -> CRender ()
 setFontStyle f = do

@@ -196,19 +196,13 @@ renderPlotLines p pmap = preserveCState $ do
     mapM_ (drawLines (mapXY pmap)) (plot_lines_values_ p)
     mapM_ (drawLines pmap) (plot_lines_limit_values_ p)
   where
-    drawLines pmap []     = return ()
-    drawLines pmap (p:ps) = do
-	moveTo (pmap p)
-	mapM_ (\p -> lineTo (pmap p)) ps
-	c $ C.stroke
+    drawLines mapfn pts = strokePath (map mapfn pts)
 
 renderPlotLegendLines :: PlotLines x y -> Rect -> CRender ()
 renderPlotLegendLines p r@(Rect p1 p2) = preserveCState $ do
     setLineStyle (plot_lines_style_ p)
     let y = (p_y p1 + p_y p2) / 2
-    moveTo (Point (p_x p1) y)
-    lineTo (Point (p_x p2) y)
-    c $ C.stroke
+    strokePath [Point (p_x p1) y, Point (p_x p2) y]
 
 defaultPlotLineStyle :: CairoLineStyle
 defaultPlotLineStyle = (solidLine 1 $ opaque blue){
@@ -308,11 +302,7 @@ renderPlotFillBetween p pmap =
 renderPlotFillBetween' p [] _     = return ()
 renderPlotFillBetween' p vs pmap  = preserveCState $ do
     setFillStyle (plot_fillbetween_style_ p)
-    moveTo p0
-    mapM_ lineTo p1s
-    mapM_ lineTo (reverse p2s)
-    lineTo p0
-    c $ C.fill
+    fillPath ([p0] ++ p1s ++ reverse p2s ++ [p0])
   where
     pmap'    = mapXY pmap
     (p0:p1s) = map pmap' [ (x,y1) | (x,(y1,y2)) <- vs ]
@@ -321,8 +311,7 @@ renderPlotFillBetween' p vs pmap  = preserveCState $ do
 renderPlotLegendFill :: PlotFillBetween x y -> Rect -> CRender ()
 renderPlotLegendFill p r = preserveCState $ do
     setFillStyle (plot_fillbetween_style_ p)
-    rectPath r
-    c $ C.fill
+    fillPath (rectPath r)
 
 plotAllPointsFillBetween :: PlotFillBetween x y -> ([x],[y])
 plotAllPointsFillBetween p = ( [ x | (x,(_,_)) <- pts ]
@@ -533,13 +522,12 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
     clusteredBars (x,ys) = preserveCState $ do
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
            setFillStyle fstyle
-           barPath (offset i) x yref0 y
+           fillPath (barPath (offset i) x yref0 y)
            c $ C.fill
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
              setLineStyle lstyle
-             barPath (offset i) x yref0 y
-             c $ C.stroke
+             strokePath (barPath (offset i) x yref0 y)
 
     offset = case (plot_bars_alignment_ p) of
       BarsLeft     -> \i -> fromIntegral i * width
@@ -555,13 +543,11 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
          }
        forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
            setFillStyle fstyle
-           barPath ofs x y0 y1
-           c $ C.fill
+           fillPath (barPath ofs x y0 y1)
        forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
                setLineStyle lstyle
-               barPath ofs x y0 y1
-               c $ C.stroke
+               strokePath (barPath ofs x y0 y1)
 
     barPath xos x y0 y1 = do
       let (Point x' y') = pmap' (x,y1)
@@ -611,8 +597,7 @@ renderPlotLegendBars :: (CairoFillStyle,Maybe CairoLineStyle) -> Rect
                         -> CRender ()
 renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
     setFillStyle fstyle
-    rectPath r
-    c $ C.fill
+    fillPath (rectPath r)
 
 ----------------------------------------------------------------------
 

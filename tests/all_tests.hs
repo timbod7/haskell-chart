@@ -318,8 +318,8 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
       render = \sz@(w,h) -> do
           let xa = w / 2
           let ya = h / 2
-          strokeLines [Point 0 ya,Point w ya]
-          strokeLines [Point xa 0,Point xa h]
+          strokePath [Point 0 ya,Point w ya]
+          strokePath [Point xa 0,Point xa h]
           render r sz
     }
 
@@ -342,7 +342,8 @@ allTests =
      , ("test6", const Test6.chart)
      , ("test7", const Test7.chart)
      , ("test8", const Test8.chart)
-     , ("test9", const Test9.chart)
+     , ("test9", const (Test9.chart True))
+     , ("test9b", const (Test9.chart False))
      , ("test9c", test9 BarsCentered)
      , ("test9l", test9 BarsLeft)
      , ("test9r", test9 BarsRight)

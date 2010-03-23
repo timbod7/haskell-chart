@@ -213,7 +213,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
    let ls = axis_line_style_ as
    preserveCState $ do
        setLineStyle ls{line_cap_=C.LineCapSquare}
-       strokeLines [Point sx sy,Point ex ey]
+       strokePath [Point sx sy,Point ex ey]
    preserveCState $ do
        setLineStyle ls{line_cap_=C.LineCapButt}
        mapM_ drawTick (axis_ticks_ ad)
@@ -227,7 +227,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
    drawTick (value,length) =
        let t1 = axisPoint value
 	   t2 = t1 `pvadd` (vscale length tp)
-       in strokeLines [t1,t2]
+       in strokePath [t1,t2]
 
    (hta,vta,lp) =
        let g = axis_label_gap_ as
@@ -268,10 +268,10 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
     drawGridLine E_Right  = hline
 
     vline v = let v' = p_x (axisPoint v)
-	      in strokeLines [Point v' 0,Point v' h]
+	      in strokePath [Point v' 0,Point v' h]
 
     hline v = let v' = p_y (axisPoint v)
-	      in strokeLines [Point 0 v',Point w v']
+	      in strokePath [Point 0 v',Point w v']
 
 
 stepsInt :: Integral a => a -> Range -> [a]
