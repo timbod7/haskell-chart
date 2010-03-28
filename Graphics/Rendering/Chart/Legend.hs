@@ -9,11 +9,13 @@
 module Graphics.Rendering.Chart.Legend(
     Legend(..),
     LegendStyle(..),
+    LegendOrientation(..),
     defaultLegendStyle,
     legendToRenderable,
     legend_label_style,
     legend_margin,
     legend_plot_size,
+    legend_orientation
 ) where
 
 import qualified Graphics.Rendering.Cairo as C
@@ -32,25 +34,40 @@ import Graphics.Rendering.Chart.Grid
 data LegendStyle = LegendStyle {
    legend_label_style_ :: CairoFontStyle,
    legend_margin_      :: Double,
-   legend_plot_size_   :: Double
+   legend_plot_size_   :: Double,
+   legend_orientation_ :: LegendOrientation
 }
 
-data Legend x y = Legend Bool LegendStyle [(String, Rect -> CRender ())]
+-- | Legends can be constructed in two orientations: in rows
+-- (where we specify the maximum number of columns), and in
+-- columns (where we specify the maximum number of rows)
+data LegendOrientation = LORows Int
+                       | LOCols Int
+                       
+
+data Legend x y = Legend LegendStyle [(String, Rect -> CRender ())]
 
 instance ToRenderable (Legend x y) where
   toRenderable = setPickFn nullPickFn.legendToRenderable
 
 legendToRenderable :: Legend x y -> Renderable String
-legendToRenderable (Legend _ ls lvs) = gridToRenderable grid
+legendToRenderable (Legend ls lvs) = gridToRenderable grid
   where
-    grid = besideN $ intersperse ggap1 (map (tval.rf) ps)
+    grid = case legend_orientation_ ls of
+        LORows n -> mkGrid n aboveG besideG
+        LOCols n -> mkGrid n besideG aboveG 
+
+    aboveG = aboveN.(intersperse ggap1)
+    besideG = besideN.(intersperse ggap1)
+
+    mkGrid n join1 join2 = join1 [ join2 (map rf ps1) | ps1 <- groups n ps ]
 
     ps  :: [(String, [Rect -> CRender ()])]
     ps   = join_nub lvs
 
-    rf (title,rfs) = gridToRenderable grid1
+    rf (title,rfs) = besideN [gpic,ggap2,gtitle]
       where
-        grid1  = besideN $ intersperse ggap2 (map rp rfs) ++ [ggap2,gtitle]
+        gpic = besideN $ intersperse ggap2 (map rp rfs)
         gtitle = tval $ lbl title
         rp rfn = tval $ Renderable {
                      minsize = return (legend_plot_size_ ls, 0),
@@ -59,9 +76,13 @@ legendToRenderable (Legend _ ls lvs) = gridToRenderable grid
                          return nullPickFn
                  }
 
-    ggap1 = tval $ spacer (legend_margin_ ls,0)
+    ggap1 = tval $ spacer (legend_margin_ ls,legend_margin_ ls / 2)
     ggap2 = tval $ spacer1 (lbl "X")
-    lbl s = label (legend_label_style_ ls) HTA_Centre VTA_Centre s
+    lbl s = label (legend_label_style_ ls) HTA_Left VTA_Centre s
+
+groups :: Int -> [a] -> [[a]]
+groups  n [] = []
+groups  n vs = let (vs1,vs2) = splitAt n vs in vs1:groups n vs2
 
 join_nub :: [(String, a)] -> [(String, [a])]
 join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
@@ -72,7 +93,8 @@ defaultLegendStyle :: LegendStyle
 defaultLegendStyle = LegendStyle {
     legend_label_style_ = defaultFontStyle,
     legend_margin_      = 20,
-    legend_plot_size_   = 20
+    legend_plot_size_   = 20,
+    legend_orientation_ = LORows 4
 }
 
 ----------------------------------------------------------------------

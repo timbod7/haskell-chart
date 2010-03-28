@@ -238,7 +238,7 @@ layout1LegendsToRenderable l = gridToRenderable g
             []  -> emptyRenderable ;
             lvs -> addMargins (0,lm,lm,lm) $
                        mapPickFn L1P_Legend $
-                                 legendToRenderable (Legend True ls lvs)
+                                 legendToRenderable (Legend ls lvs)
 
 layout1PlotAreaToGrid :: (Ord x, Ord y) =>
                           Layout1 x y -> Grid (Renderable (Layout1Pick x y))
