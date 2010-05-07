@@ -214,6 +214,7 @@ layout1ToGrid l = aboveN
     lm = layout1_margin_ l
 
 layout1TitleToRenderable :: (Ord x, Ord y) => Layout1 x y -> Renderable a
+layout1TitleToRenderable l | null (layout1_title_ l) = emptyRenderable
 layout1TitleToRenderable l = addMargins (lm/2,0,0,0) title
   where
     title = label (layout1_title_style_ l) HTA_Centre VTA_Centre
