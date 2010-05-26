@@ -9,37 +9,66 @@ module Graphics.Rendering.Chart.Gtk(
     ) where
 
 import qualified Graphics.UI.Gtk as G
-import qualified Graphics.UI.Gtk.Gdk.Events as G
+import qualified Graphics.UI.Gtk.Gdk.Events as GE
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Types
 import Data.List (isPrefixOf)
+import Data.IORef
+import Control.Monad(when)
+import System.IO.Unsafe(unsafePerformIO)
 
 -- do action m for any keypress (except meta keys)
-anyKey :: (Monad m) => m a -> G.Event -> m Bool
-anyKey m (G.Key {G.eventKeyName=key})
+anyKey :: (Monad m) => m a -> GE.Event -> m Bool
+anyKey m (GE.Key {GE.eventKeyName=key})
     | any (`isPrefixOf` key) ignores = return True
     | otherwise                      = m >> return True
   where ignores = ["Shift","Control","Alt",
                    "Super","Meta","Hyper"]
 
+-- Yuck. But we really want the convenience function
+-- renderableToWindow as to be callable without requiring
+-- initGUI to be called first. But newer versions of
+-- gtk insist that initGUI is only called once
+guiInitVar :: IORef Bool
+{-# NOINLINE guiInitVar #-}
+guiInitVar = unsafePerformIO (newIORef False)
+
+initGuiOnce :: IO ()
+initGuiOnce = do
+    v <- readIORef guiInitVar
+    when (not v) $ do
+        -- G.initGUI
+        G.unsafeInitGUIForThreadedRTS
+        writeIORef guiInitVar True
+
+-- | Display a renderable in a gtk window.
+--
+-- Note that this is a convenience function that initialises GTK on
+-- it's first call, but not subsequent calls. Hence it's 
+-- unlikely to be compatible with other code using gtk. In 
+-- that case use createRenderableWindow.
 renderableToWindow :: Renderable a -> Int -> Int -> IO ()
 renderableToWindow chart windowWidth windowHeight = do
-    G.unsafeInitGUIForThreadedRTS
-    -- G.initGUI
-    window <- G.windowNew
-    canvas <- G.drawingAreaNew
-    -- fix size
-    --   G.windowSetResizable window False
-    G.widgetSetSizeRequest window windowWidth windowHeight
-    -- press any key to quit
+    initGuiOnce
+    window <- createRenderableWindow chart windowWidth windowHeight
+    -- press any key to exit the loop
     G.onKeyPress window $ anyKey (G.widgetDestroy window)
     G.onDestroy window G.mainQuit
-    G.onExpose canvas $ const (updateCanvas chart canvas)
-    G.set window [G.containerChild G.:= canvas]
     G.widgetShowAll window
     G.mainGUI
+
+-- | Create a new GTK window displaying a renderable.
+createRenderableWindow :: Renderable a -> Int -> Int -> IO G.Window
+createRenderableWindow chart windowWidth windowHeight = do
+    window <- G.windowNew
+    canvas <- G.drawingAreaNew
+    G.widgetSetSizeRequest window windowWidth windowHeight
+    G.onExpose canvas $ const (updateCanvas chart canvas)
+    G.set window [G.containerChild G.:= canvas]
+    return window
+
 
 updateCanvas :: Renderable a -> G.DrawingArea  -> IO Bool
 updateCanvas chart canvas = do
