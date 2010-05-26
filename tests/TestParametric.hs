@@ -23,8 +23,8 @@ chart lwidth = toRenderable layout
            $ defaultLayout1
 
 main1 :: [String] -> IO()
-main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test_parametric_small.png"
-main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test_parametric_big.png"
+main1 ["small"]  = renderableToPNGFile (chart 1.00) 320 240 "test_parametric_small.png"
+main1 ["big"]    = renderableToPNGFile (chart 1.00) 800 600 "test_parametric_big.png"
 main1 _          = renderableToWindow  (chart 1.00) 640 480
 
 main = getArgs >>= main1
