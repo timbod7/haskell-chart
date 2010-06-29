@@ -60,6 +60,7 @@ module Graphics.Rendering.Chart.Axis(
     renderAxisGrid,
     axisOverhang,
     vmap,
+    invmap,
 
     axisGridAtTicks,
     axisGridAtLabels,
@@ -68,6 +69,7 @@ module Graphics.Rendering.Chart.Axis(
     axisLabelsHide,
 
     axis_viewport,
+    axis_tropweiv,
     axis_ticks,
     axis_labels,
     axis_grid,
@@ -104,6 +106,9 @@ data AxisData x = AxisData {
 
     -- | The axis_viewport_ function maps values into device coordinates.
     axis_viewport_ :: Range -> x -> Double,
+
+    -- | The axis_tropweiv_ function maps device coordinates back to values.
+    axis_tropweiv_ :: Range -> Double -> x,
 
     -- | The tick marks on the axis as pairs.
     --   The first element is the position on the axis
@@ -325,20 +330,24 @@ autoSteps nSteps vs = map fromRational $ steps (fromIntegral nSteps) r
 makeAxis :: PlotValue x => (x -> String) -> ([x],[x],[x]) -> AxisData x
 makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     axis_viewport_ = newViewport,
+    axis_tropweiv_ = newTropweiv,
     axis_ticks_    = newTicks,
     axis_grid_     = gridvs,
     axis_labels_   = newLabels
     }
   where
     newViewport = vmap (min',max')
+    newTropweiv = invmap (min',max')
     newTicks    = [ (v,2)        | v <- tickvs  ] ++ [ (v,5) | v <- labelvs ]
     newLabels   = [ (v,labelf v) | v <- labelvs ]
     min'        = minimum labelvs
     max'        = maximum labelvs
 
-makeAxis' :: Ord x => (x -> Double) -> (x -> String) -> ([x],[x],[x]) -> AxisData x
-makeAxis' f labelf (labelvs, tickvs, gridvs) = AxisData {
-    axis_viewport_ = linMap f (minimum labelvs, maximum labelvs),
+makeAxis' :: Ord x => (x -> Double) -> (Double -> x) -> (x -> String)
+                   -> ([x],[x],[x]) -> AxisData x
+makeAxis' t f labelf (labelvs, tickvs, gridvs) = AxisData {
+    axis_viewport_ = linMap t (minimum labelvs, maximum labelvs),
+    axis_tropweiv_ = invLinMap f t (minimum labelvs, maximum labelvs),
     axis_ticks_    = zip tickvs (repeat 2)  ++  zip labelvs (repeat 5),
     axis_grid_     = gridvs,
     axis_labels_   = [ (v,labelf v) | v <- labelvs ]
@@ -376,7 +385,8 @@ defaultIntAxis  = LinearAxisParams {
 --   The resulting axis will only show a grid if the template has some grid
 --   values.
 autoScaledAxis :: RealFloat a => LinearAxisParams a -> AxisFn a
-autoScaledAxis lap ps0 = makeAxis' realToFrac (la_labelf_ lap) (labelvs,tickvs,gridvs)
+autoScaledAxis lap ps0 = makeAxis' realToFrac (fromIntegral . round)
+                                   (la_labelf_ lap) (labelvs,tickvs,gridvs)
   where
     ps        = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
@@ -474,7 +484,8 @@ logTicks (low,high) = (major,minor,major)
 --   values.
 autoScaledLogAxis :: RealFloat a => LogAxisParams a -> AxisFn a
 autoScaledLogAxis lap ps0 =
-    makeAxis' (realToFrac . log) (loga_labelf_ lap) (wrap rlabelvs, wrap rtickvs, wrap rgridvs)
+    makeAxis' (realToFrac . log) (realToFrac . exp)
+              (loga_labelf_ lap) (wrap rlabelvs, wrap rtickvs, wrap rgridvs)
         where
           ps        = filter (\x -> isValidNumber x && 0 < x) ps0
           (min,max) = (minimum ps,maximum ps)
@@ -557,6 +568,7 @@ type TimeLabelFn = LocalTime -> String
 timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> AxisFn LocalTime
 timeAxis tseq lseq labelf pts = AxisData {
     axis_viewport_ = vmap(min', max'),
+    axis_tropweiv_ = invmap(min', max'),
     axis_ticks_    = [ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
     axis_labels_   = [ (t,l) | (t,l) <- labels, visible t],
     axis_grid_     = [ t     | t <- ltimes, visible t]
@@ -681,6 +693,7 @@ autoTimeAxis pts
 unitAxis :: AxisData ()
 unitAxis = AxisData {
     axis_viewport_ = \(x0,x1) _ -> (x0+x1)/2,
+    axis_tropweiv_ = \_       _ -> (),
     axis_ticks_    = [((), 0)],
     axis_labels_   = [((), "")],
     axis_grid_     = []
@@ -690,10 +703,12 @@ unitAxis = AxisData {
 
 class Ord a => PlotValue a where
     toValue  :: a -> Double
+    fromValue:: Double -> a
     autoAxis :: AxisFn a
 
 instance PlotValue Double where
     toValue  = id
+    fromValue= id
     autoAxis = autoScaledAxis defaultLinearAxis
 
 newtype LogValue = LogValue Double
@@ -704,22 +719,27 @@ instance Show LogValue where
 
 instance PlotValue LogValue where
     toValue (LogValue x) = log x
+    fromValue d          = LogValue (exp d)
     autoAxis             = autoScaledLogAxis defaultLogAxis
 
 instance PlotValue Int where
     toValue    = fromIntegral
+    fromValue  = round
     autoAxis   = autoScaledIntAxis defaultIntAxis
 
 instance PlotValue Integer where
     toValue    = fromIntegral
+    fromValue  = round
     autoAxis   = autoScaledIntAxis defaultIntAxis
 
 instance PlotValue () where
     toValue () = 0
+    fromValue  = const ()
     autoAxis   = const unitAxis
 
 instance PlotValue LocalTime where
     toValue    = doubleFromLocalTime
+    fromValue  = localTimeFromDouble
     autoAxis   = autoTimeAxis
 
 ----------------------------------------------------------------------
@@ -731,6 +751,7 @@ newtype PlotIndex = PlotIndex { plotindex_i :: Int }
 
 instance PlotValue PlotIndex where
     toValue (PlotIndex i) = fromIntegral i
+    fromValue             = PlotIndex . round
     autoAxis              = autoIndexAxis []
 
 -- | Create an axis for values indexed by position. The
@@ -738,6 +759,7 @@ instance PlotValue PlotIndex where
 autoIndexAxis :: Integral i => [String] -> [i] -> AxisData i
 autoIndexAxis labels vs = AxisData {
     axis_viewport_ = vport,
+    axis_tropweiv_ = invport,
     axis_ticks_    = [],
     axis_labels_   = filter (\(i,l) -> i >= imin && i <= imax)
                             (zip [0..] labels),
@@ -746,6 +768,7 @@ autoIndexAxis labels vs = AxisData {
   where
     vport r i = linMap id ( fromIntegral imin - 0.5
                           , fromIntegral imax + 0.5) r (fromIntegral i)
+    invport r z = invLinMap round fromIntegral (imin, imax) r z
     imin = minimum vs
     imax = maximum vs
 
@@ -759,10 +782,24 @@ vmap :: PlotValue x => (x,x) -> Range -> x -> Double
 vmap (v1,v2) (v3,v4) v = v3 + (toValue v - toValue v1) * (v4-v3)
                               / (toValue v2 - toValue v1)
 
+-- | The inverse mapping from device co-ordinate range back to
+--   interesting values.
+invmap :: PlotValue x => (x,x) -> Range -> Double -> x
+invmap (v3,v4) (d1,d2) d = fromValue (toValue v3 + ( (d-d1) * doubleRange
+                                                   / (d2-d1) ))
+    where doubleRange = toValue v4 - toValue v3
+
 -- | A linear mapping of points in one range to another.
 linMap :: (a -> Double) -> (a,a) -> Range -> a -> Double
 linMap f (x1,x2) (d1,d2) x =
     d1 + (d2 - d1) * (f x - f x1) / (f x2 - f x1)
+
+-- | An inverse linear mapping of points from one range to another.
+invLinMap :: (Double -> a) -> (a -> Double) -> (a,a) -> Range -> Double -> a
+invLinMap f t (v3,v4) (d1,d2) d =
+    f (t v3 + ( (d-d1) * doubleRange / (d2-d1) ))
+  where
+    doubleRange = t v4 - t v3
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor for
