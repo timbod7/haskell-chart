@@ -41,6 +41,7 @@ module Graphics.Rendering.Chart.Renderable(
 ) where
 
 import qualified Graphics.Rendering.Cairo as C
+import qualified Graphics.Rendering.Cairo.Matrix as Matrix
 import Control.Monad
 import Data.Accessor
 import Data.List ( nub, transpose, sort )
@@ -123,7 +124,8 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         rect = (Rect (Point 0 0) (Point w h))
 
 transform :: C.Matrix -> Point -> Point
-transform = undefined
+transform m (Point x y) = let (x',y') = Matrix.transformPoint m (x,y)
+                          in Point x' y'
 
 -- | Overlay a renderable over a solid background fill.
 fillBackground :: CairoFillStyle -> Renderable a -> Renderable a
