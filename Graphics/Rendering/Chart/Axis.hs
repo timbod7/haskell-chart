@@ -36,6 +36,7 @@ module Graphics.Rendering.Chart.Axis(
     LogAxisParams(..),
     AxisStyle(..),
     PlotValue(..),
+    Percent(..),
     LogValue(..),
     PlotIndex(..),
     AxisFn,
@@ -710,6 +711,16 @@ instance PlotValue Double where
     toValue  = id
     fromValue= id
     autoAxis = autoScaledAxis defaultLinearAxis
+
+newtype Percent = Percent {unPercent :: Double} deriving (Eq,Ord,Num,Real,Fractional,RealFrac,Floating,RealFloat)
+
+instance Show Percent where
+    show (Percent d) = showD (d*100) ++ "%"
+
+instance PlotValue Percent where
+    toValue  = unPercent
+    fromValue= Percent
+    autoAxis = autoScaledAxis defaultLinearAxis{-la_labelf_=-}
 
 newtype LogValue = LogValue Double
                     deriving (Eq, Ord, Num, Real, Fractional, RealFrac, Floating, RealFloat)
