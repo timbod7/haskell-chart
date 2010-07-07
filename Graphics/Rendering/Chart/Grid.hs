@@ -266,7 +266,8 @@ gridToRenderable t = Renderable minsizef renderf
             p1'@(Point x1 y1) <- alignc p1
             preserveCState $ do
                 c $ C.translate x0 y0
-                render r (x1-x0,y1-y0)
+                pf <- render r (x1-x0,y1-y0)
+                return (newpf pf x0 y0)
         (Above t1 t2 _) -> do
              pf1 <- rf1 borders (i,j) t1
              pf2 <- rf1 borders (i,j+height t1) t2
@@ -284,6 +285,8 @@ gridToRenderable t = Renderable minsizef renderf
              pf1 <- rf1 borders (i,j) t1
              let pf p = pf1 p `mplus` pf2 p
              return pf
+
+    newpf pf x0 y0 = \ (Point x1 y1)-> pf (Point (x1-x0) (y1-y0))
 
     -- (x borders, y borders) -> (x,y) -> (w,h)
     --     -> rectangle of grid[x..x+w, y..y+h]
