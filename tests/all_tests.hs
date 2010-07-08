@@ -27,6 +27,7 @@ import qualified Test7
 import qualified Test8
 import qualified Test9
 import qualified Test14
+import qualified Test14a
 import qualified Test15
 import qualified TestParametric
 
@@ -353,6 +354,7 @@ allTests =
      , ("test12", test12)
      , ("test13", test13)
      , ("test14", \o -> Test14.chart (chooseLineWidth o) )
+     , ("test14a", \o -> Test14a.chart (chooseLineWidth o) )
      , ("test15a", const (Test15.chart (LORows 2)))
      , ("test15b", const (Test15.chart (LOCols 2)))
      , ("misc1", misc1 0)
