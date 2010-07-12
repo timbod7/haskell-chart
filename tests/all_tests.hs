@@ -255,6 +255,7 @@ test12 otype = toRenderable layout
 
     baxis = AxisData {
         axis_viewport_ = vmap (0,15),
+        axis_tropweiv_ = invmap (0,15),
         axis_ticks_    = [(v,3) | v <- [0,1..15]],
         axis_grid_     = [0,5..15],
         axis_labels_   = [(v,show v) | v <- [0,5..15]]
@@ -262,6 +263,7 @@ test12 otype = toRenderable layout
 
     laxis = AxisData {
         axis_viewport_ = vmap (0,500),
+        axis_tropweiv_ = invmap (0,500),
         axis_ticks_    = [(v,3) | v <- [0,25..500]],
         axis_grid_     = [0,100..500],
         axis_labels_   = [(v,show v) | v <- [0,100..500]]
