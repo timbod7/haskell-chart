@@ -28,9 +28,11 @@
 module Graphics.Rendering.Chart.Layout(
     Layout1(..),
     LayoutAxis(..),
+    Layout1Pick(..),
     MAxisFn,
 
     defaultLayout1,
+    layout1ToRenderable,
     linkAxes,
     independentAxes,
 
@@ -142,6 +144,7 @@ data Layout1Pick x y = L1P_Legend String
                      | L1P_TopAxis x
                      | L1P_LeftAxis y
                      | L1P_RightAxis y
+    deriving (Show)
 
 instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
     toRenderable = setPickFn nullPickFn.layout1ToRenderable
@@ -306,7 +309,7 @@ renderPlots l sz@(w,h) = do
         setClipRegion (Point 0 0) (Point w h)
         mapM_ rPlot (layout1_plots_ l)
     when (layout1_grid_last_ l) renderGrids
-    return nullPickFn
+    return pickfn
 
   where
     (bAxis,lAxis,tAxis,rAxis) = getAxes l
@@ -314,16 +317,34 @@ renderPlots l sz@(w,h) = do
     rPlot (Left  p) = rPlot1 bAxis lAxis p
     rPlot (Right p) = rPlot1 bAxis rAxis p
 
+    xr = (0, w)
+    yr = (h, 0)
+    reverse rev (a,b) = if rev then (b,a) else (a,b)
+
     rPlot1 (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p =
-      let xrange = if xrev then (w, 0) else (0, w)
+      let 
+          xr1 = reverse xrev xr
+          yr1 = reverse yrev yr
           yrange = if yrev then (0, h) else (h, 0)
-          pmfn (x,y) = Point (mapv xrange (axis_viewport_ xaxis xrange) x)
-                             (mapv yrange (axis_viewport_ yaxis yrange) y)
+          pmfn (x,y) = Point (mapv xr1 (axis_viewport_ xaxis xr1) x)
+                             (mapv yr1 (axis_viewport_ yaxis yr1) y)
           mapv (min,max) _ LMin       = min
           mapv (min,max) _ LMax       = max
           mapv _         f (LValue v) = f v
 	  in plot_render_ p pmfn
     rPlot1 _ _ _ = return ()
+
+    pickfn (Point x y) = Just (L1P_PlotArea xv yv1 yv2)
+      where
+        xv = case (bAxis,tAxis) of
+            (Just at,_) -> mapx at x
+            (_,Just at) -> mapx at x
+        (yv1,yv2) = case (lAxis,rAxis) of
+            (Just at,Nothing) -> (mapy at y,mapy at y)
+            (Nothing,Just at) -> (mapy at y,mapy at y)
+            (Just at1,Just at2) -> (mapy at1 y,mapy at2 y)
+        mapx (AxisT _ _ rev ad) x = axis_tropweiv_ ad (reverse rev xr) x
+        mapy (AxisT _ _ rev ad) y = axis_tropweiv_ ad (reverse rev yr) y
 
     renderGrids = do
       maybeM () (renderAxisGrid sz) tAxis

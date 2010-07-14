@@ -147,9 +147,6 @@ type AxisFn x = [x] -> AxisData x
 --   bool is true if the axis direction is reversed.
 data AxisT x = AxisT RectEdge AxisStyle Bool (AxisData x)
 
-instance ToRenderable (AxisT x) where
-  toRenderable = setPickFn nullPickFn.axisToRenderable
-
 axisToRenderable :: AxisT x -> Renderable x
 axisToRenderable at = Renderable {
      minsize = minsizeAxis at,
@@ -226,9 +223,9 @@ renderAxis at@(AxisT et as rev ad) sz = do
    preserveCState $ do
        setFontStyle (axis_label_style_ as)
        mapM_ drawLabel (axis_labels_ ad)
-   return nullPickFn
+   return pickfn
  where
-   (sx,sy,ex,ey,tp,axisPoint) = axisMapping at sz
+   (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
 
    drawTick (value,length) =
        let t1 = axisPoint value
@@ -246,18 +243,26 @@ renderAxis at@(AxisT et as rev ad) sz = do
    drawLabel (value,s) = do
        drawText hta vta (axisPoint value `pvadd` lp) s
 
+   pickfn = Just . invAxisPoint
+
 axisMapping :: AxisT z -> RectSize
-               -> (Double,Double,Double,Double,Vector,z->Point)
+               -> (Double,Double,Double,Double,Vector,z->Point,Point->z)
 axisMapping (AxisT et as rev ad) (x2,y2) = case et of
-    E_Top    -> (x1,y2,x2,y2, (Vector 0 1),    mapx (x1,x2) y2)
-    E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)), mapx (x1,x2) y1)
-    E_Left   -> (x2,y2,x2,y1, (Vector (1) 0),  mapy (y1,y2) x2)		
-    E_Right  -> (x1,y2,x1,y1, (Vector (-1) 0), mapy (y1,y2) x1)
+    E_Top    -> (x1,y2,x2,y2, (Vector 0 1),    mapx y2, imapx)
+    E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)), mapx y1, imapx)
+    E_Left   -> (x2,y2,x2,y1, (Vector (1) 0),  mapy x2, imapy) 
+    E_Right  -> (x1,y2,x1,y1, (Vector (-1) 0), mapy x1, imapy)
   where
     (x1,y1) = (0,0)
+    xr = reverse (x1,x2)
+    yr = reverse (y2,y1)
 
-    mapx xr y x        = Point (axis_viewport_ ad (reverse xr) x) y
-    mapy (yr0,yr1) x y = Point x (axis_viewport_ ad (reverse (yr1,yr0)) y)
+    mapx y x = Point (axis_viewport_ ad xr x) y
+    mapy x y = Point x (axis_viewport_ ad yr y)
+
+    imapx (Point x _) = axis_tropweiv_ ad xr x
+    imapy (Point _ y) = axis_tropweiv_ ad yr y
+
     reverse r@(r0,r1)  = if rev then (r1,r0) else r
 
 renderAxisGrid :: RectSize -> AxisT z -> CRender ()
@@ -266,7 +271,7 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
         setLineStyle (axis_grid_style_ as)
         mapM_ (drawGridLine re) (axis_grid_ ad)
   where
-    (sx,sy,ex,ey,tp,axisPoint) = axisMapping at sz
+    (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
 
     drawGridLine E_Top    = vline
     drawGridLine E_Bottom = vline
@@ -386,7 +391,7 @@ defaultIntAxis  = LinearAxisParams {
 --   The resulting axis will only show a grid if the template has some grid
 --   values.
 autoScaledAxis :: RealFloat a => LinearAxisParams a -> AxisFn a
-autoScaledAxis lap ps0 = makeAxis' realToFrac (fromIntegral . round)
+autoScaledAxis lap ps0 = makeAxis' realToFrac realToFrac
                                    (la_labelf_ lap) (labelvs,tickvs,gridvs)
   where
     ps        = filter isValidNumber ps0
