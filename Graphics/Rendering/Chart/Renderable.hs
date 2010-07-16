@@ -140,7 +140,7 @@ fillBackground fs r = r{ render = rf }
 
 -- | Output the given renderable to a PNG file of the specifed size
 --   (in pixels), to the specified file.
-renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
+renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
 renderableToPNGFile chart width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
     pick <- C.renderWith result $ runCRender rfn bitmapEnv
