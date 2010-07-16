@@ -31,17 +31,25 @@ Extra-Source-Files:
 flag splitbase
   description: Choose the new smaller, split-up base package.
 
+flag gtk
+  description: If gtk2hs is available, add extra API functions to use it.
+  default: True
+
 library
   if flag(splitbase)
     Build-depends: base >= 3 && < 5, old-locale, time, mtl, array
   else
     Build-depends: base < 3
-  Build-depends: gtk >= 0.9.11, cairo >= 0.9.11, time, mtl, array, data-accessor == 0.2.*, 
+  Build-depends: cairo >= 0.9.11, time, mtl, array, data-accessor == 0.2.*, 
                  data-accessor-template >= 0.2.1.1 && < 0.3, colour >= 2.2.1
+
+  if flag(gtk)
+    build-depends: gtk >= 0.9.11
+    exposed-modules: Graphics.Rendering.Chart.Gtk
+    cpp-options: -DHAVE_GTK=1
 
   Exposed-modules:
         Graphics.Rendering.Chart,
-        Graphics.Rendering.Chart.Gtk,
         Graphics.Rendering.Chart.Types,
         Graphics.Rendering.Chart.Renderable,
         Graphics.Rendering.Chart.Axis,

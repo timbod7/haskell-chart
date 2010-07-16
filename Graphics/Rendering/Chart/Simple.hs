@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Simple
@@ -32,7 +33,10 @@
 -- > plotPS "foo.ps" [0,0.1..10] (sin . exp) "- " (sin . exp) "o-"
 -----------------------------------------------------------------------------
 module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
-                                        plotWindow, plotPDF, plotPS,
+#if HAVE_GTK
+                                        plotWindow,
+#endif
+                                        plotPDF, plotPS,
                                         plotLayout, plotPNG, Layout1DDD
                                       ) where
 
@@ -41,7 +45,9 @@ import Data.Colour
 import Data.Colour.Names
 
 import Graphics.Rendering.Chart
+#if HAVE_GTK
 import Graphics.Rendering.Chart.Gtk
+#endif
 
 styleColor :: Int -> AlphaColour Double
 styleColor ind = colorSequence !! ind
@@ -223,6 +229,7 @@ instance (PlotArg a, PlotType r) => PlotType (a -> r) where
 instance PlotType Layout1DDD where
     pl args = uplot (reverse args)
 
+#if HAVE_GTK
 -- | Display a plot on the screen.
 
 plotWindow :: PlotWindowType a => a
@@ -235,6 +242,7 @@ instance PlotWindowType (IO a) where
     plw args = do
         renderableToWindow (toRenderable $ uplot (reverse args)) 640 480
         return undefined
+#endif
 
 -- | Save a plot as a PDF file.
 
