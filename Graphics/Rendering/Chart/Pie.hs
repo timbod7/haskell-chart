@@ -113,7 +113,7 @@ defaultPieLayout = PieLayout {
 instance ToRenderable PieLayout where
     toRenderable p = fillBackground (pie_background_ p) (
        gridToRenderable $ aboveN
-         [ tval $ addMargins (lm/2,0,0,0) title
+         [ tval $ addMargins (lm/2,0,0,0) (setPickFn nullPickFn title)
          , weights (1,1) $ tval $ addMargins (lm,lm,lm,lm)
                                              (toRenderable $ pie_plot_ p)
          ] )

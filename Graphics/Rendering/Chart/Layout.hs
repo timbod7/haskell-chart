@@ -216,9 +216,11 @@ layout1ToGrid l = aboveN
   where
     lm = layout1_margin_ l
 
-layout1TitleToRenderable :: (Ord x, Ord y) => Layout1 x y -> Renderable a
+layout1TitleToRenderable :: (Ord x, Ord y) => Layout1 x y
+                                           -> Renderable (Layout1Pick x y)
 layout1TitleToRenderable l | null (layout1_title_ l) = emptyRenderable
-layout1TitleToRenderable l = addMargins (lm/2,0,0,0) title
+layout1TitleToRenderable l = addMargins (lm/2,0,0,0)
+                                        (mapPickFn L1P_Legend title)
   where
     title = label (layout1_title_style_ l) HTA_Centre VTA_Centre
                   (layout1_title_ l)
@@ -270,7 +272,8 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
     er = tval $ emptyRenderable
 
     atitle ha va rot af = if ttext == "" then er
-                          else tval $ rlabel tstyle ha va rot ttext
+                          else tval $ mapPickFn L1P_Legend
+                                    $ rlabel tstyle ha va rot ttext
       where
         tstyle = laxis_title_style_ (af l)
         ttext  = laxis_title_       (af l)

@@ -143,8 +143,9 @@ fillBackground fs r = r{ render = rf }
 renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToPNGFile chart width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
-    C.renderWith result $ runCRender rfn bitmapEnv
+    pick <- C.renderWith result $ runCRender rfn bitmapEnv
     C.surfaceWriteToPNG result path
+    return pick
   where
     rfn = do
 	render chart (fromIntegral width, fromIntegral height)
@@ -196,13 +197,14 @@ embedRenderable ca = Renderable {
 -- Labels
 
 -- | Construct a renderable from a text string, aligned with the axes.
-label :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> String -> Renderable a
+label :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> String
+         -> Renderable String
 label fs hta vta = rlabel fs hta vta 0
 
 -- | Construct a renderable from a text string, rotated wrt to axes. The angle
 --   of rotation is in degrees.
 rlabel :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> Double -> String
-          -> Renderable a
+          -> Renderable String
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
     mf = preserveCState $ do
@@ -218,7 +220,7 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
        c $ C.rotate rot'
        c $ C.moveTo (-w/2) (h/2)
        c $ C.showText s
-       return nullPickFn
+       return (\_-> Just s)  -- PickFn String
     xadj (w,h) HTA_Left   x1 x2 =  x1 +(w*acr+h*asr)/2
     xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
     xadj (w,h) HTA_Right  x1 x2 =  x2 -(w*acr+h*asr)/2

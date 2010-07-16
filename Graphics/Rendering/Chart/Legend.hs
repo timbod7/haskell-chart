@@ -73,7 +73,7 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
                      minsize = return (legend_plot_size_ ls, 0),
                      render  = \(w,h) -> do 
                          rfn (Rect (Point 0 0) (Point w h))
-                         return nullPickFn
+                         return (\_-> Just title)
                  }
 
     ggap1 = tval $ spacer (legend_margin_ ls,legend_margin_ ls / 2)
