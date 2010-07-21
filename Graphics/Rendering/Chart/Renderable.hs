@@ -114,18 +114,11 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         preserveCState $ do
             c $ C.translate l t
             pickf <- render rd (w-l-r,h-t-b)
-            mtx   <- c $ C.getMatrix
-            return (mkpickf pickf (w,h) mtx)
+            return (mkpickf pickf (t,b,l,r) (w,h))
 
-    mkpickf pickf (w,h) mtx pt | within pt' rect = pickf pt'
-                               | otherwise       = Nothing
-      where
-        pt'  = transform mtx pt
-        rect = (Rect (Point 0 0) (Point w h))
-
-transform :: C.Matrix -> Point -> Point
-transform m (Point x y) = let (x',y') = Matrix.transformPoint m (x,y)
-                          in Point x' y'
+    mkpickf pickf (t,b,l,r) (w,h) (Point x y)
+        | x >= l && x <= w-r && y >= t && t <= h-b = pickf (Point (x-l) (y-t))
+        | otherwise                                = Nothing
 
 -- | Overlay a renderable over a solid background fill.
 fillBackground :: CairoFillStyle -> Renderable a -> Renderable a

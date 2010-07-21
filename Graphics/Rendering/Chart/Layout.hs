@@ -139,6 +139,8 @@ data Layout1 x y = Layout1 {
 }
 
 data Layout1Pick x y = L1P_Legend String
+                     | L1P_Title String
+                     | L1P_AxisTitle String
                      | L1P_PlotArea x y y
                      | L1P_BottomAxis x
                      | L1P_TopAxis x
@@ -220,7 +222,7 @@ layout1TitleToRenderable :: (Ord x, Ord y) => Layout1 x y
                                            -> Renderable (Layout1Pick x y)
 layout1TitleToRenderable l | null (layout1_title_ l) = emptyRenderable
 layout1TitleToRenderable l = addMargins (lm/2,0,0,0)
-                                        (mapPickFn L1P_Legend title)
+                                        (mapPickFn L1P_Title title)
   where
     title = label (layout1_title_style_ l) HTA_Centre VTA_Centre
                   (layout1_title_ l)
@@ -272,7 +274,7 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
     er = tval $ emptyRenderable
 
     atitle ha va rot af = if ttext == "" then er
-                          else tval $ mapPickFn L1P_Legend
+                          else tval $ mapPickFn L1P_AxisTitle
                                     $ rlabel tstyle ha va rot ttext
       where
         tstyle = laxis_title_style_ (af l)
