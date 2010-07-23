@@ -30,10 +30,10 @@ chart borders = toRenderable layout
   bstyle = if borders then Just (solidLine 1.0 $ opaque black) else Nothing
   mkstyle c = (solidFillStyle c, bstyle)
 
-main1 :: [String] -> IO()
+main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile (chart True) 320 240 "test9_small.png"
 main1 ["big"]    = renderableToPNGFile (chart True) 800 600 "test9_big.png"
-main1 _          = renderableToWindow  (chart True) 640 480
+main1 _          = renderableToWindow  (chart True) 640 480 >> return undefined
 
 main = getArgs >>= main1
 

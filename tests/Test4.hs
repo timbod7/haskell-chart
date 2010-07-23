@@ -29,10 +29,10 @@ chart xrev yrev = toRenderable layout
 	   $ layout1_plots ^= [Left (toPlot points), Left (toPlot lines) ]
            $ defaultLayout1
 
-main1 :: [String] -> IO()
+main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile (chart False False) 320 240 "test4_small.png"
 main1 ["big"]    = renderableToPNGFile (chart False False) 800 600 "test4_big.png"
-main1 _          = renderableToWindow  (chart False False) 640 480
+main1 _          = renderableToWindow  (chart False False) 640 480 >> return undefined
 
 main = getArgs >>= main1
 

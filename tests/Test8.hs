@@ -16,10 +16,10 @@ chart = toRenderable layout
                                        | (s,v,o) <- values ]
            $ defaultPieLayout
 
-main1 :: [String] -> IO()
+main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile chart 320 240 "test8_small.png"
 main1 ["big"]    = renderableToPNGFile chart 800 600 "test8_big.png"
-main1 _          = renderableToWindow  chart 640 480
+main1 _          = renderableToWindow  chart 640 480 >> return undefined
 
 main = getArgs >>= main1
 

@@ -16,9 +16,9 @@ chart = toRenderable (plotLayout pp){layout1_title_="Graphics.Rendering.Chart.Si
                  [0.1,0.7,0.5::Double] "+"
     xs = [0,0.3..3] :: [Double]
 
-main1 :: [String] -> IO()
+main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile chart 320 240 "test6_small.png"
 main1 ["big"]    = renderableToPNGFile chart 800 600 "test6_big.png"
-main1 _          = renderableToWindow  chart 640 480
+main1 _          = renderableToWindow  chart 640 480 >> return undefined
 
 main = getArgs >>= main1

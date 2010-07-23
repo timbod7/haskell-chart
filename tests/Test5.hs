@@ -40,10 +40,10 @@ chart lwidth = toRenderable (layout 1001 (trial bits) :: Layout1 Double LogValue
     s1 = solidLine lwidth $ opaque green
     s2 = solidLine lwidth $ opaque blue
 
-main1 :: [String] -> IO()
+main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test5_small.png"
 main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test5_big.png"
-main1 _          = renderableToWindow  (chart 1.00) 640 480
+main1 _          = renderableToWindow  (chart 1.00) 640 480 >> return undefined
 
 main = getArgs >>= main1
 

@@ -35,10 +35,10 @@ chart lo = toRenderable layout
   btitle = ""
   mkstyle c = (solidFillStyle c, Nothing)
 
-main1 :: [String] -> IO()
+main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile (chart (LORows 3)) 320 240 "test15_small.png"
 main1 ["big"]    = renderableToPNGFile (chart (LORows 3)) 800 600 "test15_big.png"
-main1 _          = renderableToWindow  (chart (LORows 3)) 640 480
+main1 _          = renderableToWindow  (chart (LORows 3)) 640 480 >> return undefined
 
 main = getArgs >>= main1
 

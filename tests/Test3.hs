@@ -32,9 +32,9 @@ chart = toRenderable layout
            $ defaultLayout1
 
 
-main1 :: [String] -> IO()
+main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile chart 320 240 "test3_small.png"
 main1 ["big"]    = renderableToPNGFile chart 800 600 "test3_big.png"
-main1 _          = renderableToWindow  chart 640 480
+main1 _          = renderableToWindow  chart 640 480 >> return undefined
 
 main = getArgs >>= main1

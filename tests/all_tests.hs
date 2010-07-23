@@ -359,8 +359,8 @@ allTests =
      , ("test14a", \o -> Test14a.chart (chooseLineWidth o) )
      , ("test15a", const (Test15.chart (LORows 2)))
      , ("test15b", const (Test15.chart (LOCols 2)))
-     , ("misc1", misc1 0)
-     , ("misc1a", misc1 45)
+     , ("misc1", setPickFn nullPickFn . misc1 0)
+     , ("misc1a", setPickFn nullPickFn . misc1 45)
      , ("parametric", \o -> TestParametric.chart (chooseLineWidth o) )
      ]
 
@@ -384,6 +384,7 @@ match ts t = (fst t) `elem` ts
 
 renderToWindow (n,ir) = renderableToWindow (ir Window) 640 480
 renderToPNG (n,ir) = renderableToPNGFile (ir PNG) 640 480 (n ++ ".png")
+                     >> return ()
 renderToPS (n,ir) = renderableToPSFile (ir PS) 640 480 (n ++ ".ps")
 renderToPDF (n,ir) = renderableToPDFFile (ir PDF) 640 480 (n ++ ".pdf")
 renderToSVG (n,ir) = renderableToSVGFile (ir SVG) 640 480 (n ++ ".svg")
