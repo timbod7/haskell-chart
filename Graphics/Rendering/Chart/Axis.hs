@@ -73,6 +73,7 @@ module Graphics.Rendering.Chart.Axis(
     axis_tropweiv,
     axis_ticks,
     axis_labels,
+    axis_context,
     axis_grid,
 
     axis_line_style,
@@ -124,6 +125,11 @@ data AxisData x = AxisData {
     --   the second is the label text string.
     axis_labels_   :: [ (x, String) ],
 
+    -- | A secondary set of labels on an axis.
+    --   Used to display context as well as detail, e.g. for time series,
+    --   where two levels of navigational aid can help orient the user.
+    axis_context_  :: [ (x, String) ],
+
     -- | The positions on the axis (in viewport units) where
     --   we want to show grid lines.
     axis_grid_     :: [ x ]
@@ -166,7 +172,7 @@ axisTicksHide       :: AxisData x -> AxisData x
 axisTicksHide ad     = ad{ axis_ticks_  = [] }
 
 axisLabelsHide      :: AxisData x -> AxisData x
-axisLabelsHide ad    = ad{ axis_labels_ = [] }
+axisLabelsHide ad    = ad{ axis_labels_ = [], axis_context_ = [] }
 
 minsizeAxis :: AxisT x -> CRender RectSize
 minsizeAxis (AxisT at as rev ad) = do
@@ -174,27 +180,34 @@ minsizeAxis (AxisT at as rev ad) = do
     labelSizes <- preserveCState $ do
         setFontStyle (axis_label_style_ as)
         mapM textSize labels
+    let context = map snd (axis_context_ ad)
+    contextSizes <- preserveCState $ do
+        setFontStyle (axis_label_style_ as)
+        mapM textSize context
     let (lw,lh) = foldl maxsz (0,0) labelSizes
+    let (cw,ch) = foldl maxsz (0,0) contextSizes
     let ag      = axis_label_gap_ as
     let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- axis_ticks_ ad ])
     let sz      = case at of
-		     E_Top    -> (lw,max (addIfNZ lh ag) tsize)
-		     E_Bottom -> (lw,max (addIfNZ lh ag) tsize)
-		     E_Left   -> (max (addIfNZ lw ag) tsize, lh)
-		     E_Right  -> (max (addIfNZ lw ag) tsize, lh)
+		     E_Top    -> (lw,max (addTwoIfNZ lh ch ag) tsize)
+		     E_Bottom -> (lw,max (addTwoIfNZ lh ch ag) tsize)
+		     E_Left   -> (max (addTwoIfNZ lw cw ag) tsize, lh)
+		     E_Right  -> (max (addTwoIfNZ lw cw ag) tsize, lh)
     return sz
 
   where
     maxsz (w1,h1) (w2,h2)   = (max w1 w2, max h1 h2)
     addIfNZ a b | a == 0    = 0
                 | otherwise = a+b
+    addTwoIfNZ a b gap | a == 0    = addIfNZ b gap
+                       | otherwise = a + gap + addIfNZ b gap
 
 
 -- | Calculate the amount by which the labels extend beyond
 --   the ends of the axis.
 axisOverhang :: Ord x => AxisT x -> CRender (Double,Double)
 axisOverhang (AxisT at as rev ad) = do
-    let labels = map snd (sort (axis_labels_ ad))
+    let labels = map snd (sort (axis_labels_ ad ++ axis_context_ ad))
     labelSizes <- preserveCState $ do
         setFontStyle (axis_label_style_ as)
         mapM textSize labels
@@ -220,9 +233,12 @@ renderAxis at@(AxisT et as rev ad) sz = do
    preserveCState $ do
        setLineStyle ls{line_cap_=C.LineCapButt}
        mapM_ drawTick (axis_ticks_ ad)
+   sizes <- preserveCState $ do
+       setFontStyle (axis_label_style_ as)
+       mapM drawLabel (axis_labels_ ad)
    preserveCState $ do
        setFontStyle (axis_label_style_ as)
-       mapM_ drawLabel (axis_labels_ ad)
+       mapM_ (drawContext (avoid sizes)) (axis_context_ ad)
    return pickfn
  where
    (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
@@ -240,8 +256,21 @@ renderAxis at@(AxisT et as rev ad) sz = do
               E_Left   -> (HTA_Right,  VTA_Centre, (Vector (-g) 0))
               E_Right  -> (HTA_Left,   VTA_Centre, (Vector g 0))
 
+   avoid minorlabels =
+       let (lw,lh) = foldl maxsz (0,0) minorlabels
+           maxsz (w1,h1) (w2,h2)   = (max w1 w2, max h1 h2)
+       in case et of
+              E_Top    -> (Vector 0 (-lh))
+              E_Bottom -> (Vector 0    lh)
+              E_Left   -> (Vector (-lw) 0)
+              E_Right  -> (Vector lw    0)
+
    drawLabel (value,s) = do
        drawText hta vta (axisPoint value `pvadd` lp) s
+       textSize s
+
+   drawContext minor (value,s) = do
+       drawText hta vta (axisPoint value `pvadd` minor `pvadd` lp) s
 
    pickfn = Just . invAxisPoint
 
@@ -339,7 +368,8 @@ makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     axis_tropweiv_ = newTropweiv,
     axis_ticks_    = newTicks,
     axis_grid_     = gridvs,
-    axis_labels_   = newLabels
+    axis_labels_   = newLabels,
+    axis_context_  = []
     }
   where
     newViewport = vmap (min',max')
@@ -356,7 +386,8 @@ makeAxis' t f labelf (labelvs, tickvs, gridvs) = AxisData {
     axis_tropweiv_ = invLinMap f t (minimum labelvs, maximum labelvs),
     axis_ticks_    = zip tickvs (repeat 2)  ++  zip labelvs (repeat 5),
     axis_grid_     = gridvs,
-    axis_labels_   = [ (v,labelf v) | v <- labelvs ]
+    axis_labels_   = [ (v,labelf v) | v <- labelvs ],
+    axis_context_  = []
     }
 
 data LinearAxisParams a = LinearAxisParams {
@@ -549,16 +580,19 @@ localTimeFromDouble v =
 --   than or equal to the reference time, in increasing order.
 type TimeSeq = LocalTime-> ([LocalTime],[LocalTime])
 
+coverTS :: TimeSeq -> LocalTime -> LocalTime -> [LocalTime]
 coverTS tseq min max = min' ++ enumerateTS tseq min max ++ max'
   where
     min' =  if elemTS min tseq then [] else take 1 (fst (tseq min))
     max' =  if elemTS max tseq then [] else take 1 (snd (tseq max))
 
+enumerateTS :: TimeSeq -> LocalTime -> LocalTime -> [LocalTime]
 enumerateTS tseq min max =
     reverse (takeWhile (>=min) ts1)  ++ takeWhile (<=max) ts2
   where
     (ts1,ts2) = tseq min
 
+elemTS :: LocalTime -> TimeSeq -> Bool
 elemTS t tseq = case tseq t of
     (_,(t0:_)) | t == t0 -> True
     _                    -> False
@@ -568,15 +602,18 @@ type TimeLabelFn = LocalTime -> String
 
 -- | Create an 'AxisFn' to for a time axis.  The first 'TimeSeq' sets the
 --   minor ticks, and the ultimate range will be aligned to its elements.
---   The second 'TimeSeq' sets the labels and grid.  The 'TimeLabelFn' is
+--   The second 'TimeSeq' sets the labels and grid.  The third 'TimeSeq'
+--   sets the second line of contextual labels.  The 'TimeLabelFn' is
 --   used to format LocalTimes for labels.  The values to be plotted
 --   against this axis can be created with 'doubleFromLocalTime'.
-timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> AxisFn LocalTime
-timeAxis tseq lseq labelf pts = AxisData {
+timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> TimeSeq -> TimeLabelFn
+            -> AxisFn LocalTime
+timeAxis tseq lseq labelf cseq contextf pts = AxisData {
     axis_viewport_ = vmap(min', max'),
     axis_tropweiv_ = invmap(min', max'),
     axis_ticks_    = [ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
-    axis_labels_   = [ (t,l) | (t,l) <- labels, visible t],
+    axis_labels_   = [ (t,l) | (t,l) <- labels labelf   ltimes, visible t],
+    axis_context_  = [ (t,l) | (t,l) <- labels contextf ctimes, visible t],
     axis_grid_     = [ t     | t <- ltimes, visible t]
     }
   where
@@ -586,11 +623,14 @@ timeAxis tseq lseq labelf pts = AxisData {
     refLocalTime = LocalTime (ModifiedJulianDay 0) midnight
     times        = coverTS tseq min max
     ltimes       = coverTS lseq min max
+    ctimes       = coverTS cseq min max
     min'         = minimum times
     max'         = maximum times
     visible t    = min' <= t && t <= max'
-    labels       = [ (avg m1 m2, labelf m1)
-                   | (m1,m2) <- zip ltimes (tail ltimes) ]
+    labels f ts  = [ (avg m3 m4, f m1)
+                   | (m1,m2) <- zip ts (tail ts)
+                   , let m3 = if m1<min' then min' else m1
+                   , let m4 = if m2>max' then max' else m2 ]
     avg m1 m2    = localTimeFromDouble $ m1' + (m2' - m1')/2
      where
       m1' = doubleFromLocalTime m1
@@ -623,6 +663,18 @@ seconds t = (iterate rev t1, tail (iterate fwd t1))
         fwd      = addTod 0 0 1
         toTime h = LocalTime
 
+-- | Another 'TimeSeq' for seconds.
+fiveSeconds :: TimeSeq
+fiveSeconds t = (iterate rev t1, tail (iterate fwd t1))
+  where h0       = todHour (localTimeOfDay t)
+        m0       = todMin  (localTimeOfDay t)
+        s0       = todSec  (localTimeOfDay t)
+        t0       = LocalTime (localDay t) (TimeOfDay h0 m0 s0)
+        t1       = if t0 < t then t0 else (rev t0)
+        rev      = addTod 0 0 (-5)
+        fwd      = addTod 0 0 5
+        toTime h = LocalTime
+
 -- | A 'TimeSeq' for minutes.
 minutes :: TimeSeq
 minutes t = (iterate rev t1, tail (iterate fwd t1))
@@ -632,6 +684,17 @@ minutes t = (iterate rev t1, tail (iterate fwd t1))
         t1       = if t0 < t then t0 else (rev t0)
         rev      = addTod 0 (-1)0
         fwd      = addTod 0 1   0
+        toTime h = LocalTime
+
+-- | Another 'TimeSeq' for minutes.
+fiveMinutes :: TimeSeq
+fiveMinutes t = (iterate rev t1, tail (iterate fwd t1))
+  where h0       = todHour (localTimeOfDay t)
+        m0       = todMin  (localTimeOfDay t)
+        t0       = LocalTime (localDay t) (TimeOfDay h0 m0 0)
+        t1       = if t0 < t then t0 else (rev t0)
+        rev      = addTod 0 (-5)0
+        fwd      = addTod 0 5   0
         toTime h = LocalTime
 
 -- | A 'TimeSeq' for hours.
@@ -671,26 +734,56 @@ years t = (map toTime $ iterate rev t1, map toTime $ tail (iterate fwd t1))
         fwd      = succ
         toTime y = LocalTime (fromGregorian y 1 1) midnight
 
+-- | A 'TimeSeq' for no sequence at all.
+noTime :: TimeSeq
+noTime t = ([],[])
+
 -- | Automatically choose a suitable time axis, based upon the time range
 --   of data.  The values to be plotted against this axis can be created
 --   with 'doubleFromLocalTime'.
 autoTimeAxis :: AxisFn LocalTime
-autoTimeAxis [] = timeAxis days days (formatTime defaultTimeLocale "%d-%b")  []
 autoTimeAxis pts
-    | tdiff==0 && dsec<60   = timeAxis seconds seconds (ft "%H:%M:%S") pts
-    | tdiff==0 && dsec<3600 = timeAxis minutes minutes (ft "%H:%M") pts
-    | tdiff < 1             = timeAxis hours  hours (ft "%H:%M")     pts
-    | tdiff < 2             = timeAxis days   hours   (ft "%d-%b") pts
-    | tdiff < 15            = timeAxis days   days    (ft "%d-%b")     pts
-    | tdiff < 90            = timeAxis days   months  (ft "%b-%y")     pts
-    | tdiff < 450           = timeAxis months months  (ft "%b-%y")     pts
-    | tdiff < 1800          = timeAxis months years   (ft "%Y")        pts
-    | otherwise             = timeAxis years  years   (ft "%Y")        pts
+    | null pts              = timeAxis days    days    (ft "%d-%b-%y")
+                                               noTime  (ft "") []
+    | tdiff==0 && dsec<32   = timeAxis seconds seconds (ft "%Ss")
+                                               minutes (ft "%d-%b-%y %H:%M") pts
+    | tdiff==0 && dsec<120  = timeAxis seconds fiveSeconds (ft "%Ss")
+                                               minutes (ft "%d-%b-%y %H:%M") pts
+    | tdiff==0 && dmin<7    = timeAxis fiveSeconds minutes (ft "%H:%M")
+                                               hours   (ft "%d-%b-%y") pts
+    | tdiff==0 && dmin<18   = timeAxis minutes minutes (ft "%H:%M")
+                                               hours   (ft "%d-%b-%y") pts
+    | tdiff==0 && dmin<32   = timeAxis minutes minutes (ft "%Mm")
+                                               hours   (ft "%d-%b-%y %H:00") pts
+    | tdiff==0 && dmin<90   = timeAxis minutes fiveMinutes (ft "%Mm")
+                                               hours   (ft "%d-%b-%y %H:00") pts
+    | tdiff < 2 && dhour<4  = timeAxis fiveMinutes hours (ft "%H:%M")
+                                                   days  (ft "%d-%b-%y") pts
+    | tdiff < 2 && dhour<16 = timeAxis hours  hours  (ft "%H:%M")
+                                              days   (ft "%d-%b-%y") pts
+    | tdiff < 2 && dhour<32 = timeAxis hours  hours  (ft "%Hh")
+                                              days   (ft "%d-%b-%y") pts
+    | tdiff < 4             = timeAxis hours  days   (ft "%d-%b-%y")
+                                              noTime (ft "") pts
+    | tdiff < 12            = timeAxis days   days   (ft "%d-%b")
+                                              years  (ft "%Y")      pts
+    | tdiff < 45            = timeAxis days   days   (ft "%d")
+                                              months (ft "%b-%y") pts
+    | tdiff < 95            = timeAxis days   months (ft "%b-%y")
+                                              noTime (ft "") pts
+    | tdiff < 450           = timeAxis months months (ft "%b-%y")
+                                              noTime (ft "") pts
+    | tdiff < 735           = timeAxis months months (ft "%b")
+                                              years  (ft "%Y") pts
+    | tdiff < 1800          = timeAxis months years (ft "%Y") noTime (ft "") pts
+    | otherwise             = timeAxis years  years (ft "%Y") noTime (ft "") pts
   where
     tdiff = diffDays (localDay t1) (localDay t0)
-    dsec  = fromIntegral (3600*(h1-h0)+60*(m1-m0))+(s1-s0)
-      where (TimeOfDay h0 m0 s0) = localTimeOfDay t0
-            (TimeOfDay h1 m1 s1) = localTimeOfDay t1
+    dhour = if tdiff==0 then h1-h0 else 24*fromIntegral tdiff +h1-h0
+    dmin  = 60*dhour+(m1-m0)
+    dsec  = fromIntegral (60*dmin) + (s1-s0)
+    (TimeOfDay h0 m0 s0) = localTimeOfDay t0
+    (TimeOfDay h1 m1 s1) = localTimeOfDay t1
     t1    = maximum pts
     t0    = minimum pts
     ft    = formatTime defaultTimeLocale
@@ -702,6 +795,7 @@ unitAxis = AxisData {
     axis_tropweiv_ = \_       _ -> (),
     axis_ticks_    = [((), 0)],
     axis_labels_   = [((), "")],
+    axis_context_  = [],
     axis_grid_     = []
 }
 
@@ -779,6 +873,7 @@ autoIndexAxis labels vs = AxisData {
     axis_ticks_    = [],
     axis_labels_   = filter (\(i,l) -> i >= imin && i <= imax)
                             (zip [0..] labels),
+    axis_context_  = [],
     axis_grid_     = []
     }
   where
