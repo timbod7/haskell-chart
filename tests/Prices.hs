@@ -297,16 +297,96 @@ rawPrices = [
     (31,03,2007, 28.00, 78.85)
     ]
 
+rawHourly = [
+    (03,05,2005,00, 16.18, 42.02),
+    (03,05,2005,01, 16.25, 42.31),
+    (03,05,2005,02, 16.50, 42.95),
+    (03,05,2005,03, 16.52, 43.50),
+    (03,05,2005,04, 16.84, 44.91),
+    (03,05,2005,05, 16.70, 44.55),
+    (03,05,2005,06, 16.43, 43.63),
+    (03,05,2005,07, 16.29, 43.18),
+    (03,05,2005,08, 15.95, 42.40),
+    (03,05,2005,09, 15.55, 41.65),
+    (03,05,2005,10, 15.71, 42.17),
+    (03,05,2005,11, 15.93, 42.37),
+    (03,05,2005,12, 16.20, 42.85),
+    (03,05,2005,13, 15.88, 42.30),
+    (03,05,2005,14, 15.92, 42.53),
+    (03,05,2005,15, 16.25, 42.81),
+    (03,05,2005,16, 16.20, 42.67),
+    (03,05,2005,17, 16.05, 42.35),
+    (03,05,2005,18, 16.45, 43.12),
+    (03,05,2005,19, 16.85, 43.24),
+    (03,05,2005,20, 16.68, 42.57),
+    (03,05,2005,21, 16.85, 43.22),
+    (03,05,2005,22, 17.17, 43.85),
+    (03,05,2005,23, 17.42, 44.15),
+    (04,05,2005,00, 17.50, 44.07),
+    (04,05,2005,01, 17.37, 43.76),
+    (04,05,2005,02, 17.15, 43.21),
+    (04,05,2005,03, 17.12, 43.42),
+    (04,05,2005,04, 17.15, 43.27),
+    (04,05,2005,05, 17.34, 43.30),
+    (04,05,2005,06, 17.46, 43.90),
+    (04,05,2005,07, 17.71, 44.43),
+    (04,05,2005,08, 18.25, 45.45),
+    (04,05,2005,09, 18.23, 45.16),
+    (04,05,2005,10, 18.26, 45.54),
+    (04,05,2005,11, 18.11, 45.06),
+    (04,05,2005,12, 17.79, 44.65)
+    ]
+
 prices :: [(LocalTime,Double,Double)]
 prices = [ (mkDate dd mm yyyy, p1, p2) | (dd,mm,yyyy,p1,p2) <- rawPrices ]
 
-filterPrices t1 t2 = [ v | v@(d,_,_) <- prices, let t = d in t >= t1 && t <= t2]
+hourlyPrices :: [(LocalTime,Double,Double)]
+hourlyPrices = [ (mkDateTime dd mm yyyy hh 00, p1, p2)
+               | (dd,mm,yyyy,hh,p1,p2) <- rawHourly ]
 
-prices1 = filterPrices (mkDate 1 1 2005) (mkDate 31 12 2005)
-prices2 = filterPrices (mkDate 1 6 2005) (mkDate 1 9 2005)
-prices3 = filterPrices (mkDate 1 1 2006) (mkDate 10 1 2006)
-prices4 = filterPrices (mkDate 1 8 2005) (mkDate 31 8 2005)
+minutePrices :: [(LocalTime,Double,Double)]
+minutePrices = [ (mkDateTime dd mm yyyy 05 hh, p1, p2)
+               | (dd,mm,yyyy,hh,p1,p2) <- take 24 rawHourly ]
+            ++ [ (mkDateTime dd mm yyyy 05 (hh+24), p1, p2)
+               | (dd,mm,yyyy,hh,p1,p2) <- take 24 rawHourly ]
 
-mkDate dd mm yyyy = (LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight)
+secondPrices :: [(LocalTime,Double,Double)]
+secondPrices = [ (mkSeconds ss, p1, p2)
+               | (ss,(_,_,_,p1,p2)) <- zip [0..] rawPrices ]
 
+filterPrices prices t1 t2 = [ v | v@(d,_,_) <- prices
+                                , let t = d in t >= t1 && t <= t2]
+
+prices1 = filterPrices prices (mkDate 1 1 2005) (mkDate 31 12 2005)
+prices2 = filterPrices prices (mkDate 1 6 2005) (mkDate 1 9 2005)
+prices3 = filterPrices prices (mkDate 1 1 2006) (mkDate 10 1 2006)
+prices4 = filterPrices prices (mkDate 1 8 2005) (mkDate 31 8 2005)
+prices5 = filterPrices prices (mkDate 1 6 2005) (mkDate 15 7 2005)
+prices6 = filterPrices prices (mkDate 1 6 2005) (mkDate 2  7 2005)
+prices7 = filterPrices prices (mkDate 20 6 2005) (mkDate 12 7 2005)
+prices8 = filterPrices prices (mkDate 6 6 2005) (mkDate 9  6 2005)
+prices9 = filterPrices prices (mkDate 6 6 2005) (mkDate 8  6 2005)
+prices10 = hourlyPrices
+prices10a = take 31 hourlyPrices
+prices10b = take 15 hourlyPrices
+prices11 = filterPrices hourlyPrices (mkDateTime 3 5 2005 02 30)
+                                     (mkDateTime 4 5 2005 02 30)
+prices12 = filterPrices hourlyPrices (mkDateTime 3 5 2005 02 30)
+                                     (mkDateTime 3 5 2005 06 30)
+prices13  = minutePrices
+prices13a = take 24 minutePrices
+prices13b = take 16 minutePrices
+prices14  = secondPrices
+prices14a = take 90 secondPrices
+prices14b = take 35 secondPrices
+prices14c = take 30 secondPrices
+prices14d = take  7 secondPrices
+
+mkDate dd mm yyyy =
+    LocalTime (fromGregorian (fromIntegral yyyy) mm dd) midnight
+mkDateTime dd mm yyyy hh nn =
+    LocalTime (fromGregorian (fromIntegral yyyy) mm dd)
+              (dayFractionToTimeOfDay ((hh*60+nn)/1440))
+mkSeconds ss = LocalTime (fromGregorian (fromIntegral 2009) 11 23)
+                         (dayFractionToTimeOfDay (((14*60+32)*60+ss)/(1440*60)))
 
