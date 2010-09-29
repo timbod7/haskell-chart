@@ -17,6 +17,8 @@
 --
 --     * 'PlotFillBetween'
 --
+--     * 'PlotCandle'
+--
 --     * 'PlotErrBars'
 --
 --     * 'PlotBars'
@@ -58,6 +60,10 @@ module Graphics.Rendering.Chart.Plot(
     ErrPoint(..),
     ErrValue(..),
     symErrPoint,
+    -- * Candle plots
+    PlotCandle(..),
+    Candle(..),
+    defaultPlotCandle,
     -- * Plot with filled area
     PlotFillBetween(..),
     defaultPlotFillBetween,
@@ -98,6 +104,14 @@ module Graphics.Rendering.Chart.Plot(
     plot_errbars_tick_length,
     plot_errbars_overhang,
     plot_errbars_values,
+
+    plot_candle_title,
+    plot_candle_line_style,
+    plot_candle_tick_length,
+    plot_candle_width,
+    plot_candle_centre,
+    plot_candle_fill,
+    plot_candle_values,
 
     plotBars,
     plot_bars_style,
@@ -420,6 +434,105 @@ defaultPlotErrBars = PlotErrBars {
     plot_errbars_values_      = []
 }
 
+
+----------------------------------------------------------------------
+
+-- | Value defining a series of statistical intervals, and a style in
+--   which to render them.
+data PlotCandle x y = PlotCandle {
+    plot_candle_title_       :: String,
+    plot_candle_line_style_  :: CairoLineStyle,
+    plot_candle_tick_length_ :: Double,
+    plot_candle_width_       :: Double,
+    plot_candle_centre_      :: Double,
+    plot_candle_fill_        :: Bool,
+    plot_candle_values_      :: [Candle x y]
+}
+
+-- | A Value holding statistical intervals around a point (x,y): the
+--   0th, 25th, 75th, and 100th percentiles.
+data Candle x y = Candle { candle_x  :: x
+                         , candle_lo :: y
+                         , candle_q1 :: y
+                         , candle_y  :: y
+                         , candle_q3 :: y
+                         , candle_hi :: y
+                         } deriving (Show)
+
+instance ToPlot PlotCandle where
+    toPlot p = Plot {
+        plot_render_     = renderPlotCandle p,
+        plot_legend_     = [(plot_candle_title_ p, renderPlotLegendCandle p)],
+        plot_all_points_ = ( map candle_x pts
+                           , concat [ [candle_lo c, candle_hi c]
+                                    | c <- pts ] )
+    }
+      where
+        pts = plot_candle_values_ p
+
+renderPlotCandle :: PlotCandle x y -> PointMapFn x y -> CRender ()
+renderPlotCandle p pmap = preserveCState $ do
+    mapM_ (drawCandle p . candlemap) (plot_candle_values_ p)
+  where
+    candlemap (Candle x lo q1 y q3 hi) =
+        Candle x' lo' q1' y' q3' hi'
+        where (Point x' y')  = pmap' (x,y)
+              (Point _  lo') = pmap' (x,lo)
+              (Point _  q1') = pmap' (x,q1)
+              (Point _  q3') = pmap' (x,q3)
+              (Point _  hi') = pmap' (x,hi)
+    pmap' = mapXY pmap
+
+drawCandle ps (Candle x lo q1 y q3 hi) = do
+        let tl = plot_candle_tick_length_ ps
+        let wd = plot_candle_width_ ps
+        let ct = plot_candle_centre_ ps
+        let f  = plot_candle_fill_ ps
+        setLineStyle (plot_candle_line_style_ ps)
+        c $ C.newPath
+        c $ C.moveTo x lo
+        c $ C.lineTo x q1
+        c $ C.lineTo (x-wd) q1
+        c $ C.lineTo (x-wd) q3
+        c $ C.lineTo (x+wd) q3
+        c $ C.lineTo (x+wd) q1
+        c $ C.lineTo x q1
+        c $ C.moveTo x q3
+        c $ C.lineTo x hi
+        c $ if f then C.fill else C.stroke
+
+        c $ C.newPath  -- ?
+        c $ C.moveTo (x-tl) lo
+        c $ C.lineTo (x+tl) lo
+        c $ C.moveTo (x-tl) hi
+        c $ C.lineTo (x+tl) hi
+
+        c $ C.moveTo (x-ct) y
+        c $ C.lineTo (x+ct) y
+
+        c $ C.stroke
+
+renderPlotLegendCandle :: PlotCandle x y -> Rect -> CRender ()
+renderPlotLegendCandle p r@(Rect p1 p2) = preserveCState $ do
+    drawCandle p (Candle ((p_x p1 + p_x p2)/2) lo q1 mid q3 hi)
+  where
+    lo  = min (p_y p1) (p_y p2)
+    mid = (p_y p1 + p_y p2)/2
+    hi  = max (p_y p1) (p_y p2)
+    q1  = (lo + mid) / 2
+    q3  = (mid + hi) / 2
+
+defaultPlotCandle :: PlotCandle x y
+defaultPlotCandle = PlotCandle {
+    plot_candle_title_       = "",
+    plot_candle_line_style_  = solidLine 1 $ opaque blue,
+    plot_candle_tick_length_ = 2,
+    plot_candle_width_       = 5,
+    plot_candle_centre_      = 7,
+    plot_candle_fill_        = False,
+    plot_candle_values_      = []
+}
+
 ----------------------------------------------------------------------
 
 class PlotValue a => BarsPlotValue a where
@@ -674,6 +787,7 @@ $( deriveAccessors ''PlotLines )
 $( deriveAccessors ''PlotPoints )
 $( deriveAccessors ''PlotFillBetween )
 $( deriveAccessors ''PlotErrBars )
+$( deriveAccessors ''PlotCandle )
 $( deriveAccessors ''PlotBars )
 $( deriveAccessors ''PlotHidden )
 $( deriveAccessors ''PlotAnnotation )
