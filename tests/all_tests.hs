@@ -395,7 +395,12 @@ main1 ("--ps":tests) = showTests tests renderToPS
 main1 tests = showTests tests renderToWindow
 
 showTests :: [String] -> ((String,OutputType -> Renderable ()) -> IO()) -> IO ()
-showTests tests ofn = mapM_ ofn (filter (match tests) allTests)
+showTests tests ofn = mapM_ doTest (filter (match tests) allTests)
+   where
+     doTest (s,f) = do
+       putStrLn (s ++ "... ")
+       ofn (s,f)
+     
 
 match :: [String] -> (String,a) -> Bool
 match [] t = True
