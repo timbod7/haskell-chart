@@ -299,11 +299,11 @@ test13 otype = fillBackground fwhite $ (gridToRenderable t)
     annotated h v = toRenderable ( layout1_plots ^= [Left (toPlot labelPlot), Left (toPlot rotPlot), p] $ defaultLayout1 )
       where labelPlot = plot_annotation_hanchor ^= h
                       $ plot_annotation_vanchor ^= v
-                      $ plot_annotation_values  ^= [(x,x,"Hello World (plain)")|x<-points]
+                      $ plot_annotation_values  ^= [(x,x,"Hello World\n(plain)")|x<-points]
                       $ defaultPlotAnnotation
             rotPlot =   plot_annotation_angle ^= -45.0
                       $ plot_annotation_style ^= defaultFontStyle{font_size_=10,font_weight_=C.FontWeightBold, font_color_ =(opaque blue) }
-                      $ plot_annotation_values  ^= [(x,x,"Hello World (fancy)")|x<-points]
+                      $ plot_annotation_values  ^= [(x,x,"Hello World\n(fancy)")|x<-points]
                       $ labelPlot
 
 
