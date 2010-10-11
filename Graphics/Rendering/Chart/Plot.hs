@@ -111,6 +111,8 @@ module Graphics.Rendering.Chart.Plot(
     plot_candle_width,
     plot_candle_centre,
     plot_candle_fill,
+    plot_candle_rise_fill_style,
+    plot_candle_fall_fill_style,
     plot_candle_values,
 
     plotBars,
@@ -437,26 +439,33 @@ defaultPlotErrBars = PlotErrBars {
 
 ----------------------------------------------------------------------
 
--- | Value defining a series of statistical intervals, and a style in
---   which to render them.
+-- | Value defining a financial interval: opening and closing prices, with
+--   maxima and minima; and a style in which to render them.
+--   By convention, there are different fill styles depending on whether
+--   the price rises (open < close) or falls (close < open).
+--   (This plot type can also be re-purposed for statistical intervals, e.g.
+--    minimum, first quartile, median, third quartile, maximum.)
 data PlotCandle x y = PlotCandle {
-    plot_candle_title_       :: String,
-    plot_candle_line_style_  :: CairoLineStyle,
-    plot_candle_tick_length_ :: Double,
-    plot_candle_width_       :: Double,
-    plot_candle_centre_      :: Double,
-    plot_candle_fill_        :: Bool,
-    plot_candle_values_      :: [Candle x y]
+    plot_candle_title_           :: String,
+    plot_candle_line_style_      :: CairoLineStyle,
+    plot_candle_fill_            :: Bool,
+    plot_candle_rise_fill_style_ :: CairoFillStyle,
+    plot_candle_fall_fill_style_ :: CairoFillStyle,
+    plot_candle_tick_length_     :: Double,
+    plot_candle_width_           :: Double,
+    plot_candle_centre_          :: Double,
+    plot_candle_values_          :: [Candle x y]
 }
 
--- | A Value holding statistical intervals around a point (x,y): the
---   0th, 25th, 75th, and 100th percentiles.
-data Candle x y = Candle { candle_x  :: x
-                         , candle_lo :: y
-                         , candle_q1 :: y
-                         , candle_y  :: y
-                         , candle_q3 :: y
-                         , candle_hi :: y
+-- | A Value holding price intervals for a given x-coord.
+--   An alternative view is that these are statistical intervals: the
+--   0th, 25th, 50th, 75th, and 100th percentiles.
+data Candle x y = Candle { candle_x     :: x
+                         , candle_low   :: y
+                         , candle_open  :: y
+                         , candle_mid   :: y
+                         , candle_close :: y
+                         , candle_high  :: y
                          } deriving (Show)
 
 instance ToPlot PlotCandle where
@@ -464,7 +473,7 @@ instance ToPlot PlotCandle where
         plot_render_     = renderPlotCandle p,
         plot_legend_     = [(plot_candle_title_ p, renderPlotLegendCandle p)],
         plot_all_points_ = ( map candle_x pts
-                           , concat [ [candle_lo c, candle_hi c]
+                           , concat [ [candle_low c, candle_high c]
                                     | c <- pts ] )
     }
       where
@@ -474,62 +483,83 @@ renderPlotCandle :: PlotCandle x y -> PointMapFn x y -> CRender ()
 renderPlotCandle p pmap = preserveCState $ do
     mapM_ (drawCandle p . candlemap) (plot_candle_values_ p)
   where
-    candlemap (Candle x lo q1 y q3 hi) =
-        Candle x' lo' q1' y' q3' hi'
-        where (Point x' y')  = pmap' (x,y)
-              (Point _  lo') = pmap' (x,lo)
-              (Point _  q1') = pmap' (x,q1)
-              (Point _  q3') = pmap' (x,q3)
-              (Point _  hi') = pmap' (x,hi)
+    candlemap (Candle x lo op mid cl hi) =
+        Candle x' lo' op' mid' cl' hi'
+        where (Point x' mid')  = pmap' (x,mid)
+              (Point _  lo')   = pmap' (x,lo)
+              (Point _  op')   = pmap' (x,op)
+              (Point _  cl')   = pmap' (x,cl)
+              (Point _  hi')   = pmap' (x,hi)
     pmap' = mapXY pmap
 
-drawCandle ps (Candle x lo q1 y q3 hi) = do
+drawCandle ps (Candle x lo open mid close hi) = do
         let tl = plot_candle_tick_length_ ps
         let wd = plot_candle_width_ ps
         let ct = plot_candle_centre_ ps
         let f  = plot_candle_fill_ ps
+        -- the pixel coordinate system is inverted wrt the value coords.
+        when f $ do setFillStyle (if open >= close
+                                  then plot_candle_rise_fill_style_ ps
+                                  else plot_candle_fall_fill_style_ ps)
+
+                    c $ C.newPath
+                    c $ C.moveTo (x-wd) open
+                    c $ C.lineTo (x-wd) close
+                    c $ C.lineTo (x+wd) close
+                    c $ C.lineTo (x+wd) open
+                    c $ C.lineTo (x-wd) open
+                    c $ C.fill
+
         setLineStyle (plot_candle_line_style_ ps)
         c $ C.newPath
-        c $ C.moveTo x lo
-        c $ C.lineTo x q1
-        c $ C.lineTo (x-wd) q1
-        c $ C.lineTo (x-wd) q3
-        c $ C.lineTo (x+wd) q3
-        c $ C.lineTo (x+wd) q1
-        c $ C.lineTo x q1
-        c $ C.moveTo x q3
-        c $ C.lineTo x hi
-        c $ if f then C.fill else C.stroke
-
-        c $ C.newPath  -- ?
-        c $ C.moveTo (x-tl) lo
-        c $ C.lineTo (x+tl) lo
-        c $ C.moveTo (x-tl) hi
-        c $ C.lineTo (x+tl) hi
-
-        c $ C.moveTo (x-ct) y
-        c $ C.lineTo (x+ct) y
-
+        c $ C.moveTo (x-wd) open
+        c $ C.lineTo (x-wd) close
+        c $ C.lineTo (x+wd) close
+        c $ C.lineTo (x+wd) open
+        c $ C.lineTo (x-wd) open
         c $ C.stroke
+
+        c $ C.newPath
+        c $ C.moveTo x (min lo hi)
+        c $ C.lineTo x (min open close)
+        c $ C.moveTo x (max open close)
+        c $ C.lineTo x (max hi lo)
+        c $ C.stroke
+
+        when (tl > 0) $ do c $ C.newPath
+                           c $ C.moveTo (x-tl) lo
+                           c $ C.lineTo (x+tl) lo
+                           c $ C.moveTo (x-tl) hi
+                           c $ C.lineTo (x+tl) hi
+                           c $ C.stroke
+
+        when (ct > 0) $ do c $ C.moveTo (x-ct) mid
+                           c $ C.lineTo (x+ct) mid
+                           c $ C.stroke
 
 renderPlotLegendCandle :: PlotCandle x y -> Rect -> CRender ()
 renderPlotLegendCandle p r@(Rect p1 p2) = preserveCState $ do
-    drawCandle p (Candle ((p_x p1 + p_x p2)/2) lo q1 mid q3 hi)
+    drawCandle p{ plot_candle_width_ = 2}
+                      (Candle ((p_x p1 + p_x p2)*1/4) lo open mid close hi)
+    drawCandle p{ plot_candle_width_ = 2}
+                      (Candle ((p_x p1 + p_x p2)*2/3) lo close mid open hi)
   where
-    lo  = min (p_y p1) (p_y p2)
-    mid = (p_y p1 + p_y p2)/2
-    hi  = max (p_y p1) (p_y p2)
-    q1  = (lo + mid) / 2
-    q3  = (mid + hi) / 2
+    lo    = max (p_y p1) (p_y p2)
+    mid   = (p_y p1 + p_y p2)/2
+    hi    = min (p_y p1) (p_y p2)
+    open  = (lo + mid) / 2
+    close = (mid + hi) / 2
 
 defaultPlotCandle :: PlotCandle x y
 defaultPlotCandle = PlotCandle {
     plot_candle_title_       = "",
     plot_candle_line_style_  = solidLine 1 $ opaque blue,
+    plot_candle_fill_        = False,
+    plot_candle_rise_fill_style_  = solidFillStyle $ opaque white,
+    plot_candle_fall_fill_style_  = solidFillStyle $ opaque blue,
     plot_candle_tick_length_ = 2,
     plot_candle_width_       = 5,
-    plot_candle_centre_      = 7,
-    plot_candle_fill_        = False,
+    plot_candle_centre_      = 0,
     plot_candle_values_      = []
 }
 
