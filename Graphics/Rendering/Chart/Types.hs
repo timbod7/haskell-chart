@@ -86,6 +86,7 @@ module Graphics.Rendering.Chart.Types(
     VTextAnchor(..),
     drawText,
     drawTextR,
+    drawTextsR,
     textSize,
 
     CRender(..),
@@ -116,6 +117,7 @@ import Data.Accessor.Template
 import Data.Colour
 import Data.Colour.SRGB
 import Data.Colour.Names
+import Data.List (unfoldr)
 
 -- | A point in two dimensions.
 data Point = Point {
@@ -365,6 +367,42 @@ drawTextR hta vta angle (Point x y) s = preserveCState $ draw
       yadj VTA_Centre   te fe = - (C.textExtentsYbearing te) / 2
       yadj VTA_BaseLine te fe = 0
       yadj VTA_Bottom   te fe = -(C.fontExtentsDescent fe)
+
+-- | Function to draw a multi-line textual label anchored by one of its corners
+--   or edges, with rotation. Rotation angle is given in degrees,
+--   rotation is performed around anchor point.
+drawTextsR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> CRender ()
+drawTextsR hta vta angle (Point x y) s = preserveCState $ drawAll
+    where
+      ss   = lines s
+      num  = length ss
+      drawAll =  c $ do tes <- mapM C.textExtents ss
+                        fe  <- C.fontExtents
+                        let widths = map C.textExtentsWidth tes
+                            maxw   = maximum widths
+                            maxh   = maximum (map C.textExtentsYbearing tes)
+                            gap    = maxh / 2 -- half-line spacing
+                            totalHeight = fromIntegral num*maxh +
+                                          (fromIntegral num-1)*gap
+                            ys = take num (unfoldr (\y-> Just (y, y-gap-maxh))
+                                                   (yinit vta fe totalHeight))
+                            xs = map (xadj hta) widths
+                        C.translate x y
+                        C.rotate theta
+                        sequence_ (zipWith3 draw xs ys ss)
+
+      draw lx ly s =  do C.moveTo lx ly
+                         C.showText s
+      theta = angle*pi/180.0
+
+      xadj HTA_Left   w = 0
+      xadj HTA_Centre w = (-w/2)
+      xadj HTA_Right  w = (-w)
+
+      yinit VTA_Top      fe height = C.fontExtentsAscent fe
+      yinit VTA_BaseLine fe height = 0
+      yinit VTA_Centre   fe height = height / 2 + C.fontExtentsAscent fe
+      yinit VTA_Bottom   fe height = height + C.fontExtentsAscent fe
 
 
 -- | Execute a rendering action in a saved context (ie bracketed

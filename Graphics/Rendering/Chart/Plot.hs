@@ -796,7 +796,7 @@ renderAnnotation p pMap = preserveCState $ do
           values = plot_annotation_values_ p
           angle =  plot_annotation_angle_ p
           style =  plot_annotation_style_ p
-          drawOne (x,y,s) = drawTextR hta vta angle point s
+          drawOne (x,y,s) = drawTextsR hta vta angle point s
               where point = pMap (LValue x, LValue y)
 
 defaultPlotAnnotation = PlotAnnotation {
