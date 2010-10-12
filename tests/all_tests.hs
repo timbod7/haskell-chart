@@ -29,6 +29,7 @@ import qualified Test9
 import qualified Test14
 import qualified Test14a
 import qualified Test15
+import qualified Test17
 import qualified TestParametric
 
 data OutputType = Window | PNG | PS | PDF | SVG
@@ -378,6 +379,7 @@ allTests =
      , ("test14a", \o -> Test14a.chart (chooseLineWidth o) )
      , ("test15a", const (Test15.chart (LORows 2)))
      , ("test15b", const (Test15.chart (LOCols 2)))
+     , ("test17",  \o -> Test17.chart (chooseLineWidth o))
      , ("misc1", setPickFn nullPickFn . misc1 0)
      , ("misc1a", setPickFn nullPickFn . misc1 45)
      , ("parametric", \o -> TestParametric.chart (chooseLineWidth o) )
