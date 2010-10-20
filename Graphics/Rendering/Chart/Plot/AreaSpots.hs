@@ -1,5 +1,5 @@
 -- |
--- Module     :  Graphics.Rendering.Chart.AreaSpots
+-- Module     :  Graphics.Rendering.Chart.Plot.AreaSpots
 -- Copyright  :  (c) Malcolm Wallace 2009
 -- License    :  BSD-style (see COPYRIGHT file)
 --
@@ -9,7 +9,7 @@
 
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
-module Graphics.Rendering.Chart.AreaSpots
+module Graphics.Rendering.Chart.Plot.AreaSpots
   ( AreaSpots(..)
   , defaultAreaSpots
 
@@ -33,7 +33,7 @@ module Graphics.Rendering.Chart.AreaSpots
 import qualified Graphics.Rendering.Cairo as C
 
 import Graphics.Rendering.Chart.Types
-import Graphics.Rendering.Chart.Plot
+import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Axis
 import Data.Accessor.Template
 import Data.Colour

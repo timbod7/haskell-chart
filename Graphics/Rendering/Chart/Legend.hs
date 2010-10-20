@@ -24,7 +24,7 @@ import Data.List (nub, partition,intersperse)
 import Data.Accessor.Template
 
 import Graphics.Rendering.Chart.Types
-import Graphics.Rendering.Chart.Plot
+import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
 

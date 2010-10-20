@@ -2,7 +2,7 @@ module Test14a where
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Gtk
-import Graphics.Rendering.Chart.AreaSpots
+import Graphics.Rendering.Chart.Plot
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor

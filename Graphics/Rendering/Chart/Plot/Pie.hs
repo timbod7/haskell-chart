@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.Chart.Layout
+-- Module      :  Graphics.Rendering.Chart.Plot.Pie
 -- Copyright   :  (c) Tim Docker 2008
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
@@ -26,7 +26,7 @@
 --
 
 
-module Graphics.Rendering.Chart.Pie(
+module Graphics.Rendering.Chart.Plot.Pie(
     PieLayout(..),
     PieChart(..),
     PieItem(..),
@@ -64,6 +64,7 @@ import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
+import Graphics.Rendering.Chart.Plot.Types
 
 data PieLayout = PieLayout {
    pie_title_       :: String,
