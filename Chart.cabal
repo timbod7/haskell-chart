@@ -1,8 +1,8 @@
 Name: Chart
-Version: 0.13.1
+Version: 0.14
 License: BSD3
 License-file: LICENSE
-Copyright: Tim Docker, 2006-2009
+Copyright: Tim Docker, 2006-2010
 Author: Tim Docker <tim@dockerz.net>
 Maintainer: Tim Docker <tim@dockerz.net>
 Homepage: http://www.dockerz.net/software/chart.html
