@@ -4,21 +4,7 @@
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
--- Show textual annotation on a chart.
---
--- Note that template haskell is used to derive accessor functions
--- (see 'Data.Accessor') for each field of the following data types:
---
---     * 'PlotAnnotation'
---
--- These accessors are not shown in this API documentation.  They have
--- the same name as the field, but with the trailing underscore
--- dropped. Hence for data field f_::F in type D, they have type
---
--- @
---   f :: Data.Accessor.Accessor D F
--- @
---
+-- Show textual annotations on a chart.
 
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 

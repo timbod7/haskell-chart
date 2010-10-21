@@ -4,30 +4,14 @@
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
--- Definitions of various types of Plots we can put on a 2D Chart.
+-- Datatypes and functions common to the implementation of the various
+-- plot types.
 --
--- Note that template haskell is used to derive accessor functions
--- (see 'Data.Accessor') for each field of the following data types:
---
---     * 'Plot'
---
--- These accessors are not shown in this API documentation.  They have
--- the same name as the field, but with the trailing underscore
--- dropped. Hence for data field f_::F in type D, they have type
---
--- @
---   f :: Data.Accessor.Accessor D F
--- @
---
-
-
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Types(
-    -- * Plot
     Plot(..),
     joinPlot,
-    -- ** Typeclass for casting to plot
     ToPlot(..),
 
     mapXY,

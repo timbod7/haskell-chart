@@ -3,6 +3,9 @@
 -- Module      :  Graphics.Rendering.Chart.Legend
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
+-- 
+-- Types and functions for handling the legend(s) on a chart. A legend
+-- is an area on the chart used to label the plotted values.
 
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 

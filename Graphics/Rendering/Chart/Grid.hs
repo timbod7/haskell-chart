@@ -1,3 +1,12 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.Chart.Grid
+-- Copyright   :  (c) Tim Docker 2010
+-- License     :  BSD-style (see chart/COPYRIGHT)
+--
+-- A container type for values that can be composed by horizonal
+-- and vertical layout.
+
 module Graphics.Rendering.Chart.Grid (
     Grid, Span,
     tval, tspan,

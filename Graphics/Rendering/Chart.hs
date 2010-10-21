@@ -9,15 +9,15 @@
 -- The basic model is that you define a value of type 'Renderable',
 -- typically by applying 'toRenderable' to some other value. This
 -- 'Renderable' is then actually displayed or output by calling either
--- 'renderableToPNGFile', or 'Graphics.Rendering.Chart.Gtk.renderableToWindow'.
+-- 'renderableToPNGFile', or 'renderableToWindow'.
 --
 -- Currently, there are two kinds of 'Renderable' for displaying charts:
 --
 --     * a standard two axes chart can be is created by applying
---      'toRenderable' to a value of type 'Graphics.Rendering.Chart.Layout.Layout1'
+--      'toRenderable' to a value of type 'Layout1'
 --
 --     *  a pie chart can be is created by applying
---      'toRenderable' to a value of type 'Graphics.Rendering.Chart.Pie.PieLayout'
+--      'toRenderable' to a value of type 'PieLayout'
 --
 -- Multiple Renderables can be composed using the "Graphics.Rendering.Chart.Grid" module.
 --
