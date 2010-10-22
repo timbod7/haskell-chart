@@ -5,7 +5,9 @@
 -- License     :  BSD-style (see chart/COPYRIGHT)
 
 module Graphics.Rendering.Chart.Gtk(
-    renderableToWindow
+    renderableToWindow,
+    createRenderableWindow,
+    updateCanvas
     ) where
 
 import qualified Graphics.UI.Gtk as G
