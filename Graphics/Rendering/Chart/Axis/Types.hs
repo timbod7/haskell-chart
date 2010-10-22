@@ -213,8 +213,10 @@ renderAxis at@(AxisT et as rev ad) sz = do
        setLineStyle ls{line_cap_=C.LineCapButt}
        mapM_ drawTick (axis_ticks_ ad)
    sizes <- preserveCState $ do
+       let labels = axis_labels_ ad
        setFontStyle (axis_label_style_ as)
-       mapM drawLabel (axis_labels_ ad)
+       foldM_ drawLabel rect0 labels
+       mapM (textSize.snd) labels
    preserveCState $ do
        setFontStyle (axis_label_style_ as)
        mapM_ (drawContext (avoid sizes)) (axis_context_ ad)
@@ -244,14 +246,34 @@ renderAxis at@(AxisT et as rev ad) sz = do
               E_Left   -> (Vector (-lw) 0)
               E_Right  -> (Vector lw    0)
 
-   drawLabel (value,s) = do
-       drawText hta vta (axisPoint value `pvadd` lp) s
-       textSize s
+   rect0 = Rect pt0 pt0
+   pt0 = Point 0 0
+
+   drawLabel r (value,s) = do
+       let pt = axisPoint value `pvadd` lp
+       r' <- textDrawRect hta vta pt s
+       if rectsOverlap r r'
+          then return r
+          else do drawText hta vta pt s
+                  return r'
 
    drawContext minor (value,s) = do
        drawText hta vta (axisPoint value `pvadd` minor `pvadd` lp) s
 
    pickfn = Just . invAxisPoint
+
+rectsOverlap :: Rect -> Rect -> Bool
+rectsOverlap (Rect p1 p2) r = any (withinRect r) ps
+  where (Point x1 y1) = p1
+        (Point x2 y2) = p2
+        p3 = Point x1 y2
+        p4 = Point x2 y1
+        ps = [p1,p2,p3,p4]
+
+withinRect :: Rect -> Point -> Bool
+withinRect (Rect (Point x1 y1) (Point x2 y2)) (Point x y)
+    = and [x >= x1 && x <= x2,
+           y >= y1 && y <= y2]
 
 axisMapping :: AxisT z -> RectSize
                -> (Double,Double,Double,Double,Vector,z->Point,Point->z)
