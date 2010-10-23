@@ -254,7 +254,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
    labelDrawRect (value,s) = do
        let pt = axisPoint value `pvadd` lp
        r <- textDrawRect hta vta pt s
-       return (r,(value,s))
+       return (hBufferRect r,(value,s))
 
    drawLabel (value,s) = do
        let pt = axisPoint value `pvadd` lp
@@ -264,6 +264,11 @@ renderAxis at@(AxisT et as rev ad) sz = do
        drawText hta vta (axisPoint value `pvadd` minor `pvadd` lp) s
 
    pickfn = Just . invAxisPoint
+
+hBufferRect :: Rect -> Rect
+hBufferRect (Rect p (Point x y)) = Rect p $ Point x' y
+  where x' = x + w/2
+        w = x - (p_x p)
 
 noOverlaps :: [Rect] -> Bool
 noOverlaps [] = True
