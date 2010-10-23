@@ -213,15 +213,14 @@ renderAxis at@(AxisT et as rev ad) sz = do
        setLineStyle ls{line_cap_=C.LineCapButt}
        mapM_ drawTick (axis_ticks_ ad)
    sizes <- preserveCState $ do
-       let labels = axis_labels_ ad
        setFontStyle (axis_label_style_ as)
-       rects <- mapM labelDrawRect labels
-       let labels' = map snd . head . filter (noOverlaps . map fst) $ map (\n -> eachNth n rects) [0 .. length rects]
-       mapM_ drawLabel labels'
-       mapM (textSize.snd) labels'
+       labels <- avoidOverlaps $ axis_labels_ ad
+       mapM_ drawLabel labels
+       mapM (textSize.snd) labels
    preserveCState $ do
        setFontStyle (axis_label_style_ as)
-       mapM_ (drawContext (avoid sizes)) (axis_context_ ad)
+       labels <- avoidOverlaps $ axis_context_ ad
+       mapM_ (drawContext (avoid sizes)) labels
    return pickfn
  where
    (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
@@ -247,6 +246,10 @@ renderAxis at@(AxisT et as rev ad) sz = do
               E_Bottom -> (Vector 0    lh)
               E_Left   -> (Vector (-lw) 0)
               E_Right  -> (Vector lw    0)
+
+   avoidOverlaps labels = do
+       rects <- mapM labelDrawRect labels
+       return $ map snd . head . filter (noOverlaps . map fst) $ map (\n -> eachNth n rects) [0 .. length rects]
 
    labelDrawRect (value,s) = do
        let pt = axisPoint value `pvadd` lp
