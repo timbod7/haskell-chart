@@ -215,8 +215,10 @@ renderAxis at@(AxisT et as rev ad) sz = do
    sizes <- preserveCState $ do
        let labels = axis_labels_ ad
        setFontStyle (axis_label_style_ as)
-       foldM_ drawLabel rect0 labels
-       mapM (textSize.snd) labels
+       rects <- mapM labelDrawRect labels
+       let labels' = map snd . head . filter (noOverlaps . map fst) $ map (\n -> eachNth n rects) [0 .. length rects]
+       mapM_ drawLabel labels'
+       mapM (textSize.snd) labels'
    preserveCState $ do
        setFontStyle (axis_label_style_ as)
        mapM_ (drawContext (avoid sizes)) (axis_context_ ad)
@@ -246,21 +248,25 @@ renderAxis at@(AxisT et as rev ad) sz = do
               E_Left   -> (Vector (-lw) 0)
               E_Right  -> (Vector lw    0)
 
-   rect0 = Rect pt0 pt0
-   pt0 = Point 0 0
-
-   drawLabel r (value,s) = do
+   labelDrawRect (value,s) = do
        let pt = axisPoint value `pvadd` lp
-       r' <- textDrawRect hta vta pt s
-       if rectsOverlap r r'
-          then return r
-          else do drawText hta vta pt s
-                  return r'
+       r <- textDrawRect hta vta pt s
+       return (r,(value,s))
+
+   drawLabel (value,s) = do
+       let pt = axisPoint value `pvadd` lp
+       drawText hta vta pt s
 
    drawContext minor (value,s) = do
        drawText hta vta (axisPoint value `pvadd` minor `pvadd` lp) s
 
    pickfn = Just . invAxisPoint
+
+noOverlaps :: [Rect] -> Bool
+noOverlaps [] = True
+noOverlaps [_] = True
+noOverlaps (x:y:l) | rectsOverlap x y = False
+                   | otherwise        = noOverlaps (y:l)
 
 rectsOverlap :: Rect -> Rect -> Bool
 rectsOverlap (Rect p1 p2) r = any (withinRect r) ps
@@ -269,6 +275,12 @@ rectsOverlap (Rect p1 p2) r = any (withinRect r) ps
         p3 = Point x1 y2
         p4 = Point x2 y1
         ps = [p1,p2,p3,p4]
+
+eachNth n = skipN
+  where
+    n' = n - 1
+    skipN [] = []
+    skipN (x:xs) = x : skipN (drop n' xs)
 
 withinRect :: Rect -> Point -> Bool
 withinRect (Rect (Point x1 y1) (Point x2 y2)) (Point x y)
