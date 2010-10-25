@@ -211,12 +211,13 @@ renderAxis at@(AxisT et as rev ad) sz = do
    preserveCState $ do
        setLineStyle ls{line_cap_=C.LineCapButt}
        mapM_ drawTick (axis_ticks_ ad)
-   sizes <- preserveCState $ do
-       setFontStyle (axis_label_style_ as)
-       mapM drawLabel (axis_labels_ ad)
    preserveCState $ do
        setFontStyle (axis_label_style_ as)
-       mapM_ (drawContext (avoid sizes)) (axis_context_ ad)
+       labelSizes <- mapM (mapM textSize) (labelTexts ad)
+       let sizes = map ((+ag).maximum0.map coord) labelSizes
+       let offsets = scanl (+) ag sizes
+       mapM_ drawLabels (zip offsets  (axis_labels_ ad))
+
    return pickfn
  where
    (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
@@ -232,18 +233,22 @@ renderAxis at@(AxisT et as rev ad) sz = do
        E_Left   -> (HTA_Right,  VTA_Centre, fst, \v -> (Vector (-v) 0))
        E_Right  -> (HTA_Left,   VTA_Centre, fst, \v -> (Vector v 0))
 
-   avoid minorlabels =
-       let (lw,lh) = foldl maxsz (0,0) minorlabels
-           maxsz (w1,h1) (w2,h2)   = (max w1 w2, max h1 h2)
-       in case et of
-              E_Top    -> (Vector 0 (-lh))
-              E_Bottom -> (Vector 0    lh)
-              E_Left   -> (Vector (-lw) 0)
-              E_Right  -> (Vector lw    0)
+   avoidOverlaps labels = do
+       rects <- mapM labelDrawRect labels
+       return $ map snd . head . filter (noOverlaps . map fst) $ map (\n -> eachNth n rects) [0 .. length rects]
 
-   drawLabel (value,s) = do
-       drawText hta vta (axisPoint value `pvadd` lp) s
-       textSize s
+   labelDrawRect (value,s) = do
+       let pt = axisPoint value `pvadd` (awayFromAxis ag)
+       r <- textDrawRect hta vta pt s
+       return (hBufferRect r,(value,s))
+
+   drawLabels (offset,labels) = do
+        labels' <- avoidOverlaps labels
+        mapM_ drawLabel labels'
+     where
+       drawLabel (value,s) = do
+           drawText hta vta (axisPoint value `pvadd` (awayFromAxis offset)) s
+           textSize s
 
    ag = axis_label_gap_ as
    pickfn = Just . invAxisPoint
