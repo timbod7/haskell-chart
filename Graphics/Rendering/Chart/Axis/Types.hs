@@ -43,7 +43,6 @@ module Graphics.Rendering.Chart.Axis.Types(
     axis_tropweiv,
     axis_ticks,
     axis_labels,
-    axis_context,
     axis_grid,
 
     axis_line_style,
@@ -58,7 +57,7 @@ import Data.Time
 import Data.Fixed
 import System.Locale (defaultTimeLocale)
 import Control.Monad
-import Data.List(sort)
+import Data.List(sort,intersperse)
 import Data.Accessor.Template
 import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
@@ -90,15 +89,12 @@ data AxisData x = AxisData {
     --   towards the plot area.
     axis_ticks_    :: [(x,Double)],
 
-    -- | The labels on an axis as pairs. The first element
-    --   is the position on the axis (in viewport units) and
-    --   the second is the label text string.
-    axis_labels_   :: [ (x, String) ],
-
-    -- | A secondary set of labels on an axis.
-    --   Used to display context as well as detail, e.g. for time series,
-    --   where two levels of navigational aid can help orient the user.
-    axis_context_  :: [ (x, String) ],
+    -- | The labels on an axis as pairs. The first element of the pair
+    --   is the position on the axis (in viewport units) and the
+    --   second is the label text string. Note that multiple sets of
+    --   labels can be specified, and are shown successively further
+    --   away from the axis line.
+    axis_labels_   :: [[(x, String)]],
 
     -- | The positions on the axis (in viewport units) where
     --   we want to show grid lines.
@@ -143,7 +139,11 @@ axisGridAtTicks ad   = ad{ axis_grid_   = map fst (axis_ticks_ ad) }
 
 -- | Modifier to position grid lines to line up with the labels
 axisGridAtLabels    :: AxisData x -> AxisData x
-axisGridAtLabels ad  = ad{ axis_grid_   = map fst (axis_labels_ ad) }
+axisGridAtLabels ad  = ad{ axis_grid_   = map fst vs }
+  where
+    vs = case axis_labels_ ad of
+        [] -> []
+        ls -> head ls
 
 -- | Modifier to remove ticks from an axis
 axisTicksHide       :: AxisData x -> AxisData x
@@ -151,42 +151,41 @@ axisTicksHide ad     = ad{ axis_ticks_  = [] }
 
 -- | Modifier to remove labels from an axis
 axisLabelsHide      :: AxisData x -> AxisData x
-axisLabelsHide ad    = ad{ axis_labels_ = [], axis_context_ = [] }
+axisLabelsHide ad    = ad{ axis_labels_ = []}
 
 minsizeAxis :: AxisT x -> CRender RectSize
 minsizeAxis (AxisT at as rev ad) = do
-    let labels = map snd (axis_labels_ ad)
     labelSizes <- preserveCState $ do
         setFontStyle (axis_label_style_ as)
-        mapM textSize labels
-    let context = map snd (axis_context_ ad)
-    contextSizes <- preserveCState $ do
-        setFontStyle (axis_label_style_ as)
-        mapM textSize context
-    let (lw,lh) = foldl maxsz (0,0) labelSizes
-    let (cw,ch) = foldl maxsz (0,0) contextSizes
+        mapM (mapM textSize) (labelTexts ad)
+
     let ag      = axis_label_gap_ as
     let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- axis_ticks_ ad ])
+
+    let hw = maximum0 (map (maximum0.map fst) labelSizes)
+    let hh = ag + tsize + (sum . intersperse ag . map (maximum0.map snd) $ labelSizes)
+
+    let vw = ag + tsize + (sum . intersperse ag . map (maximum0.map fst) $ labelSizes)
+    let vh = maximum0 (map (maximum0.map snd) labelSizes)
+
     let sz      = case at of
-		     E_Top    -> (lw,max (addTwoIfNZ lh ch ag) tsize)
-		     E_Bottom -> (lw,max (addTwoIfNZ lh ch ag) tsize)
-		     E_Left   -> (max (addTwoIfNZ lw cw ag) tsize, lh)
-		     E_Right  -> (max (addTwoIfNZ lw cw ag) tsize, lh)
+		     E_Top    -> (hw,hh)
+		     E_Bottom -> (hw,hh)
+		     E_Left   -> (vw,vh)
+		     E_Right  -> (vw,vh)
     return sz
 
-  where
-    maxsz (w1,h1) (w2,h2)   = (max w1 w2, max h1 h2)
-    addIfNZ a b | a == 0    = 0
-                | otherwise = a+b
-    addTwoIfNZ a b gap | a == 0    = addIfNZ b gap
-                       | otherwise = a + gap + addIfNZ b gap
+labelTexts :: AxisData a -> [[String]]
+labelTexts ad = map (map snd) (axis_labels_ ad)
 
+maximum0 [] = 0
+maximum0 vs = maximum vs
 
 -- | Calculate the amount by which the labels extend beyond
 --   the ends of the axis.
 axisOverhang :: Ord x => AxisT x -> CRender (Double,Double)
 axisOverhang (AxisT at as rev ad) = do
-    let labels = map snd (sort (axis_labels_ ad ++ axis_context_ ad))
+    let labels = map snd . sort . concat . axis_labels_ $ ad
     labelSizes <- preserveCState $ do
         setFontStyle (axis_label_style_ as)
         mapM textSize labels
@@ -214,13 +213,10 @@ renderAxis at@(AxisT et as rev ad) sz = do
        mapM_ drawTick (axis_ticks_ ad)
    sizes <- preserveCState $ do
        setFontStyle (axis_label_style_ as)
-       labels <- avoidOverlaps $ axis_labels_ ad
-       mapM_ drawLabel labels
-       mapM (textSize.snd) labels
+       mapM drawLabel (axis_labels_ ad)
    preserveCState $ do
        setFontStyle (axis_label_style_ as)
-       labels <- avoidOverlaps $ axis_context_ ad
-       mapM_ (drawContext (avoid sizes)) labels
+       mapM_ (drawContext (avoid sizes)) (axis_context_ ad)
    return pickfn
  where
    (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
@@ -230,13 +226,11 @@ renderAxis at@(AxisT et as rev ad) sz = do
 	   t2 = t1 `pvadd` (vscale length tp)
        in strokePath [t1,t2]
 
-   (hta,vta,lp) =
-       let g = axis_label_gap_ as
-       in case et of
-              E_Top    -> (HTA_Centre, VTA_Bottom, (Vector 0 (-g)))
-              E_Bottom -> (HTA_Centre, VTA_Top,    (Vector 0 g))
-              E_Left   -> (HTA_Right,  VTA_Centre, (Vector (-g) 0))
-              E_Right  -> (HTA_Left,   VTA_Centre, (Vector g 0))
+   (hta,vta,coord,awayFromAxis) = case et of
+       E_Top    -> (HTA_Centre, VTA_Bottom, snd, \v -> (Vector 0 (-v)))
+       E_Bottom -> (HTA_Centre, VTA_Top,    snd, \v -> (Vector 0 v))
+       E_Left   -> (HTA_Right,  VTA_Centre, fst, \v -> (Vector (-v) 0))
+       E_Right  -> (HTA_Left,   VTA_Centre, fst, \v -> (Vector v 0))
 
    avoid minorlabels =
        let (lw,lh) = foldl maxsz (0,0) minorlabels
@@ -247,22 +241,11 @@ renderAxis at@(AxisT et as rev ad) sz = do
               E_Left   -> (Vector (-lw) 0)
               E_Right  -> (Vector lw    0)
 
-   avoidOverlaps labels = do
-       rects <- mapM labelDrawRect labels
-       return $ map snd . head . filter (noOverlaps . map fst) $ map (\n -> eachNth n rects) [0 .. length rects]
-
-   labelDrawRect (value,s) = do
-       let pt = axisPoint value `pvadd` lp
-       r <- textDrawRect hta vta pt s
-       return (hBufferRect r,(value,s))
-
    drawLabel (value,s) = do
-       let pt = axisPoint value `pvadd` lp
-       drawText hta vta pt s
+       drawText hta vta (axisPoint value `pvadd` lp) s
+       textSize s
 
-   drawContext minor (value,s) = do
-       drawText hta vta (axisPoint value `pvadd` minor `pvadd` lp) s
-
+   ag = axis_label_gap_ as
    pickfn = Just . invAxisPoint
 
 hBufferRect :: Rect -> Rect
@@ -344,8 +327,7 @@ makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     axis_tropweiv_ = newTropweiv,
     axis_ticks_    = newTicks,
     axis_grid_     = gridvs,
-    axis_labels_   = newLabels,
-    axis_context_  = []
+    axis_labels_   = [newLabels]
     }
   where
     newViewport = vmap (min',max')
@@ -364,10 +346,8 @@ makeAxis' t f labelf (labelvs, tickvs, gridvs) = AxisData {
     axis_tropweiv_ = invLinMap f t (minimum labelvs, maximum labelvs),
     axis_ticks_    = zip tickvs (repeat 2)  ++  zip labelvs (repeat 5),
     axis_grid_     = gridvs,
-    axis_labels_   = [ (v,labelf v) | v <- labelvs ],
-    axis_context_  = []
+    axis_labels_   = [[ (v,labelf v) | v <- labelvs ]]
     }
-
 
 
 ----------------------------------------------------------------------

@@ -259,8 +259,7 @@ test12 otype = toRenderable layout
         axis_tropweiv_ = invmap (0,15),
         axis_ticks_    = [(v,3) | v <- [0,1..15]],
         axis_grid_     = [0,5..15],
-        axis_labels_   = [(v,show v) | v <- [0,5..15]],
-        axis_context_  = []
+        axis_labels_   = [[(v,show v) | v <- [0,5..15]]]
     }    
 
     laxis = AxisData {
@@ -268,8 +267,7 @@ test12 otype = toRenderable layout
         axis_tropweiv_ = invmap (0,500),
         axis_ticks_    = [(v,3) | v <- [0,25..500]],
         axis_grid_     = [0,100..500],
-        axis_labels_   = [(v,show v) | v <- [0,100..500]],
-        axis_context_  = []
+        axis_labels_   = [[(v,show v) | v <- [0,100..500]]]
     }    
 
     plot = plot_lines_values ^= [vs1]

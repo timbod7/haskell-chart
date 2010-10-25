@@ -38,9 +38,8 @@ autoIndexAxis labels vs = AxisData {
     axis_viewport_ = vport,
     axis_tropweiv_ = invport,
     axis_ticks_    = [],
-    axis_labels_   = filter (\(i,l) -> i >= imin && i <= imax)
-                            (zip [0..] labels),
-    axis_context_  = [],
+    axis_labels_   = [filter (\(i,l) -> i >= imin && i <= imax)
+                            (zip [0..] labels)],
     axis_grid_     = []
     }
   where

@@ -25,7 +25,6 @@ unitAxis = AxisData {
     axis_viewport_ = \(x0,x1) _ -> (x0+x1)/2,
     axis_tropweiv_ = \_       _ -> (),
     axis_ticks_    = [((), 0)],
-    axis_labels_   = [((), "")],
-    axis_context_  = [],
+    axis_labels_   = [[((), "")]],
     axis_grid_     = []
 }

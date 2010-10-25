@@ -79,7 +79,7 @@ type TimeLabelFn = LocalTime -> String
 -- | Create an 'AxisFn' to for a time axis.  The first 'TimeSeq' sets the
 --   minor ticks, and the ultimate range will be aligned to its elements.
 --   The second 'TimeSeq' sets the labels and grid.  The third 'TimeSeq'
---   sets the second line of contextual labels.  The 'TimeLabelFn' is
+--   sets the second line of labels.  The 'TimeLabelFn' is
 --   used to format LocalTimes for labels.  The values to be plotted
 --   against this axis can be created with 'doubleFromLocalTime'.
 timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> TimeSeq -> TimeLabelFn
@@ -88,8 +88,9 @@ timeAxis tseq lseq labelf cseq contextf pts = AxisData {
     axis_viewport_ = vmap(min', max'),
     axis_tropweiv_ = invmap(min', max'),
     axis_ticks_    = [ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
-    axis_labels_   = [ (t,l) | (t,l) <- labels labelf   ltimes, visible t],
-    axis_context_  = [ (t,l) | (t,l) <- labels contextf ctimes, visible t],
+    axis_labels_   = [ [ (t,l) | (t,l) <- labels labelf   ltimes, visible t]
+                     , [ (t,l) | (t,l) <- labels contextf ctimes, visible t]
+                     ], 
     axis_grid_     = [ t     | t <- ltimes, visible t]
     }
   where
