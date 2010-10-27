@@ -76,20 +76,25 @@ elemTS t tseq = case tseq t of
 -- | How to display a time
 type TimeLabelFn = LocalTime -> String
 
+data TimeLabelAlignment = UnderTicks
+                        | BetweenTicks
+                        deriving (Show)
+
 -- | Create an 'AxisFn' to for a time axis.  The first 'TimeSeq' sets the
 --   minor ticks, and the ultimate range will be aligned to its elements.
 --   The second 'TimeSeq' sets the labels and grid.  The third 'TimeSeq'
 --   sets the second line of labels.  The 'TimeLabelFn' is
 --   used to format LocalTimes for labels.  The values to be plotted
 --   against this axis can be created with 'doubleFromLocalTime'.
-timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> TimeSeq -> TimeLabelFn
-            -> AxisFn LocalTime
-timeAxis tseq lseq labelf cseq contextf pts = AxisData {
+timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> TimeLabelAlignment -> 
+                       TimeSeq -> TimeLabelFn -> TimeLabelAlignment -> 
+            AxisFn LocalTime
+timeAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
     axis_viewport_ = vmap(min', max'),
     axis_tropweiv_ = invmap(min', max'),
     axis_ticks_    = [ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
-    axis_labels_   = [ [ (t,l) | (t,l) <- labels labelf   ltimes, visible t]
-                     , [ (t,l) | (t,l) <- labels contextf ctimes, visible t]
+    axis_labels_   = [ [ (t,l) | (t,l) <- labels labelf   ltimes lal, visible t]
+                     , [ (t,l) | (t,l) <- labels contextf ctimes clal, visible t]
                      ], 
     axis_grid_     = [ t     | t <- ltimes, visible t]
     }
@@ -104,10 +109,15 @@ timeAxis tseq lseq labelf cseq contextf pts = AxisData {
     min'         = minimum times
     max'         = maximum times
     visible t    = min' <= t && t <= max'
-    labels f ts  = [ (avg m3 m4, f m1)
-                   | (m1,m2) <- zip ts (tail ts)
-                   , let m3 = if m1<min' then min' else m1
-                   , let m4 = if m2>max' then max' else m2 ]
+    labels f ts lal =
+        [ (align lal m1' m2', f m1)
+          | (m1,m2) <- zip ts (tail ts)
+          , let m1' = if m1<min' then min' else m1
+          , let m2' = if m2>max' then max' else m2 ]
+
+    align BetweenTicks m1 m2 = avg m1 m2
+    align UnderTicks m1 m2 = m1
+
     avg m1 m2    = localTimeFromDouble $ m1' + (m2' - m1')/2
      where
       m1' = doubleFromLocalTime m1
@@ -115,6 +125,9 @@ timeAxis tseq lseq labelf cseq contextf pts = AxisData {
 
 normalizeTimeOfDay :: LocalTime -> LocalTime
 normalizeTimeOfDay t@(LocalTime day (TimeOfDay h m s))
+  | s <  0    = normalizeTimeOfDay (LocalTime day (TimeOfDay h (m-1) (s+60)))
+  | m <  0    = normalizeTimeOfDay (LocalTime day (TimeOfDay (h-1) (m+60) s))
+  | h <  0    = normalizeTimeOfDay (LocalTime (addDays (-1) day) (TimeOfDay (h+24) m s))
   | s >= 60   = normalizeTimeOfDay (LocalTime day (TimeOfDay h (m+s`div'`60)
                                                                (s`mod'`60)))
   | m >= 60   = normalizeTimeOfDay (LocalTime day (TimeOfDay (h+m`div`60)
@@ -123,56 +136,43 @@ normalizeTimeOfDay t@(LocalTime day (TimeOfDay h m s))
                           (TimeOfDay (h`mod`24) m s)
   | otherwise = t
 
-addTod :: Int -> Int -> Int -> LocalTime -> LocalTime
+addTod :: Int -> Int -> Pico -> LocalTime -> LocalTime
 addTod dh dm ds (LocalTime day (TimeOfDay h m s)) = normalizeTimeOfDay t'
-  where t' = LocalTime day (TimeOfDay (h+dh) (m+dm) (s+fromIntegral ds))
+  where t' = LocalTime day (TimeOfDay (h+dh) (m+dm) (s+ds))
 
+truncateTo :: (HasResolution a) => Fixed a -> Fixed a -> Fixed a
+truncateTo t step = t - t `mod'` step
 
--- | A 'TimeSeq' for seconds.
-seconds :: TimeSeq
-seconds t = (iterate rev t1, tail (iterate fwd t1))
+secondSeq :: Pico -> TimeSeq
+secondSeq step t = (iterate rev t1, tail (iterate fwd t1))
   where h0       = todHour (localTimeOfDay t)
         m0       = todMin  (localTimeOfDay t)
-        s0       = todSec  (localTimeOfDay t)
+        s0       = todSec  (localTimeOfDay t) `truncateTo` (fromIntegral 1 / 1000)
         t0       = LocalTime (localDay t) (TimeOfDay h0 m0 s0)
         t1       = if t0 < t then t0 else (rev t0)
-        rev      = addTod 0 0 (-1)
-        fwd      = addTod 0 0 1
-        toTime h = LocalTime
+        rev      = addTod 0 0 (negate step)
+        fwd      = addTod 0 0 (step)
 
--- | Another 'TimeSeq' for seconds.
-fiveSeconds :: TimeSeq
-fiveSeconds t = (iterate rev t1, tail (iterate fwd t1))
-  where h0       = todHour (localTimeOfDay t)
-        m0       = todMin  (localTimeOfDay t)
-        s0       = todSec  (localTimeOfDay t)
-        t0       = LocalTime (localDay t) (TimeOfDay h0 m0 s0)
-        t1       = if t0 < t then t0 else (rev t0)
-        rev      = addTod 0 0 (-5)
-        fwd      = addTod 0 0 5
-        toTime h = LocalTime
+millis1, millis10, millis100, seconds, fiveSeconds  :: TimeSeq
+millis1 = secondSeq (fromIntegral 1 / 1000)
+millis10 = secondSeq (fromIntegral 1 / 100)
+millis100 = secondSeq (fromIntegral 1 / 10)
+seconds = secondSeq (fromIntegral 1)
+fiveSeconds = secondSeq (fromIntegral 5)
 
--- | A 'TimeSeq' for minutes.
-minutes :: TimeSeq
-minutes t = (iterate rev t1, tail (iterate fwd t1))
+minuteSeq :: Int -> TimeSeq
+minuteSeq step t = (iterate rev t1, tail (iterate fwd t1))
   where h0       = todHour (localTimeOfDay t)
         m0       = todMin  (localTimeOfDay t)
         t0       = LocalTime (localDay t) (TimeOfDay h0 m0 0)
         t1       = if t0 < t then t0 else (rev t0)
-        rev      = addTod 0 (-1)0
-        fwd      = addTod 0 1   0
-        toTime h = LocalTime
+        rev      = addTod 0 (negate step) (fromIntegral 0)
+        fwd      = addTod 0 step    (fromIntegral 0)
 
--- | Another 'TimeSeq' for minutes.
-fiveMinutes :: TimeSeq
-fiveMinutes t = (iterate rev t1, tail (iterate fwd t1))
-  where h0       = todHour (localTimeOfDay t)
-        m0       = todMin  (localTimeOfDay t)
-        t0       = LocalTime (localDay t) (TimeOfDay h0 m0 0)
-        t1       = if t0 < t then t0 else (rev t0)
-        rev      = addTod 0 (-5)0
-        fwd      = addTod 0 5   0
-        toTime h = LocalTime
+
+minutes, fiveMinutes :: TimeSeq
+minutes = minuteSeq 1
+fiveMinutes = minuteSeq 5
 
 -- | A 'TimeSeq' for hours.
 hours :: TimeSeq
@@ -180,9 +180,8 @@ hours t = (iterate rev t1, tail (iterate fwd t1))
   where h0       = todHour (localTimeOfDay t)
         t0       = LocalTime (localDay t) (TimeOfDay h0 0 0)
         t1       = if t0 < t then t0 else (rev t0)
-        rev      = addTod (-1) 0 0
-        fwd      = addTod 1    0 0
-        toTime h = LocalTime
+        rev      = addTod (-1) 0 (fromIntegral 0)
+        fwd      = addTod 1    0 (fromIntegral 0)
 
 -- | A 'TimeSeq' for calendar days.
 days :: TimeSeq
@@ -220,40 +219,46 @@ noTime t = ([],[])
 --   with 'doubleFromLocalTime'.
 autoTimeAxis :: AxisFn LocalTime
 autoTimeAxis pts
-    | null pts              = timeAxis days    days    (ft "%d-%b-%y")
-                                               noTime  (ft "") []
-    | tdiff==0 && dsec<32   = timeAxis seconds seconds (ft "%Ss")
-                                               minutes (ft "%d-%b-%y %H:%M") pts
-    | tdiff==0 && dsec<120  = timeAxis seconds fiveSeconds (ft "%Ss")
-                                               minutes (ft "%d-%b-%y %H:%M") pts
-    | tdiff==0 && dmin<7    = timeAxis fiveSeconds minutes (ft "%H:%M")
-                                               hours   (ft "%d-%b-%y") pts
-    | tdiff==0 && dmin<18   = timeAxis minutes minutes (ft "%H:%M")
-                                               hours   (ft "%d-%b-%y") pts
-    | tdiff==0 && dmin<32   = timeAxis minutes minutes (ft "%Mm")
-                                               hours   (ft "%d-%b-%y %H:00") pts
-    | tdiff==0 && dmin<90   = timeAxis minutes fiveMinutes (ft "%Mm")
-                                               hours   (ft "%d-%b-%y %H:00") pts
-    | tdiff < 2 && dhour<4  = timeAxis fiveMinutes hours (ft "%H:%M")
-                                                   days  (ft "%d-%b-%y") pts
-    | tdiff < 2 && dhour<16 = timeAxis hours  hours  (ft "%H:%M")
-                                              days   (ft "%d-%b-%y") pts
-    | tdiff < 2 && dhour<32 = timeAxis hours  hours  (ft "%Hh")
-                                              days   (ft "%d-%b-%y") pts
-    | tdiff < 4             = timeAxis hours  days   (ft "%d-%b-%y")
-                                              noTime (ft "") pts
-    | tdiff < 12            = timeAxis days   days   (ft "%d-%b")
-                                              years  (ft "%Y")      pts
-    | tdiff < 45            = timeAxis days   days   (ft "%d")
-                                              months (ft "%b-%y") pts
-    | tdiff < 95            = timeAxis days   months (ft "%b-%y")
-                                              noTime (ft "") pts
-    | tdiff < 450           = timeAxis months months (ft "%b-%y")
-                                              noTime (ft "") pts
-    | tdiff < 735           = timeAxis months months (ft "%b")
-                                              years  (ft "%Y") pts
-    | tdiff < 1800          = timeAxis months years (ft "%Y") noTime (ft "") pts
-    | otherwise             = timeAxis years  years (ft "%Y") noTime (ft "") pts
+    | null pts              = timeAxis days    days    (ft "%d-%b-%y") UnderTicks
+                                               noTime  (ft "") UnderTicks []
+    | tdiff==0 && 100*dsec<1= timeAxis millis1   millis1  (ft "%S%Q") UnderTicks 
+                                                 noTime (ft "%S%Q") UnderTicks pts
+    | tdiff==0 && 10*dsec<1 = timeAxis millis10  millis10  (ft "%S%Q") UnderTicks 
+                                                 noTime (ft "%S%Q") UnderTicks pts
+    | tdiff==0 && dsec<1    = timeAxis millis10  millis100 (ft "%S%Q") UnderTicks
+                                                 seconds (ft "%M:%S") BetweenTicks pts
+    | tdiff==0 && dsec<5    = timeAxis millis100 seconds (ft "%M:%S%Q") UnderTicks
+                                                 seconds (ft "%M:%S") BetweenTicks pts
+    | tdiff==0 && dsec<32   = timeAxis seconds seconds (ft "%Ss") UnderTicks
+                                               minutes (ft "%d-%b-%y %H:%M") BetweenTicks pts
+    | tdiff==0 && dsec<120  = timeAxis seconds fiveSeconds (ft "%Ss") UnderTicks
+                                               minutes (ft "%d-%b-%y %H:%M") BetweenTicks pts
+    | tdiff==0 && dmin<7    = timeAxis fiveSeconds minutes (ft "%Mm") UnderTicks
+                                               hours   (ft "%d-%b-%y %H:00") BetweenTicks pts
+    | tdiff==0 && dmin<32   = timeAxis minutes minutes (ft "%Mm") UnderTicks
+                                               hours   (ft "%d-%b-%y %H:00") BetweenTicks pts
+    | tdiff==0 && dmin<90   = timeAxis minutes fiveMinutes (ft "%Mm") UnderTicks
+                                               hours   (ft "%d-%b-%y %H:00") BetweenTicks pts
+    | tdiff < 2 && dhour<4  = timeAxis fiveMinutes hours (ft "%H:%M") UnderTicks
+                                                   days  (ft "%d-%b-%y") BetweenTicks pts
+    | tdiff < 2 && dhour<32 = timeAxis hours  hours  (ft "%H:%M") UnderTicks
+                                              days   (ft "%d-%b-%y") BetweenTicks pts
+    | tdiff < 4             = timeAxis hours  days   (ft "%d-%b-%y") BetweenTicks
+                                              noTime (ft "") BetweenTicks pts
+    | tdiff < 12            = timeAxis days   days   (ft "%d-%b") BetweenTicks
+                                              years  (ft "%Y") BetweenTicks pts
+    | tdiff < 45            = timeAxis days   days   (ft "%d") BetweenTicks
+                                              months (ft "%b-%y") BetweenTicks pts
+    | tdiff < 95            = timeAxis days   months (ft "%b-%y") BetweenTicks
+                                              noTime (ft "") BetweenTicks pts
+    | tdiff < 450           = timeAxis months months (ft "%b-%y") BetweenTicks
+                                              noTime (ft "") BetweenTicks pts
+    | tdiff < 735           = timeAxis months months (ft "%b") BetweenTicks
+                                              years  (ft "%Y") BetweenTicks pts
+    | tdiff < 1800          = timeAxis months years (ft "%Y") BetweenTicks
+                                              noTime (ft "") BetweenTicks pts
+    | otherwise             = timeAxis years  years (ft "%Y") BetweenTicks
+                                              noTime (ft "") BetweenTicks pts
   where
     tdiff = diffDays (localDay t1) (localDay t0)
     dhour = if tdiff==0 then h1-h0 else 24*fromIntegral tdiff +h1-h0
@@ -264,4 +269,5 @@ autoTimeAxis pts
     t1    = maximum pts
     t0    = minimum pts
     ft    = formatTime defaultTimeLocale
+
 
