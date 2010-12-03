@@ -31,6 +31,7 @@ module Graphics.Rendering.Chart.Axis.Floating(
 
 import Data.List(minimumBy)
 import Data.Ord (comparing)
+import Numeric (showFFloat)
 
 import Data.Accessor.Template
 import Graphics.Rendering.Chart.Types
@@ -67,9 +68,10 @@ instance PlotValue LogValue where
     fromValue d          = LogValue (exp d)
     autoAxis             = autoScaledLogAxis defaultLogAxis
 
-showD x = case reverse $ show x of
+showD :: (RealFloat d) => d -> String
+showD x = case reverse $ showFFloat Nothing x "" of
             '0':'.':r -> reverse r
-            _         -> show x
+            r         -> reverse r
 
 data LinearAxisParams a = LinearAxisParams {
     -- | The function used to show the axes labels.
@@ -82,7 +84,7 @@ data LinearAxisParams a = LinearAxisParams {
     la_nTicks_  :: Int
 }
 
-defaultLinearAxis :: (Show a) => LinearAxisParams a
+defaultLinearAxis :: (Show a, RealFloat a) => LinearAxisParams a
 defaultLinearAxis = LinearAxisParams {
     la_labelf_    = showD,
     la_nLabels_   = 5,
@@ -138,7 +140,7 @@ autoSteps nSteps vs = map fromRational $ steps (fromIntegral nSteps) r
 
 ----------------------------------------------------------------------
 
-defaultLogAxis :: Show a => LogAxisParams a
+defaultLogAxis :: (Show a, RealFloat a) => LogAxisParams a
 defaultLogAxis = LogAxisParams {
     loga_labelf_ = showD
 }
