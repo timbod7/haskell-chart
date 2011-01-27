@@ -100,7 +100,8 @@ autoScaledAxis lap ps0 = makeAxis' realToFrac realToFrac
     ps        = filter isValidNumber ps0
     (min,max) = (minimum ps,maximum ps)
     range []  = (0,1)
-    range _   | min == max = let d = abs (min * 0.01) in (min-d,max+d)
+    range _   | min == max = if min==0 then (-1,1) else
+                             let d = abs (min * 0.01) in (min-d,max+d)
               | otherwise  = (min,max)
     labelvs   = map fromRational $ steps (fromIntegral (la_nLabels_ lap)) r
     tickvs    = map fromRational $ steps (fromIntegral (la_nTicks_ lap))
