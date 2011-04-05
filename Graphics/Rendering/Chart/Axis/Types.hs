@@ -34,6 +34,7 @@ module Graphics.Rendering.Chart.Axis.Types(
     invLinMap,
 
     axisGridAtTicks,
+    axisGridAtBigTicks,
     axisGridAtLabels,
     axisGridHide,
     axisTicksHide,
@@ -130,16 +131,23 @@ axisToRenderable at = Renderable {
   }
 
 -- | Modifier to remove grid lines from an axis
-axisGridHide        :: AxisData x -> AxisData x
-axisGridHide ad      = ad{ axis_grid_   = [] }
+axisGridHide         :: AxisData x -> AxisData x
+axisGridHide ad       = ad{ axis_grid_ = [] }
 
 -- | Modifier to position grid lines to line up with the ticks
-axisGridAtTicks     :: AxisData x -> AxisData x
-axisGridAtTicks ad   = ad{ axis_grid_   = map fst (axis_ticks_ ad) }
+axisGridAtTicks      :: AxisData x -> AxisData x
+axisGridAtTicks ad    = ad{ axis_grid_ = map fst (axis_ticks_ ad) }
+
+-- | Modifier to position grid lines to line up with only the major ticks
+axisGridAtBigTicks   :: AxisData x -> AxisData x
+axisGridAtBigTicks ad = ad{ axis_grid_ =
+                            map fst $
+                            filter ((> minimum (map (abs.snd) (axis_ticks_ ad))).snd) $
+                            axis_ticks_ ad }
 
 -- | Modifier to position grid lines to line up with the labels
-axisGridAtLabels    :: AxisData x -> AxisData x
-axisGridAtLabels ad  = ad{ axis_grid_   = map fst vs }
+axisGridAtLabels     :: AxisData x -> AxisData x
+axisGridAtLabels ad   = ad{ axis_grid_ = map fst vs }
   where
     vs = case axis_labels_ ad of
         [] -> []
