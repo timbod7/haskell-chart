@@ -31,6 +31,7 @@ module Graphics.Rendering.Chart.Renderable(
     spacer,
     spacer1,
     setPickFn,
+    mapMaybePickFn,
     mapPickFn,
     nullPickFn,
 
@@ -95,10 +96,14 @@ spacer1 r  = r{ render  = \_ -> return nullPickFn }
 setPickFn :: PickFn b -> Renderable a -> Renderable b
 setPickFn pickfn r = r{ render  = \sz -> do { render r sz; return pickfn; } }
 
+-- | Map a function over the result of a renderable's pickfunction, keeping only 'Just' results.
+mapMaybePickFn :: (a -> Maybe b) -> Renderable a -> Renderable b
+mapMaybePickFn f r = r{ render = \sz -> do pf <- render r sz
+                                           return (join . fmap f . pf) }
+
 -- | Map a function over result of a renderable's pickfunction.
 mapPickFn :: (a -> b) -> Renderable a -> Renderable b
-mapPickFn f r = r{ render  = \sz -> do pf <- render r sz
-                                       return (fmap f . pf) }
+mapPickFn f = mapMaybePickFn (Just . f)
 
 -- | Add some spacing at the edges of a renderable.
 addMargins :: (Double,Double,Double,Double) -- ^ The spacing to be added.
