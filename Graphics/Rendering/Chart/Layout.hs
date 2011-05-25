@@ -140,7 +140,10 @@ data Layout1 x y = Layout1 {
 
 data Layout1Pick x y = L1P_Legend String
                      | L1P_Title String
-                     | L1P_AxisTitle String
+                     | L1P_BottomAxisTitle String
+                     | L1P_TopAxisTitle String
+                     | L1P_LeftAxisTitle String
+                     | L1P_RightAxisTitle String
                      | L1P_PlotArea x y y
                      | L1P_BottomAxis x
                      | L1P_TopAxis x
@@ -266,16 +269,16 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
          , besideN [er,     er,    btitle, er,    er       ]
          ]
 
-    ttitle = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_
-    btitle = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_
-    ltitle = atitle HTA_Right  VTA_Centre 270 layout1_left_axis_
-    rtitle = atitle HTA_Left   VTA_Centre 270 layout1_right_axis_
+    ttitle = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_    L1P_TopAxisTitle
+    btitle = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_ L1P_BottomAxisTitle
+    ltitle = atitle HTA_Right  VTA_Centre 270 layout1_left_axis_   L1P_LeftAxisTitle
+    rtitle = atitle HTA_Left   VTA_Centre 270 layout1_right_axis_  L1P_RightAxisTitle
 
     er = tval $ emptyRenderable
 
-    atitle ha va rot af = if ttext == "" then er
-                          else tval $ mapPickFn L1P_AxisTitle
-                                    $ rlabel tstyle ha va rot ttext
+    atitle ha va rot af pf = if ttext == "" then er
+                             else tval $ mapPickFn pf
+                                       $ rlabel tstyle ha va rot ttext
       where
         tstyle = laxis_title_style_ (af l)
         ttext  = laxis_title_       (af l)
