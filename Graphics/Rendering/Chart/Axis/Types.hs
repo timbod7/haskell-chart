@@ -249,7 +249,8 @@ renderAxis at@(AxisT et as rev ad) sz = do
 
    avoidOverlaps labels = do
        rects <- mapM labelDrawRect labels
-       return $ map snd . head . filter (noOverlaps . map fst) $ map (\n -> eachNth n rects) [0 .. length rects]
+       return $ map snd . head . filter (noOverlaps . map fst)
+              $ map (\n -> eachNth n rects) [0 .. length rects]
 
    labelDrawRect (value,s) = do
        let pt = axisPoint value `pvadd` (awayFromAxis ag)
