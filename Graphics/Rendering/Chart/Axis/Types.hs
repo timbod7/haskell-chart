@@ -39,6 +39,7 @@ module Graphics.Rendering.Chart.Axis.Types(
     axisGridHide,
     axisTicksHide,
     axisLabelsHide,
+    axisLabelsOverride,
 
     axis_viewport,
     axis_tropweiv,
@@ -56,6 +57,7 @@ module Graphics.Rendering.Chart.Axis.Types(
 import qualified Graphics.Rendering.Cairo as C
 import Data.Time
 import Data.Fixed
+import Data.Maybe
 import System.Locale (defaultTimeLocale)
 import Control.Monad
 import Data.List(sort,intersperse)
@@ -160,6 +162,10 @@ axisTicksHide ad     = ad{ axis_ticks_  = [] }
 -- | Modifier to remove labels from an axis
 axisLabelsHide      :: AxisData x -> AxisData x
 axisLabelsHide ad    = ad{ axis_labels_ = []}
+
+-- | Modifier to change labels on an axis
+axisLabelsOverride  :: [(x,String)] -> AxisData x -> AxisData x
+axisLabelsOverride o ad = ad{ axis_labels_ = [o] }
 
 minsizeAxis :: AxisT x -> CRender RectSize
 minsizeAxis (AxisT at as rev ad) = do
