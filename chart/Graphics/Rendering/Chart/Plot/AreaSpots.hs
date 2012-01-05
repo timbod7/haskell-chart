@@ -59,7 +59,8 @@ data AreaSpots z x y = AreaSpots
   { area_spots_title_      :: String
   , area_spots_linethick_  :: Double
   , area_spots_linecolour_ :: AlphaColour Double
-  , area_spots_fillcolour_ :: AlphaColour Double
+  , area_spots_fillcolour_ :: Colour Double
+  , area_spots_opacity_    :: Double
   , area_spots_max_radius_ :: Double	-- ^ the largest size of spot
   , area_spots_values_     :: [(x,y,z)]
   }
@@ -69,7 +70,8 @@ defaultAreaSpots = AreaSpots
   { area_spots_title_      = ""
   , area_spots_linethick_  = 0.1
   , area_spots_linecolour_ = opaque blue
-  , area_spots_fillcolour_ = flip withOpacity 0.2 blue
+  , area_spots_fillcolour_ = blue
+  , area_spots_opacity_    = 0.2
   , area_spots_max_radius_ = 20  -- in pixels
   , area_spots_values_     = []
   }
@@ -88,8 +90,10 @@ renderAreaSpots p pmap = preserveCState $
                     (area_spots_values_ p))
           (\ (x,y,z)-> do
               let radius = sqrt z
-              let (CairoPointStyle drawSpotAt)    = filledCircles radius
-                                                      (area_spots_fillcolour_ p)
+              let (CairoPointStyle drawSpotAt)    = filledCircles radius $
+                                                    flip withOpacity 
+                                                      (area_spots_opacity_ p) $
+                                                    area_spots_fillcolour_ p
               drawSpotAt (pmap (LValue x, LValue y))
               let (CairoPointStyle drawOutlineAt) = hollowCircles radius
                                                       (area_spots_linethick_ p)
@@ -106,8 +110,10 @@ renderSpotLegend :: AreaSpots z x y -> Rect -> CRender ()
 renderSpotLegend p r@(Rect p1 p2) = preserveCState $ do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2
-    let (CairoPointStyle drawSpotAt)    = filledCircles radius
-                                            (area_spots_fillcolour_ p)
+    let (CairoPointStyle drawSpotAt)    = filledCircles radius $
+                                          flip withOpacity 
+                                               (area_spots_opacity_ p) $
+                                          area_spots_fillcolour_ p
     drawSpotAt centre
     let (CairoPointStyle drawOutlineAt) = hollowCircles radius
                                             (area_spots_linethick_ p)
@@ -126,6 +132,7 @@ data AreaSpots4D z t x y = AreaSpots4D
   { area_spots_4d_title_      :: String
   , area_spots_4d_linethick_  :: Double
   , area_spots_4d_palette_    :: [Colour Double]
+  , area_spots_4d_opacity_    :: Double
   , area_spots_4d_max_radius_ :: Double	-- ^ the largest size of spot
   , area_spots_4d_values_     :: [(x,y,z,t)]
   }
@@ -135,6 +142,7 @@ defaultAreaSpots4D = AreaSpots4D
   { area_spots_4d_title_      = ""
   , area_spots_4d_linethick_  = 0.1
   , area_spots_4d_palette_    = [ blue, green, yellow, orange, red ]
+  , area_spots_4d_opacity_    = 0.2
   , area_spots_4d_max_radius_ = 20  -- in pixels
   , area_spots_4d_values_     = []
   }
@@ -157,7 +165,8 @@ renderAreaSpots4D p pmap = preserveCState $
               let radius  = sqrt z
               let colour  = (area_spots_4d_palette_ p) !! t 
               let (CairoPointStyle drawSpotAt)
-                    = filledCircles radius (flip withOpacity 0.2 colour)
+                    = filledCircles radius $
+                          flip withOpacity (area_spots_4d_opacity_ p) $ colour
               drawSpotAt (pmap (LValue x, LValue y))
               let (CairoPointStyle drawOutlineAt)
                     = hollowCircles radius (area_spots_4d_linethick_ p)
@@ -183,9 +192,10 @@ renderSpotLegend4D :: AreaSpots4D z t x y -> Rect -> CRender ()
 renderSpotLegend4D p r@(Rect p1 p2) = preserveCState $ do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2
-    let (CairoPointStyle drawSpotAt)    = filledCircles radius
-                                            (flip withOpacity 0.2 $
-                                             head (area_spots_4d_palette_ p))
+    let (CairoPointStyle drawSpotAt)    = filledCircles radius $
+                                          flip withOpacity
+                                               (area_spots_4d_opacity_ p) $
+                                          head $ area_spots_4d_palette_ p
     drawSpotAt centre
     let (CairoPointStyle drawOutlineAt) = hollowCircles radius
                                             (area_spots_4d_linethick_ p)
