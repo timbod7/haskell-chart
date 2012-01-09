@@ -1,7 +1,6 @@
 module Test9 where 
 
 import Graphics.Rendering.Chart
-import Graphics.Rendering.Chart.Gtk
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
@@ -33,7 +32,6 @@ chart borders = toRenderable layout
 main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile (chart True) 320 240 "test9_small.png"
 main1 ["big"]    = renderableToPNGFile (chart True) 800 600 "test9_big.png"
-main1 _          = renderableToWindow  (chart True) 640 480 >> return undefined
 
 main = getArgs >>= main1
 

@@ -1,7 +1,6 @@
 module Test2 where
 
 import Graphics.Rendering.Chart
-import Graphics.Rendering.Chart.Gtk
 import Data.Time.LocalTime
 import Data.Colour
 import Data.Colour.Names
@@ -59,6 +58,5 @@ chart prices showMinMax lwidth = toRenderable layout
 main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile (chart prices2 True 0.25) 320 240 "test2_small.png"
 main1 ["big"]    = renderableToPNGFile (chart prices2 True 0.25) 800 600 "test2_big.png"
-main1 _          = renderableToWindow  (chart prices2 True 1.00) 640 480 >> return undefined
 
 main = getArgs >>= main1

@@ -1,7 +1,6 @@
 module Test4 where 
 
 import Graphics.Rendering.Chart
-import Graphics.Rendering.Chart.Gtk
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
@@ -32,7 +31,6 @@ chart xrev yrev = toRenderable layout
 main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile (chart False False) 320 240 "test4_small.png"
 main1 ["big"]    = renderableToPNGFile (chart False False) 800 600 "test4_big.png"
-main1 _          = renderableToWindow  (chart False False) 640 480 >> return undefined
 
 main = getArgs >>= main1
 

@@ -1,7 +1,6 @@
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Simple
-import Graphics.Rendering.Chart.Gtk
 import Graphics.Rendering.Chart.Grid
 
 import System.Environment(getArgs)
@@ -32,9 +31,8 @@ import qualified Test15
 import qualified Test17
 import qualified TestParametric
 
-data OutputType = Window | PNG | PS | PDF | SVG
+data OutputType = PNG | PS | PDF | SVG
 
-chooseLineWidth Window = 1.0
 chooseLineWidth PNG = 1.0
 chooseLineWidth PDF = 0.25
 chooseLineWidth PS = 0.25
@@ -388,11 +386,11 @@ main = do
     main1 args
 
 main1 :: [String] -> IO ()
-main1 ("--png":tests) = showTests tests renderToPNG
 main1 ("--pdf":tests) = showTests tests renderToPDF
 main1 ("--svg":tests) = showTests tests renderToSVG
 main1 ("--ps":tests) = showTests tests renderToPS
-main1 tests = showTests tests renderToWindow
+main1 ("--png":tests) = showTests tests renderToPNG
+main1 tests = showTests tests renderToPNG
 
 showTests :: [String] -> ((String,OutputType -> Renderable ()) -> IO()) -> IO ()
 showTests tests ofn = mapM_ doTest (filter (match tests) allTests)
@@ -406,7 +404,6 @@ match :: [String] -> (String,a) -> Bool
 match [] t = True
 match ts t = (fst t) `elem` ts
 
-renderToWindow (n,ir) = renderableToWindow (ir Window) 640 480
 renderToPNG (n,ir) = renderableToPNGFile (ir PNG) 640 480 (n ++ ".png")
                      >> return ()
 renderToPS (n,ir) = renderableToPSFile (ir PS) 640 480 (n ++ ".ps")

@@ -2,7 +2,6 @@ module Test6 where
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Simple
-import Graphics.Rendering.Chart.Gtk
 import System.Environment(getArgs)
 
 chart :: Renderable ()
@@ -19,6 +18,5 @@ chart = toRenderable (plotLayout pp){layout1_title_="Graphics.Rendering.Chart.Si
 main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile chart 320 240 "test6_small.png"
 main1 ["big"]    = renderableToPNGFile chart 800 600 "test6_big.png"
-main1 _          = renderableToWindow  chart 640 480 >> return undefined
 
 main = getArgs >>= main1

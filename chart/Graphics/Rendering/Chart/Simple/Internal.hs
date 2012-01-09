@@ -1,53 +1,10 @@
-{-# LANGUAGE CPP #-}
------------------------------------------------------------------------------
--- |
--- Module      :  Graphics.Rendering.Chart.Simple
--- Copyright   :  (c) David Roundy 2007
--- License     :  BSD-style (see chart/COPYRIGHT)
---
--- An even simpler framework for creating 2D charts in Haskell.
---
--- The basic idea is to make it as easy to plot as octave, which means that
--- you provide no more information than you wish to provide.  We provide
--- four plotting functions, which differ only in their output.  One
--- produces a "Layout1" that you can customize using other
--- Graphics.Rendering.Chart functions.  The other three produce their
--- output directly.  All three accept the same input (except for the
--- filename required by plotPDF and plotPS), and produce the same plots.
---
--- The plot functions accept a variable number of arguments.  You must
--- provide a [Double] which defines the points on the x axis, which must
--- precede any of the "y" values.  The y values may either be [Double] or
--- functions.  After any given y value, you can give either Strings or
--- PlotKinds describing how you'd like that y printed.
---
--- Examples:
---
--- > renderableToWindow (toRenderable $ plotLayout $
--- >                     plot [0,0.1..10] sin "sin(x)") 640 480
---
--- > plotWindow [0,1,3,4,8] [12,15,1,5,8] "o" "points"
---
--- > plotPDF "foo.pdf" [0,0.1..10] sin "- " cos ". " cos "o"
---
--- > plotPS "foo.ps" [0,0.1..10] (sin . exp) "- " (sin . exp) "o-"
------------------------------------------------------------------------------
-module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
-#if HAVE_GTK
-                                        plotWindow,
-#endif
-                                        plotPDF, plotPS,
-                                        plotLayout, plotPNG, Layout1DDD
-                                      ) where
+module Graphics.Rendering.Chart.Simple.Internal where
 
 import Data.Maybe ( catMaybes )
 import Data.Colour
 import Data.Colour.Names
 
 import Graphics.Rendering.Chart
-#if HAVE_GTK
-import Graphics.Rendering.Chart.Gtk
-#endif
 
 styleColor :: Int -> AlphaColour Double
 styleColor ind = colorSequence !! ind
@@ -228,21 +185,6 @@ instance (PlotArg a, PlotType r) => PlotType (a -> r) where
     pl args = \ a -> pl (toUPlot a ++ args)
 instance PlotType Layout1DDD where
     pl args = uplot (reverse args)
-
-#if HAVE_GTK
--- | Display a plot on the screen.
-
-plotWindow :: PlotWindowType a => a
-plotWindow = plw []
-class PlotWindowType t where
-    plw     :: [UPlot] -> t
-instance (PlotArg a, PlotWindowType r) => PlotWindowType (a -> r) where
-    plw args = \ a -> plw (toUPlot a ++ args)
-instance PlotWindowType (IO a) where
-    plw args = do
-        renderableToWindow (toRenderable $ uplot (reverse args)) 640 480
-        return undefined
-#endif
 
 -- | Save a plot as a PDF file.
 

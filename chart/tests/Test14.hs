@@ -1,8 +1,6 @@
-module Test14a where 
+module Test14 where 
 
 import Graphics.Rendering.Chart
-import Graphics.Rendering.Chart.Gtk
-import Graphics.Rendering.Chart.Plot
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
@@ -10,7 +8,7 @@ import System.Random
 import System.Environment(getArgs)
 import Prices(prices1)
 
--- demonstrate AreaSpots4D
+-- demonstrate AreaSpots
 
 chart :: Double -> Renderable ()
 chart lwidth = toRenderable layout
@@ -27,16 +25,15 @@ chart lwidth = toRenderable layout
            $ plot_lines_title ^= "price 1"
            $ defaultPlotLines
 
-    spots = area_spots_4d_title ^= "random value"
-          $ area_spots_4d_max_radius ^= 20
-          $ area_spots_4d_values ^= values
-          $ defaultAreaSpots4D
+    spots = area_spots_title ^= "random value"
+          $ area_spots_max_radius ^= 20
+          $ area_spots_values ^= values
+          $ defaultAreaSpots
     
-    points = map (\ (d,v,z,t)-> (d,v) ) values
-    values = [ (d, v, z, t) | ((d,v,_),z,t) <- zip3 prices1 zs ts ]
-    zs,ts :: [Int]
+    points = map (\ (d,v,z)-> (d,v) ) values
+    values = [ (d, v, z) | ((d,v,_),z) <- zip prices1 zs ]
+    zs    :: [Int]
     zs     = randoms $ mkStdGen 0
-    ts     = randomRs (-2,27) $ mkStdGen 1
 
     lineStyle = line_width ^= 3 * lwidth
               $ line_color ^= opaque blue
@@ -45,6 +42,5 @@ chart lwidth = toRenderable layout
 main1 :: [String] -> IO (PickFn ())
 main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test14_small.png"
 main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test14_big.png"
-main1 _          = renderableToWindow  (chart 1.00) 640 480 >> return undefined
 
 main = getArgs >>= main1

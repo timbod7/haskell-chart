@@ -1,7 +1,6 @@
 module Test17 where 
 
 import Graphics.Rendering.Chart
-import Graphics.Rendering.Chart.Gtk
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
@@ -75,8 +74,7 @@ chart lwidth = toRenderable layout
                        $ defaultPlotLines ^. plot_lines_style
 
 main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test17_small.png"
-main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test17_big.png"
-main1 _          = renderableToWindow  (chart 1.00) 640 480 >> return undefined
+main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test1_small.png"
+main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test1_big.png"
 
 main = getArgs >>= main1
