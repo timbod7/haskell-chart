@@ -11,8 +11,7 @@
 -- four plotting functions, which differ only in their output.  One
 -- produces a "Layout1" that you can customize using other
 -- Graphics.Rendering.Chart functions.  The other three produce their
--- output directly.  All three accept the same input (except for the
--- filename required by plotPDF and plotPS), and produce the same plots.
+-- output directly.  All three accept the same input and produce the same plots.
 --
 -- The plot functions accept a variable number of arguments.  You must
 -- provide a [Double] which defines the points on the x axis, which must
@@ -21,11 +20,6 @@
 -- PlotKinds describing how you'd like that y printed.
 --
 -- Examples:
---
--- > renderableToWindow (toRenderable $ plotLayout $
--- >                     plot [0,0.1..10] sin "sin(x)") 640 480
---
--- > plotWindow [0,1,3,4,8] [12,15,1,5,8] "o" "points"
 --
 -- > plotPDF "foo.pdf" [0,0.1..10] sin "- " cos ". " cos "o"
 --
