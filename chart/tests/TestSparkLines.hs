@@ -11,8 +11,8 @@ import ExampleStocks
 
 -- demonstrate SparkLine
 
-msft = SparkLine { sparkOptions = smoothSpark { limits=(bot,top), height=40 }
-                 , sparkData    = closing }
+msft = SparkLine { sl_options = smoothSpark { so_limits=(bot,top), so_height=40 }
+                 , sl_data    = closing }
   where
     closing  = [ cl | (d,(lo,op,cl,hi)) <- reverse pricesMSFT ]
     lowpoint = [ lo | (d,(lo,op,cl,hi)) <- reverse pricesMSFT ]
