@@ -19,6 +19,9 @@ msft = SparkLine { sparkOptions = smoothSpark { limits=(bot,top), height=40 }
     bot = minimum lowpoint
     top = maximum closing
 
+chart = toRenderable msft
+chartSize = sparkSize msft
+
 main1 :: [String] -> IO (PickFn ())
 main1 _  = sparkLineToPNG "test_sparkline.png" msft
 

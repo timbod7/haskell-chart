@@ -32,6 +32,8 @@ module Graphics.Rendering.Chart.SparkLine
   , SparkOptions(..)
   , smoothSpark
   , barSpark
+    -- * Size calculation
+  , sparkSize
     -- * Rendering function
   , renderSparkLine
   , sparkLineToPNG
@@ -102,6 +104,9 @@ sparkWidth SparkLine{sparkOptions=opt, sparkData=ds} =
       bw | smooth opt = 0
          | otherwise  = 2
   in w
+
+sparkSize :: SparkLine -> (Int,Int)
+sparkSize s = (sparkWidth s, height (sparkOptions s))
 
 -- | Render a SparkLine to a drawing surface using cairo.
 renderSparkLine :: SparkLine -> CRender (PickFn ())

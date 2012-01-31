@@ -30,6 +30,7 @@ import qualified Test14a
 import qualified Test15
 import qualified Test17
 import qualified TestParametric
+import qualified TestSparkLines
 
 data OutputType = PNG | PS | PDF | SVG
 
@@ -327,58 +328,61 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
     }
 
 ----------------------------------------------------------------------
-allTests :: [ (String, OutputType -> Renderable ()) ]
+stdSize = (640,480)
+
+allTests :: [ (String, (Int,Int), OutputType -> Renderable ()) ]
 allTests =
-     [ ("test1",  \o -> Test1.chart (chooseLineWidth o) )
-     , ("test1a", \o -> test1a (chooseLineWidth o) )
-     , ("test2a", \o -> Test2.chart prices    False (chooseLineWidth o))
-     , ("test2b", \o -> Test2.chart prices1   False (chooseLineWidth o))
-     , ("test2c", \o -> Test2.chart prices2   False (chooseLineWidth o))
-     , ("test2d", \o -> Test2.chart prices5   True  (chooseLineWidth o))
-     , ("test2e", \o -> Test2.chart prices6   True  (chooseLineWidth o))
-     , ("test2f", \o -> Test2.chart prices7   True  (chooseLineWidth o))
-     , ("test2g", \o -> Test2.chart prices3   False (chooseLineWidth o))
-     , ("test2h", \o -> Test2.chart prices8   True  (chooseLineWidth o))
-     , ("test2i", \o -> Test2.chart prices9   True  (chooseLineWidth o))
-     , ("test2j", \o -> Test2.chart prices10  True  (chooseLineWidth o))
-     , ("test2k", \o -> Test2.chart prices10a True  (chooseLineWidth o))
-     , ("test2m", \o -> Test2.chart prices11  True  (chooseLineWidth o))
-     , ("test2n", \o -> Test2.chart prices10b True  (chooseLineWidth o))
-     , ("test2o", \o -> Test2.chart prices12  True  (chooseLineWidth o))
-     , ("test2p", \o -> Test2.chart prices13  True  (chooseLineWidth o))
-     , ("test2q", \o -> Test2.chart prices13a True  (chooseLineWidth o))
-     , ("test2r", \o -> Test2.chart prices13b True  (chooseLineWidth o))
-     , ("test2s", \o -> Test2.chart prices14  True  (chooseLineWidth o))
-     , ("test2t", \o -> Test2.chart prices14a True  (chooseLineWidth o))
-     , ("test2u", \o -> Test2.chart prices14b True  (chooseLineWidth o))
-     , ("test2v", \o -> Test2.chart prices14c True  (chooseLineWidth o))
-     , ("test2w", \o -> Test2.chart prices14d True  (chooseLineWidth o))
-     , ("test3",  const Test3.chart)
-     , ("test4a", const (Test4.chart False False))
-     , ("test4b", const (Test4.chart True False))
-     , ("test4c", const (Test4.chart False True))
-     , ("test4d", test4d)
-     , ("test5", \o -> Test5.chart (chooseLineWidth o))
-     , ("test6", const Test6.chart)
-     , ("test7", const Test7.chart)
-     , ("test8", const Test8.chart)
-     , ("test9", const (Test9.chart True))
-     , ("test9b", const (Test9.chart False))
-     , ("test9c", test9 BarsCentered)
-     , ("test9l", test9 BarsLeft)
-     , ("test9r", test9 BarsRight)
-     , ("test10", test10 prices1)
-     , ("test11", test11)
-     , ("test12", test12)
-     , ("test13", test13)
-     , ("test14", \o -> Test14.chart (chooseLineWidth o) )
-     , ("test14a", \o -> Test14a.chart (chooseLineWidth o) )
-     , ("test15a", const (Test15.chart (LORows 2)))
-     , ("test15b", const (Test15.chart (LOCols 2)))
-     , ("test17",  \o -> Test17.chart (chooseLineWidth o))
-     , ("misc1", setPickFn nullPickFn . misc1 0)
-     , ("misc1a", setPickFn nullPickFn . misc1 45)
-     , ("parametric", \o -> TestParametric.chart (chooseLineWidth o) )
+     [ ("test1",  stdSize, \o -> Test1.chart (chooseLineWidth o) )
+     , ("test1a", stdSize, \o -> test1a (chooseLineWidth o) )
+     , ("test2a", stdSize, \o -> Test2.chart prices    False (chooseLineWidth o))
+     , ("test2b", stdSize, \o -> Test2.chart prices1   False (chooseLineWidth o))
+     , ("test2c", stdSize, \o -> Test2.chart prices2   False (chooseLineWidth o))
+     , ("test2d", stdSize, \o -> Test2.chart prices5   True  (chooseLineWidth o))
+     , ("test2e", stdSize, \o -> Test2.chart prices6   True  (chooseLineWidth o))
+     , ("test2f", stdSize, \o -> Test2.chart prices7   True  (chooseLineWidth o))
+     , ("test2g", stdSize, \o -> Test2.chart prices3   False (chooseLineWidth o))
+     , ("test2h", stdSize, \o -> Test2.chart prices8   True  (chooseLineWidth o))
+     , ("test2i", stdSize, \o -> Test2.chart prices9   True  (chooseLineWidth o))
+     , ("test2j", stdSize, \o -> Test2.chart prices10  True  (chooseLineWidth o))
+     , ("test2k", stdSize, \o -> Test2.chart prices10a True  (chooseLineWidth o))
+     , ("test2m", stdSize, \o -> Test2.chart prices11  True  (chooseLineWidth o))
+     , ("test2n", stdSize, \o -> Test2.chart prices10b True  (chooseLineWidth o))
+     , ("test2o", stdSize, \o -> Test2.chart prices12  True  (chooseLineWidth o))
+     , ("test2p", stdSize, \o -> Test2.chart prices13  True  (chooseLineWidth o))
+     , ("test2q", stdSize, \o -> Test2.chart prices13a True  (chooseLineWidth o))
+     , ("test2r", stdSize, \o -> Test2.chart prices13b True  (chooseLineWidth o))
+     , ("test2s", stdSize, \o -> Test2.chart prices14  True  (chooseLineWidth o))
+     , ("test2t", stdSize, \o -> Test2.chart prices14a True  (chooseLineWidth o))
+     , ("test2u", stdSize, \o -> Test2.chart prices14b True  (chooseLineWidth o))
+     , ("test2v", stdSize, \o -> Test2.chart prices14c True  (chooseLineWidth o))
+     , ("test2w", stdSize, \o -> Test2.chart prices14d True  (chooseLineWidth o))
+     , ("test3",  stdSize,  const Test3.chart)
+     , ("test4a", stdSize, const (Test4.chart False False))
+     , ("test4b", stdSize, const (Test4.chart True False))
+     , ("test4c", stdSize, const (Test4.chart False True))
+     , ("test4d", stdSize, test4d)
+     , ("test5",  stdSize, \o -> Test5.chart (chooseLineWidth o))
+     , ("test6",  stdSize, const Test6.chart)
+     , ("test7",  stdSize, const Test7.chart)
+     , ("test8",  stdSize, const Test8.chart)
+     , ("test9",  stdSize, const (Test9.chart True))
+     , ("test9b", stdSize, const (Test9.chart False))
+     , ("test9c", stdSize, test9 BarsCentered)
+     , ("test9l", stdSize, test9 BarsLeft)
+     , ("test9r", stdSize, test9 BarsRight)
+     , ("test10", stdSize, test10 prices1)
+     , ("test11", stdSize, test11)
+     , ("test12", stdSize, test12)
+     , ("test13", stdSize, test13)
+     , ("test14", stdSize, \o -> Test14.chart (chooseLineWidth o) )
+     , ("test14a", stdSize, \o -> Test14a.chart (chooseLineWidth o) )
+     , ("test15a", stdSize, const (Test15.chart (LORows 2)))
+     , ("test15b", stdSize, const (Test15.chart (LOCols 2)))
+     , ("test17", stdSize,  \o -> Test17.chart (chooseLineWidth o))
+     , ("misc1",  stdSize, setPickFn nullPickFn . misc1 0)
+     , ("misc1a", stdSize, setPickFn nullPickFn . misc1 45)
+     , ("parametric", stdSize, \o -> TestParametric.chart (chooseLineWidth o) )
+     , ("sparklines", TestSparkLines.chartSize, const TestSparkLines.chart )
      ]
 
 main = do
@@ -392,20 +396,20 @@ main1 ("--ps":tests) = showTests tests renderToPS
 main1 ("--png":tests) = showTests tests renderToPNG
 main1 tests = showTests tests renderToPNG
 
-showTests :: [String] -> ((String,OutputType -> Renderable ()) -> IO()) -> IO ()
+showTests :: [String] -> ((String,(Int,Int),OutputType -> Renderable ()) -> IO()) -> IO ()
 showTests tests ofn = mapM_ doTest (filter (match tests) allTests)
    where
-     doTest (s,f) = do
+     doTest (s,size,f) = do
        putStrLn (s ++ "... ")
-       ofn (s,f)
+       ofn (s,size,f)
      
 
-match :: [String] -> (String,a) -> Bool
+match :: [String] -> (String,s,a) -> Bool
 match [] t = True
-match ts t = (fst t) `elem` ts
+match ts (s,_,_) = s `elem` ts
 
-renderToPNG (n,ir) = renderableToPNGFile (ir PNG) 640 480 (n ++ ".png")
-                     >> return ()
-renderToPS (n,ir) = renderableToPSFile (ir PS) 640 480 (n ++ ".ps")
-renderToPDF (n,ir) = renderableToPDFFile (ir PDF) 640 480 (n ++ ".pdf")
-renderToSVG (n,ir) = renderableToSVGFile (ir SVG) 640 480 (n ++ ".svg")
+renderToPNG (n,(w,h),ir) = renderableToPNGFile (ir PNG) w h (n ++ ".png")
+                           >> return ()
+renderToPS  (n,(w,h),ir) = renderableToPSFile (ir PS) w h (n ++ ".ps")
+renderToPDF (n,(w,h),ir) = renderableToPDFFile (ir PDF) w h (n ++ ".pdf")
+renderToSVG (n,(w,h),ir) = renderableToSVGFile (ir SVG) w h (n ++ ".svg")
