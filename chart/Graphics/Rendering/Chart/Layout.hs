@@ -342,15 +342,20 @@ renderPlots l sz@(w,h) = do
 	  in plot_render_ p pmfn
     rPlot1 _ _ _ = return ()
 
-    pickfn (Point x y) = case (lAxis,rAxis) of
-            (Just at,Nothing)   -> Just $ L1P_PlotArea xv (mapy at y)  (mapy at y)
-            (Nothing,Just at)   -> Just $ L1P_PlotArea xv (mapy at y)  (mapy at y)
-            (Just at1,Just at2) -> Just $ L1P_PlotArea xv (mapy at1 y) (mapy at2 y)
-            (Nothing,Nothing)   -> Nothing
+    pickfn (Point x y) = do  -- Maybe monad
+        xat <- mxat
+        (yat1,yat2) <- myats
+        return (L1P_PlotArea (mapx xat x) (mapy yat1 y)  (mapy yat2 y))
       where
-        xv = case (bAxis,tAxis) of
-            (Just at,_) -> mapx at x
-            (_,Just at) -> mapx at x
+        mxat = case (bAxis,tAxis) of
+            (Just at,_)       -> Just at
+            (_,Just at)       -> Just at
+            (Nothing,Nothing) -> Nothing
+        myats = case (lAxis,rAxis) of
+            (Just at,Nothing)   -> Just (at,at)
+            (Nothing,Just at)   -> Just (at,at)
+            (Just at1,Just at2) -> Just (at1,at2)
+            (Nothing,Nothing)   -> Nothing
         mapx (AxisT _ _ rev ad) x = axis_tropweiv_ ad (reverse rev xr) x
         mapy (AxisT _ _ rev ad) y = axis_tropweiv_ ad (reverse rev yr) y
 
