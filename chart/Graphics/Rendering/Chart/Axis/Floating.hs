@@ -18,6 +18,7 @@ module Graphics.Rendering.Chart.Axis.Floating(
     LogAxisParams(..),
     defaultLinearAxis,
     defaultLogAxis,
+    scaledAxis,
     autoScaledAxis,
     autoScaledLogAxis,
     autoSteps,
@@ -91,14 +92,12 @@ defaultLinearAxis = LinearAxisParams {
     la_nTicks_    = 50
 }
 
--- | Generate a linear axis automatically, scaled appropriately for the
--- input data.
-autoScaledAxis :: RealFloat a => LinearAxisParams a -> AxisFn a
-autoScaledAxis lap ps0 = makeAxis' realToFrac realToFrac
-                                   (la_labelf_ lap) (labelvs,tickvs,gridvs)
+-- | Generate a linear axis with the specified bounds
+scaledAxis :: RealFloat a => LinearAxisParams a -> (a,a) -> AxisFn a
+scaledAxis lap (min,max) ps0 = makeAxis' realToFrac realToFrac
+                                         (la_labelf_ lap) (labelvs,tickvs,gridvs)
   where
     ps        = filter isValidNumber ps0
-    (min,max) = (minimum ps,maximum ps)
     range []  = (0,1)
     range _   | min == max = if min==0 then (-1,1) else
                              let d = abs (min * 0.01) in (min-d,max+d)
@@ -108,6 +107,13 @@ autoScaledAxis lap ps0 = makeAxis' realToFrac realToFrac
                                          (minimum labelvs,maximum labelvs)
     gridvs    = labelvs
     r         = range ps
+
+-- | Generate a linear axis automatically, scaled appropriately for the
+-- input data.
+autoScaledAxis :: RealFloat a => LinearAxisParams a -> AxisFn a
+autoScaledAxis lap ps0 = scaledAxis lap (min,max) ps0
+  where
+    (min,max) = (minimum ps0,maximum ps0)
 
 steps :: RealFloat a => a -> (a,a) -> [Rational]
 steps nSteps (min,max) = map ((s*) . fromIntegral) [min' .. max']
