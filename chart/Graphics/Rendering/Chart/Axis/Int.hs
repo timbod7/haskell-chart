@@ -11,6 +11,7 @@
 
 module Graphics.Rendering.Chart.Axis.Int(
     defaultIntAxis,
+    scaledIntAxis,
     autoScaledIntAxis
 ) where
 
@@ -38,10 +39,15 @@ defaultIntAxis  = LinearAxisParams {
 
 autoScaledIntAxis :: (Integral i, PlotValue i) =>
                      LinearAxisParams i -> AxisFn i
-autoScaledIntAxis lap ps =
-    makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
+autoScaledIntAxis lap ps = scaledIntAxis lap (min,max) ps
   where
     (min,max) = (minimum ps,maximum ps)
+
+scaledIntAxis :: (Integral i, PlotValue i) =>
+                 LinearAxisParams i -> (i,i) -> AxisFn i
+scaledIntAxis lap (min,max) ps =
+    makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
+  where
     range []  = (0,1)
     range _   | min == max = (fromIntegral $ min-1, fromIntegral $ min+1)
               | otherwise  = (fromIntegral $ min,   fromIntegral $ max)
