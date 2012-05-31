@@ -316,9 +316,7 @@ setLineStyle ls = do
     c $ setSourceColor (line_color_ ls)
     c $ C.setLineCap (line_cap_ ls)
     c $ C.setLineJoin (line_join_ ls)
-    case line_dashes_ ls of
-      [] -> return ()
-      ds -> c $ C.setDash ds 0
+    c $ C.setDash (line_dashes_ ls) 0
 
 setFillStyle :: CairoFillStyle -> CRender ()
 setFillStyle (CairoFillStyle s) = s
