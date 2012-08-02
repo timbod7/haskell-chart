@@ -4,10 +4,10 @@
 
 # or use cabal-dev
 CABAL=cabal-dev -s$(CURDIR)/cabal-dev
-RUNGHC=GHC_PACKAGE_PATH=$(CURDIR)/cabal-dev/packages-7.0.3.conf: runghc
+RUNGHC=GHC_PACKAGE_PATH=$(CURDIR)/cabal-dev/packages-7.4.1.conf: runghc
 
 install:
-	cd chart && $(CABAL) install
+	cd chart && $(CABAL) install --force-reinstalls
 	cd chart-gtk && $(CABAL) install
 
 clean:
