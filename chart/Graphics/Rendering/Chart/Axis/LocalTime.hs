@@ -21,7 +21,7 @@ import Data.Fixed
 import System.Locale (defaultTimeLocale)
 import Control.Monad
 import Data.List
-import Data.Accessor.Template
+import Control.Lens
 import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
 import Data.Ord (comparing)
@@ -90,13 +90,13 @@ timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> TimeLabelAlignment ->
                        TimeSeq -> TimeLabelFn -> TimeLabelAlignment ->
             AxisFn LocalTime
 timeAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
-    axis_viewport_ = vmap(min', max'),
-    axis_tropweiv_ = invmap(min', max'),
-    axis_ticks_    = [ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
-    axis_labels_   = [ [ (t,l) | (t,l) <- labels labelf   ltimes lal, visible t]
+    _axis_viewport = vmap(min', max'),
+    _axis_tropweiv = invmap(min', max'),
+    _axis_ticks    = [ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
+    _axis_labels   = [ [ (t,l) | (t,l) <- labels labelf   ltimes lal, visible t]
                      , [ (t,l) | (t,l) <- labels contextf ctimes clal, visible t]
                      ],
-    axis_grid_     = [ t     | t <- ltimes, visible t]
+    _axis_grid     = [ t     | t <- ltimes, visible t]
     }
   where
     (min,max)    = case pts of

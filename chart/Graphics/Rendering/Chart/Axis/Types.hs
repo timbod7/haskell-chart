@@ -61,7 +61,7 @@ import Data.Maybe
 import System.Locale (defaultTimeLocale)
 import Control.Monad
 import Data.List(sort,intersperse)
-import Data.Accessor.Template
+import Control.Lens
 import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
 
@@ -78,11 +78,11 @@ class Ord a => PlotValue a where
 -- | The basic data associated with an axis showing values of type x.
 data AxisData x = AxisData {
 
-    -- | The axis_viewport_ function maps values into device coordinates.
-    axis_viewport_ :: Range -> x -> Double,
+    -- | The _axis_viewport function maps values into device coordinates.
+    _axis_viewport :: Range -> x -> Double,
 
-    -- | The axis_tropweiv_ function maps device coordinates back to values.
-    axis_tropweiv_ :: Range -> Double -> x,
+    -- | The _axis_tropweiv function maps device coordinates back to values.
+    _axis_tropweiv :: Range -> Double -> x,
 
     -- | The tick marks on the axis as pairs.
     --   The first element is the position on the axis
@@ -90,28 +90,28 @@ data AxisData x = AxisData {
     --   length of the tick in output coordinates.
     --   The tick starts on the axis, and positive numbers are drawn
     --   towards the plot area.
-    axis_ticks_    :: [(x,Double)],
+    _axis_ticks    :: [(x,Double)],
 
     -- | The labels on an axis as pairs. The first element of the pair
     --   is the position on the axis (in viewport units) and the
     --   second is the label text string. Note that multiple sets of
     --   labels can be specified, and are shown successively further
     --   away from the axis line.
-    axis_labels_   :: [[(x, String)]],
+    _axis_labels   :: [[(x, String)]],
 
     -- | The positions on the axis (in viewport units) where
     --   we want to show grid lines.
-    axis_grid_     :: [ x ]
+    _axis_grid     :: [ x ]
 }
 
 -- | Control values for how an axis gets displayed.
 data AxisStyle = AxisStyle {
-    axis_line_style_  :: CairoLineStyle,
-    axis_label_style_ :: CairoFontStyle,
-    axis_grid_style_  :: CairoLineStyle,
+    _axis_line_style  :: CairoLineStyle,
+    _axis_label_style :: CairoFontStyle,
+    _axis_grid_style  :: CairoLineStyle,
 
     -- | How far the labels are to be drawn from the axis.
-    axis_label_gap_   :: Double
+    _axis_label_gap   :: Double
 }
 
 -- | A function to generate the axis data, given the data values
@@ -134,47 +134,47 @@ axisToRenderable at = Renderable {
 
 -- | Modifier to remove grid lines from an axis
 axisGridHide         :: AxisData x -> AxisData x
-axisGridHide ad       = ad{ axis_grid_ = [] }
+axisGridHide ad       = ad{ _axis_grid = [] }
 
 -- | Modifier to position grid lines to line up with the ticks
 axisGridAtTicks      :: AxisData x -> AxisData x
-axisGridAtTicks ad    = ad{ axis_grid_ = map fst (axis_ticks_ ad) }
+axisGridAtTicks ad    = ad{ _axis_grid = map fst (_axis_ticks ad) }
 
 -- | Modifier to position grid lines to line up with only the major ticks
 axisGridAtBigTicks   :: AxisData x -> AxisData x
-axisGridAtBigTicks ad = ad{ axis_grid_ =
+axisGridAtBigTicks ad = ad{ _axis_grid =
                             map fst $
-                            filter ((> minimum (map (abs.snd) (axis_ticks_ ad))).snd) $
-                            axis_ticks_ ad }
+                            filter ((> minimum (map (abs.snd) (_axis_ticks ad))).snd) $
+                            _axis_ticks ad }
 
 -- | Modifier to position grid lines to line up with the labels
 axisGridAtLabels     :: AxisData x -> AxisData x
-axisGridAtLabels ad   = ad{ axis_grid_ = map fst vs }
+axisGridAtLabels ad   = ad{ _axis_grid = map fst vs }
   where
-    vs = case axis_labels_ ad of
+    vs = case _axis_labels ad of
         [] -> []
         ls -> head ls
 
 -- | Modifier to remove ticks from an axis
 axisTicksHide       :: AxisData x -> AxisData x
-axisTicksHide ad     = ad{ axis_ticks_  = [] }
+axisTicksHide ad     = ad{ _axis_ticks  = [] }
 
 -- | Modifier to remove labels from an axis
 axisLabelsHide      :: AxisData x -> AxisData x
-axisLabelsHide ad    = ad{ axis_labels_ = []}
+axisLabelsHide ad    = ad{ _axis_labels = []}
 
 -- | Modifier to change labels on an axis
 axisLabelsOverride  :: [(x,String)] -> AxisData x -> AxisData x
-axisLabelsOverride o ad = ad{ axis_labels_ = [o] }
+axisLabelsOverride o ad = ad{ _axis_labels = [o] }
 
 minsizeAxis :: AxisT x -> CRender RectSize
 minsizeAxis (AxisT at as rev ad) = do
     labelSizes <- preserveCState $ do
-        setFontStyle (axis_label_style_ as)
+        setFontStyle (_axis_label_style as)
         mapM (mapM textSize) (labelTexts ad)
 
-    let ag      = axis_label_gap_ as
-    let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- axis_ticks_ ad ])
+    let ag      = _axis_label_gap as
+    let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- _axis_ticks ad ])
 
     let hw = maximum0 (map (maximum0.map fst) labelSizes)
     let hh = ag + tsize + (sum . intersperse ag . map (maximum0.map snd) $ labelSizes)
@@ -190,7 +190,7 @@ minsizeAxis (AxisT at as rev ad) = do
     return sz
 
 labelTexts :: AxisData a -> [[String]]
-labelTexts ad = map (map snd) (axis_labels_ ad)
+labelTexts ad = map (map snd) (_axis_labels ad)
 
 maximum0 [] = 0
 maximum0 vs = maximum vs
@@ -199,9 +199,9 @@ maximum0 vs = maximum vs
 --   the ends of the axis.
 axisOverhang :: Ord x => AxisT x -> CRender (Double,Double)
 axisOverhang (AxisT at as rev ad) = do
-    let labels = map snd . sort . concat . axis_labels_ $ ad
+    let labels = map snd . sort . concat . _axis_labels $ ad
     labelSizes <- preserveCState $ do
-        setFontStyle (axis_label_style_ as)
+        setFontStyle (_axis_label_style as)
         mapM textSize labels
     case labelSizes of
         []  -> return (0,0)
@@ -218,19 +218,19 @@ axisOverhang (AxisT at as rev ad) = do
 
 renderAxis :: AxisT x -> RectSize -> CRender (PickFn x)
 renderAxis at@(AxisT et as rev ad) sz = do
-   let ls = axis_line_style_ as
+   let ls = _axis_line_style as
    preserveCState $ do
-       setLineStyle ls{line_cap_=C.LineCapSquare}
+       setLineStyle ls{_line_cap=C.LineCapSquare}
        strokePath [Point sx sy,Point ex ey]
    preserveCState $ do
-       setLineStyle ls{line_cap_=C.LineCapButt}
-       mapM_ drawTick (axis_ticks_ ad)
+       setLineStyle ls{_line_cap=C.LineCapButt}
+       mapM_ drawTick (_axis_ticks ad)
    preserveCState $ do
-       setFontStyle (axis_label_style_ as)
+       setFontStyle (_axis_label_style as)
        labelSizes <- mapM (mapM textSize) (labelTexts ad)
        let sizes = map ((+ag).maximum0.map coord) labelSizes
        let offsets = scanl (+) ag sizes
-       mapM_ drawLabels (zip offsets  (axis_labels_ ad))
+       mapM_ drawLabels (zip offsets  (_axis_labels ad))
 
    return pickfn
  where
@@ -265,7 +265,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
            drawText hta vta (axisPoint value `pvadd` (awayFromAxis offset)) s
            textSize s
 
-   ag = axis_label_gap_ as
+   ag = _axis_label_gap as
    pickfn = Just . invAxisPoint
 
 hBufferRect :: Rect -> Rect
@@ -310,11 +310,11 @@ axisMapping (AxisT et as rev ad) (x2,y2) = case et of
     xr = reverse (x1,x2)
     yr = reverse (y2,y1)
 
-    mapx y x = Point (axis_viewport_ ad xr x) y
-    mapy x y = Point x (axis_viewport_ ad yr y)
+    mapx y x = Point (_axis_viewport ad xr x) y
+    mapy x y = Point x (_axis_viewport ad yr y)
 
-    imapx (Point x _) = axis_tropweiv_ ad xr x
-    imapy (Point _ y) = axis_tropweiv_ ad yr y
+    imapx (Point x _) = _axis_tropweiv ad xr x
+    imapy (Point _ y) = _axis_tropweiv ad yr y
 
     reverse r@(r0,r1)  = if rev then (r1,r0) else r
 
@@ -322,8 +322,8 @@ axisMapping (AxisT et as rev ad) (x2,y2) = case et of
 renderAxisGrid :: RectSize -> AxisT z -> CRender ()
 renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
     preserveCState $ do
-        setLineStyle (axis_grid_style_ as)
-        mapM_ (drawGridLine re) (axis_grid_ ad)
+        setLineStyle (_axis_grid_style as)
+        mapM_ (drawGridLine re) (_axis_grid ad)
   where
     (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
 
@@ -343,11 +343,11 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
 -- labels, and the labelling function
 makeAxis :: PlotValue x => (x -> String) -> ([x],[x],[x]) -> AxisData x
 makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
-    axis_viewport_ = newViewport,
-    axis_tropweiv_ = newTropweiv,
-    axis_ticks_    = newTicks,
-    axis_grid_     = gridvs,
-    axis_labels_   = [newLabels]
+    _axis_viewport = newViewport,
+    _axis_tropweiv = newTropweiv,
+    _axis_ticks    = newTicks,
+    _axis_grid     = gridvs,
+    _axis_labels   = [newLabels]
     }
   where
     newViewport = vmap (min',max')
@@ -362,11 +362,11 @@ makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
 makeAxis' :: Ord x => (x -> Double) -> (Double -> x) -> (x -> String)
                    -> ([x],[x],[x]) -> AxisData x
 makeAxis' t f labelf (labelvs, tickvs, gridvs) = AxisData {
-    axis_viewport_ = linMap t (minimum labelvs, maximum labelvs),
-    axis_tropweiv_ = invLinMap f t (minimum labelvs, maximum labelvs),
-    axis_ticks_    = zip tickvs (repeat 2)  ++  zip labelvs (repeat 5),
-    axis_grid_     = gridvs,
-    axis_labels_   = [[ (v,labelf v) | v <- labelvs ]]
+    _axis_viewport = linMap t (minimum labelvs, maximum labelvs),
+    _axis_tropweiv = invLinMap f t (minimum labelvs, maximum labelvs),
+    _axis_ticks    = zip tickvs (repeat 2)  ++  zip labelvs (repeat 5),
+    _axis_grid     = gridvs,
+    _axis_labels   = [[ (v,labelf v) | v <- labelvs ]]
     }
 
 
@@ -380,10 +380,10 @@ defaultGridLineStyle = dashedLine 1 [5,5] $ opaque lightgrey
 
 defaultAxisStyle :: AxisStyle
 defaultAxisStyle = AxisStyle {
-    axis_line_style_  = defaultAxisLineStyle,
-    axis_label_style_ = defaultFontStyle,
-    axis_grid_style_  = defaultGridLineStyle,
-    axis_label_gap_   = 10
+    _axis_line_style  = defaultAxisLineStyle,
+    _axis_label_style = defaultFontStyle,
+    _axis_grid_style  = defaultGridLineStyle,
+    _axis_label_gap   = 10
 }
 
 ----------------------------------------------------------------------
@@ -415,5 +415,5 @@ invLinMap f t (v3,v4) (d1,d2) d =
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor for
 -- each field.
-$( deriveAccessors ''AxisData )
-$( deriveAccessors ''AxisStyle )
+$( makeLenses ''AxisData )
+$( makeLenses ''AxisStyle )

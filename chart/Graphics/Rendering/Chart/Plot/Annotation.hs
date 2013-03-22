@@ -19,7 +19,7 @@ module Graphics.Rendering.Chart.Plot.Annotation(
     plot_annotation_values
 ) where
 
-import Data.Accessor.Template
+import Control.Lens
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
@@ -33,22 +33,22 @@ import Data.Colour.SRGB (sRGB)
 --   rotation is performend around the anchor point.
 
 data PlotAnnotation  x y = PlotAnnotation {
-      plot_annotation_hanchor_ :: HTextAnchor,
-      plot_annotation_vanchor_ :: VTextAnchor,
-      plot_annotation_angle_   :: Double,
-      plot_annotation_style_   :: CairoFontStyle,
-      plot_annotation_values_  :: [(x,y,String)]
+      _plot_annotation_hanchor :: HTextAnchor,
+      _plot_annotation_vanchor :: VTextAnchor,
+      _plot_annotation_angle   :: Double,
+      _plot_annotation_style   :: CairoFontStyle,
+      _plot_annotation_values  :: [(x,y,String)]
 }
 
 
 instance ToPlot PlotAnnotation where
     toPlot p = Plot {
-        plot_render_ = renderAnnotation p,
-        plot_legend_ = [],
-        plot_all_points_ = (map (\(x,_,_)->x)  vs , map (\(_,y,_)->y) vs)
+        _plot_render = renderAnnotation p,
+        _plot_legend = [],
+        _plot_all_points = (map (\(x,_,_)->x)  vs , map (\(_,y,_)->y) vs)
     }
       where
-        vs = plot_annotation_values_ p
+        vs = _plot_annotation_values p
 
 
 renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> CRender ()
@@ -56,24 +56,24 @@ renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> CRender ()
 renderAnnotation p pMap = preserveCState $ do
                             setFontStyle style
                             mapM_ drawOne values
-    where hta = plot_annotation_hanchor_ p
-          vta = plot_annotation_vanchor_ p
-          values = plot_annotation_values_ p
-          angle =  plot_annotation_angle_ p
-          style =  plot_annotation_style_ p
+    where hta = _plot_annotation_hanchor p
+          vta = _plot_annotation_vanchor p
+          values = _plot_annotation_values p
+          angle =  _plot_annotation_angle p
+          style =  _plot_annotation_style p
           drawOne (x,y,s) = drawTextsR hta vta angle point s
               where point = pMap (LValue x, LValue y)
 
 defaultPlotAnnotation = PlotAnnotation {
-                          plot_annotation_hanchor_ = HTA_Centre,
-                          plot_annotation_vanchor_ = VTA_Centre,
-                          plot_annotation_angle_   = 0,
-                          plot_annotation_style_   = defaultFontStyle,
-                          plot_annotation_values_  = []
+                          _plot_annotation_hanchor = HTA_Centre,
+                          _plot_annotation_vanchor = VTA_Centre,
+                          _plot_annotation_angle   = 0,
+                          _plot_annotation_style   = defaultFontStyle,
+                          _plot_annotation_values  = []
 }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
 
-$( deriveAccessors ''PlotAnnotation )
+$( makeLenses ''PlotAnnotation )

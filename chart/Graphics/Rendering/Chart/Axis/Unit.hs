@@ -22,9 +22,9 @@ instance PlotValue () where
 
 unitAxis :: AxisData ()
 unitAxis = AxisData {
-    axis_viewport_ = \(x0,x1) _ -> (x0+x1)/2,
-    axis_tropweiv_ = \_       _ -> (),
-    axis_ticks_    = [((), 0)],
-    axis_labels_   = [[((), "")]],
-    axis_grid_     = []
+    _axis_viewport = \(x0,x1) _ -> (x0+x1)/2,
+    _axis_tropweiv = \_       _ -> (),
+    _axis_ticks    = [((), 0)],
+    _axis_labels   = [[((), "")]],
+    _axis_grid     = []
 }

@@ -20,7 +20,7 @@ module Graphics.Rendering.Chart.Plot.Points(
     plot_points_values,
 ) where
 
-import Data.Accessor.Template
+import Control.Lens
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
@@ -31,26 +31,26 @@ import Data.Colour.Names (black, blue)
 -- | Value defining a series of datapoints, and a style in
 --   which to render them.
 data PlotPoints x y = PlotPoints {
-    plot_points_title_  :: String,
-    plot_points_style_  :: CairoPointStyle,
-    plot_points_values_ :: [(x,y)]
+    _plot_points_title  :: String,
+    _plot_points_style  :: CairoPointStyle,
+    _plot_points_values :: [(x,y)]
 }
 
 instance ToPlot PlotPoints where
     toPlot p = Plot {
-        plot_render_     = renderPlotPoints p,
-        plot_legend_     = [(plot_points_title_ p, renderPlotLegendPoints p)],
-        plot_all_points_ = (map fst pts, map snd pts)
+        _plot_render     = renderPlotPoints p,
+        _plot_legend     = [(_plot_points_title p, renderPlotLegendPoints p)],
+        _plot_all_points = (map fst pts, map snd pts)
     }
       where
-        pts = plot_points_values_ p
+        pts = _plot_points_values p
 
 renderPlotPoints :: PlotPoints x y -> PointMapFn x y -> CRender ()
 renderPlotPoints p pmap = preserveCState $ do
-    mapM_ (drawPoint.pmap') (plot_points_values_ p)
+    mapM_ (drawPoint.pmap') (_plot_points_values p)
   where
     pmap' = mapXY pmap
-    (CairoPointStyle drawPoint) = (plot_points_style_ p)
+    (CairoPointStyle drawPoint) = (_plot_points_style p)
 
 renderPlotLegendPoints :: PlotPoints x y -> Rect -> CRender ()
 renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
@@ -59,17 +59,17 @@ renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
     drawPoint (Point (p_x p2)              ((p_y p1 + p_y p2)/2))
 
   where
-    (CairoPointStyle drawPoint) = (plot_points_style_ p)
+    (CairoPointStyle drawPoint) = (_plot_points_style p)
 
 defaultPlotPoints :: PlotPoints x y
 defaultPlotPoints = PlotPoints {
-    plot_points_title_  = "",
-    plot_points_style_  = defaultPointStyle,
-    plot_points_values_ = []
+    _plot_points_title  = "",
+    _plot_points_style  = defaultPointStyle,
+    _plot_points_values = []
 }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
 
-$( deriveAccessors ''PlotPoints )
+$( makeLenses ''PlotPoints )

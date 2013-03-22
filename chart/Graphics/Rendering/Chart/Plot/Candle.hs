@@ -24,7 +24,7 @@ module Graphics.Rendering.Chart.Plot.Candle(
     plot_candle_values,
 ) where
 
-import Data.Accessor.Template
+import Control.Lens
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
@@ -41,15 +41,15 @@ import Data.Colour.SRGB (sRGB)
 --   (This plot type can also be re-purposed for statistical intervals, e.g.
 --    minimum, first quartile, median, third quartile, maximum.)
 data PlotCandle x y = PlotCandle {
-    plot_candle_title_           :: String,
-    plot_candle_line_style_      :: CairoLineStyle,
-    plot_candle_fill_            :: Bool,
-    plot_candle_rise_fill_style_ :: CairoFillStyle,
-    plot_candle_fall_fill_style_ :: CairoFillStyle,
-    plot_candle_tick_length_     :: Double,
-    plot_candle_width_           :: Double,
-    plot_candle_centre_          :: Double,
-    plot_candle_values_          :: [Candle x y]
+    _plot_candle_title           :: String,
+    _plot_candle_line_style      :: CairoLineStyle,
+    _plot_candle_fill            :: Bool,
+    _plot_candle_rise_fill_style :: CairoFillStyle,
+    _plot_candle_fall_fill_style :: CairoFillStyle,
+    _plot_candle_tick_length     :: Double,
+    _plot_candle_width           :: Double,
+    _plot_candle_centre          :: Double,
+    _plot_candle_values          :: [Candle x y]
 }
 
 -- | A Value holding price intervals for a given x-coord.
@@ -65,18 +65,18 @@ data Candle x y = Candle { candle_x     :: x
 
 instance ToPlot PlotCandle where
     toPlot p = Plot {
-        plot_render_     = renderPlotCandle p,
-        plot_legend_     = [(plot_candle_title_ p, renderPlotLegendCandle p)],
-        plot_all_points_ = ( map candle_x pts
+        _plot_render     = renderPlotCandle p,
+        _plot_legend     = [(_plot_candle_title p, renderPlotLegendCandle p)],
+        _plot_all_points = ( map candle_x pts
                            , concat [ [candle_low c, candle_high c]
                                     | c <- pts ] )
     }
       where
-        pts = plot_candle_values_ p
+        pts = _plot_candle_values p
 
 renderPlotCandle :: PlotCandle x y -> PointMapFn x y -> CRender ()
 renderPlotCandle p pmap = preserveCState $ do
-    mapM_ (drawCandle p . candlemap) (plot_candle_values_ p)
+    mapM_ (drawCandle p . candlemap) (_plot_candle_values p)
   where
     candlemap (Candle x lo op mid cl hi) =
         Candle x' lo' op' mid' cl' hi'
@@ -88,14 +88,14 @@ renderPlotCandle p pmap = preserveCState $ do
     pmap' = mapXY pmap
 
 drawCandle ps (Candle x lo open mid close hi) = do
-        let tl = plot_candle_tick_length_ ps
-        let wd = plot_candle_width_ ps
-        let ct = plot_candle_centre_ ps
-        let f  = plot_candle_fill_ ps
+        let tl = _plot_candle_tick_length ps
+        let wd = _plot_candle_width ps
+        let ct = _plot_candle_centre ps
+        let f  = _plot_candle_fill ps
         -- the pixel coordinate system is inverted wrt the value coords.
         when f $ do setFillStyle (if open >= close
-                                  then plot_candle_rise_fill_style_ ps
-                                  else plot_candle_fall_fill_style_ ps)
+                                  then _plot_candle_rise_fill_style ps
+                                  else _plot_candle_fall_fill_style ps)
 
                     c $ C.newPath
                     c $ C.moveTo (x-wd) open
@@ -105,7 +105,7 @@ drawCandle ps (Candle x lo open mid close hi) = do
                     c $ C.lineTo (x-wd) open
                     c $ C.fill
 
-        setLineStyle (plot_candle_line_style_ ps)
+        setLineStyle (_plot_candle_line_style ps)
         c $ C.newPath
         c $ C.moveTo (x-wd) open
         c $ C.lineTo (x-wd) close
@@ -134,9 +134,9 @@ drawCandle ps (Candle x lo open mid close hi) = do
 
 renderPlotLegendCandle :: PlotCandle x y -> Rect -> CRender ()
 renderPlotLegendCandle p r@(Rect p1 p2) = preserveCState $ do
-    drawCandle p{ plot_candle_width_ = 2}
+    drawCandle p{ _plot_candle_width = 2}
                       (Candle ((p_x p1 + p_x p2)*1/4) lo open mid close hi)
-    drawCandle p{ plot_candle_width_ = 2}
+    drawCandle p{ _plot_candle_width = 2}
                       (Candle ((p_x p1 + p_x p2)*2/3) lo close mid open hi)
   where
     lo    = max (p_y p1) (p_y p2)
@@ -147,19 +147,19 @@ renderPlotLegendCandle p r@(Rect p1 p2) = preserveCState $ do
 
 defaultPlotCandle :: PlotCandle x y
 defaultPlotCandle = PlotCandle {
-    plot_candle_title_       = "",
-    plot_candle_line_style_  = solidLine 1 $ opaque blue,
-    plot_candle_fill_        = False,
-    plot_candle_rise_fill_style_  = solidFillStyle $ opaque white,
-    plot_candle_fall_fill_style_  = solidFillStyle $ opaque blue,
-    plot_candle_tick_length_ = 2,
-    plot_candle_width_       = 5,
-    plot_candle_centre_      = 0,
-    plot_candle_values_      = []
+    _plot_candle_title       = "",
+    _plot_candle_line_style  = solidLine 1 $ opaque blue,
+    _plot_candle_fill        = False,
+    _plot_candle_rise_fill_style  = solidFillStyle $ opaque white,
+    _plot_candle_fall_fill_style  = solidFillStyle $ opaque blue,
+    _plot_candle_tick_length = 2,
+    _plot_candle_width       = 5,
+    _plot_candle_centre      = 0,
+    _plot_candle_values      = []
 }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
 
-$( deriveAccessors ''PlotCandle )
+$( makeLenses ''PlotCandle )

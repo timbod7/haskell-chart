@@ -34,7 +34,7 @@ import Data.List(minimumBy)
 import Data.Ord (comparing)
 import Numeric (showFFloat)
 
-import Data.Accessor.Template
+import Control.Lens
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Axis.Types
 
@@ -76,34 +76,34 @@ showD x = case reverse $ showFFloat Nothing x "" of
 
 data LinearAxisParams a = LinearAxisParams {
     -- | The function used to show the axes labels.
-    la_labelf_  :: a -> String,
+    _la_labelf  :: a -> String,
 
     -- | The target number of labels to be shown.
-    la_nLabels_ :: Int,
+    _la_nLabels :: Int,
 
     -- | The target number of ticks to be shown.
-    la_nTicks_  :: Int
+    _la_nTicks  :: Int
 }
 
 defaultLinearAxis :: (Show a, RealFloat a) => LinearAxisParams a
 defaultLinearAxis = LinearAxisParams {
-    la_labelf_    = showD,
-    la_nLabels_   = 5,
-    la_nTicks_    = 50
+    _la_labelf    = showD,
+    _la_nLabels   = 5,
+    _la_nTicks    = 50
 }
 
 -- | Generate a linear axis with the specified bounds
 scaledAxis :: RealFloat a => LinearAxisParams a -> (a,a) -> AxisFn a
 scaledAxis lap (min,max) ps0 = makeAxis' realToFrac realToFrac
-                                         (la_labelf_ lap) (labelvs,tickvs,gridvs)
+                                         (_la_labelf lap) (labelvs,tickvs,gridvs)
   where
     ps        = filter isValidNumber ps0
     range []  = (0,1)
     range _   | min == max = if min==0 then (-1,1) else
                              let d = abs (min * 0.01) in (min-d,max+d)
               | otherwise  = (min,max)
-    labelvs   = map fromRational $ steps (fromIntegral (la_nLabels_ lap)) r
-    tickvs    = map fromRational $ steps (fromIntegral (la_nTicks_ lap))
+    labelvs   = map fromRational $ steps (fromIntegral (_la_nLabels lap)) r
+    tickvs    = map fromRational $ steps (fromIntegral (_la_nTicks lap))
                                          (minimum labelvs,maximum labelvs)
     gridvs    = labelvs
     r         = range ps
@@ -149,7 +149,7 @@ autoSteps nSteps vs = map fromRational $ steps (fromIntegral nSteps) r
 
 defaultLogAxis :: (Show a, RealFloat a) => LogAxisParams a
 defaultLogAxis = LogAxisParams {
-    loga_labelf_ = showD
+    _loga_labelf = showD
 }
 
 -- | Generate a log axis automatically, scaled appropriate for the
@@ -157,7 +157,7 @@ defaultLogAxis = LogAxisParams {
 autoScaledLogAxis :: RealFloat a => LogAxisParams a -> AxisFn a
 autoScaledLogAxis lap ps0 =
     makeAxis' (realToFrac . log) (realToFrac . exp)
-              (loga_labelf_ lap) (wrap rlabelvs, wrap rtickvs, wrap rgridvs)
+              (_loga_labelf lap) (wrap rlabelvs, wrap rtickvs, wrap rgridvs)
         where
           ps        = filter (\x -> isValidNumber x && 0 < x) ps0
           (min,max) = (minimum ps,maximum ps)
@@ -170,7 +170,7 @@ autoScaledLogAxis lap ps0 =
 
 data LogAxisParams a = LogAxisParams {
     -- | The function used to show the axes labels.
-    loga_labelf_ :: a -> String
+    _loga_labelf :: a -> String
 }
 
 {-
@@ -228,5 +228,5 @@ frac x | 0 <= b    = (a,b)
  where
   (a,b) = properFraction x
 
-$( deriveAccessors ''LinearAxisParams )
-$( deriveAccessors ''LogAxisParams )
+$( makeLenses ''LinearAxisParams )
+$( makeLenses ''LogAxisParams )

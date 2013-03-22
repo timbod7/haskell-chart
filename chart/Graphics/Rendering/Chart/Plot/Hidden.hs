@@ -13,7 +13,7 @@ module Graphics.Rendering.Chart.Plot.Hidden(
     PlotHidden(..),
 ) where
 
-import Data.Accessor.Template
+import Control.Lens
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
@@ -22,19 +22,19 @@ import Graphics.Rendering.Chart.Plot.Types
 -- | Value defining some hidden x and y values. The values don't
 --   get displayed, but still affect axis scaling.
 data PlotHidden x y = PlotHidden {
-    plot_hidden_x_values_ :: [x],
-    plot_hidden_y_values_ :: [y]
+    _plot_hidden_x_values :: [x],
+    _plot_hidden_y_values :: [y]
 }
 
 instance ToPlot PlotHidden where
     toPlot ph = Plot {
-        plot_render_     = \_ -> return (),
-        plot_legend_     = [],
-        plot_all_points_ = (plot_hidden_x_values_ ph, plot_hidden_y_values_ ph)
+        _plot_render     = \_ -> return (),
+        _plot_legend     = [],
+        _plot_all_points = (_plot_hidden_x_values ph, _plot_hidden_y_values ph)
     }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
 
-$( deriveAccessors ''PlotHidden )
+$( makeLenses ''PlotHidden )

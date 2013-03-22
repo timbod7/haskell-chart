@@ -1,5 +1,5 @@
 Name: Chart
-Version: 0.16
+Version: 1.0
 License: BSD3
 License-file: LICENSE
 Copyright: Tim Docker, 2006-2010
@@ -39,8 +39,7 @@ library
     Build-depends: base >= 3 && < 5, old-locale, time, mtl, array
   else
     Build-depends: base < 3
-  Build-depends: cairo >= 0.9.11, time, mtl, array, data-accessor == 0.2.*, 
-                 data-accessor-template >= 0.2.1.1 && < 0.3, colour >= 2.2.1
+  Build-depends: cairo >= 0.9.11, time, mtl, array, lens, colour >= 2.2.1
 
   Exposed-modules:
         Graphics.Rendering.Chart,

@@ -28,7 +28,7 @@ module Graphics.Rendering.Chart.Plot.Bars(
 
 ) where
 
-import Data.Accessor.Template
+import Control.Lens
 import Control.Monad
 import Data.List(nub,sort)
 import qualified Graphics.Rendering.Cairo as C
@@ -79,44 +79,44 @@ data PlotBarsAlignment = BarsLeft      -- ^ The left edge of bars is at deviceX
 data PlotBars x y = PlotBars {
    -- | This value specifies whether each value from [y] should be
    --   shown beside or above the previous value.
-   plot_bars_style_           :: PlotBarsStyle,
+   _plot_bars_style           :: PlotBarsStyle,
 
    -- | The style in which to draw each element of [y]. A fill style
    --   is required, and if a linestyle is given, each bar will be
    --   outlined.
-   plot_bars_item_styles_     :: [ (CairoFillStyle,Maybe CairoLineStyle) ],
+   _plot_bars_item_styles     :: [ (CairoFillStyle,Maybe CairoLineStyle) ],
 
    -- | The title of each element of [y]. These will be shown in the legend.
-   plot_bars_titles_          :: [String],
+   _plot_bars_titles          :: [String],
 
    -- | This value controls how the widths of the bars are
    --   calculated. Either the widths of the bars, or the gaps between
    --   them can be fixed.
-   plot_bars_spacing_         :: PlotBarsSpacing,
+   _plot_bars_spacing         :: PlotBarsSpacing,
 
    -- | This value controls how bars for a fixed x are aligned with
    --   respect to the device coordinate corresponding to x.
-   plot_bars_alignment_       :: PlotBarsAlignment,
+   _plot_bars_alignment       :: PlotBarsAlignment,
 
    -- | The starting level for the chart (normally 0).
-   plot_bars_reference_       :: y,
+   _plot_bars_reference       :: y,
 
-   plot_bars_singleton_width_ :: Double,
+   _plot_bars_singleton_width :: Double,
 
    -- | The actual points to be plotted.
-   plot_bars_values_          :: [ (x,[y]) ]
+   _plot_bars_values          :: [ (x,[y]) ]
 }
 
 defaultPlotBars :: BarsPlotValue y => PlotBars x y
 defaultPlotBars = PlotBars {
-   plot_bars_style_           = BarsClustered,
-   plot_bars_item_styles_     = cycle istyles,
-   plot_bars_titles_          = [],
-   plot_bars_spacing_         = BarsFixGap 10 2,
-   plot_bars_alignment_       = BarsCentered,
-   plot_bars_values_          = [],
-   plot_bars_singleton_width_ = 20,
-   plot_bars_reference_       = barsReference
+   _plot_bars_style           = BarsClustered,
+   _plot_bars_item_styles     = cycle istyles,
+   _plot_bars_titles          = [],
+   _plot_bars_spacing         = BarsFixGap 10 2,
+   _plot_bars_alignment       = BarsCentered,
+   _plot_bars_values          = [],
+   _plot_bars_singleton_width = 20,
+   _plot_bars_reference       = barsReference
    }
   where
     istyles   = map mkstyle defaultColorSeq
@@ -124,16 +124,16 @@ defaultPlotBars = PlotBars {
 
 plotBars :: (BarsPlotValue y) => PlotBars x y -> Plot x y
 plotBars p = Plot {
-        plot_render_     = renderPlotBars p,
-        plot_legend_     = zip (plot_bars_titles_ p)
+        _plot_render     = renderPlotBars p,
+        _plot_legend     = zip (_plot_bars_titles p)
                                (map renderPlotLegendBars
-                                    (plot_bars_item_styles_ p)),
-        plot_all_points_ = allBarPoints p
+                                    (_plot_bars_item_styles p)),
+        _plot_all_points = allBarPoints p
     }
 
 renderPlotBars :: (BarsPlotValue y) =>
                   PlotBars x y -> PointMapFn x y -> CRender ()
-renderPlotBars p pmap = case (plot_bars_style_ p) of
+renderPlotBars p pmap = case (_plot_bars_style p) of
       BarsClustered -> forM_ vals clusteredBars
       BarsStacked   -> forM_ vals stackedBars
   where
@@ -147,14 +147,14 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
              setLineStyle lstyle
              strokePath (barPath (offset i) x yref0 y)
 
-    offset = case (plot_bars_alignment_ p) of
+    offset = case (_plot_bars_alignment p) of
       BarsLeft     -> \i -> fromIntegral i * width
       BarsRight    -> \i -> fromIntegral (i-nys) * width
       BarsCentered -> \i -> fromIntegral (2*i-nys) * width/2
 
     stackedBars (x,ys) =  preserveCState $ do
        let y2s = zip (yref0:stack ys) (stack ys)
-       let ofs = case (plot_bars_alignment_ p) of {
+       let ofs = case (_plot_bars_alignment p) of {
          BarsLeft     -> 0          ;
          BarsRight    -> (-width)   ;
          BarsCentered -> (-width/2)
@@ -172,19 +172,19 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
       let (Point _ y0') = pmap' (x,y0)
       rectPath (Rect (Point (x'+xos) y0') (Point (x'+xos+width) y'))
 
-    yref0 = plot_bars_reference_ p
-    vals  = plot_bars_values_ p
-    width = case plot_bars_spacing_ p of
+    yref0 = _plot_bars_reference p
+    vals  = _plot_bars_values p
+    width = case _plot_bars_spacing p of
         BarsFixGap gap minw -> let w = max (minXInterval - gap) minw in
-            case (plot_bars_style_ p) of
+            case (_plot_bars_style p) of
                 BarsClustered -> w / fromIntegral nys
                 BarsStacked -> w
         BarsFixWidth width -> width
-    styles = plot_bars_item_styles_ p
+    styles = _plot_bars_item_styles p
 
     minXInterval = let diffs = zipWith (-) (tail mxs) mxs
                    in if null diffs
-                        then plot_bars_singleton_width_ p
+                        then _plot_bars_singleton_width p
                         else minimum diffs
       where
         xs  = fst (allBarPoints p)
@@ -200,12 +200,12 @@ whenJust (Just a) f = f a
 whenJust _        _ = return ()
 
 allBarPoints :: (BarsPlotValue y) => PlotBars x y -> ([x],[y])
-allBarPoints p = case (plot_bars_style_ p) of
+allBarPoints p = case (_plot_bars_style p) of
     BarsClustered -> ( [x| (x,_) <- pts], y0:concat [ys| (_,ys) <- pts] )
     BarsStacked   -> ( [x| (x,_) <- pts], y0:concat [stack ys | (_,ys) <- pts] )
   where
-    pts = plot_bars_values_ p
-    y0  = plot_bars_reference_ p
+    pts = _plot_bars_values p
+    y0  = _plot_bars_reference p
 
 stack :: (BarsPlotValue y) => [y] -> [y]
 stack ys = scanl1 barsAdd ys
@@ -221,4 +221,4 @@ renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
 
-$( deriveAccessors ''PlotBars )
+$( makeLenses ''PlotBars )

@@ -113,8 +113,7 @@ module Graphics.Rendering.Chart.Types(
 
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad.Reader
-import Data.Accessor
-import Data.Accessor.Template
+import Control.Lens hiding (moveTo, over, within)
 import Data.Colour
 import Data.Colour.SRGB
 import Data.Colour.Names
@@ -209,11 +208,11 @@ newtype CairoPointStyle = CairoPointStyle (Point -> CRender ())
 
 -- | Data type for the style of a line.
 data CairoLineStyle = CairoLineStyle {
-   line_width_  :: Double,
-   line_color_  :: AlphaColour Double,
-   line_dashes_ :: [Double],
-   line_cap_    :: C.LineCap,
-   line_join_   :: C.LineJoin
+   _line_width  :: Double,
+   _line_color  :: AlphaColour Double,
+   _line_dashes :: [Double],
+   _line_cap    :: C.LineCap,
+   _line_join   :: C.LineJoin
 }
 
 -- | Abstract data type for a fill style.
@@ -224,11 +223,11 @@ newtype CairoFillStyle = CairoFillStyle (CRender ())
 
 -- | Data type for a font.
 data CairoFontStyle = CairoFontStyle {
-      font_name_   :: String,
-      font_size_   :: Double,
-      font_slant_  :: C.FontSlant,
-      font_weight_ :: C.FontWeight,
-      font_color_  :: AlphaColour Double
+      _font_name   :: String,
+      _font_size   :: Double,
+      _font_slant  :: C.FontSlant,
+      _font_weight :: C.FontWeight,
+      _font_color  :: AlphaColour Double
 }
 
 type Range    = (Double,Double)
@@ -306,17 +305,17 @@ fillPath pts = do
 
 setFontStyle :: CairoFontStyle -> CRender ()
 setFontStyle f = do
-    c $ C.selectFontFace (font_name_ f) (font_slant_ f) (font_weight_ f)
-    c $ C.setFontSize (font_size_ f)
-    c $ setSourceColor (font_color_ f)
+    c $ C.selectFontFace (_font_name f) (_font_slant f) (_font_weight f)
+    c $ C.setFontSize (_font_size f)
+    c $ setSourceColor (_font_color f)
 
 setLineStyle :: CairoLineStyle -> CRender ()
 setLineStyle ls = do
-    c $ C.setLineWidth (line_width_ ls)
-    c $ setSourceColor (line_color_ ls)
-    c $ C.setLineCap (line_cap_ ls)
-    c $ C.setLineJoin (line_join_ ls)
-    c $ C.setDash (line_dashes_ ls) 0
+    c $ C.setLineWidth (_line_width ls)
+    c $ setSourceColor (_line_color ls)
+    c $ C.setLineCap (_line_cap ls)
+    c $ C.setLineJoin (_line_join ls)
+    c $ C.setDash (_line_dashes ls) 0
 
 setFillStyle :: CairoFillStyle -> CRender ()
 setFillStyle (CairoFillStyle s) = s
@@ -590,11 +589,11 @@ defaultPointStyle = filledCircles 1 $ opaque white
 
 defaultFontStyle :: CairoFontStyle
 defaultFontStyle = CairoFontStyle {
-   font_name_   = "sans",
-   font_size_   = 10,
-   font_slant_  = C.FontSlantNormal,
-   font_weight_ = C.FontWeightNormal,
-   font_color_  = opaque black
+   _font_name   = "sans",
+   _font_size   = 10,
+   _font_slant  = C.FontSlantNormal,
+   _font_weight = C.FontWeightNormal,
+   _font_color  = opaque black
 }
 
 isValidNumber :: (RealFloat a) => a -> Bool
@@ -606,5 +605,5 @@ maybeM v = maybe (return v)
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
-$( deriveAccessors ''CairoLineStyle )
-$( deriveAccessors ''CairoFontStyle )
+$( makeLenses ''CairoLineStyle )
+$( makeLenses ''CairoFontStyle )

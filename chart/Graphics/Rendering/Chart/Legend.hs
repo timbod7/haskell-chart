@@ -24,7 +24,7 @@ module Graphics.Rendering.Chart.Legend(
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
 import Data.List (nub, partition,intersperse)
-import Data.Accessor.Template
+import Control.Lens
 
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Plot.Types
@@ -35,10 +35,10 @@ import Graphics.Rendering.Chart.Grid
 -- Legend
 
 data LegendStyle = LegendStyle {
-   legend_label_style_ :: CairoFontStyle,
-   legend_margin_      :: Double,
-   legend_plot_size_   :: Double,
-   legend_orientation_ :: LegendOrientation
+   _legend_label_style :: CairoFontStyle,
+   _legend_margin      :: Double,
+   _legend_plot_size   :: Double,
+   _legend_orientation :: LegendOrientation
 }
 
 -- | Legends can be constructed in two orientations: in rows
@@ -56,7 +56,7 @@ instance ToRenderable (Legend x y) where
 legendToRenderable :: Legend x y -> Renderable String
 legendToRenderable (Legend ls lvs) = gridToRenderable grid
   where
-    grid = case legend_orientation_ ls of
+    grid = case _legend_orientation ls of
         LORows n -> mkGrid n aboveG besideG
         LOCols n -> mkGrid n besideG aboveG
 
@@ -73,15 +73,15 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
         gpic = besideN $ intersperse ggap2 (map rp rfs)
         gtitle = tval $ lbl title
         rp rfn = tval $ Renderable {
-                     minsize = return (legend_plot_size_ ls, 0),
+                     minsize = return (_legend_plot_size ls, 0),
                      render  = \(w,h) -> do
                          rfn (Rect (Point 0 0) (Point w h))
                          return (\_-> Just title)
                  }
 
-    ggap1 = tval $ spacer (legend_margin_ ls,legend_margin_ ls / 2)
+    ggap1 = tval $ spacer (_legend_margin ls,_legend_margin ls / 2)
     ggap2 = tval $ spacer1 (lbl "X")
-    lbl s = label (legend_label_style_ ls) HTA_Left VTA_Centre s
+    lbl s = label (_legend_label_style ls) HTA_Left VTA_Centre s
 
 groups :: Int -> [a] -> [[a]]
 groups  n [] = []
@@ -94,13 +94,13 @@ join_nub []          = []
 
 defaultLegendStyle :: LegendStyle
 defaultLegendStyle = LegendStyle {
-    legend_label_style_ = defaultFontStyle,
-    legend_margin_      = 20,
-    legend_plot_size_   = 20,
-    legend_orientation_ = LORows 4
+    _legend_label_style = defaultFontStyle,
+    _legend_margin      = 20,
+    _legend_plot_size   = 20,
+    _legend_orientation = LORows 4
 }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
-$( deriveAccessors ''LegendStyle )
+$( makeLenses ''LegendStyle )

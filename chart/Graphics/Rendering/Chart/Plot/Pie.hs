@@ -50,7 +50,7 @@ import qualified Graphics.Rendering.Cairo as C
 
 import Data.List
 import Data.Bits
-import Data.Accessor.Template
+import Control.Lens hiding (moveTo)
 import Data.Colour
 import Data.Colour.Names (black, white)
 import Control.Monad
@@ -62,35 +62,35 @@ import Graphics.Rendering.Chart.Grid
 import Graphics.Rendering.Chart.Plot.Types
 
 data PieLayout = PieLayout {
-   pie_title_       :: String,
-   pie_title_style_ :: CairoFontStyle,
-   pie_plot_        :: PieChart,
-   pie_background_  :: CairoFillStyle,
-   pie_margin_      :: Double
+   _pie_title       :: String,
+   _pie_title_style :: CairoFontStyle,
+   _pie_plot        :: PieChart,
+   _pie_background  :: CairoFillStyle,
+   _pie_margin      :: Double
 }
 
 data PieChart = PieChart {
-   pie_data_             :: [PieItem],
-   pie_colors_           :: [AlphaColour Double],
-   pie_label_style_      :: CairoFontStyle,
-   pie_label_line_style_ :: CairoLineStyle,
-   pie_start_angle_      :: Double
+   _pie_data             :: [PieItem],
+   _pie_colors           :: [AlphaColour Double],
+   _pie_label_style      :: CairoFontStyle,
+   _pie_label_line_style :: CairoLineStyle,
+   _pie_start_angle      :: Double
 
 }
 
 data PieItem = PieItem {
-   pitem_label_  :: String,
-   pitem_offset_ :: Double,
-   pitem_value_  :: Double
+   _pitem_label  :: String,
+   _pitem_offset :: Double,
+   _pitem_value  :: Double
 }
 
 defaultPieChart :: PieChart
 defaultPieChart = PieChart {
-    pie_data_             = [],
-    pie_colors_           = defaultColorSeq,
-    pie_label_style_      = defaultFontStyle,
-    pie_label_line_style_ = solidLine 1 $ opaque black,
-    pie_start_angle_      = 0
+    _pie_data             = [],
+    _pie_colors           = defaultColorSeq,
+    _pie_label_style      = defaultFontStyle,
+    _pie_label_line_style = solidLine 1 $ opaque black,
+    _pie_start_angle      = 0
 }
 
 defaultPieItem :: PieItem
@@ -98,24 +98,24 @@ defaultPieItem = PieItem "" 0 0
 
 defaultPieLayout :: PieLayout
 defaultPieLayout = PieLayout {
-    pie_background_  = solidFillStyle $ opaque white,
-    pie_title_       = "",
-    pie_title_style_ = defaultFontStyle{ font_size_   = 15
-                                       , font_weight_ = C.FontWeightBold },
-    pie_plot_        = defaultPieChart,
-    pie_margin_      = 10
+    _pie_background  = solidFillStyle $ opaque white,
+    _pie_title       = "",
+    _pie_title_style = defaultFontStyle{ _font_size   = 15
+                                       , _font_weight = C.FontWeightBold },
+    _pie_plot        = defaultPieChart,
+    _pie_margin      = 10
 }
 
 instance ToRenderable PieLayout where
-    toRenderable p = fillBackground (pie_background_ p) (
+    toRenderable p = fillBackground (_pie_background p) (
        gridToRenderable $ aboveN
          [ tval $ addMargins (lm/2,0,0,0) (setPickFn nullPickFn title)
          , weights (1,1) $ tval $ addMargins (lm,lm,lm,lm)
-                                             (toRenderable $ pie_plot_ p)
+                                             (toRenderable $ _pie_plot p)
          ] )
       where
-        title = label (pie_title_style_ p) HTA_Centre VTA_Top (pie_title_ p)
-        lm    = pie_margin_ p
+        title = label (_pie_title_style p) HTA_Centre VTA_Top (_pie_title p)
+        lm    = _pie_margin p
 
 instance ToRenderable PieChart where
     toRenderable p = Renderable {
@@ -124,10 +124,10 @@ instance ToRenderable PieChart where
     }
 
 extraSpace p = do
-    textSizes <- mapM textSize (map pitem_label_ (pie_data_ p))
+    textSizes <- mapM textSize (map _pitem_label (_pie_data p))
     let maxw  = foldr (max.fst) 0 textSizes
     let maxh  = foldr (max.snd) 0 textSizes
-    let maxo  = foldr (max.pitem_offset_) 0 (pie_data_ p)
+    let maxo  = foldr (max._pitem_offset) 0 (_pie_data p)
     let extra = label_rgap + label_rlength + maxo
     return (extra + maxw, extra + maxh )
 
@@ -141,35 +141,35 @@ renderPie p (w,h) = do
     let center = Point (p_x p1 + w/2)  (p_y p1 + h/2)
     let radius = (min (w - 2*extraw) (h - 2*extrah)) / 2
 
-    foldM_ (paint center radius) (pie_start_angle_ p)
-           (zip (pie_colors_ p) content)
+    foldM_ (paint center radius) (_pie_start_angle p)
+           (zip (_pie_colors p) content)
     return nullPickFn
 
     where
         p1 = Point 0 0
         p2 = Point w h
-        content = let total = sum (map pitem_value_ (pie_data_ p))
-                  in [ pi{pitem_value_=pitem_value_ pi/total}
-                     | pi <- pie_data_ p ]
+        content = let total = sum (map _pitem_value (_pie_data p))
+                  in [ pi{_pitem_value = _pitem_value pi/total}
+                     | pi <- _pie_data p ]
 
         paint :: Point -> Double -> Double -> (AlphaColour Double, PieItem)
                  -> CRender Double
         paint center radius a1 (color,pitem) = do
-            let ax     = 360.0 * (pitem_value_ pitem)
+            let ax     = 360.0 * (_pitem_value pitem)
             let a2     = a1 + (ax / 2)
             let a3     = a1 + ax
-            let offset = pitem_offset_ pitem
+            let offset = _pitem_offset pitem
 
             pieSlice (ray a2 offset) a1 a3 color
-            pieLabel (pitem_label_ pitem) a2 offset
+            pieLabel (_pitem_label pitem) a2 offset
 
             return a3
 
             where
                 pieLabel :: String -> Double -> Double -> CRender ()
                 pieLabel name angle offset = do
-                    setFontStyle (pie_label_style_ p)
-                    setLineStyle (pie_label_line_style_ p)
+                    setFontStyle (_pie_label_style p)
+                    setLineStyle (_pie_label_line_style p)
 
                     moveTo (ray angle (radius + label_rgap+offset))
                     let p1 = ray angle (radius+label_rgap+label_rlength+offset)
@@ -219,6 +219,6 @@ label_rlength = 15
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
-$( deriveAccessors ''PieLayout )
-$( deriveAccessors ''PieChart )
-$( deriveAccessors ''PieItem )
+$( makeLenses ''PieLayout )
+$( makeLenses ''PieChart )
+$( makeLenses ''PieItem )

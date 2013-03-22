@@ -25,7 +25,7 @@ module Graphics.Rendering.Chart.Plot.ErrBars(
     plot_errbars_values,
 ) where
 
-import Data.Accessor.Template
+import Control.Lens
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Renderable
@@ -55,29 +55,29 @@ symErrPoint x y dx dy = ErrPoint (ErrValue (x-dx) x (x+dx))
 -- | Value defining a series of error intervals, and a style in
 --   which to render them.
 data PlotErrBars x y = PlotErrBars {
-    plot_errbars_title_       :: String,
-    plot_errbars_line_style_  :: CairoLineStyle,
-    plot_errbars_tick_length_ :: Double,
-    plot_errbars_overhang_    :: Double,
-    plot_errbars_values_      :: [ErrPoint x y]
+    _plot_errbars_title       :: String,
+    _plot_errbars_line_style  :: CairoLineStyle,
+    _plot_errbars_tick_length :: Double,
+    _plot_errbars_overhang    :: Double,
+    _plot_errbars_values      :: [ErrPoint x y]
 }
 
 
 instance ToPlot PlotErrBars where
     toPlot p = Plot {
-        plot_render_     = renderPlotErrBars p,
-        plot_legend_     = [(plot_errbars_title_ p, renderPlotLegendErrBars p)],
-        plot_all_points_ = ( concat [ [ev_low x,ev_high x]
+        _plot_render     = renderPlotErrBars p,
+        _plot_legend     = [(_plot_errbars_title p, renderPlotLegendErrBars p)],
+        _plot_all_points = ( concat [ [ev_low x,ev_high x]
                                     | ErrPoint x _ <- pts ]
                            , concat [ [ev_low y,ev_high y]
                                     | ErrPoint _ y <- pts ] )
     }
       where
-        pts = plot_errbars_values_ p
+        pts = _plot_errbars_values p
 
 renderPlotErrBars :: PlotErrBars x y -> PointMapFn x y -> CRender ()
 renderPlotErrBars p pmap = preserveCState $ do
-    mapM_ (drawErrBar.epmap) (plot_errbars_values_ p)
+    mapM_ (drawErrBar.epmap) (_plot_errbars_values p)
   where
     epmap (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) =
         ErrPoint (ErrValue xl' x' xh') (ErrValue yl' y' yh')
@@ -88,9 +88,9 @@ renderPlotErrBars p pmap = preserveCState $ do
     pmap'      = mapXY pmap
 
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
-        let tl = plot_errbars_tick_length_ ps
-        let oh = plot_errbars_overhang_ ps
-        setLineStyle (plot_errbars_line_style_ ps)
+        let tl = _plot_errbars_tick_length ps
+        let oh = _plot_errbars_overhang ps
+        setLineStyle (_plot_errbars_line_style ps)
         c $ C.newPath
         c $ C.moveTo (xl-oh) y
         c $ C.lineTo (xh+oh) y
@@ -118,15 +118,15 @@ renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
 
 defaultPlotErrBars :: PlotErrBars x y
 defaultPlotErrBars = PlotErrBars {
-    plot_errbars_title_       = "",
-    plot_errbars_line_style_  = solidLine 1 $ opaque blue,
-    plot_errbars_tick_length_ = 3,
-    plot_errbars_overhang_    = 0,
-    plot_errbars_values_      = []
+    _plot_errbars_title       = "",
+    _plot_errbars_line_style  = solidLine 1 $ opaque blue,
+    _plot_errbars_tick_length = 3,
+    _plot_errbars_overhang    = 0,
+    _plot_errbars_values      = []
 }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
 
-$( deriveAccessors ''PlotErrBars )
+$( makeLenses ''PlotErrBars )
