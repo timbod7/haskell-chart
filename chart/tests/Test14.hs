@@ -1,4 +1,4 @@
-module Test14 where 
+module Test14 where
 
 import Graphics.Rendering.Chart
 import Data.Colour
@@ -16,7 +16,7 @@ chart lwidth = toRenderable layout
     layout = layout1_title ^="Price History"
            $ layout1_background ^= solidFillStyle (opaque white)
            $ layout1_left_axis ^: laxis_override ^= axisTicksHide
- 	   $ layout1_plots ^= [ Left (toPlot price1), Left (toPlot spots) ]
+           $ layout1_plots ^= [ Left (toPlot price1), Left (toPlot spots) ]
            $ setLayout1Foreground (opaque black)
            $ defaultLayout1
 
@@ -29,7 +29,7 @@ chart lwidth = toRenderable layout
           $ area_spots_max_radius ^= 20
           $ area_spots_values ^= values
           $ defaultAreaSpots
-    
+
     points = map (\ (d,v,z)-> (d,v) ) values
     values = [ (d, v, z) | ((d,v,_),z) <- zip prices1 zs ]
     zs    :: [Int]

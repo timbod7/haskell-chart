@@ -1,4 +1,4 @@
-module Test5 where 
+module Test5 where
 
 import Graphics.Rendering.Chart
 import Data.Colour
@@ -44,5 +44,3 @@ main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test5_small.png"
 main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test5_big.png"
 
 main = getArgs >>= main1
-
-

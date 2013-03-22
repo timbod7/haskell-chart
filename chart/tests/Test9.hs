@@ -1,4 +1,4 @@
-module Test9 where 
+module Test9 where
 
 import Graphics.Rendering.Chart
 import Data.Colour
@@ -8,7 +8,7 @@ import System.Environment(getArgs)
 
 chart borders = toRenderable layout
  where
-  layout = 
+  layout =
         layout1_title ^= "Sample Bars" ++ btitle
       $ layout1_title_style ^: font_size ^= 10
       $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
@@ -34,5 +34,3 @@ main1 ["small"]  = renderableToPNGFile (chart True) 320 240 "test9_small.png"
 main1 ["big"]    = renderableToPNGFile (chart True) 800 600 "test9_big.png"
 
 main = getArgs >>= main1
-
-

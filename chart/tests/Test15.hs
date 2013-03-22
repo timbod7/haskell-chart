@@ -1,4 +1,4 @@
-module Test15 where 
+module Test15 where
 
 import Graphics.Rendering.Chart
 import Data.Colour
@@ -8,7 +8,7 @@ import System.Environment(getArgs)
 
 chart lo = toRenderable layout
  where
-  layout = 
+  layout =
         layout1_title ^= "Legend Test"
       $ layout1_title_style ^: font_size ^= 10
       $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
@@ -39,5 +39,3 @@ main1 ["small"]  = renderableToPNGFile (chart (LORows 3)) 320 240 "test15_small.
 main1 ["big"]    = renderableToPNGFile (chart (LORows 3)) 800 600 "test15_big.png"
 
 main = getArgs >>= main1
-
-

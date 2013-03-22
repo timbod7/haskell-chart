@@ -12,7 +12,7 @@ pricesAAPL :: [(LocalTime,(Double,Double,Double,Double))]
 pricesMSFT :: [(LocalTime,(Double,Double,Double,Double))]
 pricesARMH :: [(LocalTime,(Double,Double,Double,Double))]
 
-pricesAAPL = 
+pricesAAPL =
     [ (mkDate 55105,(180.7,185.35,180.86,186.22))
     , (mkDate 55104,(182.61,186.13,185.35,186.45))
     , (mkDate 55103,(184.31,186.73,185.38,187.4))
@@ -80,7 +80,7 @@ pricesAAPL =
     , (mkDate 55013,(142.52,143.5,142.83,144.66))
     ]
 
-pricesMSFT = 
+pricesMSFT =
     [ (mkDate 55105,(24.8,25.41,24.88,25.47))
     , (mkDate 55104,(25.38,25.76,25.72,25.99))
     , (mkDate 55103,(25.69,25.91,25.75,25.96))
@@ -148,7 +148,7 @@ pricesMSFT =
     , (mkDate 55013,(23.96,24.05,24.04,24.3))
     ]
 
-pricesARMH = 
+pricesARMH =
     [ (mkDate 55105,(6.65,6.83,6.65,6.86))
     , (mkDate 55104,(6.87,7.0,7.0,7.02))
     , (mkDate 55103,(6.88,6.92,6.95,6.97))
@@ -215,5 +215,3 @@ pricesARMH =
     , (mkDate 55014,(5.89,6.03,5.94,6.06))
     , (mkDate 55013,(5.93,5.98,5.95,6.03))
     ]
-
-

@@ -1,4 +1,4 @@
-module Test4 where 
+module Test4 where
 
 import Graphics.Rendering.Chart
 import Data.Colour
@@ -25,7 +25,7 @@ chart xrev yrev = toRenderable layout
            $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis defaultLogAxis
            $ layout1_left_axis ^: laxis_title ^= "vertical"
            $ layout1_left_axis ^: laxis_reverse ^= yrev
-	   $ layout1_plots ^= [Left (toPlot points), Left (toPlot lines) ]
+           $ layout1_plots ^= [Left (toPlot points), Left (toPlot lines) ]
            $ defaultLayout1
 
 main1 :: [String] -> IO (PickFn ())
@@ -33,5 +33,3 @@ main1 ["small"]  = renderableToPNGFile (chart False False) 320 240 "test4_small.
 main1 ["big"]    = renderableToPNGFile (chart False False) 800 600 "test4_big.png"
 
 main = getArgs >>= main1
-
-

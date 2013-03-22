@@ -1,4 +1,4 @@
-module Test8 where 
+module Test8 where
 
 import Graphics.Rendering.Chart
 import Data.Accessor
@@ -20,5 +20,3 @@ main1 ["small"]  = renderableToPNGFile chart 320 240 "test8_small.png"
 main1 ["big"]    = renderableToPNGFile chart 800 600 "test8_big.png"
 
 main = getArgs >>= main1
-
-

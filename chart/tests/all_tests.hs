@@ -109,7 +109,7 @@ test4d otype = toRenderable layout
            $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis defaultLogAxis
            $ layout1_left_axis ^: laxis_title ^= "vertical"
            $ layout1_left_axis ^: laxis_reverse ^= False
-	   $ layout1_plots ^= [Left (toPlot points `joinPlot` toPlot lines) ]
+           $ layout1_plots ^= [Left (toPlot points `joinPlot` toPlot lines) ]
            $ defaultLayout1
 
 ----------------------------------------------------------------------
@@ -193,7 +193,7 @@ test10 prices otype = toRenderable layout
                 $ defaultPlotFillBetween
 
     price2 = plot_lines_style ^= lineStyle (opaque red)
-	   $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
+           $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
            $ plot_lines_title ^= "price 2"
            $ defaultPlotLines
 
@@ -207,7 +207,7 @@ test10 prices otype = toRenderable layout
     layout = layout1_title ^="Price History"
            $ layout1_background ^= solidFillStyle (opaque white)
            $ layout1_right_axis ^: laxis_override ^= axisGridHide
- 	   $ layout1_plots ^= [ Left (toPlot price1_area), Right (toPlot price2_area)
+           $ layout1_plots ^= [ Left (toPlot price1_area), Right (toPlot price2_area)
                               , Left (toPlot price1),      Right (toPlot price2)
                               ]
            $ setLayout1Foreground fg
@@ -233,14 +233,14 @@ test11 otype = renderLayout1sStacked [withAnyOrdinate layout1, withAnyOrdinate l
           $ defaultPlotPoints
 
     layout1 = layout1_title ^= "Integer Axis"
- 	   $ layout1_plots ^= [Left (toPlot plot1), Left (toPlot extendRange)]
+           $ layout1_plots ^= [Left (toPlot plot1), Left (toPlot extendRange)]
            $ defaultLayout1
 
     plot2 = plot_lines_values ^= [vs2]
           $ defaultPlotLines
 
     layout2 = layout1_title ^= "Float Axis"
- 	   $ layout1_plots ^= [Left (toPlot plot2), Left (toPlot extendRange)]
+           $ layout1_plots ^= [Left (toPlot plot2), Left (toPlot extendRange)]
            $ defaultLayout1
 
 -------------------------------------------------------------------------------
@@ -259,7 +259,7 @@ test12 otype = toRenderable layout
         axis_ticks_    = [(v,3) | v <- [0,1..15]],
         axis_grid_     = [0,5..15],
         axis_labels_   = [[(v,show v) | v <- [0,5..15]]]
-    }    
+    }
 
     laxis = AxisData {
         axis_viewport_ = vmap (0,500),
@@ -267,7 +267,7 @@ test12 otype = toRenderable layout
         axis_ticks_    = [(v,3) | v <- [0,25..500]],
         axis_grid_     = [0,100..500],
         axis_labels_   = [[(v,show v) | v <- [0,100..500]]]
-    }    
+    }
 
     plot = plot_lines_values ^= [vs1]
          $ defaultPlotLines
@@ -402,7 +402,7 @@ showTests tests ofn = mapM_ doTest (filter (match tests) allTests)
      doTest (s,size,f) = do
        putStrLn (s ++ "... ")
        ofn (s,size,f)
-     
+
 
 match :: [String] -> (String,s,a) -> Bool
 match [] t = True

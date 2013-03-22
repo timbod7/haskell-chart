@@ -26,7 +26,7 @@ chart = toRenderable layout
 
     layout = layout1_title ^= "Price History"
            $ layout1_grid_last ^= True
- 	   $ layout1_plots ^= [Left (toPlot price1),
+           $ layout1_plots ^= [Left (toPlot price1),
                                Left (toPlot price2)]
            $ defaultLayout1
 

@@ -28,7 +28,7 @@ chart prices showMinMax lwidth = toRenderable layout
            $ defaultPlotLines
 
     price2 = plot_lines_style ^= lineStyle (opaque green)
-	   $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
+           $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
            $ plot_lines_title ^= "price 2"
            $ defaultPlotLines
 
@@ -50,7 +50,7 @@ chart prices showMinMax lwidth = toRenderable layout
            $ layout1_left_axis ^: laxis_override ^= axisGridHide
            $ layout1_right_axis ^: laxis_override ^= axisGridHide
            $ layout1_bottom_axis ^: laxis_override ^= axisGridHide
- 	   $ layout1_plots ^= ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
+           $ layout1_plots ^= ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
            $ layout1_grid_last ^= False
            $ setLayout1Foreground fg
            $ defaultLayout1

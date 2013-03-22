@@ -1,4 +1,4 @@
-module TestSparkLines where 
+module TestSparkLines where
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.SparkLine

@@ -14,7 +14,7 @@ chart lwidth = toRenderable layout
         r a = 0.8 * cos (a * 20 * pi /360)
 
     circleP = plot_lines_values ^= [circle]
-            $ plot_lines_style ^= solidLine lwidth (opaque blue) 
+            $ plot_lines_style ^= solidLine lwidth (opaque blue)
             $ defaultPlotLines
 
     layout = layout1_title ^= "Parametric Plot"

@@ -1,4 +1,4 @@
-module Test1 where 
+module Test1 where
 
 import Graphics.Rendering.Chart
 import Data.Colour
@@ -14,7 +14,7 @@ layout lwidth = layout1
   where
     layout1 = layout1_title ^= "Amplitude Modulation"
             $ layout1_plots ^= [Left (toPlot sinusoid1),
-			       Left (toPlot sinusoid2)]
+                               Left (toPlot sinusoid2)]
             $ layout1_plot_background ^= Just (solidFillStyle $ opaque white)
             $ defaultLayout1
 
@@ -35,5 +35,3 @@ main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test1_small.png"
 main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test1_big.png"
 
 main = getArgs >>= main1
-
-

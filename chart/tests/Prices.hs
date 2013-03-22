@@ -389,4 +389,3 @@ mkDateTime dd mm yyyy hh nn =
               (dayFractionToTimeOfDay ((hh*60+nn)/1440))
 mkSeconds ss = LocalTime (fromGregorian (fromIntegral 2009) 11 23)
                          (dayFractionToTimeOfDay (((14*60+32)*60+ss)/(1440*60)))
-

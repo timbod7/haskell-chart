@@ -1,4 +1,4 @@
-module Test7 where 
+module Test7 where
 
 import Graphics.Rendering.Chart
 import Data.Colour
@@ -15,7 +15,7 @@ chart = toRenderable layout
          $ defaultPlotErrBars
 
     points = plot_points_style ^= filledCircles 2 (opaque red)
-	   $ plot_points_values ^= [(x,y) |  (x,y,dx,dy) <- vals]
+           $ plot_points_values ^= [(x,y) |  (x,y,dx,dy) <- vals]
            $ plot_points_title ^= "test data"
            $ defaultPlotPoints
 
@@ -30,5 +30,3 @@ main1 ["small"]  = renderableToPNGFile chart 320 240 "test7_small.png"
 main1 ["big"]    = renderableToPNGFile chart 800 600 "test7_big.png"
 
 main = getArgs >>= main1
-
-

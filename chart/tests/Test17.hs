@@ -1,4 +1,4 @@
-module Test17 where 
+module Test17 where
 
 import Graphics.Rendering.Chart
 import Data.Colour
@@ -16,7 +16,7 @@ chart lwidth = toRenderable layout
     layout = layout1_title ^="Stock Prices"
            $ layout1_background ^= solidFillStyle (opaque white)
            $ layout1_left_axis ^: laxis_override ^= axisTicksHide
- 	   $ layout1_plots ^= [ Right (toPlot msftArea)
+           $ layout1_plots ^= [ Right (toPlot msftArea)
                               , Right (toPlot msftLine)
                               , Right (toPlot msftCandle)
                               , Left  (toPlot aaplArea)
