@@ -27,7 +27,7 @@ Extra-Source-Files:
      tests/Test14a.hs,
      tests/Test15.hs,
      tests/Test17.hs,
-     tests/TestParametric.hs,     
+     tests/TestParametric.hs,
      tests/Prices.hs
      tests/ExampleStocks.hs
 

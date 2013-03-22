@@ -116,7 +116,7 @@ renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
                  | otherwise  = bw * length ds
       bw | so_smooth opt = 0
          | otherwise  = 2
-      h = so_height opt 
+      h = so_height opt
       dmin = fst (so_limits opt)
       dmax = snd (so_limits opt)
       coords = zipWith (\x y-> Point (fi x) y)

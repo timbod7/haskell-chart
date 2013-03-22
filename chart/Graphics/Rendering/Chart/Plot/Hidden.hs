@@ -38,4 +38,3 @@ instance ToPlot PlotHidden where
 -- for each field.
 
 $( deriveAccessors ''PlotHidden )
-

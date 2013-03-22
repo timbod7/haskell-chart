@@ -76,4 +76,3 @@ stepsInt nSteps range = bestSize (goodness alt0) alt0 alts
       where
         a = (floor   (min / fromIntegral size)) * size
         b = (ceiling (max / fromIntegral size)) * size
-

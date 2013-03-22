@@ -19,7 +19,7 @@ module Graphics.Rendering.Chart.Plot.Points(
     plot_points_style,
     plot_points_values,
 ) where
-    
+
 import Data.Accessor.Template
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart.Types

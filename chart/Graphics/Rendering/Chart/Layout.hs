@@ -330,7 +330,7 @@ renderPlots l sz@(w,h) = do
     reverse rev (a,b) = if rev then (b,a) else (a,b)
 
     rPlot1 (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p =
-      let 
+      let
           xr1 = reverse xrev xr
           yr1 = reverse yrev yr
           yrange = if yrev then (0, h) else (h, 0)
@@ -339,7 +339,7 @@ renderPlots l sz@(w,h) = do
           mapv (min,max) _ LMin       = min
           mapv (min,max) _ LMax       = max
           mapv _         f (LValue v) = f v
-	  in plot_render_ p pmfn
+          in plot_render_ p pmfn
     rPlot1 _ _ _ = return ()
 
     pickfn (Point x y) = do  -- Maybe monad

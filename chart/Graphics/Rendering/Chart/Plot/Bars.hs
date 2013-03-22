@@ -222,4 +222,3 @@ renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
 -- for each field.
 
 $( deriveAccessors ''PlotBars )
-

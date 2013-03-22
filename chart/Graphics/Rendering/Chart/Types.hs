@@ -96,7 +96,7 @@ module Graphics.Rendering.Chart.Types(
     c,
     alignp,
     alignc,
-    
+
     line_width,
     line_color,
     line_dashes,
@@ -198,7 +198,7 @@ runCRender (DR m) e = runReaderT m e
 
 c :: C.Render a -> CRender a
 c = DR . lift
- 
+
 ----------------------------------------------------------------------
 
 -- | Abstract data type for the style of a plotted point.
@@ -246,12 +246,12 @@ moveTo p  = do
     c $ C.moveTo (p_x p') (p_y p')
 
 alignp :: Point -> CRender Point
-alignp p = do 
+alignp p = do
     alignfn <- fmap cenv_point_alignfn ask
     return (alignfn p)
 
 alignc :: Point -> CRender Point
-alignc p = do 
+alignc p = do
     alignfn <- fmap cenv_coord_alignfn ask
     return (alignfn p)
 
@@ -260,7 +260,7 @@ lineTo p = do
     c $ C.lineTo (p_x p') (p_y p')
 
 setClipRegion :: Point -> Point -> CRender ()
-setClipRegion p2 p3 = do    
+setClipRegion p2 p3 = do
     c $ C.moveTo (p_x p2) (p_y p2)
     c $ C.lineTo (p_x p2) (p_y p3)
     c $ C.lineTo (p_x p3) (p_y p3)
@@ -271,13 +271,13 @@ setClipRegion p2 p3 = do
 -- | Make a path from a rectangle.
 rectPath :: Rect -> [Point]
 rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = [p1,p2,p3,p4,p1]
-  where    
+  where
     p2 = (Point x1 y2)
     p4 = (Point x2 y1)
 
 stepPath :: [Point] -> CRender()
 stepPath (p:ps) = c $ do
-    C.newPath                    
+    C.newPath
     C.moveTo (p_x p) (p_y p)
     mapM_ (\p -> C.lineTo (p_x p) (p_y p)) ps
 stepPath _  = return ()
@@ -429,7 +429,7 @@ drawTextsR hta vta angle (Point x y) s = preserveCState $ drawAll
 -- | Execute a rendering action in a saved context (ie bracketed
 --   between C.save and C.restore).
 preserveCState :: CRender a -> CRender a
-preserveCState a = do 
+preserveCState a = do
   c $ C.save
   v <- a
   c $ C.restore
@@ -445,10 +445,10 @@ filledCircles radius cl = CairoPointStyle rf
   where
     rf p = do
         (Point x y) <- alignp p
-	c $ setSourceColor cl
+        c $ setSourceColor cl
         c $ C.newPath
-	c $ C.arc x y radius 0 (2*pi)
-	c $ C.fill
+        c $ C.arc x y radius 0 (2*pi)
+        c $ C.fill
 
 hollowCircles ::
      Double -- ^ Radius of circle.
@@ -460,10 +460,10 @@ hollowCircles radius w cl = CairoPointStyle rf
     rf p = do
         (Point x y) <- alignp p
         c $ C.setLineWidth w
-	c $ setSourceColor cl
+        c $ setSourceColor cl
         c $ C.newPath
-	c $ C.arc x y radius 0 (2*pi)
-	c $ C.stroke
+        c $ C.arc x y radius 0 (2*pi)
+        c $ C.stroke
 
 hollowPolygon ::
      Double -- ^ Radius of circle.
@@ -476,7 +476,7 @@ hollowPolygon radius w sides isrot cl = CairoPointStyle rf
   where rf p =
             do (Point x y ) <- alignp p
                c $ C.setLineWidth w
-	       c $ setSourceColor cl
+               c $ setSourceColor cl
                c $ C.newPath
                let intToAngle n =
                          if isrot
@@ -488,7 +488,7 @@ hollowPolygon radius w sides isrot cl = CairoPointStyle rf
                                 angles
                moveTo p
                mapM_ lineTo (ps++[p])
-	       c $ C.stroke
+               c $ C.stroke
 
 filledPolygon ::
      Double -- ^ Radius of circle.
@@ -510,7 +510,7 @@ filledPolygon radius sides isrot cl = CairoPointStyle rf
                                              (y + radius * cos a)) angles
                moveTo p
                mapM_ lineTo (ps++[p])
-	       c $ C.fill
+               c $ C.fill
 
 plusses ::
      Double -- ^ Radius of circle.
@@ -520,13 +520,13 @@ plusses ::
 plusses radius w cl = CairoPointStyle rf
   where rf p = do (Point x y ) <- alignp p
                   c $ C.setLineWidth w
-	          c $ setSourceColor cl
+                  c $ setSourceColor cl
                   c $ C.newPath
                   c $ C.moveTo (x+radius) y
                   c $ C.lineTo (x-radius) y
                   c $ C.moveTo x (y-radius)
                   c $ C.lineTo x (y+radius)
-	          c $ C.stroke
+                  c $ C.stroke
 
 exes ::
      Double -- ^ Radius of circle.
@@ -537,13 +537,13 @@ exes radius w cl = CairoPointStyle rf
   where rad = radius / sqrt 2
         rf p = do (Point x y ) <- alignp p
                   c $ C.setLineWidth w
-	          c $ setSourceColor cl
+                  c $ setSourceColor cl
                   c $ C.newPath
                   c $ C.moveTo (x+rad) (y+rad)
                   c $ C.lineTo (x-rad) (y-rad)
                   c $ C.moveTo (x+rad) (y-rad)
                   c $ C.lineTo (x-rad) (y+rad)
-	          c $ C.stroke
+                  c $ C.stroke
 
 stars ::
      Double -- ^ Radius of circle.
@@ -554,7 +554,7 @@ stars radius w cl = CairoPointStyle rf
   where rad = radius / sqrt 2
         rf p = do (Point x y ) <- alignp p
                   c $ C.setLineWidth w
-	          c $ setSourceColor cl
+                  c $ setSourceColor cl
                   c $ C.newPath
                   c $ C.moveTo (x+radius) y
                   c $ C.lineTo (x-radius) y
@@ -564,7 +564,7 @@ stars radius w cl = CairoPointStyle rf
                   c $ C.lineTo (x-rad) (y-rad)
                   c $ C.moveTo (x+rad) (y-rad)
                   c $ C.lineTo (x-rad) (y+rad)
-	          c $ C.stroke
+                  c $ C.stroke
 
 solidLine ::
      Double -- ^ Width of line.
@@ -608,4 +608,3 @@ maybeM v = maybe (return v)
 -- for each field.
 $( deriveAccessors ''CairoLineStyle )
 $( deriveAccessors ''CairoFontStyle )
-

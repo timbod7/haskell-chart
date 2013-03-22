@@ -17,7 +17,7 @@ styleSymbol ind = symbolSequence !! ind
                                  , Triangle, DownTriangle, Plus, Star
                                  , FilledCircle ]
 
--- When defaultLayout1 has been generalized, change this signature to 
+-- When defaultLayout1 has been generalized, change this signature to
 -- [InternalPlot x y] -> Layout1 x y z
 iplot :: [InternalPlot Double Double] -> Layout1 Double Double
 iplot foobar = defaultLayout1 {

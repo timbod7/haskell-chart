@@ -44,8 +44,8 @@ data PlotAnnotation  x y = PlotAnnotation {
 instance ToPlot PlotAnnotation where
     toPlot p = Plot {
         plot_render_ = renderAnnotation p,
-	plot_legend_ = [],
-	plot_all_points_ = (map (\(x,_,_)->x)  vs , map (\(_,y,_)->y) vs)
+        plot_legend_ = [],
+        plot_all_points_ = (map (\(x,_,_)->x)  vs , map (\(_,y,_)->y) vs)
     }
       where
         vs = plot_annotation_values_ p
@@ -54,7 +54,7 @@ instance ToPlot PlotAnnotation where
 renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> CRender ()
 
 renderAnnotation p pMap = preserveCState $ do
-                            setFontStyle style                            
+                            setFontStyle style
                             mapM_ drawOne values
     where hta = plot_annotation_hanchor_ p
           vta = plot_annotation_vanchor_ p
@@ -77,4 +77,3 @@ defaultPlotAnnotation = PlotAnnotation {
 -- for each field.
 
 $( deriveAccessors ''PlotAnnotation )
-

@@ -103,7 +103,3 @@ vlinePlot t ls v = toPlot defaultPlotLines {
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
 $( deriveAccessors ''PlotLines )
-
-
-
-

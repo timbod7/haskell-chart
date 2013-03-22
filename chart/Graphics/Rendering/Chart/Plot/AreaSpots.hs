@@ -91,7 +91,7 @@ renderAreaSpots p pmap = preserveCState $
           (\ (x,y,z)-> do
               let radius = sqrt z
               let (CairoPointStyle drawSpotAt)    = filledCircles radius $
-                                                    flip withOpacity 
+                                                    flip withOpacity
                                                       (area_spots_opacity_ p) $
                                                     area_spots_fillcolour_ p
               drawSpotAt (pmap (LValue x, LValue y))
@@ -111,7 +111,7 @@ renderSpotLegend p r@(Rect p1 p2) = preserveCState $ do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2
     let (CairoPointStyle drawSpotAt)    = filledCircles radius $
-                                          flip withOpacity 
+                                          flip withOpacity
                                                (area_spots_opacity_ p) $
                                           area_spots_fillcolour_ p
     drawSpotAt centre
@@ -163,7 +163,7 @@ renderAreaSpots4D p pmap = preserveCState $
                     (area_spots_4d_values_ p))
           (\ (x,y,z,t)-> do
               let radius  = sqrt z
-              let colour  = (area_spots_4d_palette_ p) !! t 
+              let colour  = (area_spots_4d_palette_ p) !! t
               let (CairoPointStyle drawSpotAt)
                     = filledCircles radius $
                           flip withOpacity (area_spots_4d_opacity_ p) $ colour
@@ -181,7 +181,7 @@ renderAreaSpots4D p pmap = preserveCState $
                               colVals  = map (toValue . fth4) points
                               colMin   = minimum colVals
                               colMax   = maximum colVals
-                              select t = min (c-1) $ 
+                              select t = min (c-1) $
                                          truncate ( fromIntegral c
                                                        * (toValue t-colMin)
                                                        / (colMax-colMin))

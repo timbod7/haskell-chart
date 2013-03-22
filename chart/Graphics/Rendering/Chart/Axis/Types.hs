@@ -183,10 +183,10 @@ minsizeAxis (AxisT at as rev ad) = do
     let vh = maximum0 (map (maximum0.map snd) labelSizes)
 
     let sz      = case at of
-		     E_Top    -> (hw,hh)
-		     E_Bottom -> (hw,hh)
-		     E_Left   -> (vw,vh)
-		     E_Right  -> (vw,vh)
+                     E_Top    -> (hw,hh)
+                     E_Bottom -> (hw,hh)
+                     E_Left   -> (vw,vh)
+                     E_Right  -> (vw,vh)
     return sz
 
 labelTexts :: AxisData a -> [[String]]
@@ -205,16 +205,16 @@ axisOverhang (AxisT at as rev ad) = do
         mapM textSize labels
     case labelSizes of
         []  -> return (0,0)
-	ls  -> let l1     = head ls
-		   l2     = last ls
-		   ohangv = return (snd l1 / 2, snd l2 / 2)
-		   ohangh = return (fst l1 / 2, fst l2 / 2)
-		   in
-		   case at of
-		       E_Top    -> ohangh
-		       E_Bottom -> ohangh
-		       E_Left   -> ohangv
-		       E_Right  -> ohangh
+        ls  -> let l1     = head ls
+                   l2     = last ls
+                   ohangv = return (snd l1 / 2, snd l2 / 2)
+                   ohangh = return (fst l1 / 2, fst l2 / 2)
+                   in
+                   case at of
+                       E_Top    -> ohangh
+                       E_Bottom -> ohangh
+                       E_Left   -> ohangv
+                       E_Right  -> ohangh
 
 renderAxis :: AxisT x -> RectSize -> CRender (PickFn x)
 renderAxis at@(AxisT et as rev ad) sz = do
@@ -238,7 +238,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
 
    drawTick (value,length) =
        let t1 = axisPoint value
-	   t2 = t1 `pvadd` (vscale length tp)
+           t2 = t1 `pvadd` (vscale length tp)
        in strokePath [t1,t2]
 
    (hta,vta,coord,awayFromAxis) = case et of
@@ -303,7 +303,7 @@ axisMapping :: AxisT z -> RectSize
 axisMapping (AxisT et as rev ad) (x2,y2) = case et of
     E_Top    -> (x1,y2,x2,y2, (Vector 0 1),    mapx y2, imapx)
     E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)), mapx y1, imapx)
-    E_Left   -> (x2,y2,x2,y1, (Vector (1) 0),  mapy x2, imapy) 
+    E_Left   -> (x2,y2,x2,y1, (Vector (1) 0),  mapy x2, imapy)
     E_Right  -> (x1,y2,x1,y1, (Vector (-1) 0), mapy x1, imapy)
   where
     (x1,y1) = (0,0)
@@ -318,7 +318,7 @@ axisMapping (AxisT et as rev ad) (x2,y2) = case et of
 
     reverse r@(r0,r1)  = if rev then (r1,r0) else r
 
--- 
+--
 renderAxisGrid :: RectSize -> AxisT z -> CRender ()
 renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
     preserveCState $ do
@@ -333,13 +333,13 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
     drawGridLine E_Right  = hline
 
     vline v = let v' = p_x (axisPoint v)
-	      in strokePath [Point v' 0,Point v' h]
+              in strokePath [Point v' 0,Point v' h]
 
     hline v = let v' = p_y (axisPoint v)
-	      in strokePath [Point 0 v',Point w v']
+              in strokePath [Point 0 v',Point w v']
 
 
--- | Construct an axis given the positions for ticks, grid lines, and 
+-- | Construct an axis given the positions for ticks, grid lines, and
 -- labels, and the labelling function
 makeAxis :: PlotValue x => (x -> String) -> ([x],[x],[x]) -> AxisData x
 makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
@@ -357,7 +357,7 @@ makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     min'        = minimum labelvs
     max'        = maximum labelvs
 
--- | Construct an axis given the positions for ticks, grid lines, and 
+-- | Construct an axis given the positions for ticks, grid lines, and
 -- labels, and the positioning and labelling functions
 makeAxis' :: Ord x => (x -> Double) -> (Double -> x) -> (x -> String)
                    -> ([x],[x],[x]) -> AxisData x
@@ -417,4 +417,3 @@ invLinMap f t (v3,v4) (d1,d2) d =
 -- each field.
 $( deriveAccessors ''AxisData )
 $( deriveAccessors ''AxisStyle )
-

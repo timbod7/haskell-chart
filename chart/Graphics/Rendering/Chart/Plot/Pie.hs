@@ -73,7 +73,7 @@ data PieChart = PieChart {
    pie_data_             :: [PieItem],
    pie_colors_           :: [AlphaColour Double],
    pie_label_style_      :: CairoFontStyle,
-   pie_label_line_style_ :: CairoLineStyle, 
+   pie_label_line_style_ :: CairoLineStyle,
    pie_start_angle_      :: Double
 
 }
@@ -86,7 +86,7 @@ data PieItem = PieItem {
 
 defaultPieChart :: PieChart
 defaultPieChart = PieChart {
-    pie_data_             = [], 
+    pie_data_             = [],
     pie_colors_           = defaultColorSeq,
     pie_label_style_      = defaultFontStyle,
     pie_label_line_style_ = solidLine 1 $ opaque black,
@@ -144,10 +144,10 @@ renderPie p (w,h) = do
     foldM_ (paint center radius) (pie_start_angle_ p)
            (zip (pie_colors_ p) content)
     return nullPickFn
- 
+
     where
-        p1 = Point 0 0 
-        p2 = Point w h 
+        p1 = Point 0 0
+        p2 = Point w h
         content = let total = sum (map pitem_value_ (pie_data_ p))
                   in [ pi{pitem_value_=pitem_value_ pi/total}
                      | pi <- pie_data_ p ]
@@ -175,7 +175,7 @@ renderPie p (w,h) = do
                     let p1 = ray angle (radius+label_rgap+label_rlength+offset)
                     lineTo p1
                     (tw,th) <- textSize name
-                    let (offset,anchor) = if angle < 90 || angle > 270 
+                    let (offset,anchor) = if angle < 90 || angle > 270
                                           then ((0+),HTA_Left)
                                           else ((0-),HTA_Right)
                     c $ C.relLineTo (offset (tw + label_rgap)) 0

@@ -230,4 +230,3 @@ frac x | 0 <= b    = (a,b)
 
 $( deriveAccessors ''LinearAxisParams )
 $( deriveAccessors ''LogAxisParams )
-

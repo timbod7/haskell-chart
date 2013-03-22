@@ -86,8 +86,8 @@ data TimeLabelAlignment = UnderTicks
 --   sets the second line of labels.  The 'TimeLabelFn' is
 --   used to format LocalTimes for labels.  The values to be plotted
 --   against this axis can be created with 'doubleFromLocalTime'.
-timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> TimeLabelAlignment -> 
-                       TimeSeq -> TimeLabelFn -> TimeLabelAlignment -> 
+timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> TimeLabelAlignment ->
+                       TimeSeq -> TimeLabelFn -> TimeLabelAlignment ->
             AxisFn LocalTime
 timeAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
     axis_viewport_ = vmap(min', max'),
@@ -95,7 +95,7 @@ timeAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
     axis_ticks_    = [ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
     axis_labels_   = [ [ (t,l) | (t,l) <- labels labelf   ltimes lal, visible t]
                      , [ (t,l) | (t,l) <- labels contextf ctimes clal, visible t]
-                     ], 
+                     ],
     axis_grid_     = [ t     | t <- ltimes, visible t]
     }
   where
@@ -221,9 +221,9 @@ autoTimeAxis :: AxisFn LocalTime
 autoTimeAxis pts
     | null pts              = timeAxis days    days    (ft "%d-%b-%y") UnderTicks
                                                noTime  (ft "") UnderTicks []
-    | tdiff==0 && 100*dsec<1= timeAxis millis1   millis1  (ft "%S%Q") UnderTicks 
+    | tdiff==0 && 100*dsec<1= timeAxis millis1   millis1  (ft "%S%Q") UnderTicks
                                                  noTime (ft "%S%Q") UnderTicks pts
-    | tdiff==0 && 10*dsec<1 = timeAxis millis10  millis10  (ft "%S%Q") UnderTicks 
+    | tdiff==0 && 10*dsec<1 = timeAxis millis10  millis10  (ft "%S%Q") UnderTicks
                                                  noTime (ft "%S%Q") UnderTicks pts
     | tdiff==0 && dsec<1    = timeAxis millis10  millis100 (ft "%S%Q") UnderTicks
                                                  seconds (ft "%M:%S") BetweenTicks pts
@@ -269,5 +269,3 @@ autoTimeAxis pts
     t1    = maximum pts
     t0    = minimum pts
     ft    = formatTime defaultTimeLocale
-
-

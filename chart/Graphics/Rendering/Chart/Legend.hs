@@ -3,7 +3,7 @@
 -- Module      :  Graphics.Rendering.Chart.Legend
 -- Copyright   :  (c) Tim Docker 2006
 -- License     :  BSD-style (see chart/COPYRIGHT)
--- 
+--
 -- Types and functions for handling the legend(s) on a chart. A legend
 -- is an area on the chart used to label the plotted values.
 
@@ -46,7 +46,7 @@ data LegendStyle = LegendStyle {
 -- columns (where we specify the maximum number of rows)
 data LegendOrientation = LORows Int
                        | LOCols Int
-                       
+
 
 data Legend x y = Legend LegendStyle [(String, Rect -> CRender ())]
 
@@ -58,7 +58,7 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
   where
     grid = case legend_orientation_ ls of
         LORows n -> mkGrid n aboveG besideG
-        LOCols n -> mkGrid n besideG aboveG 
+        LOCols n -> mkGrid n besideG aboveG
 
     aboveG = aboveN.(intersperse ggap1)
     besideG = besideN.(intersperse ggap1)
@@ -74,7 +74,7 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
         gtitle = tval $ lbl title
         rp rfn = tval $ Renderable {
                      minsize = return (legend_plot_size_ ls, 0),
-                     render  = \(w,h) -> do 
+                     render  = \(w,h) -> do
                          rfn (Rect (Point 0 0) (Point w h))
                          return (\_-> Just title)
                  }
@@ -104,4 +104,3 @@ defaultLegendStyle = LegendStyle {
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
 $( deriveAccessors ''LegendStyle )
-

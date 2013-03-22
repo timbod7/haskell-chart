@@ -104,7 +104,7 @@ drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         c $ C.lineTo xh (y+tl)
         c $ C.moveTo (x-tl) yh
         c $ C.lineTo (x+tl) yh
-	c $ C.stroke
+        c $ C.stroke
 
 renderPlotLegendErrBars :: PlotErrBars x y -> Rect -> CRender ()
 renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do

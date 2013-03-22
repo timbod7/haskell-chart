@@ -80,7 +80,7 @@ emptyRenderable :: Renderable a
 emptyRenderable = spacer (0,0)
 
 -- | Create a blank renderable with a specified minimum size.
-spacer :: RectSize -> Renderable a 
+spacer :: RectSize -> Renderable a
 spacer sz  = Renderable {
    minsize = return sz,
    render  = \_ -> return nullPickFn
@@ -134,21 +134,21 @@ fillBackground fs r = r{ render = rf }
             setClipRegion (Point 0 0) (Point w h)
             setFillStyle fs
             c $ C.paint
-	render r rsize
+        render r rsize
 
 -- | Output the given renderable to a PNG file of the specifed size
 --   (in pixels), to the specified file.
 renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
-renderableToPNGFile chart width height path = 
+renderableToPNGFile chart width height path =
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
     pick <- C.renderWith result $ runCRender rfn bitmapEnv
     C.surfaceWriteToPNG result path
     return pick
   where
     rfn = do
-	render chart (fromIntegral width, fromIntegral height)
+        render chart (fromIntegral width, fromIntegral height)
 
-renderableToFile withSurface chart width height path = 
+renderableToFile withSurface chart width height path =
     withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
     C.renderWith result $ runCRender rfn vectorEnv
     C.surfaceFinish result
@@ -300,7 +300,7 @@ instance ToRenderable Rectangle where
           C.lineTo x2 y1
           C.lineTo x1 y1
           C.lineTo x1 y2
-                                  
+
       strokeRectangle (x2,y2) (RCornerBevel s) = c $ do
           let (x1,y1) = (0,0)
           C.moveTo x1 (y1+s)
@@ -316,11 +316,10 @@ instance ToRenderable Rectangle where
 
       strokeRectangle (x2,y2) (RCornerRounded s) = c $ do
           let (x1,y1) = (0,0)
-          C.arcNegative (x1+s) (y2-s) s (pi2*2) pi2 
+          C.arcNegative (x1+s) (y2-s) s (pi2*2) pi2
           C.arcNegative (x2-s) (y2-s) s pi2 0
           C.arcNegative (x2-s) (y1+s) s 0 (pi2*3)
           C.arcNegative (x1+s) (y1+s) s (pi2*3) (pi2*2)
           C.lineTo x1 (y2-s)
 
       pi2 = pi / 2
-
