@@ -9,7 +9,7 @@ import System.IO
 import Data.Time.Calendar
 import Data.Time.LocalTime
 import Data.Time.Format
-import Data.Accessor
+import Control.Lens
 import Data.List(sort,nub)
 import qualified Data.Map as Map
 import qualified Text.XML.Light as X
@@ -54,13 +54,13 @@ main = do
 
 plotPatches patches = layout
   where
-    layout = layout1_title ^= "Patch history by user"
-           $ layout1_plots ^= [ Left (plotBars bars) ]
+    layout = layout1_title .~ "Patch history by user"
+           $ layout1_plots .~ [ Left (plotBars bars) ]
            $ defaultLayout1 :: Layout1 LocalTime Double
         
-    bars = plot_bars_titles ^= users
-         $ plot_bars_style ^= BarsStacked
-         $ plot_bars_values ^= barvs
+    bars = plot_bars_titles .~ users
+         $ plot_bars_style .~ BarsStacked
+         $ plot_bars_values .~ barvs
          $ defaultPlotBars
 
     allUsers = map snd $ reverse $ sort [ (n,u) | (u,n) <- Map.toList countPerUser]
