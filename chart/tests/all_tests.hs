@@ -216,8 +216,7 @@ test10 prices otype = toRenderable layout
 -------------------------------------------------------------------------------
 -- A quick test of stacked layouts
 
-test11 :: OutputType -> Renderable ()
-test11 otype = renderLayout1sStacked [withAnyOrdinate layout1, withAnyOrdinate layout2]
+test11_ f = f layout1 layout2
   where
     vs1 :: [(Int,Int)]
     vs1 = [ (2,2), (3,40), (8,400), (12,60) ]
@@ -225,23 +224,41 @@ test11 otype = renderLayout1sStacked [withAnyOrdinate layout1, withAnyOrdinate l
     vs2 :: [(Int,Double)]
     vs2 = [ (0,0.7), (3,0.35), (4,0.25), (7, 0.6), (10,0.4) ]
 
-    allx = map fst vs1 ++ map fst vs2
-    extendRange = PlotHidden allx []
-
     plot1 = plot_points_style ^= filledCircles 5 (opaque red)
           $ plot_points_values ^= vs1
+          $ plot_points_title ^= "spots"
           $ defaultPlotPoints
 
-    layout1 = layout1_title ^= "Integer Axis"
- 	   $ layout1_plots ^= [Left (toPlot plot1), Left (toPlot extendRange)]
+    layout1 = layout1_title ^= "Multi typed stack"
+ 	   $ layout1_plots ^= [Left (toPlot plot1)]
+           $ layout1_left_axis ^: laxis_title ^= "integer values"
            $ defaultLayout1
 
     plot2 = plot_lines_values ^= [vs2]
+          $ plot_lines_title ^= "lines"
           $ defaultPlotLines
 
-    layout2 = layout1_title ^= "Float Axis"
- 	   $ layout1_plots ^= [Left (toPlot plot2), Left (toPlot extendRange)]
+    layout2 = layout1_plots ^= [Left (toPlot plot2)]
+           $ layout1_left_axis ^: laxis_title ^= "double values"
            $ defaultLayout1
+
+test11a :: OutputType -> Renderable ()
+test11a otype = test11_ f
+   where
+     f l1 l2 = renderStackedLayouts 
+             $ slayouts_layouts ^= [StackedLayout l1, StackedLayout l2]
+             $ slayouts_compress_xlabels ^= False
+             $ slayouts_compress_legend ^= False
+             $ defaultStackedLayouts
+ 
+test11b :: OutputType -> Renderable ()
+test11b otype = test11_ f
+   where
+     f l1 l2 = renderStackedLayouts 
+             $ slayouts_layouts ^= [StackedLayout l1, StackedLayout l2]
+             $ slayouts_compress_xlabels ^= True
+             $ slayouts_compress_legend ^= True
+             $ defaultStackedLayouts
 
 -------------------------------------------------------------------------------
 -- More of an example that a test:
@@ -371,7 +388,8 @@ allTests =
      , ("test9l", stdSize, test9 BarsLeft)
      , ("test9r", stdSize, test9 BarsRight)
      , ("test10", stdSize, test10 prices1)
-     , ("test11", stdSize, test11)
+     , ("test11a", stdSize, test11a)
+     , ("test11b", stdSize, test11b)
      , ("test12", stdSize, test12)
      , ("test13", stdSize, test13)
      , ("test14", stdSize, \o -> Test14.chart (chooseLineWidth o) )

@@ -11,6 +11,8 @@
 -- (see 'Data.Accessor') for each field of the following data types:
 --
 --     * 'Layout1'
+-- 
+--     * 'StackedLayouts'
 --
 --     * 'LayoutAxis'
 --
@@ -23,12 +25,14 @@
 -- @
 --
 
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# OPTIONS_GHC -XTemplateHaskell -XExistentialQuantification #-}
 
 module Graphics.Rendering.Chart.Layout(
     Layout1(..),
     LayoutAxis(..),
     Layout1Pick(..),
+    StackedLayouts(..),
+    StackedLayout(..),
     MAxisFn,
 
     defaultLayout1,
@@ -62,9 +66,12 @@ module Graphics.Rendering.Chart.Layout(
     layout1_legend,
     layout1_grid_last,
 
-    renderLayout1sStacked,
-    AnyLayout1(),
-    withAnyOrdinate
+    defaultStackedLayouts,
+    slayouts_layouts,
+    slayouts_compress_xlabels,
+    slayouts_compress_legend,
+
+    renderStackedLayouts,
   ) where
 
 import qualified Graphics.Rendering.Cairo as C
@@ -154,42 +161,75 @@ data Layout1Pick x y = L1P_Legend String
 instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
     toRenderable = setPickFn nullPickFn.layout1ToRenderable
 
--- | Encapsulates a 'Layout1' with a fixed abscissa type but
---   arbitrary ordinate type.
-data AnyLayout1 x = AnyLayout1 {
-    background       :: CairoFillStyle,
-    titleRenderable  :: Renderable (),
-    plotAreaGrid     :: Grid (Renderable ()),
-    legendRenderable :: Renderable (),
-    margin           :: Double
-  }
+type LegendItem = (String,Rect -> CRender ())
 
-withAnyOrdinate :: (Ord x,Ord y) => Layout1 x y -> AnyLayout1 x
-withAnyOrdinate l = AnyLayout1 {
-    background       = layout1_background_ l,
-    titleRenderable  = mapPickFn (const ()) $ layout1TitleToRenderable l,
-    plotAreaGrid     = fmap (mapPickFn (const ())) $ layout1PlotAreaToGrid l,
-    legendRenderable = mapPickFn (const ()) $ layout1LegendsToRenderable l,
-    margin           = layout1_margin_ l
-  }
+-- | A layout with it's y type hidded, so that it can be stacked
+-- with other layouts (with differing y types)
+data StackedLayout x = forall y . Ord y => StackedLayout (Layout1 x y)
 
+-- | A holder for a set of vertically stacked layouts
+data StackedLayouts x = StackedLayouts {
+      slayouts_layouts_ :: [StackedLayout x],
+      slayouts_compress_xlabels_ :: Bool,
+      slayouts_compress_legend_ :: Bool
+}
 
--- | Render several layouts with the same abscissa type stacked so that their
---   origins and axis titles are aligned horizontally with respect to each
---   other.  The exterior margins and background are taken from the first
---   element.
-renderLayout1sStacked :: (Ord x) => [AnyLayout1 x] -> Renderable ()
-renderLayout1sStacked []        = emptyRenderable
-renderLayout1sStacked ls@(l1:_) = gridToRenderable g
+defaultStackedLayouts :: StackedLayouts x
+defaultStackedLayouts = StackedLayouts [] True True
+
+-- | Render several layouts with the same x-axis type and range,
+--   vertically stacked so that their origins and x-values are aligned.
+--
+-- The legends from all the charts may be optionally combined, and shown
+-- once on the bottom chart.   The x labels may be optionally removed so that
+-- they are only shown once.
+renderStackedLayouts :: (Ord x) => StackedLayouts x -> Renderable ()
+renderStackedLayouts (StackedLayouts{slayouts_layouts_=[]}) = emptyRenderable
+renderStackedLayouts slp@(StackedLayouts{slayouts_layouts_=sls@(sl1:_)}) = gridToRenderable g
   where
-    g = fullOverlayUnder (fillBackground (background l1) emptyRenderable)
-        $ addMarginsToGrid (lm,lm,lm,lm)
-        $ aboveN [ fullRowAbove (titleRenderable l) 0 (
-                       fullRowBelow (legendRenderable l) 0
-                           (plotAreaGrid l))
-                 | l <- ls ]
+    g = fullOverlayUnder (fillBackground bg emptyRenderable)
+      $ foldr (above.mkGrid) nullt (zip sls [0,1..])
+      
+    mkGrid ((StackedLayout l),i)
+        = (noPickFn $ layout1TitleToRenderable l)
+          `wideAbove`
+          (addMarginsToGrid (lm,lm,lm,lm) $ mkPlotArea baxis taxis)
+          `aboveWide`
+          (if showLegend then noPickFn $ renderLegend l legenditems else emptyRenderable)
 
-    lm = margin l1
+      where
+        legenditems = case (slayouts_compress_legend_ slp,isBottomPlot) of
+            (False,_) -> getLegendItems l
+            (True,True) -> alllegendItems
+            (True,False) -> ([],[])
+
+        mkPlotArea bx tx = fmap (mapPickFn (const ()))
+                         $ layout1PlotAreaToGrid l{layout1_bottom_axis_=bx,layout1_top_axis_=tx}
+
+        showLegend = not (null (fst legenditems)) || not (null (snd legenditems))
+
+        isTopPlot = i == 0
+        isBottomPlot = i == length sls -1
+
+        lm = layout1_margin_ l
+
+        baxis = mkAxis (layout1_bottom_axis_ l) (isBottomPlot || not (slayouts_compress_xlabels_ slp))
+        taxis = mkAxis (layout1_top_axis_ l) (isTopPlot || not (slayouts_compress_xlabels_ slp))
+
+        mkAxis a showLabels = a{
+            laxis_generate_=const (laxis_generate_ a all_xvals),
+            laxis_override_= if showLabels then id else \ad -> ad{axis_labels_=[]}
+        }
+
+    bg = (\(StackedLayout l) -> layout1_background_ l) sl1
+    
+    all_xvals = concatMap (\(StackedLayout l) -> getLayout1XVals l) sls
+
+    alllegendItems = (concatMap (fst.legendItems) sls, concatMap (snd.legendItems) sls)
+    legendItems (StackedLayout l) = (getLegendItems l)
+    
+    noPickFn :: Renderable a -> Renderable ()
+    noPickFn = mapPickFn (const ())
 
 addMarginsToGrid :: (Double,Double,Double,Double) -> Grid (Renderable a)
                     -> Grid (Renderable a)
@@ -231,15 +271,25 @@ layout1TitleToRenderable l = addMargins (lm/2,0,0,0)
                   (layout1_title_ l)
     lm    = layout1_margin_ l
 
-layout1LegendsToRenderable :: (Ord x, Ord y) =>
-                              Layout1 x y -> Renderable (Layout1Pick x y)
-layout1LegendsToRenderable l = gridToRenderable g
+getLayout1XVals :: Layout1 x y -> [x]
+getLayout1XVals l = concatMap (fst.plot_all_points_.deEither) (layout1_plots_ l)
+  where
+    deEither (Left x)  = x
+    deEither (Right x) = x
+
+
+getLegendItems :: Layout1 x y -> ([LegendItem],[LegendItem])
+getLegendItems l = (
+    concat [ plot_legend_ p | (Left p ) <- (layout1_plots_ l) ],
+    concat [ plot_legend_ p | (Right p) <- (layout1_plots_ l) ]
+    )
+
+renderLegend :: Layout1 x y -> ([LegendItem],[LegendItem]) -> Renderable (Layout1Pick x y)
+renderLegend l (lefts,rights) = gridToRenderable g
   where
     g      = besideN [ tval $ mkLegend lefts
                      , weights (1,1) $ tval $ emptyRenderable
                      , tval $ mkLegend rights ]
-    lefts  = concat [ plot_legend_ p | (Left p ) <- (layout1_plots_ l) ]
-    rights = concat [ plot_legend_ p | (Right p) <- (layout1_plots_ l) ]
 
     lm     = layout1_margin_ l
 
@@ -248,38 +298,41 @@ layout1LegendsToRenderable l = gridToRenderable g
         Just ls ->  case filter ((/="").fst) vals of
             []  -> emptyRenderable ;
             lvs -> addMargins (0,lm,lm,lm) $
-                       mapPickFn L1P_Legend $
-                                 legendToRenderable (Legend ls lvs)
+                       mapPickFn L1P_Legend $ legendToRenderable (Legend ls lvs)
+
+layout1LegendsToRenderable :: (Ord x, Ord y) =>
+                              Layout1 x y -> Renderable (Layout1Pick x y)
+layout1LegendsToRenderable l = renderLegend l (getLegendItems l)
 
 layout1PlotAreaToGrid :: (Ord x, Ord y) =>
                           Layout1 x y -> Grid (Renderable (Layout1Pick x y))
 layout1PlotAreaToGrid l = layer2 `overlay` layer1
   where
     layer1 = aboveN
-         [ besideN [er,     er,    er   ]
-         , besideN [er,     er,    er   ]
-         , besideN [er,     er,    weights (1,1) plots ]
+         [ besideN [er,     er,  er,    er   ]
+         , besideN [er,     er,  er,    er   ]
+         , besideN [er,     er,  er,    weights (1,1) plots ]
          ]
 
     layer2 = aboveN
-         [ besideN [er,     er,    ttitle, er,    er       ]
-         , besideN [er,     tl,    taxis,  tr,    er       ]
-         , besideN [ltitle, laxis, er,     raxis, rtitle   ]
-         , besideN [er,     bl,    baxis,  br,    er       ]
-         , besideN [er,     er,    btitle, er,    er       ]
+         [ besideN [er,     er,  er,    ttitle, er,    er,  er       ]
+         , besideN [er,     er,  tl,    taxis,  tr,    er,  er       ]
+         , besideN [ltitle, lam, laxis, er,     raxis, ram, rtitle   ]
+         , besideN [er,     er,  bl,    baxis,  br,    er,  er       ]
+         , besideN [er,     er,  er,    btitle, er,    er,  er       ]
          ]
 
-    ttitle = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_    L1P_TopAxisTitle
-    btitle = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_ L1P_BottomAxisTitle
-    ltitle = atitle HTA_Right  VTA_Centre 270 layout1_left_axis_   L1P_LeftAxisTitle
-    rtitle = atitle HTA_Left   VTA_Centre 270 layout1_right_axis_  L1P_RightAxisTitle
+    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_    L1P_TopAxisTitle
+    (btitle,_) = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_ L1P_BottomAxisTitle
+    (ltitle,lam) = atitle HTA_Right  VTA_Centre 270 layout1_left_axis_   L1P_LeftAxisTitle
+    (rtitle,ram) = atitle HTA_Left   VTA_Centre 270 layout1_right_axis_  L1P_RightAxisTitle
 
     er = tval $ emptyRenderable
 
-    atitle ha va rot af pf = if ttext == "" then er
-                             else tval $ mapPickFn pf
-                                       $ rlabel tstyle ha va rot ttext
+    atitle ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
       where
+        label = tval $ mapPickFn pf $ rlabel tstyle ha va rot ttext
+        gap = tval $ spacer (layout1_margin_ l,0)
         tstyle = laxis_title_style_ (af l)
         ttext  = laxis_title_       (af l)
 
@@ -438,6 +491,7 @@ defaultLayoutAxis = LayoutAxis {
 -- for each field.
 $( deriveAccessors ''Layout1 )
 $( deriveAccessors ''LayoutAxis )
+$( deriveAccessors ''StackedLayouts )
 
 -- | Helper to update all axis styles on a Layout1 simultaneously.
 updateAllAxesStyles :: (AxisStyle -> AxisStyle) -> Layout1 x y -> Layout1 x y

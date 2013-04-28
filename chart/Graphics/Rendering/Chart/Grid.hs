@@ -18,10 +18,10 @@ module Graphics.Rendering.Chart.Grid (
     width, height,
     gridToRenderable,
     weights,
-    fullRowAbove,
-    fullRowBelow,
-    fullColLeft,
-    fullColRight,
+    aboveWide,
+    wideAbove,
+    tallBeside,
+    besideTall,
     fullOverlayUnder,
     fullOverlayOver
 ) where
@@ -101,25 +101,24 @@ above t Null = t
 above t1 t2  = Above t1 t2 size
   where size = (max (width t1) (width t2), height t1 + height t2)
 
--- | A value placed above the grid, occupying 1 row with the same
---   horizontal span as the grid.
-fullRowAbove :: a -> Double -> Grid a -> Grid a
-fullRowAbove a w g = (weights (0,w) $ tspan a (width g,1)) `above` g
+-- | A value occupying 1 row with the same  horizontal span as the grid.
+wideAbove :: a -> Grid a -> Grid a
+wideAbove a g = (weights (0,0) $ tspan a (width g,1)) `above` g
 
 -- | A value placed below the grid, occupying 1 row with the same
 --   horizontal span as the grid.
-fullRowBelow :: a -> Double -> Grid a -> Grid a
-fullRowBelow a w g = g `above` (weights (0,w) $ tspan a (width g,1))
+aboveWide :: Grid a -> a -> Grid a
+aboveWide g a = g `above` (weights (0,0) $ tspan a (width g,1))
 
 -- | A value placed to the left of the grid, occupying 1 column with
 --   the same vertical span as the grid.
-fullColLeft  :: a -> Double -> Grid a -> Grid a
-fullColLeft  a w g = (weights (w,0) $ tspan a (1,height g)) `beside` g
+tallBeside  :: a -> Grid a -> Grid a
+tallBeside  a g = (weights (0,0) $ tspan a (1,height g)) `beside` g
 
 -- | A value placed to the right of the grid, occupying 1 column with
 --   the same vertical span as the grid.
-fullColRight :: a -> Double -> Grid a -> Grid a
-fullColRight a w g = g `beside` (weights (w,0) $ tspan a (1,height g))
+besideTall :: Grid a -> a -> Grid a
+besideTall g a = g `beside` (weights (0,0) $ tspan a (1,height g))
 
 -- | A value placed under a grid, with the same span as the grid.
 fullOverlayUnder :: a -> Grid a -> Grid a
