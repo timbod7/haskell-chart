@@ -1,0 +1,5 @@
+*~
+cabal-dev/
+chart/dist/
+chart-gtk/dist/
+chart/tests/*.png
