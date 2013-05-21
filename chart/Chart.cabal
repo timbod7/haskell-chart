@@ -1,11 +1,11 @@
 Name: Chart
-Version: 0.16
+Version: 0.17
 License: BSD3
 License-file: LICENSE
 Copyright: Tim Docker, 2006-2010
 Author: Tim Docker <tim@dockerz.net>
 Maintainer: Tim Docker <tim@dockerz.net>
-Homepage: http://www.dockerz.net/software/chart.html
+Homepage: https://github.com/timbod7/haskell-chart/wiki
 Synopsis: A library for generating 2D Charts and Plots
 Description: A library for generating 2D Charts and Plots, based upon the cairo graphics library.
 Category: Graphics
@@ -71,3 +71,7 @@ library
         Graphics.Rendering.Chart.Plot.Pie,
         Graphics.Rendering.Chart.Plot.Points
         Graphics.Rendering.Chart.SparkLine
+
+source-repository head
+  type:     git
+  location: https://github.com/timbod7/haskell-chart
