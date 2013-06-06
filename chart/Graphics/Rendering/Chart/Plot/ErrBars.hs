@@ -26,8 +26,8 @@ module Graphics.Rendering.Chart.Plot.ErrBars(
 ) where
 
 import Data.Accessor.Template
-import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
@@ -91,20 +91,20 @@ drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = plot_errbars_tick_length_ ps
         let oh = plot_errbars_overhang_ ps
         setLineStyle (plot_errbars_line_style_ ps)
-        c $ C.newPath
-        c $ C.moveTo (xl-oh) y
-        c $ C.lineTo (xh+oh) y
-        c $ C.moveTo x (yl-oh)
-        c $ C.lineTo x (yh+oh)
-        c $ C.moveTo xl (y-tl)
-        c $ C.lineTo xl (y+tl)
-        c $ C.moveTo (x-tl) yl
-        c $ C.lineTo (x+tl) yl
-        c $ C.moveTo xh (y-tl)
-        c $ C.lineTo xh (y+tl)
-        c $ C.moveTo (x-tl) yh
-        c $ C.lineTo (x+tl) yh
-	c $ C.stroke
+        cNewPath
+        cMoveTo (xl-oh) y
+        cLineTo (xh+oh) y
+        cMoveTo x (yl-oh)
+        cLineTo x (yh+oh)
+        cMoveTo xl (y-tl)
+        cLineTo xl (y+tl)
+        cMoveTo (x-tl) yl
+        cLineTo (x+tl) yl
+        cMoveTo xh (y-tl)
+        cLineTo xh (y+tl)
+        cMoveTo (x-tl) yh
+        cLineTo (x+tl) yh
+	cStroke
 
 renderPlotLegendErrBars :: PlotErrBars x y -> Rect -> CRender ()
 renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do

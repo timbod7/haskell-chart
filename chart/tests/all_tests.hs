@@ -1,5 +1,5 @@
-import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Simple
 import Graphics.Rendering.Chart.Grid
 
@@ -316,7 +316,7 @@ test13 otype = fillBackground fwhite $ (gridToRenderable t)
                       $ plot_annotation_values  ^= [(x,x,"Hello World\n(plain)")|x<-points]
                       $ defaultPlotAnnotation
             rotPlot =   plot_annotation_angle ^= -45.0
-                      $ plot_annotation_style ^= defaultFontStyle{font_size_=10,font_weight_=C.FontWeightBold, font_color_ =(opaque blue) }
+                      $ plot_annotation_style ^= defaultFontStyle{font_size_=10,font_weight_=FontWeightBold, font_color_ =(opaque blue) }
                       $ plot_annotation_values  ^= [(x,x,"Hello World\n(fancy)")|x<-points]
                       $ labelPlot
 
@@ -333,7 +333,7 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]
     fwhite = solidFillStyle $ opaque white
     fblue = solidFillStyle $ opaque $ sRGB 0.8 0.8 1
-    fs = defaultFontStyle{font_size_=20,font_weight_=C.FontWeightBold}
+    fs = defaultFontStyle{font_size_=20,font_weight_=FontWeightBold}
     crossHairs r =Renderable {
       minsize = minsize r,
       render = \sz@(w,h) -> do

@@ -16,7 +16,8 @@ module Graphics.Rendering.Chart.Axis.Int(
 ) where
 
 import Data.List(genericLength)
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Axis.Types
 import Graphics.Rendering.Chart.Axis.Floating
 

@@ -54,7 +54,6 @@ module Graphics.Rendering.Chart.Axis.Types(
 
 ) where
 
-import qualified Graphics.Rendering.Cairo as C
 import Data.Time
 import Data.Fixed
 import Data.Maybe
@@ -65,7 +64,8 @@ import Data.Accessor.Template
 import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
 
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 
 -- | A typeclass abstracting the functions we need
@@ -220,10 +220,10 @@ renderAxis :: AxisT x -> RectSize -> CRender (PickFn x)
 renderAxis at@(AxisT et as rev ad) sz = do
    let ls = axis_line_style_ as
    preserveCState $ do
-       setLineStyle ls{line_cap_=C.LineCapSquare}
+       setLineStyle ls{line_cap_=LineCapSquare}
        strokePath [Point sx sy,Point ex ey]
    preserveCState $ do
-       setLineStyle ls{line_cap_=C.LineCapButt}
+       setLineStyle ls{line_cap_=LineCapButt}
        mapM_ drawTick (axis_ticks_ ad)
    preserveCState $ do
        setFontStyle (axis_label_style_ as)

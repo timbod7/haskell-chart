@@ -30,9 +30,8 @@ module Graphics.Rendering.Chart.Plot.AreaSpots
   , area_spots_4d_values
   ) where
 
-import qualified Graphics.Rendering.Cairo as C
-
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Axis
 import Data.Accessor.Template

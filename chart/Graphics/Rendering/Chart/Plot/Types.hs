@@ -22,8 +22,8 @@ module Graphics.Rendering.Chart.Plot.Types(
 
     ) where
 
-import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Control.Monad
 import Data.Accessor.Template

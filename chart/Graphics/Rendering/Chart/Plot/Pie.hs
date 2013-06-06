@@ -46,8 +46,6 @@ module Graphics.Rendering.Chart.Plot.Pie(
 ) where
 -- original code thanks to Neal Alexander
 
-import qualified Graphics.Rendering.Cairo as C
-
 import Data.List
 import Data.Bits
 import Data.Accessor.Template
@@ -55,7 +53,8 @@ import Data.Colour
 import Data.Colour.Names (black, white)
 import Control.Monad
 
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
@@ -101,7 +100,7 @@ defaultPieLayout = PieLayout {
     pie_background_  = solidFillStyle $ opaque white,
     pie_title_       = "",
     pie_title_style_ = defaultFontStyle{ font_size_   = 15
-                                       , font_weight_ = C.FontWeightBold },
+                                       , font_weight_ = FontWeightBold },
     pie_plot_        = defaultPieChart,
     pie_margin_      = 10
 }
@@ -178,26 +177,25 @@ renderPie p (w,h) = do
                     let (offset,anchor) = if angle < 90 || angle > 270 
                                           then ((0+),HTA_Left)
                                           else ((0-),HTA_Right)
-                    c $ C.relLineTo (offset (tw + label_rgap)) 0
-                    c $ C.stroke
+                    cRelLineTo (offset (tw + label_rgap)) 0
+                    cStroke
 
                     let p2 = p1 `pvadd` (Vector (offset label_rgap) 0)
                     drawText anchor VTA_Bottom p2 name
 
                 pieSlice :: Point -> Double -> Double -> AlphaColour Double
                             -> CRender ()
-                pieSlice (Point x y) a1 a2 color = c $ do
-                    C.newPath
-                    C.arc x y radius (radian a1) (radian a2)
-                    C.lineTo x y
-                    C.lineTo x y
-                    C.closePath
+                pieSlice (Point x y) a1 a2 color = do
+                    cNewPath
+                    cArc x y radius (radian a1) (radian a2)
+                    cLineTo x y
+                    cLineTo x y
+                    cClosePath
 
-                    setSourceColor color
-                    C.fillPreserve
-                    C.setSourceRGBA 1 1 1 0.1
-
-                    C.stroke
+                    cSetSourceColor color
+                    cFillPreserve
+                    cSetSourceColor (withOpacity white 0.1)
+                    cStroke
 
                 ray :: Double -> Double -> Point
                 ray angle r = Point x' y'

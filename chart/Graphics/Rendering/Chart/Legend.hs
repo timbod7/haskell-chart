@@ -21,12 +21,12 @@ module Graphics.Rendering.Chart.Legend(
     legend_orientation
 ) where
 
-import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
 import Data.List (nub, partition,intersperse)
 import Data.Accessor.Template
 
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid

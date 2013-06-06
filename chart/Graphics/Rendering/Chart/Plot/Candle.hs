@@ -25,8 +25,8 @@ module Graphics.Rendering.Chart.Plot.Candle(
 ) where
 
 import Data.Accessor.Template
-import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Control.Monad
@@ -97,40 +97,40 @@ drawCandle ps (Candle x lo open mid close hi) = do
                                   then plot_candle_rise_fill_style_ ps
                                   else plot_candle_fall_fill_style_ ps)
 
-                    c $ C.newPath
-                    c $ C.moveTo (x-wd) open
-                    c $ C.lineTo (x-wd) close
-                    c $ C.lineTo (x+wd) close
-                    c $ C.lineTo (x+wd) open
-                    c $ C.lineTo (x-wd) open
-                    c $ C.fill
+                    cNewPath
+                    cMoveTo (x-wd) open
+                    cLineTo (x-wd) close
+                    cLineTo (x+wd) close
+                    cLineTo (x+wd) open
+                    cLineTo (x-wd) open
+                    cFill
 
         setLineStyle (plot_candle_line_style_ ps)
-        c $ C.newPath
-        c $ C.moveTo (x-wd) open
-        c $ C.lineTo (x-wd) close
-        c $ C.lineTo (x+wd) close
-        c $ C.lineTo (x+wd) open
-        c $ C.lineTo (x-wd) open
-        c $ C.stroke
+        cNewPath
+        cMoveTo (x-wd) open
+        cLineTo (x-wd) close
+        cLineTo (x+wd) close
+        cLineTo (x+wd) open
+        cLineTo (x-wd) open
+        cStroke
 
-        c $ C.newPath
-        c $ C.moveTo x (min lo hi)
-        c $ C.lineTo x (min open close)
-        c $ C.moveTo x (max open close)
-        c $ C.lineTo x (max hi lo)
-        c $ C.stroke
+        cNewPath
+        cMoveTo x (min lo hi)
+        cLineTo x (min open close)
+        cMoveTo x (max open close)
+        cLineTo x (max hi lo)
+        cStroke
 
-        when (tl > 0) $ do c $ C.newPath
-                           c $ C.moveTo (x-tl) lo
-                           c $ C.lineTo (x+tl) lo
-                           c $ C.moveTo (x-tl) hi
-                           c $ C.lineTo (x+tl) hi
-                           c $ C.stroke
+        when (tl > 0) $ do cNewPath
+                           cMoveTo (x-tl) lo
+                           cLineTo (x+tl) lo
+                           cMoveTo (x-tl) hi
+                           cLineTo (x+tl) hi
+                           cStroke
 
-        when (ct > 0) $ do c $ C.moveTo (x-ct) mid
-                           c $ C.lineTo (x+ct) mid
-                           c $ C.stroke
+        when (ct > 0) $ do cMoveTo (x-ct) mid
+                           cLineTo (x+ct) mid
+                           cStroke
 
 renderPlotLegendCandle :: PlotCandle x y -> Rect -> CRender ()
 renderPlotLegendCandle p r@(Rect p1 p2) = preserveCState $ do

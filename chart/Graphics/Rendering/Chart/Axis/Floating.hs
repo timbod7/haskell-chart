@@ -35,7 +35,9 @@ import Data.Ord (comparing)
 import Numeric (showFFloat)
 
 import Data.Accessor.Template
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Utils
 import Graphics.Rendering.Chart.Axis.Types
 
 instance PlotValue Double where

@@ -43,7 +43,8 @@ module Graphics.Rendering.Chart.SparkLine
 import Control.Monad
 import Data.List
 import Data.Ord
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Data.Colour
 import Data.Colour.Names

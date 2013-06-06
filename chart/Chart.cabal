@@ -44,9 +44,9 @@ library
 
   Exposed-modules:
         Graphics.Rendering.Chart,
-        Graphics.Rendering.Chart.Types,
         Graphics.Rendering.Chart.Drawing,
         Graphics.Rendering.Chart.Geometry,
+        Graphics.Rendering.Chart.Utils,
         Graphics.Rendering.Chart.Renderable,
         Graphics.Rendering.Chart.Axis,
         Graphics.Rendering.Chart.Axis.Floating,

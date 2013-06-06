@@ -76,6 +76,16 @@ module Graphics.Rendering.Chart.Drawing(
     alignc,
 
     cTranslate,
+    cNewPath,
+    cMoveTo,
+    cLineTo,
+    cRelLineTo,
+    cArc,
+    cClosePath,
+    cStroke,
+    cFill,
+    cFillPreserve,
+    cSetSourceColor,
     
     line_width,
     line_color,
@@ -89,9 +99,14 @@ module Graphics.Rendering.Chart.Drawing(
     font_weight,
     font_color,
 
+    FontWeight(..),
+    LineCap(..),
+    LineJoin(..),
 ) where
 
 import qualified Graphics.Rendering.Cairo as C
+import Graphics.Rendering.Cairo(FontWeight,LineCap,LineJoin)
+                                
 import Control.Monad.Reader
 import Data.Accessor
 import Data.Accessor.Template
@@ -518,6 +533,16 @@ defaultFontStyle = CairoFontStyle {
 }
 
 cTranslate x y = c $ C.translate x y
+cNewPath = c $ C.newPath
+cLineTo x y = c $ C.lineTo x y
+cMoveTo x y = c $ C.moveTo x y
+cRelLineTo x y = c $ C.relLineTo x y
+cArc x y r a1 a2 = c $ C.arc x y r a1 a2
+cClosePath = c $ C.closePath
+cStroke = c $ C.stroke
+cFill = c $ C.fill
+cFillPreserve = c $ C.fillPreserve
+cSetSourceColor color = c $ setSourceColor color
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

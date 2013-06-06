@@ -74,10 +74,10 @@ module Graphics.Rendering.Chart.Layout(
     renderStackedLayouts,
   ) where
 
-import qualified Graphics.Rendering.Cairo as C
-
 import Graphics.Rendering.Chart.Axis
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Utils
 import Graphics.Rendering.Chart.Plot
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
@@ -460,7 +460,7 @@ defaultLayout1 = Layout1 {
 
     layout1_title_           = "",
     layout1_title_style_     = defaultFontStyle{font_size_   =15
-                                               ,font_weight_ =C.FontWeightBold},
+                                               ,font_weight_ =FontWeightBold},
 
     layout1_top_axis_        = defaultLayoutAxis {laxis_visible_ = const False},
     layout1_bottom_axis_     = defaultLayoutAxis,

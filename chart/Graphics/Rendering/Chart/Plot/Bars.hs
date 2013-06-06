@@ -31,8 +31,8 @@ module Graphics.Rendering.Chart.Plot.Bars(
 import Data.Accessor.Template
 import Control.Monad
 import Data.List(nub,sort)
-import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Axis
@@ -141,7 +141,7 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
            setFillStyle fstyle
            fillPath (barPath (offset i) x yref0 y)
-           c $ C.fill
+           cFill
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
              setLineStyle lstyle

@@ -15,7 +15,8 @@ import qualified Graphics.UI.Gtk.Gdk.Events as GE
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Data.List (isPrefixOf)
 import Data.IORef
 import Control.Monad(when)

@@ -47,7 +47,9 @@ import Control.Monad
 import Data.Accessor
 import Data.List ( nub, transpose, sort )
 
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Utils
 
 -- | A function that maps a point in device coordinates to some value.
 --
@@ -117,7 +119,7 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
 
     rf (w,h) = do
         preserveCState $ do
-            c $ C.translate l t
+            cTranslate l t
             pickf <- render rd (w-l-r,h-t-b)
             return (mkpickf pickf (t,b,l,r) (w,h))
 
@@ -285,12 +287,12 @@ instance ToRenderable Rectangle where
       fill sz fs = do
           setFillStyle fs
           strokeRectangle sz (rect_cornerStyle_ rectangle)
-          c $ C.fill
+          cFill
 
       stroke sz ls = do
           setLineStyle ls
           strokeRectangle sz (rect_cornerStyle_ rectangle)
-          c $ C.stroke
+          cStroke
 
       strokeRectangle (x2,y2) RCornerSquare = c $ do
           let (x1,y1) = (0,0)

@@ -5,6 +5,8 @@ import Data.Colour
 import Data.Colour.Names
 
 import Graphics.Rendering.Chart
+import Graphics.Rendering.Chart.Utils
+
 
 styleColor :: Int -> AlphaColour Double
 styleColor ind = colorSequence !! ind

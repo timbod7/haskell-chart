@@ -22,8 +22,8 @@ module Graphics.Rendering.Chart.Plot.Lines(
 ) where
 
 import Data.Accessor.Template
-import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
@@ -71,8 +71,8 @@ renderPlotLegendLines p r@(Rect p1 p2) = preserveCState $ do
 
 defaultPlotLineStyle :: CairoLineStyle
 defaultPlotLineStyle = (solidLine 1 $ opaque blue){
-     line_cap_  = C.LineCapRound,
-     line_join_ = C.LineJoinRound
+     line_cap_  = LineCapRound,
+     line_join_ = LineJoinRound
  }
 
 defaultPlotLines :: PlotLines x y
