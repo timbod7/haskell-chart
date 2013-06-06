@@ -32,8 +32,8 @@ import Control.Monad
 import Control.Monad.Trans
 import Numeric
 import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.Types
-import qualified Graphics.Rendering.Cairo as C
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 
 import Data.Colour
 import Data.Colour.Names
@@ -273,7 +273,7 @@ gridToRenderable t = Renderable minsizef renderf
             p0'@(Point x0 y0) <- alignc p0
             p1'@(Point x1 y1) <- alignc p1
             preserveCState $ do
-                c $ C.translate x0 y0
+                cTranslate x0 y0
                 pf <- render r (x1-x0,y1-y0)
                 return (newpf pf x0 y0)
         (Above t1 t2 _) -> do
