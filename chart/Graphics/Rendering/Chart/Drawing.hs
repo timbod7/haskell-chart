@@ -68,24 +68,37 @@ module Graphics.Rendering.Chart.Drawing(
     textSize,
     textDrawRect,
 
-    CRender(..),
+    CRender,
     CEnv(..),
     runCRender,
-    c,
     alignp,
     alignc,
 
+    vectorEnv,
+    bitmapEnv,
+
     cTranslate,
+    cRotate,
     cNewPath,
     cMoveTo,
     cLineTo,
     cRelLineTo,
     cArc,
+    cArcNegative,
     cClosePath,
     cStroke,
     cFill,
     cFillPreserve,
     cSetSourceColor,
+    cPaint,
+    cFontExtents,
+    cFontExtentsDescent,
+    cShowText,
+
+    cRenderToPNGFile,
+    cRenderToPSFile,
+    cRenderToPDFFile,
+    cRenderToSVGFile,
     
     line_width,
     line_color,
@@ -533,16 +546,57 @@ defaultFontStyle = CairoFontStyle {
 }
 
 cTranslate x y = c $ C.translate x y
+cRotate a = c $ C.rotate a
 cNewPath = c $ C.newPath
 cLineTo x y = c $ C.lineTo x y
 cMoveTo x y = c $ C.moveTo x y
 cRelLineTo x y = c $ C.relLineTo x y
 cArc x y r a1 a2 = c $ C.arc x y r a1 a2
+cArcNegative x y r a1 a2 = c $ C.arcNegative x y r a1 a2
 cClosePath = c $ C.closePath
 cStroke = c $ C.stroke
 cFill = c $ C.fill
 cFillPreserve = c $ C.fillPreserve
 cSetSourceColor color = c $ setSourceColor color
+cPaint = c $ C.paint
+cFontExtents = c $ C.fontExtents
+cFontExtentsDescent fe = C.fontExtentsDescent fe
+cShowText s = c $ C.showText s
+
+cRenderToPNGFile :: CRender a -> Int -> Int -> FilePath -> IO a
+cRenderToPNGFile cr width height path = 
+    C.withImageSurface C.FormatARGB32 width height $ \result -> do
+    a <- C.renderWith result $ runCRender cr bitmapEnv
+    C.surfaceWriteToPNG result path
+    return a
+
+cRenderToPDFFile :: CRender a -> Int -> Int -> FilePath -> IO ()
+cRenderToPDFFile = cRenderToFile C.withPDFSurface
+
+cRenderToPSFile  ::  CRender a -> Int -> Int -> FilePath -> IO ()
+cRenderToPSFile  = cRenderToFile C.withPSSurface
+
+cRenderToSVGFile  ::  CRender a -> Int -> Int -> FilePath -> IO ()
+cRenderToSVGFile  = cRenderToFile C.withSVGSurface
+
+cRenderToFile withSurface cr width height path = 
+    withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
+    C.renderWith result $ runCRender rfn vectorEnv
+    C.surfaceFinish result
+  where
+    rfn = do
+        cr
+        c $ C.showPage
+
+bitmapEnv :: CEnv
+bitmapEnv = CEnv (adjfn 0.5) (adjfn 0.0)
+  where
+    adjfn offset (Point x y) = Point (adj x) (adj y)
+      where
+        adj v = (fromIntegral.round) v +offset
+
+vectorEnv :: CEnv
+vectorEnv = CEnv id id
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

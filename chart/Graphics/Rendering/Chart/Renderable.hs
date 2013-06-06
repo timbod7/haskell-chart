@@ -19,9 +19,6 @@ module Graphics.Rendering.Chart.Renderable(
     renderableToPSFile,
     renderableToSVGFile,
 
-    vectorEnv,
-    bitmapEnv,
-
     fillBackground,
     addMargins,
     emptyRenderable,
@@ -41,7 +38,6 @@ module Graphics.Rendering.Chart.Renderable(
     rect_cornerStyle,
 ) where
 
-import qualified Graphics.Rendering.Cairo as C
 import qualified Graphics.Rendering.Cairo.Matrix as Matrix
 import Control.Monad
 import Data.Accessor
@@ -135,54 +131,40 @@ fillBackground fs r = r{ render = rf }
         preserveCState $ do
             setClipRegion (Point 0 0) (Point w h)
             setFillStyle fs
-            c $ C.paint
+            cPaint
 	render r rsize
 
 -- | Output the given renderable to a PNG file of the specifed size
 --   (in pixels), to the specified file.
 renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
-renderableToPNGFile chart width height path = 
-    C.withImageSurface C.FormatARGB32 width height $ \result -> do
-    pick <- C.renderWith result $ runCRender rfn bitmapEnv
-    C.surfaceWriteToPNG result path
-    return pick
+renderableToPNGFile r width height path =
+    cRenderToPNGFile cr width height path
   where
-    rfn = do
-	render chart (fromIntegral width, fromIntegral height)
-
-renderableToFile withSurface chart width height path = 
-    withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
-    C.renderWith result $ runCRender rfn vectorEnv
-    C.surfaceFinish result
-  where
-    rfn = do
-        render chart (fromIntegral width, fromIntegral height)
-        c $ C.showPage
+    cr = render r (fromIntegral width, fromIntegral height)
 
 -- | Output the given renderable to a PDF file of the specifed size
 --   (in points), to the specified file.
 renderableToPDFFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToPDFFile = renderableToFile C.withPDFSurface
+renderableToPDFFile r width height path =
+    cRenderToPDFFile cr width height path
+  where
+    cr = render r (fromIntegral width, fromIntegral height)
 
 -- | Output the given renderable to a postscript file of the specifed size
 --   (in points), to the specified file.
 renderableToPSFile  :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToPSFile  = renderableToFile C.withPSSurface
+renderableToPSFile r width height path  = 
+    cRenderToPSFile cr width height path
+  where
+    cr = render r (fromIntegral width, fromIntegral height)
 
 -- | Output the given renderable to an SVG file of the specifed size
 --   (in points), to the specified file.
 renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToSVGFile = renderableToFile C.withSVGSurface
-
-bitmapEnv :: CEnv
-bitmapEnv = CEnv (adjfn 0.5) (adjfn 0.0)
+renderableToSVGFile r width height path =
+    cRenderToSVGFile cr width height path
   where
-    adjfn offset (Point x y) = Point (adj x) (adj y)
-      where
-        adj v = (fromIntegral.round) v +offset
-
-vectorEnv :: CEnv
-vectorEnv = CEnv id id
+    cr = render r (fromIntegral width, fromIntegral height)
 
 -- | Helper function for using a renderable, when we generate it
 --   in the CRender monad.
@@ -214,12 +196,12 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
     rf (w0,h0) = preserveCState $ do
        setFontStyle fs
        sz@(w,h) <- textSize s
-       fe <- c $ C.fontExtents
-       c $ C.translate 0 (-C.fontExtentsDescent fe)
-       c $ C.translate (xadj sz hta 0 w0) (yadj sz vta 0 h0)
-       c $ C.rotate rot'
-       c $ C.moveTo (-w/2) (h/2)
-       c $ C.showText s
+       fe <- cFontExtents
+       cTranslate 0 (-cFontExtentsDescent fe)
+       cTranslate (xadj sz hta 0 w0) (yadj sz vta 0 h0)
+       cRotate rot'
+       cMoveTo (-w/2) (h/2)
+       cShowText s
        return (\_-> Just s)  -- PickFn String
     xadj (w,h) HTA_Left   x1 x2 =  x1 +(w*acr+h*asr)/2
     xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
@@ -294,35 +276,35 @@ instance ToRenderable Rectangle where
           strokeRectangle sz (rect_cornerStyle_ rectangle)
           cStroke
 
-      strokeRectangle (x2,y2) RCornerSquare = c $ do
+      strokeRectangle (x2,y2) RCornerSquare = do
           let (x1,y1) = (0,0)
-          C.moveTo x1 y1
-          C.lineTo x1 y2
-          C.lineTo x2 y2
-          C.lineTo x2 y1
-          C.lineTo x1 y1
-          C.lineTo x1 y2
+          cMoveTo x1 y1
+          cLineTo x1 y2
+          cLineTo x2 y2
+          cLineTo x2 y1
+          cLineTo x1 y1
+          cLineTo x1 y2
                                   
-      strokeRectangle (x2,y2) (RCornerBevel s) = c $ do
+      strokeRectangle (x2,y2) (RCornerBevel s) = do
           let (x1,y1) = (0,0)
-          C.moveTo x1 (y1+s)
-          C.lineTo x1 (y2-s)
-          C.lineTo (x1+s) y2
-          C.lineTo (x2-s) y2
-          C.lineTo x2 (y2-s)
-          C.lineTo x2 (y1+s)
-          C.lineTo (x2-s) y1
-          C.lineTo (x1+s) y1
-          C.lineTo x1 (y1+s)
-          C.lineTo x1 (y2-s)
+          cMoveTo x1 (y1+s)
+          cLineTo x1 (y2-s)
+          cLineTo (x1+s) y2
+          cLineTo (x2-s) y2
+          cLineTo x2 (y2-s)
+          cLineTo x2 (y1+s)
+          cLineTo (x2-s) y1
+          cLineTo (x1+s) y1
+          cLineTo x1 (y1+s)
+          cLineTo x1 (y2-s)
 
-      strokeRectangle (x2,y2) (RCornerRounded s) = c $ do
+      strokeRectangle (x2,y2) (RCornerRounded s) = do
           let (x1,y1) = (0,0)
-          C.arcNegative (x1+s) (y2-s) s (pi2*2) pi2 
-          C.arcNegative (x2-s) (y2-s) s pi2 0
-          C.arcNegative (x2-s) (y1+s) s 0 (pi2*3)
-          C.arcNegative (x1+s) (y1+s) s (pi2*3) (pi2*2)
-          C.lineTo x1 (y2-s)
+          cArcNegative (x1+s) (y2-s) s (pi2*2) pi2 
+          cArcNegative (x2-s) (y2-s) s pi2 0
+          cArcNegative (x2-s) (y1+s) s 0 (pi2*3)
+          cArcNegative (x1+s) (y1+s) s (pi2*3) (pi2*2)
+          cLineTo x1 (y2-s)
 
       pi2 = pi / 2
 
