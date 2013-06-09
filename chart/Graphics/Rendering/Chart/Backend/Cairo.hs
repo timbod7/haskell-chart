@@ -5,28 +5,28 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , convertFontSlant, convertFontWeight
   
   
-    setClipRegion,
-    moveTo,
-    lineTo,
-    strokePath,
-    fillPath,
+  , setClipRegion
+  , moveTo
+  , lineTo
+  , strokePath
+  , fillPath
     
-    drawTextR,
-    drawTextsR,
-    textSize,
-    textDrawRect,
+  , drawTextR
+  , drawTextsR
+  , textSize
+  , textDrawRect
   
-    setLineStyle,
-    setFillStyle,
-    setFontStyle,
+  , setLineStyle
+  , setFillStyle
+  , setFontStyle
     
-    filledPolygon,
-    hollowPolygon,
-    filledCircles,
-    hollowCircles,
-    plusses,
-    exes,
-    stars,
+  , filledPolygon
+  , hollowPolygon
+  , filledCircles
+  , hollowCircles
+  , plusses
+  , exes
+  , stars
     
   , cTranslate
   , cRotate

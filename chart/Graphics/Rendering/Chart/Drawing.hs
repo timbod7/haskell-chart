@@ -32,24 +32,13 @@ module Graphics.Rendering.Chart.Drawing(
 
     setSourceColor,
     
-    LineCap(..),
-    LineJoin(..),
-
-    LineStyle(..),
     solidLine,
     dashedLine,
 
-    FillStyle(..),
     defaultPointStyle,
     solidFillStyle,
 
-    FontStyle(..),
     defaultFontStyle,
-
-    PointStyle(..),
-
-    HTextAnchor(..),
-    VTextAnchor(..),
     drawText,
 
     CRender,
@@ -71,16 +60,12 @@ module Graphics.Rendering.Chart.Drawing(
     font_size,
     font_slant,
     font_weight,
-    font_color,
-
-    FontWeight(..)
+    font_color
 ) where
 
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Cairo(FontWeight)
 
-import Graphics.Rendering.Chart.Backend.Cairo
-                                
 import Control.Monad.Reader
 import Data.Accessor
 import Data.Accessor.Template
@@ -89,7 +74,9 @@ import Data.Colour.SRGB
 import Data.Colour.Names
 import Data.List (unfoldr)
 
+import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Backend.Cairo
 
 -- | The environment present in the CRender Monad.
 data CEnv = CEnv {
@@ -118,57 +105,7 @@ runCRender (DR m) e = runReaderT m e
 c :: C.Render a -> CRender a
 c = DR . lift
  
-----------------------------------------------------------------------
-
--- | The different supported line ends.
-data LineCap = LineCapButt   -- ^ Just cut the line straight.
-             | LineCapRound  -- ^ Make a rounded line end.
-             | LineCapSquare -- ^ Make a square that ends the line.
-
--- | The different supported ways to join line ends.
-data LineJoin = LineJoinMiter -- ^ Extends the outline until they meet each other.
-              | LineJoinRound -- ^ Draw a circle fragment to connet line end.
-              | LineJoinBevel -- ^ Like miter, but cuts it off if a certain 
-                              --   threshold is exceeded.
-
--- | Abstract data type for the style of a plotted point.
---
---   The contained Cairo action draws a point in the desired
---   style, at the supplied device coordinates.
-newtype PointStyle = PointStyle (Point -> CRender ())
-
--- | Data type for the style of a line.
-data LineStyle = LineStyle {
-   line_width_  :: Double,
-   line_color_  :: AlphaColour Double,
-   line_dashes_ :: [Double],
-   line_cap_    :: LineCap,
-   line_join_   :: LineJoin
-}
-
--- | The possible slants of a font.
-data FontSlant = FontSlantNormal  -- ^ Normal font style without slant.
-               | FontSlantItalic  -- ^ With a slight slant.
-               | FontSlantOblique -- ^ With a greater slant.
-
--- | The possible weights of a font.
-data FontWeight = FontWeightNormal -- ^ Normal font style without weight.
-                | FontWeightBold   -- ^ Bold font.
-
--- | Abstract data type for a fill style.
---
---   The contained Cairo action sets the required fill
---   style in the Cairo rendering state.
-newtype FillStyle = FillStyle (CRender ())
-
--- | Data type for a font.
-data FontStyle = FontStyle {
-      font_name_   :: String,
-      font_size_   :: Double,
-      font_slant_  :: FontSlant,
-      font_weight_ :: FontWeight,
-      font_color_  :: AlphaColour Double
-}
+-- -----------------------------------------------------------------------
 
 defaultColorSeq :: [AlphaColour Double]
 defaultColorSeq = cycle $ map opaque [blue, red, green, yellow, cyan, magenta]
@@ -182,9 +119,6 @@ alignc :: Point -> CRender Point
 alignc p = do 
     alignfn <- fmap cenv_coord_alignfn ask
     return (alignfn p)
-
-data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right
-data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine
 
 -- | Function to draw a textual label anchored by one of its corners
 --   or edges.
