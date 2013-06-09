@@ -33,7 +33,7 @@ import Data.Colour.SRGB (sRGB)
 
 data PlotFillBetween x y = PlotFillBetween {
     plot_fillbetween_title_  :: String,
-    plot_fillbetween_style_  :: CairoFillStyle,
+    plot_fillbetween_style_  :: FillStyle,
     plot_fillbetween_values_ :: [ (x, (y,y))]
 }
 

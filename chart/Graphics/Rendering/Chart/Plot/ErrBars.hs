@@ -56,7 +56,7 @@ symErrPoint x y dx dy = ErrPoint (ErrValue (x-dx) x (x+dx))
 --   which to render them.
 data PlotErrBars x y = PlotErrBars {
     plot_errbars_title_       :: String,
-    plot_errbars_line_style_  :: CairoLineStyle,
+    plot_errbars_line_style_  :: LineStyle,
     plot_errbars_tick_length_ :: Double,
     plot_errbars_overhang_    :: Double,
     plot_errbars_values_      :: [ErrPoint x y]

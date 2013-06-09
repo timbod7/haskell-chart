@@ -42,10 +42,10 @@ import Data.Colour.SRGB (sRGB)
 --    minimum, first quartile, median, third quartile, maximum.)
 data PlotCandle x y = PlotCandle {
     plot_candle_title_           :: String,
-    plot_candle_line_style_      :: CairoLineStyle,
+    plot_candle_line_style_      :: LineStyle,
     plot_candle_fill_            :: Bool,
-    plot_candle_rise_fill_style_ :: CairoFillStyle,
-    plot_candle_fall_fill_style_ :: CairoFillStyle,
+    plot_candle_rise_fill_style_ :: FillStyle,
+    plot_candle_fall_fill_style_ :: FillStyle,
     plot_candle_tick_length_     :: Double,
     plot_candle_width_           :: Double,
     plot_candle_centre_          :: Double,

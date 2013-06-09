@@ -62,17 +62,17 @@ import Graphics.Rendering.Chart.Plot.Types
 
 data PieLayout = PieLayout {
    pie_title_       :: String,
-   pie_title_style_ :: CairoFontStyle,
+   pie_title_style_ :: FontStyle,
    pie_plot_        :: PieChart,
-   pie_background_  :: CairoFillStyle,
+   pie_background_  :: FillStyle,
    pie_margin_      :: Double
 }
 
 data PieChart = PieChart {
    pie_data_             :: [PieItem],
    pie_colors_           :: [AlphaColour Double],
-   pie_label_style_      :: CairoFontStyle,
-   pie_label_line_style_ :: CairoLineStyle, 
+   pie_label_style_      :: FontStyle,
+   pie_label_line_style_ :: LineStyle, 
    pie_start_angle_      :: Double
 
 }

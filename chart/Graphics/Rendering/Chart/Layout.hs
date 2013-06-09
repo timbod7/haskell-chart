@@ -94,7 +94,7 @@ import Data.Colour.Names (white)
 type MAxisFn t = [t] -> Maybe (AxisData t)
 
 data LayoutAxis x = LayoutAxis {
-   laxis_title_style_ :: CairoFontStyle,
+   laxis_title_style_ :: FontStyle,
    laxis_title_       :: String,
    laxis_style_       :: AxisStyle,
 
@@ -122,11 +122,11 @@ data LayoutAxis x = LayoutAxis {
 --   and vertical axes.
 data Layout1 x y = Layout1 {
 
-    layout1_background_      :: CairoFillStyle,
-    layout1_plot_background_ :: Maybe CairoFillStyle,
+    layout1_background_      :: FillStyle,
+    layout1_plot_background_ :: Maybe FillStyle,
 
     layout1_title_           :: String,
-    layout1_title_style_     :: CairoFontStyle,
+    layout1_title_style_     :: FontStyle,
 
     layout1_bottom_axis_     :: LayoutAxis x,
     layout1_top_axis_        :: LayoutAxis x,

@@ -84,7 +84,7 @@ data PlotBars x y = PlotBars {
    -- | The style in which to draw each element of [y]. A fill style
    --   is required, and if a linestyle is given, each bar will be
    --   outlined.
-   plot_bars_item_styles_     :: [ (CairoFillStyle,Maybe CairoLineStyle) ],
+   plot_bars_item_styles_     :: [ (FillStyle,Maybe LineStyle) ],
 
    -- | The title of each element of [y]. These will be shown in the legend.
    plot_bars_titles_          :: [String],
@@ -211,7 +211,7 @@ stack :: (BarsPlotValue y) => [y] -> [y]
 stack ys = scanl1 barsAdd ys
 
 
-renderPlotLegendBars :: (CairoFillStyle,Maybe CairoLineStyle) -> Rect
+renderPlotLegendBars :: (FillStyle,Maybe LineStyle) -> Rect
                         -> CRender ()
 renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
     setFillStyle fstyle

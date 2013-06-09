@@ -89,15 +89,15 @@ renderAreaSpots p pmap = preserveCState $
                     (area_spots_values_ p))
           (\ (x,y,z)-> do
               let radius = sqrt z
-              let (CairoPointStyle drawSpotAt)    = filledCircles radius $
+              let psSpot = filledCircles radius $
                                                     flip withOpacity 
                                                       (area_spots_opacity_ p) $
                                                     area_spots_fillcolour_ p
-              drawSpotAt (pmap (LValue x, LValue y))
-              let (CairoPointStyle drawOutlineAt) = hollowCircles radius
+              drawPoint psSpot (pmap (LValue x, LValue y))
+              let psOutline = hollowCircles radius
                                                       (area_spots_linethick_ p)
                                                       (area_spots_linecolour_ p)
-              drawOutlineAt (pmap (LValue x, LValue y))
+              drawPoint psOutline (pmap (LValue x, LValue y))
           )
   where
     scaleMax :: PlotValue z => Double -> [(x,y,z)] -> [(x,y,Double)]
@@ -109,15 +109,15 @@ renderSpotLegend :: AreaSpots z x y -> Rect -> CRender ()
 renderSpotLegend p r@(Rect p1 p2) = preserveCState $ do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2
-    let (CairoPointStyle drawSpotAt)    = filledCircles radius $
+    let psSpot    = filledCircles radius $
                                           flip withOpacity 
                                                (area_spots_opacity_ p) $
                                           area_spots_fillcolour_ p
-    drawSpotAt centre
-    let (CairoPointStyle drawOutlineAt) = hollowCircles radius
+    drawPoint psSpot centre
+    let psSpot = hollowCircles radius
                                             (area_spots_linethick_ p)
                                             (area_spots_linecolour_ p)
-    drawOutlineAt centre
+    drawPoint psSpot centre
   where
     linearInterpolate (Point x0 y0) (Point x1 y1) =
         Point (x0 + abs(x1-x0)/2) (y0 + abs(y1-y0)/2)
@@ -163,14 +163,14 @@ renderAreaSpots4D p pmap = preserveCState $
           (\ (x,y,z,t)-> do
               let radius  = sqrt z
               let colour  = (area_spots_4d_palette_ p) !! t 
-              let (CairoPointStyle drawSpotAt)
+              let psSpot
                     = filledCircles radius $
                           flip withOpacity (area_spots_4d_opacity_ p) $ colour
-              drawSpotAt (pmap (LValue x, LValue y))
-              let (CairoPointStyle drawOutlineAt)
+              drawPoint psSpot (pmap (LValue x, LValue y))
+              let psOutline
                     = hollowCircles radius (area_spots_4d_linethick_ p)
                                            (opaque colour)
-              drawOutlineAt (pmap (LValue x, LValue y))
+              drawPoint psOutline (pmap (LValue x, LValue y))
           )
   where
     scaleMax :: (PlotValue z, PlotValue t, Show t) =>
@@ -191,16 +191,16 @@ renderSpotLegend4D :: AreaSpots4D z t x y -> Rect -> CRender ()
 renderSpotLegend4D p r@(Rect p1 p2) = preserveCState $ do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2
-    let (CairoPointStyle drawSpotAt)    = filledCircles radius $
+    let psSpot    = filledCircles radius $
                                           flip withOpacity
                                                (area_spots_4d_opacity_ p) $
                                           head $ area_spots_4d_palette_ p
-    drawSpotAt centre
-    let (CairoPointStyle drawOutlineAt) = hollowCircles radius
+    drawPoint psSpot centre
+    let psOutline = hollowCircles radius
                                             (area_spots_4d_linethick_ p)
                                             (opaque $
                                              head (area_spots_4d_palette_ p))
-    drawOutlineAt centre
+    drawPoint psOutline centre
   where
     linearInterpolate (Point x0 y0) (Point x1 y1) =
         Point (x0 + abs(x1-x0)/2) (y0 + abs(y1-y0)/2)

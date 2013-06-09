@@ -36,7 +36,7 @@ data PlotAnnotation  x y = PlotAnnotation {
       plot_annotation_hanchor_ :: HTextAnchor,
       plot_annotation_vanchor_ :: VTextAnchor,
       plot_annotation_angle_   :: Double,
-      plot_annotation_style_   :: CairoFontStyle,
+      plot_annotation_style_   :: FontStyle,
       plot_annotation_values_  :: [(x,y,String)]
 }
 
