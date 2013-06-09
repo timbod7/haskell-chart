@@ -11,6 +11,8 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , strokePath
   , fillPath
     
+  , alignp
+  , alignc
   , drawTextR
   , drawTextsR
   , textSize
@@ -19,14 +21,6 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , setLineStyle
   , setFillStyle
   , setFontStyle
-    
-  , filledPolygon
-  , hollowPolygon
-  , filledCircles
-  , hollowCircles
-  , plusses
-  , exes
-  , stars
     
   , cTranslate
   , cRotate
@@ -50,12 +44,28 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , cRenderToPSFile
   , cRenderToPDFFile
   , cRenderToSVGFile
+  , vectorEnv
+  , bitmapEnv
   ) where
 
+import Data.Colour
+import Data.Colour.SRGB
+import Data.List (unfoldr)
+
+import Control.Monad.Reader
 
 import qualified Graphics.Rendering.Cairo as C
 
-import qualified Graphics.Rendering.Chart.Drawing as G
+import qualified Graphics.Rendering.Chart.Types as G
+import Graphics.Rendering.Chart.Types 
+  ( c
+  , runCRender
+  , CRender, CEnv(..)
+  , PointShape(..)
+  , FillStyle(..), PointStyle(..), FontStyle(..), LineStyle(..)
+  , HTextAnchor(..), VTextAnchor(..)
+  )
+import Graphics.Rendering.Chart.Geometry
 
 -- -----------------------------------------------------------------------
 -- Type Conversions: Chart -> Cairo
@@ -89,6 +99,21 @@ convertFontWeight fw = case fw of
 -- -----------------------------------------------------------------------
 -- Assorted helper functions in Cairo Usage
 -- -----------------------------------------------------------------------
+
+alignp :: Point -> CRender Point
+alignp p = do 
+    alignfn <- fmap cenv_point_alignfn ask
+    return (alignfn p)
+
+alignc :: Point -> CRender Point
+alignc p = do 
+    alignfn <- fmap cenv_coord_alignfn ask
+    return (alignfn p)
+
+-- | Function to draw a textual label anchored by one of its corners
+--   or edges.
+drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> CRender ()
+drawText hta vta p s = drawTextR hta vta 0 p s
 
 moveTo, lineTo :: Point -> CRender ()
 moveTo p  = do
@@ -139,20 +164,23 @@ fillPath pts = do
 
 setFontStyle :: FontStyle -> CRender ()
 setFontStyle f = do
-    c $ C.selectFontFace (font_name_ f) (font_slant_ f) (font_weight_ f)
-    c $ C.setFontSize (font_size_ f)
-    c $ setSourceColor (font_color_ f)
+    c $ C.selectFontFace (G.font_name_ f) 
+                         (convertFontSlant $ G.font_slant_ f) 
+                         (convertFontWeight $ G.font_weight_ f)
+    c $ C.setFontSize (G.font_size_ f)
+    c $ setSourceColor (G.font_color_ f)
 
 setLineStyle :: LineStyle -> CRender ()
 setLineStyle ls = do
-    c $ C.setLineWidth (line_width_ ls)
-    c $ setSourceColor (line_color_ ls)
-    c $ C.setLineCap (line_cap_ ls)
-    c $ C.setLineJoin (line_join_ ls)
-    c $ C.setDash (line_dashes_ ls) 0
+    c $ C.setLineWidth (G.line_width_ ls)
+    c $ setSourceColor (G.line_color_ ls)
+    c $ C.setLineCap (convertLineCap $ G.line_cap_ ls)
+    c $ C.setLineJoin (convertLineJoin $ G.line_join_ ls)
+    c $ C.setDash (G.line_dashes_ ls) 0
 
 setFillStyle :: FillStyle -> CRender ()
-setFillStyle (FillStyle s) = s
+setFillStyle (FillStyleSolid cl) = do
+  c $ setSourceColor cl
 
 colourChannel :: (Floating a, Ord a) => AlphaColour a -> Colour a
 colourChannel c = darken (recip (alphaChannel c)) (c `over` black)
@@ -262,134 +290,55 @@ preserveCState a = do
 
 -- -----------------------------------------------------------------------
 
-filledCircles ::
-     Double             -- ^ Radius of circle.
-  -> AlphaColour Double -- ^ Colour.
-  -> PointStyle
-filledCircles radius cl = PointStyle rf
-  where
-    rf p = do
-        (Point x y) <- alignp p
-    c $ setSourceColor cl
-        c $ C.newPath
-    c $ C.arc x y radius 0 (2*pi)
-    c $ C.fill
-
-hollowCircles ::
-     Double -- ^ Radius of circle.
-  -> Double -- ^ Thickness of line.
-  -> AlphaColour Double
-  -> PointStyle
-hollowCircles radius w cl = PointStyle rf
-  where
-    rf p = do
-        (Point x y) <- alignp p
-        c $ C.setLineWidth w
-    c $ setSourceColor cl
-        c $ C.newPath
-    c $ C.arc x y radius 0 (2*pi)
-    c $ C.stroke
-
-hollowPolygon ::
-     Double -- ^ Radius of circle.
-  -> Double -- ^ Thickness of line.
-  -> Int    -- ^ Number of vertices.
-  -> Bool   -- ^ Is right-side-up?
-  -> AlphaColour Double
-  -> PointStyle
-hollowPolygon radius w sides isrot cl = PointStyle rf
-  where rf p =
-            do (Point x y ) <- alignp p
-               c $ C.setLineWidth w
-           c $ setSourceColor cl
-               c $ C.newPath
-               let intToAngle n =
-                         if isrot
-                         then       fromIntegral n * 2*pi / fromIntegral sides
-                         else (0.5 + fromIntegral n)*2*pi / fromIntegral sides
-                   angles = map intToAngle [0 .. sides-1]
-                   (p:ps) = map (\a -> Point (x + radius * sin a)
-                                             (y + radius * cos a))
-                                angles
-               moveTo p
-               mapM_ lineTo (ps++[p])
-           c $ C.stroke
-
-filledPolygon ::
-     Double -- ^ Radius of circle.
-  -> Int    -- ^ Number of vertices.
-  -> Bool   -- ^ Is right-side-up?
-  -> AlphaColour Double
-  -> PointStyle
-filledPolygon radius sides isrot cl = PointStyle rf
-  where rf p =
-            do (Point x y ) <- alignp p
-               c $ setSourceColor cl
-               c $ C.newPath
-               let intToAngle n =
-                         if isrot
-                         then       fromIntegral n * 2*pi/fromIntegral sides
-                         else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
-                   angles = map intToAngle [0 .. sides-1]
-                   (p:ps) = map (\a -> Point (x + radius * sin a)
-                                             (y + radius * cos a)) angles
-               moveTo p
-               mapM_ lineTo (ps++[p])
-           c $ C.fill
-
-plusses ::
-     Double -- ^ Radius of circle.
-  -> Double -- ^ Thickness of line.
-  -> AlphaColour Double
-  -> PointStyle
-plusses radius w cl = PointStyle rf
-  where rf p = do (Point x y ) <- alignp p
-                  c $ C.setLineWidth w
-              c $ setSourceColor cl
-                  c $ C.newPath
-                  c $ C.moveTo (x+radius) y
-                  c $ C.lineTo (x-radius) y
-                  c $ C.moveTo x (y-radius)
-                  c $ C.lineTo x (y+radius)
-              c $ C.stroke
-
-exes ::
-     Double -- ^ Radius of circle.
-  -> Double -- ^ Thickness of line.
-  -> AlphaColour Double
-  -> PointStyle
-exes radius w cl = PointStyle rf
-  where rad = radius / sqrt 2
-        rf p = do (Point x y ) <- alignp p
-                  c $ C.setLineWidth w
-              c $ setSourceColor cl
-                  c $ C.newPath
-                  c $ C.moveTo (x+rad) (y+rad)
-                  c $ C.lineTo (x-rad) (y-rad)
-                  c $ C.moveTo (x+rad) (y-rad)
-                  c $ C.lineTo (x-rad) (y+rad)
-              c $ C.stroke
-
-stars ::
-     Double -- ^ Radius of circle.
-  -> Double -- ^ Thickness of line.
-  -> AlphaColour Double
-  -> PointStyle
-stars radius w cl = PointStyle rf
-  where rad = radius / sqrt 2
-        rf p = do (Point x y ) <- alignp p
-                  c $ C.setLineWidth w
-              c $ setSourceColor cl
-                  c $ C.newPath
-                  c $ C.moveTo (x+radius) y
-                  c $ C.lineTo (x-radius) y
-                  c $ C.moveTo x (y-radius)
-                  c $ C.lineTo x (y+radius)
-                  c $ C.moveTo (x+rad) (y+rad)
-                  c $ C.lineTo (x-rad) (y-rad)
-                  c $ C.moveTo (x+rad) (y-rad)
-                  c $ C.lineTo (x-rad) (y+rad)
-              c $ C.stroke
+drawPoint :: PointStyle -> Point -> CRender ()
+drawPoint (PointStyle cl bcl bw r shape) p = do
+  (Point x y) <- alignp p
+  case shape of
+    PointShapeCircle -> do
+      c $ setSourceColor cl
+      c $ C.newPath
+      c $ C.arc x y r 0 (2*pi)
+      c $ C.fill
+    PointShapePolygon sides isrot -> do
+      c $ setSourceColor cl
+      c $ C.newPath
+      let intToAngle n =
+            if isrot
+            then       fromIntegral n * 2*pi/fromIntegral sides
+            else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
+          angles = map intToAngle [0 .. sides-1]
+          (p:ps) = map (\a -> Point (x + r * sin a)
+                                    (y + r * cos a)) angles
+      moveTo p
+      mapM_ lineTo (ps++[p])
+      c $ C.fill
+    PointShapePlus -> do
+      c $ C.newPath
+      c $ C.moveTo (x+r) y
+      c $ C.lineTo (x-r) y
+      c $ C.moveTo x (y-r)
+      c $ C.lineTo x (y+r)
+    PointShapeCross -> do
+      let rad = r / sqrt 2
+      c $ C.newPath
+      c $ C.moveTo (x+rad) (y+rad)
+      c $ C.lineTo (x-rad) (y-rad)
+      c $ C.moveTo (x+rad) (y-rad)
+      c $ C.lineTo (x-rad) (y+rad)
+    PointShapeStar -> do
+      let rad = r / sqrt 2
+      c $ C.newPath
+      c $ C.moveTo (x+r) y
+      c $ C.lineTo (x-r) y
+      c $ C.moveTo x (y-r)
+      c $ C.lineTo x (y+r)
+      c $ C.moveTo (x+rad) (y+rad)
+      c $ C.lineTo (x-rad) (y-rad)
+      c $ C.moveTo (x+rad) (y-rad)
+      c $ C.lineTo (x-rad) (y+rad)
+  c $ C.setLineWidth bw
+  c $ setSourceColor bcl
+  c $ C.stroke
 
 cTranslate x y = c $ C.translate x y
 cRotate a = c $ C.rotate a
@@ -433,3 +382,13 @@ cRenderToFile withSurface cr width height path =
     rfn = do
         cr
         c $ C.showPage
+
+bitmapEnv :: CEnv
+bitmapEnv = CEnv (adjfn 0.5) (adjfn 0.0)
+  where
+    adjfn offset (Point x y) = Point (adj x) (adj y)
+      where
+        adj v = (fromIntegral.round) v +offset
+
+vectorEnv :: CEnv
+vectorEnv = CEnv id id

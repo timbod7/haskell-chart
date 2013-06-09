@@ -36,14 +36,19 @@ module Graphics.Rendering.Chart.Drawing(
     dashedLine,
 
     defaultPointStyle,
+    filledCircles,
+    hollowCircles,
+    filledPolygon,
+    hollowPolygon,
+    plusses,
+    exes,
+    stars,
+    
     solidFillStyle,
 
     defaultFontStyle,
     drawText,
 
-    CRender,
-    CEnv(..),
-    runCRender,
     alignp,
     alignc,
 
@@ -64,9 +69,7 @@ module Graphics.Rendering.Chart.Drawing(
 ) where
 
 import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Cairo(FontWeight)
 
-import Control.Monad.Reader
 import Data.Accessor
 import Data.Accessor.Template
 import Data.Colour
@@ -77,53 +80,11 @@ import Data.List (unfoldr)
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Backend.Cairo
-
--- | The environment present in the CRender Monad.
-data CEnv = CEnv {
-    -- | An adjustment applied immediately prior to points
-    --   being displayed in device coordinates.
-    --
-    --   When device coordinates correspond to pixels, a cleaner
-    --   image is created if this transform rounds to the nearest
-    --   pixel. With higher-resolution output, this transform can
-    --   just be the identity function.
-    cenv_point_alignfn :: Point -> Point,
-
-    -- | A adjustment applied immediately prior to coordinates
-    --   being transformed.
-    cenv_coord_alignfn :: Point -> Point
-}
-
--- | The reader monad containing context information to control
---   the rendering process.
-newtype CRender a = DR (ReaderT CEnv C.Render a)
-  deriving (Functor, Monad, MonadReader CEnv)
-
-runCRender :: CRender a -> CEnv -> C.Render a
-runCRender (DR m) e = runReaderT m e
-
-c :: C.Render a -> CRender a
-c = DR . lift
  
 -- -----------------------------------------------------------------------
 
 defaultColorSeq :: [AlphaColour Double]
 defaultColorSeq = cycle $ map opaque [blue, red, green, yellow, cyan, magenta]
-
-alignp :: Point -> CRender Point
-alignp p = do 
-    alignfn <- fmap cenv_point_alignfn ask
-    return (alignfn p)
-
-alignc :: Point -> CRender Point
-alignc p = do 
-    alignfn <- fmap cenv_coord_alignfn ask
-    return (alignfn p)
-
--- | Function to draw a textual label anchored by one of its corners
---   or edges.
-drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> CRender ()
-drawText hta vta p s = drawTextR hta vta 0 p s
 
 ----------------------------------------------------------------------
 
@@ -140,14 +101,62 @@ dashedLine ::
   -> LineStyle
 dashedLine w ds cl = LineStyle w cl ds LineCapButt LineJoinMiter
 
-solidFillStyle ::
-     AlphaColour Double
-  -> FillStyle
-solidFillStyle cl = FillStyle fn
-   where fn = c $ setSourceColor cl
-
 defaultPointStyle :: PointStyle
-defaultPointStyle = filledCircles 1 $ opaque white
+defaultPointStyle = PointStyle (opaque white) transparent 0 1 PointShapeCircle
+
+filledCircles :: Double             -- ^ Radius of circle.
+              -> AlphaColour Double -- ^ Colour.
+              -> PointStyle
+filledCircles radius cl = 
+  PointStyle cl transparent 0 radius PointShapeCircle
+
+hollowCircles :: Double -- ^ Radius of circle.
+              -> Double -- ^ Thickness of line.
+              -> AlphaColour Double
+              -> PointStyle
+hollowCircles radius w cl = 
+  PointStyle transparent cl w radius PointShapeCircle
+
+hollowPolygon :: Double -- ^ Radius of circle.
+              -> Double -- ^ Thickness of line.
+              -> Int    -- ^ Number of vertices.
+              -> Bool   -- ^ Is right-side-up?
+              -> AlphaColour Double
+              -> PointStyle
+hollowPolygon radius w sides isrot cl = 
+  PointStyle transparent cl w radius (PointShapePolygon sides isrot)
+
+filledPolygon :: Double -- ^ Radius of circle.
+              -> Int    -- ^ Number of vertices.
+              -> Bool   -- ^ Is right-side-up?
+              -> AlphaColour Double
+              -> PointStyle
+filledPolygon radius sides isrot cl = 
+  PointStyle cl transparent 0 radius (PointShapePolygon sides isrot)
+
+plusses :: Double -- ^ Radius of circle.
+        -> Double -- ^ Thickness of line.
+        -> AlphaColour Double
+        -> PointStyle
+plusses radius w cl = 
+  PointStyle transparent Just (cl, w) radius PointShapePlus
+
+exes :: Double -- ^ Radius of circle.
+     -> Double -- ^ Thickness of line.
+     -> AlphaColour Double
+     -> PointStyle
+exes radius w cl =
+  PointStyle transparent Just (cl, w) radius PointShapeCross
+
+stars :: Double -- ^ Radius of circle.
+      -> Double -- ^ Thickness of line.
+      -> AlphaColour Double
+      -> PointStyle
+stars radius w cl =
+  PointStyle transparent Just (cl, w) radius PointShapeStar
+
+solidFillStyle :: AlphaColour Double -> FillStyle
+solidFillStyle cl = FillStyleSolid cl
 
 defaultFontStyle :: FontStyle
 defaultFontStyle = FontStyle {
@@ -158,15 +167,7 @@ defaultFontStyle = FontStyle {
    font_color_  = opaque black
 }
 
-bitmapEnv :: CEnv
-bitmapEnv = CEnv (adjfn 0.5) (adjfn 0.0)
-  where
-    adjfn offset (Point x y) = Point (adj x) (adj y)
-      where
-        adj v = (fromIntegral.round) v +offset
 
-vectorEnv :: CEnv
-vectorEnv = CEnv id id
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
