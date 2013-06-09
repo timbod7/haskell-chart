@@ -38,6 +38,7 @@ module Graphics.Rendering.Chart.Drawing(
     setSourceColor,
     
     LineCap(..),
+    LineJoin(..),
 
     CairoLineStyle(..),
     solidLine,
@@ -114,13 +115,11 @@ module Graphics.Rendering.Chart.Drawing(
     font_weight,
     font_color,
 
-    FontWeight(..),
-    LineCap(..),
-    LineJoin(..),
+    FontWeight(..)
 ) where
 
 import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Cairo(FontWeight,LineCap,LineJoin)
+import Graphics.Rendering.Cairo(FontWeight)
                                 
 import Control.Monad.Reader
 import Data.Accessor
@@ -183,8 +182,8 @@ data CairoLineStyle = CairoLineStyle {
    line_width_  :: Double,
    line_color_  :: AlphaColour Double,
    line_dashes_ :: [Double],
-   line_cap_    :: C.LineCap,
-   line_join_   :: C.LineJoin
+   line_cap_    :: LineCap,
+   line_join_   :: LineJoin
 }
 
 -- | Abstract data type for a fill style.
@@ -531,14 +530,14 @@ solidLine ::
      Double -- ^ Width of line.
   -> AlphaColour Double
   -> CairoLineStyle
-solidLine w cl = CairoLineStyle w cl [] C.LineCapButt C.LineJoinMiter
+solidLine w cl = CairoLineStyle w cl [] LineCapButt LineJoinMiter
 
 dashedLine ::
      Double   -- ^ Width of line.
   -> [Double] -- ^ The dash pattern in device coordinates.
   -> AlphaColour Double
   -> CairoLineStyle
-dashedLine w ds cl = CairoLineStyle w cl ds C.LineCapButt C.LineJoinMiter
+dashedLine w ds cl = CairoLineStyle w cl ds LineCapButt LineJoinMiter
 
 solidFillStyle ::
      AlphaColour Double
