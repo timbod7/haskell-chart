@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Types
   ( CRender
@@ -25,6 +26,8 @@ module Graphics.Rendering.Chart.Types
   ) where
 
 import Data.Colour
+import Data.Accessor
+import Data.Accessor.Template
 
 import Control.Monad.Reader
 
@@ -144,8 +147,9 @@ data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine
 --   style in the Cairo rendering state.
 newtype FillStyle = FillStyleSolid { fill_colour_ :: AlphaColour Double }
 
-
-
-
-
+-- -----------------------------------------------------------------------
+-- Template haskell to derive an instance of Data.Accessor.Accessor
+-- for each field.
+$( deriveAccessors '' LineStyle )
+$( deriveAccessors '' FontStyle )
 

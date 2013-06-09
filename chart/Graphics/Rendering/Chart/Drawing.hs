@@ -168,10 +168,3 @@ defaultFontStyle = FontStyle {
 }
 
 
-
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
-$( deriveAccessors '' LineStyle )
-$( deriveAccessors '' FontStyle )
-
