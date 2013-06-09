@@ -2,6 +2,7 @@
 -- | The backend to render charts with cairo.
 module Graphics.Rendering.Chart.Backend.Cairo
   ( convertLineCap, convertLineJoin
+  , convertFontSlant, convertFontWeight
   ) where
 
 
@@ -23,3 +24,13 @@ convertLineCap lc = case lc of
   G.LineCapButt   -> C.LineCapButt
   G.LineCapSquare -> C.LineCapSquare
 
+convertFontSlant :: G.FontSlant -> C.FontSlant
+convertFontSlant fs = case fs of
+  G.FontSlantItalic  -> C.FontSlantItalic
+  G.FontSlantNormal  -> C.FontSlantNormal
+  G.FontSlantOblique -> C.FontSlantOblique
+
+convertFontWeight :: G.FontWeight -> C.FontWeight
+convertFontWeight fw = case fw of
+  G.FontWeightBold   -> C.FontWeightBold
+  G.FontWeightNormal -> C.FontWeightNormal
