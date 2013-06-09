@@ -32,7 +32,7 @@ import Data.Colour.Names (black, blue)
 --   which to render them.
 data PlotPoints x y = PlotPoints {
     plot_points_title_  :: String,
-    plot_points_style_  :: CairoPointStyle,
+    plot_points_style_  :: PointStyle,
     plot_points_values_ :: [(x,y)]
 }
 
@@ -50,7 +50,7 @@ renderPlotPoints p pmap = preserveCState $ do
     mapM_ (drawPoint.pmap') (plot_points_values_ p)
   where
     pmap' = mapXY pmap
-    (CairoPointStyle drawPoint) = (plot_points_style_ p)
+    (PointStyle drawPoint) = (plot_points_style_ p)
 
 renderPlotLegendPoints :: PlotPoints x y -> Rect -> CRender ()
 renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
@@ -59,7 +59,7 @@ renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
     drawPoint (Point (p_x p2)              ((p_y p1 + p_y p2)/2))
 
   where
-    (CairoPointStyle drawPoint) = (plot_points_style_ p)
+    (PointStyle drawPoint) = (plot_points_style_ p)
 
 defaultPlotPoints :: PlotPoints x y
 defaultPlotPoints = PlotPoints {

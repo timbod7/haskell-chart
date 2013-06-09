@@ -35,7 +35,7 @@ import Graphics.Rendering.Chart.Grid
 -- Legend
 
 data LegendStyle = LegendStyle {
-   legend_label_style_ :: CairoFontStyle,
+   legend_label_style_ :: FontStyle,
    legend_margin_      :: Double,
    legend_plot_size_   :: Double,
    legend_orientation_ :: LegendOrientation

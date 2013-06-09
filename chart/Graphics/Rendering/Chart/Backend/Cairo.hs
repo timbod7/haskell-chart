@@ -16,6 +16,7 @@ module Graphics.Rendering.Chart.Backend.Cairo
     
   , alignp
   , alignc
+  , drawText
   , drawTextR
   , drawTextsR
   , textSize

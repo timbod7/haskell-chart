@@ -33,7 +33,7 @@ import Data.Colour.Names (black, blue)
 --   and a style in which to render them.
 data PlotLines x y = PlotLines {
     plot_lines_title_        :: String,
-    plot_lines_style_        :: CairoLineStyle,
+    plot_lines_style_        :: LineStyle,
 
     -- | The lines to be plotted
     plot_lines_values_       :: [[(x,y)]],
@@ -69,7 +69,7 @@ renderPlotLegendLines p r@(Rect p1 p2) = preserveCState $ do
     let y = (p_y p1 + p_y p2) / 2
     strokePath [Point (p_x p1) y, Point (p_x p2) y]
 
-defaultPlotLineStyle :: CairoLineStyle
+defaultPlotLineStyle :: LineStyle
 defaultPlotLineStyle = (solidLine 1 $ opaque blue){
      line_cap_  = LineCapRound,
      line_join_ = LineJoinRound
@@ -84,7 +84,7 @@ defaultPlotLines = PlotLines {
 }
 
 -- | Helper function to plot a single horizontal line.
-hlinePlot :: String -> CairoLineStyle -> b -> Plot a b
+hlinePlot :: String -> LineStyle -> b -> Plot a b
 hlinePlot t ls v = toPlot defaultPlotLines {
     plot_lines_title_        = t,
     plot_lines_style_        = ls,
@@ -92,7 +92,7 @@ hlinePlot t ls v = toPlot defaultPlotLines {
     }
 
 -- | Helper function to plot a single vertical line.
-vlinePlot :: String -> CairoLineStyle -> a -> Plot a b
+vlinePlot :: String -> LineStyle -> a -> Plot a b
 vlinePlot t ls v = toPlot defaultPlotLines {
     plot_lines_title_        = t,
     plot_lines_style_        = ls,

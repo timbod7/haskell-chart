@@ -124,7 +124,7 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         | otherwise                                = Nothing
 
 -- | Overlay a renderable over a solid background fill.
-fillBackground :: CairoFillStyle -> Renderable a -> Renderable a
+fillBackground :: FillStyle -> Renderable a -> Renderable a
 fillBackground fs r = r{ render = rf }
   where
     rf rsize@(w,h) = do
@@ -179,13 +179,13 @@ embedRenderable ca = Renderable {
 -- Labels
 
 -- | Construct a renderable from a text string, aligned with the axes.
-label :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> String
+label :: FontStyle -> HTextAnchor -> VTextAnchor -> String
          -> Renderable String
 label fs hta vta = rlabel fs hta vta 0
 
 -- | Construct a renderable from a text string, rotated wrt to axes. The angle
 --   of rotation is in degrees.
-rlabel :: CairoFontStyle -> HTextAnchor -> VTextAnchor -> Double -> String
+rlabel :: FontStyle -> HTextAnchor -> VTextAnchor -> Double -> String
           -> Renderable String
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
@@ -223,8 +223,8 @@ data RectCornerStyle = RCornerSquare
 
 data Rectangle = Rectangle {
   rect_minsize_     :: RectSize,
-  rect_fillStyle_   :: Maybe CairoFillStyle,
-  rect_lineStyle_   :: Maybe CairoLineStyle,
+  rect_fillStyle_   :: Maybe FillStyle,
+  rect_lineStyle_   :: Maybe LineStyle,
   rect_cornerStyle_ :: RectCornerStyle
 }
 
@@ -234,12 +234,12 @@ rect_minsize     = accessor (\v->rect_minsize_ v)
                             (\a v -> v{rect_minsize_=a})
 
 -- | Accessor for field rect_fillStyle_.
-rect_fillStyle :: Accessor Rectangle (Maybe CairoFillStyle)
+rect_fillStyle :: Accessor Rectangle (Maybe FillStyle)
 rect_fillStyle   = accessor (\v->rect_fillStyle_ v)
                             (\a v -> v{rect_fillStyle_=a})
 
 -- | Accessor for field rect_lineStyle_.
-rect_lineStyle :: Accessor Rectangle (Maybe CairoLineStyle)
+rect_lineStyle :: Accessor Rectangle (Maybe LineStyle)
 rect_lineStyle   = accessor (\v->rect_lineStyle_ v)
                             (\a v -> v{rect_lineStyle_=a})
 

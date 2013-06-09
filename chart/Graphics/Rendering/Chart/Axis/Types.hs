@@ -106,9 +106,9 @@ data AxisData x = AxisData {
 
 -- | Control values for how an axis gets displayed.
 data AxisStyle = AxisStyle {
-    axis_line_style_  :: CairoLineStyle,
-    axis_label_style_ :: CairoFontStyle,
-    axis_grid_style_  :: CairoLineStyle,
+    axis_line_style_  :: LineStyle,
+    axis_label_style_ :: FontStyle,
+    axis_grid_style_  :: LineStyle,
 
     -- | How far the labels are to be drawn from the axis.
     axis_label_gap_   :: Double
@@ -372,10 +372,10 @@ makeAxis' t f labelf (labelvs, tickvs, gridvs) = AxisData {
 
 ----------------------------------------------------------------------
 
-defaultAxisLineStyle :: CairoLineStyle
+defaultAxisLineStyle :: LineStyle
 defaultAxisLineStyle = solidLine 1 $ opaque black
 
-defaultGridLineStyle :: CairoLineStyle
+defaultGridLineStyle :: LineStyle
 defaultGridLineStyle = dashedLine 1 [5,5] $ opaque lightgrey
 
 defaultAxisStyle :: AxisStyle
