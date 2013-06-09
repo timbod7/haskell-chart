@@ -12,9 +12,9 @@
 -- Note that template haskell is used to derive accessor functions
 -- (see 'Data.Accessor') for each field of the following data types:
 --
---    * 'CairoLineStyle'
+--    * 'LineStyle'
 --
---    * 'CairoFontStyle'
+--    * 'FontStyle'
 --
 -- These accessors are not shown in this API documentation.  They have
 -- the same name as the field, but with the trailing underscore
@@ -40,21 +40,21 @@ module Graphics.Rendering.Chart.Drawing(
     LineCap(..),
     LineJoin(..),
 
-    CairoLineStyle(..),
+    LineStyle(..),
     solidLine,
     dashedLine,
     setLineStyle,
 
-    CairoFillStyle(..),
+    FillStyle(..),
     defaultPointStyle,
     solidFillStyle,
     setFillStyle,
 
-    CairoFontStyle(..),
+    FontStyle(..),
     defaultFontStyle,
     setFontStyle,
 
-    CairoPointStyle(..),
+    PointStyle(..),
     filledPolygon,
     hollowPolygon,
     filledCircles,
@@ -175,10 +175,10 @@ data LineJoin = LineJoinMiter -- ^ Extends the outline until they meet each othe
 --
 --   The contained Cairo action draws a point in the desired
 --   style, at the supplied device coordinates.
-newtype CairoPointStyle = CairoPointStyle (Point -> CRender ())
+newtype PointStyle = PointStyle (Point -> CRender ())
 
 -- | Data type for the style of a line.
-data CairoLineStyle = CairoLineStyle {
+data LineStyle = CairoLineStyle {
    line_width_  :: Double,
    line_color_  :: AlphaColour Double,
    line_dashes_ :: [Double],
@@ -190,10 +190,10 @@ data CairoLineStyle = CairoLineStyle {
 --
 --   The contained Cairo action sets the required fill
 --   style in the Cairo rendering state.
-newtype CairoFillStyle = CairoFillStyle (CRender ())
+newtype FillStyle = FillStyle (CRender ())
 
 -- | Data type for a font.
-data CairoFontStyle = CairoFontStyle {
+data FontStyle = FontStyle {
       font_name_   :: String,
       font_size_   :: Double,
       font_slant_  :: C.FontSlant,
@@ -264,13 +264,13 @@ fillPath pts = do
     stepPath (map alignfn pts)
     c $ C.fill
 
-setFontStyle :: CairoFontStyle -> CRender ()
+setFontStyle :: FontStyle -> CRender ()
 setFontStyle f = do
     c $ C.selectFontFace (font_name_ f) (font_slant_ f) (font_weight_ f)
     c $ C.setFontSize (font_size_ f)
     c $ setSourceColor (font_color_ f)
 
-setLineStyle :: CairoLineStyle -> CRender ()
+setLineStyle :: LineStyle -> CRender ()
 setLineStyle ls = do
     c $ C.setLineWidth (line_width_ ls)
     c $ setSourceColor (line_color_ ls)
@@ -278,8 +278,8 @@ setLineStyle ls = do
     c $ C.setLineJoin (line_join_ ls)
     c $ C.setDash (line_dashes_ ls) 0
 
-setFillStyle :: CairoFillStyle -> CRender ()
-setFillStyle (CairoFillStyle s) = s
+setFillStyle :: FillStyle -> CRender ()
+setFillStyle (FillStyle s) = s
 
 colourChannel :: (Floating a, Ord a) => AlphaColour a -> Colour a
 colourChannel c = darken (recip (alphaChannel c)) (c `over` black)
@@ -400,8 +400,8 @@ preserveCState a = do
 filledCircles ::
      Double             -- ^ Radius of circle.
   -> AlphaColour Double -- ^ Colour.
-  -> CairoPointStyle
-filledCircles radius cl = CairoPointStyle rf
+  -> PointStyle
+filledCircles radius cl = PointStyle rf
   where
     rf p = do
         (Point x y) <- alignp p
@@ -414,8 +414,8 @@ hollowCircles ::
      Double -- ^ Radius of circle.
   -> Double -- ^ Thickness of line.
   -> AlphaColour Double
-  -> CairoPointStyle
-hollowCircles radius w cl = CairoPointStyle rf
+  -> PointStyle
+hollowCircles radius w cl = PointStyle rf
   where
     rf p = do
         (Point x y) <- alignp p
@@ -431,8 +431,8 @@ hollowPolygon ::
   -> Int    -- ^ Number of vertices.
   -> Bool   -- ^ Is right-side-up?
   -> AlphaColour Double
-  -> CairoPointStyle
-hollowPolygon radius w sides isrot cl = CairoPointStyle rf
+  -> PointStyle
+hollowPolygon radius w sides isrot cl = PointStyle rf
   where rf p =
             do (Point x y ) <- alignp p
                c $ C.setLineWidth w
@@ -455,8 +455,8 @@ filledPolygon ::
   -> Int    -- ^ Number of vertices.
   -> Bool   -- ^ Is right-side-up?
   -> AlphaColour Double
-  -> CairoPointStyle
-filledPolygon radius sides isrot cl = CairoPointStyle rf
+  -> PointStyle
+filledPolygon radius sides isrot cl = PointStyle rf
   where rf p =
             do (Point x y ) <- alignp p
                c $ setSourceColor cl
@@ -476,8 +476,8 @@ plusses ::
      Double -- ^ Radius of circle.
   -> Double -- ^ Thickness of line.
   -> AlphaColour Double
-  -> CairoPointStyle
-plusses radius w cl = CairoPointStyle rf
+  -> PointStyle
+plusses radius w cl = PointStyle rf
   where rf p = do (Point x y ) <- alignp p
                   c $ C.setLineWidth w
 	          c $ setSourceColor cl
@@ -492,8 +492,8 @@ exes ::
      Double -- ^ Radius of circle.
   -> Double -- ^ Thickness of line.
   -> AlphaColour Double
-  -> CairoPointStyle
-exes radius w cl = CairoPointStyle rf
+  -> PointStyle
+exes radius w cl = PointStyle rf
   where rad = radius / sqrt 2
         rf p = do (Point x y ) <- alignp p
                   c $ C.setLineWidth w
@@ -509,8 +509,8 @@ stars ::
      Double -- ^ Radius of circle.
   -> Double -- ^ Thickness of line.
   -> AlphaColour Double
-  -> CairoPointStyle
-stars radius w cl = CairoPointStyle rf
+  -> PointStyle
+stars radius w cl = PointStyle rf
   where rad = radius / sqrt 2
         rf p = do (Point x y ) <- alignp p
                   c $ C.setLineWidth w
@@ -529,27 +529,27 @@ stars radius w cl = CairoPointStyle rf
 solidLine ::
      Double -- ^ Width of line.
   -> AlphaColour Double
-  -> CairoLineStyle
-solidLine w cl = CairoLineStyle w cl [] LineCapButt LineJoinMiter
+  -> LineStyle
+solidLine w cl = LineStyle w cl [] LineCapButt LineJoinMiter
 
 dashedLine ::
      Double   -- ^ Width of line.
   -> [Double] -- ^ The dash pattern in device coordinates.
   -> AlphaColour Double
-  -> CairoLineStyle
-dashedLine w ds cl = CairoLineStyle w cl ds LineCapButt LineJoinMiter
+  -> LineStyle
+dashedLine w ds cl = LineStyle w cl ds LineCapButt LineJoinMiter
 
 solidFillStyle ::
      AlphaColour Double
-  -> CairoFillStyle
-solidFillStyle cl = CairoFillStyle fn
+  -> FillStyle
+solidFillStyle cl = FillStyle fn
    where fn = c $ setSourceColor cl
 
-defaultPointStyle :: CairoPointStyle
+defaultPointStyle :: PointStyle
 defaultPointStyle = filledCircles 1 $ opaque white
 
-defaultFontStyle :: CairoFontStyle
-defaultFontStyle = CairoFontStyle {
+defaultFontStyle :: FontStyle
+defaultFontStyle = FontStyle {
    font_name_   = "sans",
    font_size_   = 10,
    font_slant_  = C.FontSlantNormal,
@@ -613,6 +613,6 @@ vectorEnv = CEnv id id
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
-$( deriveAccessors ''CairoLineStyle )
-$( deriveAccessors ''CairoFontStyle )
+$( deriveAccessors '' LineStyle )
+$( deriveAccessors '' FontStyle )
 
