@@ -13,7 +13,9 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , lineTo
   , strokePath
   , fillPath
-    
+  
+  , drawPoint
+  
   , alignp
   , alignc
   , drawText

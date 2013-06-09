@@ -47,19 +47,19 @@ instance ToPlot PlotPoints where
 
 renderPlotPoints :: PlotPoints x y -> PointMapFn x y -> CRender ()
 renderPlotPoints p pmap = preserveCState $ do
-    mapM_ (drawPoint.pmap') (plot_points_values_ p)
+    mapM_ (drawPoint ps . pmap') (plot_points_values_ p)
   where
     pmap' = mapXY pmap
-    (PointStyle drawPoint) = (plot_points_style_ p)
+    ps = (plot_points_style_ p)
 
 renderPlotLegendPoints :: PlotPoints x y -> Rect -> CRender ()
 renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
-    drawPoint (Point (p_x p1)              ((p_y p1 + p_y p2)/2))
-    drawPoint (Point ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2))
-    drawPoint (Point (p_x p2)              ((p_y p1 + p_y p2)/2))
+    drawPoint ps (Point (p_x p1)              ((p_y p1 + p_y p2)/2))
+    drawPoint ps (Point ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2))
+    drawPoint ps (Point (p_x p2)              ((p_y p1 + p_y p2)/2))
 
   where
-    (PointStyle drawPoint) = (plot_points_style_ p)
+    ps = (plot_points_style_ p)
 
 defaultPlotPoints :: PlotPoints x y
 defaultPlotPoints = PlotPoints {
