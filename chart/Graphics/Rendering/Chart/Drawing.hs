@@ -36,6 +36,8 @@ module Graphics.Rendering.Chart.Drawing(
     defaultColorSeq,
 
     setSourceColor,
+    
+    LineCap(..),
 
     CairoLineStyle(..),
     solidLine,
@@ -158,6 +160,17 @@ c :: C.Render a -> CRender a
 c = DR . lift
  
 ----------------------------------------------------------------------
+
+-- | The different supported line ends.
+data LineCap = LineCapButt   -- ^ Just cut the line straight.
+             | LineCapRound  -- ^ Make a rounded line end.
+             | LineCapSquare -- ^ Make a square that ends the line.
+
+-- | The different supported ways to join line ends.
+data LineJoin = LineJoinMiter -- ^ Extends the outline until they meet each other.
+              | LineJoinRound -- ^ Draw a circle fragment to connet line end.
+              | LineJoinBevel -- ^ Like miter, but cuts it off if a certain 
+                              --   threshold is exceeded.
 
 -- | Abstract data type for the style of a plotted point.
 --
