@@ -178,13 +178,22 @@ data LineJoin = LineJoinMiter -- ^ Extends the outline until they meet each othe
 newtype PointStyle = PointStyle (Point -> CRender ())
 
 -- | Data type for the style of a line.
-data LineStyle = CairoLineStyle {
+data LineStyle = LineStyle {
    line_width_  :: Double,
    line_color_  :: AlphaColour Double,
    line_dashes_ :: [Double],
    line_cap_    :: LineCap,
    line_join_   :: LineJoin
 }
+
+-- | The possible slants of a font.
+data FontSlant = FontSlantNormal  -- ^ Normal font style without slant.
+               | FontSlantItalic  -- ^ With a slight slant.
+               | FontSlantOblique -- ^ With a greater slant.
+
+-- | The possible weights of a font.
+data FontWeight = FontWeightNormal -- ^ Normal font style without weight.
+                | FontWeightBold   -- ^ Bold font.
 
 -- | Abstract data type for a fill style.
 --
@@ -196,8 +205,8 @@ newtype FillStyle = FillStyle (CRender ())
 data FontStyle = FontStyle {
       font_name_   :: String,
       font_size_   :: Double,
-      font_slant_  :: C.FontSlant,
-      font_weight_ :: C.FontWeight,
+      font_slant_  :: FontSlant,
+      font_weight_ :: FontWeight,
       font_color_  :: AlphaColour Double
 }
 
@@ -552,8 +561,8 @@ defaultFontStyle :: FontStyle
 defaultFontStyle = FontStyle {
    font_name_   = "sans",
    font_size_   = 10,
-   font_slant_  = C.FontSlantNormal,
-   font_weight_ = C.FontWeightNormal,
+   font_slant_  = FontSlantNormal,
+   font_weight_ = FontWeightNormal,
    font_color_  = opaque black
 }
 
