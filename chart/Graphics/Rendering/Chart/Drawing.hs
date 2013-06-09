@@ -26,11 +26,8 @@
 --
 
 module Graphics.Rendering.Chart.Drawing(
-    preserveCState,
 
     defaultColorSeq,
-
-    setSourceColor,
     
     solidLine,
     dashedLine,
@@ -47,25 +44,9 @@ module Graphics.Rendering.Chart.Drawing(
     solidFillStyle,
 
     defaultFontStyle,
-    drawText,
-
-    alignp,
-    alignc,
-
-    vectorEnv,
-    bitmapEnv,
     
-    line_width,
-    line_color,
-    line_dashes,
-    line_cap,
-    line_join,
-
-    font_name,
-    font_size,
-    font_slant,
-    font_weight,
-    font_color
+    module Graphics.Rendering.Chart.Backend.Cairo,
+    module Graphics.Rendering.Chart.Types
 ) where
 
 import qualified Graphics.Rendering.Cairo as C
@@ -139,21 +120,21 @@ plusses :: Double -- ^ Radius of circle.
         -> AlphaColour Double
         -> PointStyle
 plusses radius w cl = 
-  PointStyle transparent Just (cl, w) radius PointShapePlus
+  PointStyle transparent cl w radius PointShapePlus
 
 exes :: Double -- ^ Radius of circle.
      -> Double -- ^ Thickness of line.
      -> AlphaColour Double
      -> PointStyle
 exes radius w cl =
-  PointStyle transparent Just (cl, w) radius PointShapeCross
+  PointStyle transparent cl w radius PointShapeCross
 
 stars :: Double -- ^ Radius of circle.
       -> Double -- ^ Thickness of line.
       -> AlphaColour Double
       -> PointStyle
 stars radius w cl =
-  PointStyle transparent Just (cl, w) radius PointShapeStar
+  PointStyle transparent cl w radius PointShapeStar
 
 solidFillStyle :: AlphaColour Double -> FillStyle
 solidFillStyle cl = FillStyleSolid cl

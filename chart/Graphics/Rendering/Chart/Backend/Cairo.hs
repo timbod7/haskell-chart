@@ -4,6 +4,9 @@ module Graphics.Rendering.Chart.Backend.Cairo
   ( convertLineCap, convertLineJoin
   , convertFontSlant, convertFontWeight
   
+  , preserveCState
+
+  , setSourceColor
   
   , setClipRegion
   , moveTo

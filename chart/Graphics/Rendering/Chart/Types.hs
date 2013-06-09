@@ -23,6 +23,18 @@ module Graphics.Rendering.Chart.Types
   , HTextAnchor(..)
   , VTextAnchor(..)
   , FontWeight(..)
+  
+  , line_width
+  , line_color
+  , line_dashes
+  , line_cap
+  , line_join
+
+  , font_name
+  , font_size
+  , font_slant
+  , font_weight
+  , font_color
   ) where
 
 import Data.Colour
