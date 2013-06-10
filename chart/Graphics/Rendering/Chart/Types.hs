@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Types
@@ -80,7 +81,7 @@ runCRender (DR m) e = runReaderT m e
 c :: C.Render a -> CRender a
 c = DR . lift
 
-class (Monad m) => ChartBackend m where
+class (Monad m, MonadReader CEnv m) => ChartBackend m where
   type ChartOutput a :: *
   bNewPath :: m ()
   bClosePath :: m ()

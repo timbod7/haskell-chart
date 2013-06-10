@@ -9,6 +9,8 @@
 -- them.
 --
 
+{-# LANGUAGE TypeFamilies #-}
+
 module Graphics.Rendering.Chart.Renderable(
     Renderable(..),
     ToRenderable(..),
@@ -58,27 +60,28 @@ nullPickFn = const Nothing
 
 -- | A Renderable is a record of functions required to layout a
 --   graphic element.
-data Renderable a = Renderable {
+data Renderable m a = Renderable {
 
    -- | A Cairo action to calculate a minimum size.
-   minsize :: CRender RectSize,
+   minsize :: m RectSize,
 
    -- | A Cairo action for drawing it within a rectangle.
    --   The rectangle is from the origin to the given point.
    --
    --   The resulting "pick" function  maps a point in the image to a value.
-   render  ::  RectSize -> CRender (PickFn a)
+   render  ::  RectSize -> m (PickFn a)
 }
 
 -- | A type class abtracting the conversion of a value to a Renderable.
 class ToRenderable a where
-   toRenderable :: a -> Renderable ()
+  type RenderableT m b :: *
+  toRenderable :: (ChartBackend m) => RenderableT m a -> Renderable m ()
 
-emptyRenderable :: Renderable a
+emptyRenderable :: (ChartBackend m) => Renderable m a
 emptyRenderable = spacer (0,0)
 
 -- | Create a blank renderable with a specified minimum size.
-spacer :: RectSize -> Renderable a 
+spacer :: (ChartBackend m) => RectSize -> Renderable m a 
 spacer sz  = Renderable {
    minsize = return sz,
    render  = \_ -> return nullPickFn
@@ -87,26 +90,26 @@ spacer sz  = Renderable {
 
 -- | Create a blank renderable with a minimum size the same as
 --   some other renderable.
-spacer1 :: Renderable a -> Renderable b
+spacer1 :: (ChartBackend m) => Renderable m a -> Renderable m b
 spacer1 r  = r{ render  = \_ -> return nullPickFn }
 
 -- | Replace the pick function of a renderable with another.
-setPickFn :: PickFn b -> Renderable a -> Renderable b
+setPickFn :: (ChartBackend m) => PickFn b -> Renderable m a -> Renderable m b
 setPickFn pickfn r = r{ render  = \sz -> do { render r sz; return pickfn; } }
 
 -- | Map a function over the result of a renderable's pickfunction, keeping only 'Just' results.
-mapMaybePickFn :: (a -> Maybe b) -> Renderable a -> Renderable b
+mapMaybePickFn :: (ChartBackend m) => (a -> Maybe b) -> Renderable m a -> Renderable m b
 mapMaybePickFn f r = r{ render = \sz -> do pf <- render r sz
                                            return (join . fmap f . pf) }
 
 -- | Map a function over result of a renderable's pickfunction.
-mapPickFn :: (a -> b) -> Renderable a -> Renderable b
+mapPickFn :: (ChartBackend m) => (a -> b) -> Renderable m a -> Renderable m b
 mapPickFn f = mapMaybePickFn (Just . f)
 
 -- | Add some spacing at the edges of a renderable.
-addMargins :: (Double,Double,Double,Double) -- ^ The spacing to be added.
-           -> Renderable a                  -- ^ The source renderable.
-           -> Renderable a
+addMargins :: (ChartBackend m) => (Double,Double,Double,Double) -- ^ The spacing to be added.
+           -> Renderable m a                  -- ^ The source renderable.
+           -> Renderable m a
 addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
   where
     mf = do
@@ -114,8 +117,8 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         return (w+l+r,h+t+b)
 
     rf (w,h) = do
-        preserveCState $ do
-            cTranslate l t
+        bLocal $ do
+            bTranslate (Point l t)
             pickf <- render rd (w-l-r,h-t-b)
             return (mkpickf pickf (t,b,l,r) (w,h))
 
@@ -124,19 +127,19 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         | otherwise                                = Nothing
 
 -- | Overlay a renderable over a solid background fill.
-fillBackground :: FillStyle -> Renderable a -> Renderable a
+fillBackground :: (ChartBackend m) => FillStyle -> Renderable m a -> Renderable m a
 fillBackground fs r = r{ render = rf }
   where
     rf rsize@(w,h) = do
-        preserveCState $ do
-            setClipRegion (Point 0 0) (Point w h)
-            setFillStyle fs
-            cPaint
+        bLocal $ do
+            bSetClipRegion $ Rect (Point 0 0) (Point w h)
+            bSetFillStyle fs
+            bPaint
 	render r rsize
 
 -- | Output the given renderable to a PNG file of the specifed size
 --   (in pixels), to the specified file.
-renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
+renderableToPNGFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO (PickFn a)
 renderableToPNGFile r width height path =
     cRenderToPNGFile cr width height path
   where
@@ -144,7 +147,7 @@ renderableToPNGFile r width height path =
 
 -- | Output the given renderable to a PDF file of the specifed size
 --   (in points), to the specified file.
-renderableToPDFFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
+renderableToPDFFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
 renderableToPDFFile r width height path =
     cRenderToPDFFile cr width height path
   where
@@ -152,7 +155,7 @@ renderableToPDFFile r width height path =
 
 -- | Output the given renderable to a postscript file of the specifed size
 --   (in points), to the specified file.
-renderableToPSFile  :: Renderable a -> Int -> Int -> FilePath -> IO ()
+renderableToPSFile  :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
 renderableToPSFile r width height path  = 
     cRenderToPSFile cr width height path
   where
@@ -160,7 +163,7 @@ renderableToPSFile r width height path  =
 
 -- | Output the given renderable to an SVG file of the specifed size
 --   (in points), to the specified file.
-renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
+renderableToSVGFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
 renderableToSVGFile r width height path =
     cRenderToSVGFile cr width height path
   where
@@ -168,7 +171,7 @@ renderableToSVGFile r width height path =
 
 -- | Helper function for using a renderable, when we generate it
 --   in the CRender monad.
-embedRenderable :: CRender (Renderable a) -> Renderable a
+embedRenderable :: (ChartBackend m) => m (Renderable m a) -> Renderable m a
 embedRenderable ca = Renderable {
    minsize = do { a <- ca; minsize a },
    render  = \ r -> do { a <- ca; render a r }
@@ -179,29 +182,30 @@ embedRenderable ca = Renderable {
 -- Labels
 
 -- | Construct a renderable from a text string, aligned with the axes.
-label :: FontStyle -> HTextAnchor -> VTextAnchor -> String
-         -> Renderable String
+label :: (ChartBackend m) => FontStyle -> HTextAnchor -> VTextAnchor -> String
+         -> Renderable m String
 label fs hta vta = rlabel fs hta vta 0
 
 -- | Construct a renderable from a text string, rotated wrt to axes. The angle
 --   of rotation is in degrees.
-rlabel :: FontStyle -> HTextAnchor -> VTextAnchor -> Double -> String
-          -> Renderable String
+rlabel :: (ChartBackend m) => FontStyle -> HTextAnchor -> VTextAnchor -> Double -> String
+          -> Renderable m String
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
-    mf = preserveCState $ do
-       setFontStyle fs
-       (w,h) <- textSize s
+    mf = bLocal $ do
+       bSetFontStyle fs
+       (w,h) <- bTextSize s
        return (w*acr+h*asr,w*asr+h*acr)
-    rf (w0,h0) = preserveCState $ do
-       setFontStyle fs
-       sz@(w,h) <- textSize s
-       descent <- cFontDescent
-       cTranslate 0 (-descent)
-       cTranslate (xadj sz hta 0 w0) (yadj sz vta 0 h0)
-       cRotate rot'
-       cMoveTo (-w/2) (h/2)
-       cShowText s
+    rf (w0,h0) = bLocal $ do
+       bSetFontStyle fs
+       sz@(w,h) <- bTextSize s
+       extents <- bFontExtents
+       let descent = fontExtentsDescent extents
+       bTranslate $ Point 0 (-descent)
+       bTranslate $ Point (xadj sz hta 0 w0) (yadj sz vta 0 h0)
+       bRotate rot'
+       bMoveTo $ Point (-w/2) (h/2)
+       bShowText s
        return (\_-> Just s)  -- PickFn String
     xadj (w,h) HTA_Left   x1 x2 =  x1 +(w*acr+h*asr)/2
     xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
@@ -258,53 +262,54 @@ defaultRectangle = Rectangle {
 }
 
 instance ToRenderable Rectangle where
+   type RenderableT m Rectangle = Rectangle
    toRenderable rectangle = Renderable mf rf
      where
       mf    = return (rect_minsize_ rectangle)
-      rf sz = preserveCState $ do
+      rf sz = bLocal $ do
         maybeM () (fill sz) (rect_fillStyle_ rectangle)
         maybeM () (stroke sz) (rect_lineStyle_ rectangle)
         return nullPickFn
 
       fill sz fs = do
-          setFillStyle fs
+          bSetFillStyle fs
           strokeRectangle sz (rect_cornerStyle_ rectangle)
-          cFill
+          bFill
 
       stroke sz ls = do
-          setLineStyle ls
+          bSetLineStyle ls
           strokeRectangle sz (rect_cornerStyle_ rectangle)
-          cStroke
+          bStroke
 
       strokeRectangle (x2,y2) RCornerSquare = do
           let (x1,y1) = (0,0)
-          cMoveTo x1 y1
-          cLineTo x1 y2
-          cLineTo x2 y2
-          cLineTo x2 y1
-          cLineTo x1 y1
-          cLineTo x1 y2
+          bMoveTo $ Point x1 y1
+          bLineTo $ Point x1 y2
+          bLineTo $ Point x2 y2
+          bLineTo $ Point x2 y1
+          bLineTo $ Point x1 y1
+          bLineTo $ Point x1 y2
                                   
       strokeRectangle (x2,y2) (RCornerBevel s) = do
           let (x1,y1) = (0,0)
-          cMoveTo x1 (y1+s)
-          cLineTo x1 (y2-s)
-          cLineTo (x1+s) y2
-          cLineTo (x2-s) y2
-          cLineTo x2 (y2-s)
-          cLineTo x2 (y1+s)
-          cLineTo (x2-s) y1
-          cLineTo (x1+s) y1
-          cLineTo x1 (y1+s)
-          cLineTo x1 (y2-s)
+          bMoveTo $ Point x1 (y1+s)
+          bLineTo $ Point x1 (y2-s)
+          bLineTo $ Point (x1+s) y2
+          bLineTo $ Point (x2-s) y2
+          bLineTo $ Point x2 (y2-s)
+          bLineTo $ Point x2 (y1+s)
+          bLineTo $ Point (x2-s) y1
+          bLineTo $ Point (x1+s) y1
+          bLineTo $ Point x1 (y1+s)
+          bLineTo $ Point x1 (y2-s)
 
       strokeRectangle (x2,y2) (RCornerRounded s) = do
           let (x1,y1) = (0,0)
-          cArcNegative (x1+s) (y2-s) s (pi2*2) pi2 
-          cArcNegative (x2-s) (y2-s) s pi2 0
-          cArcNegative (x2-s) (y1+s) s 0 (pi2*3)
-          cArcNegative (x1+s) (y1+s) s (pi2*3) (pi2*2)
-          cLineTo x1 (y2-s)
+          bArcNegative (Point (x1+s) (y2-s)) s (pi2*2) pi2 
+          bArcNegative (Point (x2-s) (y2-s)) s pi2 0
+          bArcNegative (Point (x2-s) (y1+s)) s 0 (pi2*3)
+          bArcNegative (Point (x1+s) (y1+s)) s (pi2*3) (pi2*2)
+          bLineTo $ Point x1 (y2-s)
 
       pi2 = pi / 2
 

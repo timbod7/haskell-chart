@@ -110,7 +110,7 @@ sparkSize :: SparkLine -> (Int,Int)
 sparkSize s = (sparkWidth s, so_height (sl_options s))
 
 -- | Render a SparkLine to a drawing surface using cairo.
-renderSparkLine :: SparkLine -> CRender (PickFn ())
+renderSparkLine :: (ChartBackend m) => SparkLine -> m (PickFn ())
 renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
   let w = 4 + (so_step opt) * (length ds - 1) + extrawidth
       extrawidth | so_smooth opt = 0
@@ -133,26 +133,26 @@ renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
       boxpt (Point x y) = Rect (Point (x-1)(y-1)) (Point (x+1)(y+1))
       fi    :: (Num b, Integral a) => a -> b
       fi    = fromIntegral
-  in preserveCState $ do
+  in bLocal $ do
 
-  setFillStyle (solidFillStyle (opaque (so_bgColor opt)))
+  bSetFillStyle (solidFillStyle (opaque (so_bgColor opt)))
   fillPath (rectPath (Rect (Point 0 0) (Point (fi w) (fi h))))
   if so_smooth opt
     then do
-      setLineStyle (solidLine 1 (opaque grey))
+      bSetLineStyle (solidLine 1 (opaque grey))
       strokePath coords
     else do
-      setFillStyle (solidFillStyle (opaque grey))
+      bSetFillStyle (solidFillStyle (opaque grey))
       forM_ coords $ \ (Point x y) ->
           fillPath (rectPath (Rect (Point (x-1) y) (Point (x+1) (fi h))))
   when (so_minMarker opt) $ do
-      setFillStyle (solidFillStyle (opaque (so_minColor opt)))
+      bSetFillStyle (solidFillStyle (opaque (so_minColor opt)))
       fillPath (rectPath (boxpt minpt))
   when (so_maxMarker opt) $ do
-      setFillStyle (solidFillStyle (opaque (so_maxColor opt)))
+      bSetFillStyle (solidFillStyle (opaque (so_maxColor opt)))
       fillPath (rectPath (boxpt maxpt))
   when (so_lastMarker opt) $ do
-      setFillStyle (solidFillStyle (opaque (so_lastColor opt)))
+      bSetFillStyle (solidFillStyle (opaque (so_lastColor opt)))
       fillPath (rectPath (boxpt endpt))
   return nullPickFn
 

@@ -126,7 +126,7 @@ data AxisT x = AxisT RectEdge AxisStyle Bool (AxisData x)
 -- it can be composed with other renderables and drawn. This
 -- does not include the drawing of the grid, which must be done
 -- separately by the `renderAxisGrid` function.
-axisToRenderable :: AxisT x -> Renderable x
+axisToRenderable :: (ChartBackend m) => AxisT x -> Renderable m x
 axisToRenderable at = Renderable {
      minsize = minsizeAxis at,
      render  = renderAxis at
@@ -167,11 +167,11 @@ axisLabelsHide ad    = ad{ axis_labels_ = []}
 axisLabelsOverride  :: [(x,String)] -> AxisData x -> AxisData x
 axisLabelsOverride o ad = ad{ axis_labels_ = [o] }
 
-minsizeAxis :: AxisT x -> CRender RectSize
+minsizeAxis :: (ChartBackend m) => AxisT x -> m RectSize
 minsizeAxis (AxisT at as rev ad) = do
-    labelSizes <- preserveCState $ do
-        setFontStyle (axis_label_style_ as)
-        mapM (mapM textSize) (labelTexts ad)
+    labelSizes <- bLocal $ do
+        bSetFontStyle (axis_label_style_ as)
+        mapM (mapM bTextSize) (labelTexts ad)
 
     let ag      = axis_label_gap_ as
     let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- axis_ticks_ ad ])
@@ -216,18 +216,18 @@ axisOverhang (AxisT at as rev ad) = do
 		       E_Left   -> ohangv
 		       E_Right  -> ohangh
 
-renderAxis :: AxisT x -> RectSize -> CRender (PickFn x)
+renderAxis :: (ChartBackend m) => AxisT x -> RectSize -> m (PickFn x)
 renderAxis at@(AxisT et as rev ad) sz = do
    let ls = axis_line_style_ as
-   preserveCState $ do
-       setLineStyle ls{line_cap_=LineCapSquare}
+   bLocal $ do
+       bSetLineStyle ls{line_cap_=LineCapSquare}
        strokePath [Point sx sy,Point ex ey]
-   preserveCState $ do
-       setLineStyle ls{line_cap_=LineCapButt}
+   bLocal $ do
+       bSetLineStyle ls{line_cap_=LineCapButt}
        mapM_ drawTick (axis_ticks_ ad)
-   preserveCState $ do
-       setFontStyle (axis_label_style_ as)
-       labelSizes <- mapM (mapM textSize) (labelTexts ad)
+   bLocal $ do
+       bSetFontStyle (axis_label_style_ as)
+       labelSizes <- mapM (mapM bTextSize) (labelTexts ad)
        let sizes = map ((+ag).maximum0.map coord) labelSizes
        let offsets = scanl (+) ag sizes
        mapM_ drawLabels (zip offsets  (axis_labels_ ad))
@@ -254,7 +254,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
 
    labelDrawRect (value,s) = do
        let pt = axisPoint value `pvadd` (awayFromAxis ag)
-       r <- textDrawRect hta vta pt s
+       r <- bTextRect hta vta pt s
        return (hBufferRect r,(value,s))
 
    drawLabels (offset,labels) = do
@@ -262,8 +262,8 @@ renderAxis at@(AxisT et as rev ad) sz = do
         mapM_ drawLabel labels'
      where
        drawLabel (value,s) = do
-           drawText hta vta (axisPoint value `pvadd` (awayFromAxis offset)) s
-           textSize s
+           bDrawText hta vta (axisPoint value `pvadd` (awayFromAxis offset)) s
+           bTextSize s
 
    ag = axis_label_gap_ as
    pickfn = Just . invAxisPoint

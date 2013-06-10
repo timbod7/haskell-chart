@@ -18,7 +18,7 @@
 --        $ defaultPieLayout
 -- renderable = toRenderable layout
 -- @
-
+{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Pie(
@@ -105,7 +105,15 @@ defaultPieLayout = PieLayout {
     pie_margin_      = 10
 }
 
+instance ToRenderable PieChart where
+    type RenderableT m PieChart = PieChart
+    toRenderable p = Renderable {
+      minsize = minsizePie p,
+      render  = renderPie p
+    }
+
 instance ToRenderable PieLayout where
+    type RenderableT m PieLayout = PieLayout
     toRenderable p = fillBackground (pie_background_ p) (
        gridToRenderable $ aboveN
          [ tval $ addMargins (lm/2,0,0,0) (setPickFn nullPickFn title)
@@ -116,24 +124,21 @@ instance ToRenderable PieLayout where
         title = label (pie_title_style_ p) HTA_Centre VTA_Top (pie_title_ p)
         lm    = pie_margin_ p
 
-instance ToRenderable PieChart where
-    toRenderable p = Renderable {
-      minsize = minsizePie p,
-      render  = renderPie p
-    }
-
+extraSpace :: (ChartBackend m) => PieChart -> m (Double, Double)
 extraSpace p = do
-    textSizes <- mapM textSize (map pitem_label_ (pie_data_ p))
+    textSizes <- mapM bTextSize (map pitem_label_ (pie_data_ p))
     let maxw  = foldr (max.fst) 0 textSizes
     let maxh  = foldr (max.snd) 0 textSizes
     let maxo  = foldr (max.pitem_offset_) 0 (pie_data_ p)
     let extra = label_rgap + label_rlength + maxo
     return (extra + maxw, extra + maxh )
 
+minsizePie :: (ChartBackend m) => PieChart -> m (Double, Double)
 minsizePie p = do
     (extraw,extrah) <- extraSpace p
     return (extraw * 2, extrah * 2)
 
+renderPie :: (ChartBackend m) => PieChart -> (Double, Double) -> m (PickFn a)
 renderPie p (w,h) = do
     (extraw,extrah) <- extraSpace p
     let (w,h)  = (p_x p2 - p_x p1, p_y p2 - p_y p1)
@@ -151,8 +156,9 @@ renderPie p (w,h) = do
                   in [ pi{pitem_value_=pitem_value_ pi/total}
                      | pi <- pie_data_ p ]
 
-        paint :: Point -> Double -> Double -> (AlphaColour Double, PieItem)
-                 -> CRender Double
+        paint :: (ChartBackend m) 
+              => Point -> Double -> Double -> (AlphaColour Double, PieItem)
+              -> m Double
         paint center radius a1 (color,pitem) = do
             let ax     = 360.0 * (pitem_value_ pitem)
             let a2     = a1 + (ax / 2)
@@ -165,37 +171,37 @@ renderPie p (w,h) = do
             return a3
 
             where
-                pieLabel :: String -> Double -> Double -> CRender ()
+                pieLabel :: (ChartBackend m) => String -> Double -> Double -> m ()
                 pieLabel name angle offset = do
-                    setFontStyle (pie_label_style_ p)
-                    setLineStyle (pie_label_line_style_ p)
+                    bSetFontStyle (pie_label_style_ p)
+                    bSetLineStyle (pie_label_line_style_ p)
 
                     moveTo (ray angle (radius + label_rgap+offset))
                     let p1 = ray angle (radius+label_rgap+label_rlength+offset)
                     lineTo p1
-                    (tw,th) <- textSize name
+                    (tw,th) <- bTextSize name
                     let (offset,anchor) = if angle < 90 || angle > 270 
                                           then ((0+),HTA_Left)
                                           else ((0-),HTA_Right)
-                    cRelLineTo (offset (tw + label_rgap)) 0
-                    cStroke
+                    bRelLineTo $ Point (offset (tw + label_rgap)) 0
+                    bStroke
 
                     let p2 = p1 `pvadd` (Vector (offset label_rgap) 0)
-                    drawText anchor VTA_Bottom p2 name
+                    bDrawText anchor VTA_Bottom p2 name
 
-                pieSlice :: Point -> Double -> Double -> AlphaColour Double
-                            -> CRender ()
+                pieSlice :: (ChartBackend m) => Point -> Double -> Double -> AlphaColour Double
+                            -> m ()
                 pieSlice (Point x y) a1 a2 color = do
-                    cNewPath
-                    cArc x y radius (radian a1) (radian a2)
-                    cLineTo x y
-                    cLineTo x y
-                    cClosePath
+                    bNewPath
+                    bArc (Point x y) radius (radian a1) (radian a2)
+                    bLineTo $ Point x y
+                    bLineTo $ Point x y
+                    bClosePath
 
-                    cSetSourceColor color
-                    cFillPreserve
-                    cSetSourceColor (withOpacity white 0.1)
-                    cStroke
+                    bSetSourceColor color
+                    bFillPreserve
+                    bSetSourceColor (withOpacity white 0.1)
+                    bStroke
 
                 ray :: Double -> Double -> Point
                 ray angle r = Point x' y'

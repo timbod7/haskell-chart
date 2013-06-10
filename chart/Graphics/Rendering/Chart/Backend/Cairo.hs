@@ -163,14 +163,14 @@ convertFontWeight fw = case fw of
 -- Assorted helper functions in Cairo Usage
 -- -----------------------------------------------------------------------
 
-alignp :: Point -> CRender Point
+alignp :: (ChartBackend m) => Point -> m Point
 alignp p = do 
-    alignfn <- fmap cenv_point_alignfn ask
+    alignfn <- liftM cenv_point_alignfn ask
     return (alignfn p)
 
-alignc :: Point -> CRender Point
+alignc :: (ChartBackend m) => Point -> m Point
 alignc p = do 
-    alignfn <- fmap cenv_coord_alignfn ask
+    alignfn <- liftM cenv_coord_alignfn ask
     return (alignfn p)
 
 -- | Function to draw a textual label anchored by one of its corners
@@ -178,14 +178,14 @@ alignc p = do
 drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> CRender ()
 drawText hta vta p s = drawTextR hta vta 0 p s
 
-moveTo, lineTo :: Point -> CRender ()
+moveTo, lineTo :: (ChartBackend m) => Point -> m ()
 moveTo p  = do
     p' <- alignp p
-    c $ C.moveTo (p_x p') (p_y p')
+    bMoveTo p'
 
 lineTo p = do
     p' <- alignp p
-    c $ C.lineTo (p_x p') (p_y p')
+    bLineTo p'
 
 setClipRegion :: Point -> Point -> CRender ()
 setClipRegion p2 p3 = do    
@@ -196,11 +196,11 @@ setClipRegion p2 p3 = do
     c $ C.lineTo (p_x p2) (p_y p2)
     c $ C.clip
 
-stepPath :: [Point] -> CRender()
-stepPath (p:ps) = c $ do
-    C.newPath                    
-    C.moveTo (p_x p) (p_y p)
-    mapM_ (\p -> C.lineTo (p_x p) (p_y p)) ps
+stepPath :: (ChartBackend m) => [Point] -> m ()
+stepPath (p:ps) = do
+    bNewPath                    
+    bMoveTo p
+    mapM_ bLineTo ps
 stepPath _  = return ()
 
 -- | Draw lines between the specified points.
@@ -208,22 +208,22 @@ stepPath _  = return ()
 -- The points will be "corrected" by the cenv_point_alignfn, so that
 -- when drawing bitmaps, 1 pixel wide lines will be centred on the
 -- pixels.
-strokePath :: [Point] -> CRender()
+strokePath :: (ChartBackend m) => [Point] -> m ()
 strokePath pts = do
-    alignfn <- fmap cenv_point_alignfn ask
+    alignfn <- liftM cenv_point_alignfn ask
     stepPath (map alignfn pts)
-    c $ C.stroke
+    bStroke
 
 -- | Fill the region with the given corners.
 --
 -- The points will be "corrected" by the cenv_coord_alignfn, so that
 -- when drawing bitmaps, the edges of the region will fall between
 -- pixels.
-fillPath ::  [Point] -> CRender()
+fillPath :: (ChartBackend m) => [Point] -> m ()
 fillPath pts = do
-    alignfn <- fmap cenv_coord_alignfn ask
+    alignfn <- liftM cenv_coord_alignfn ask
     stepPath (map alignfn pts)
-    c $ C.fill
+    bFill
 
 setFontStyle :: FontStyle -> CRender ()
 setFontStyle f = do

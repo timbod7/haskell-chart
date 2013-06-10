@@ -6,7 +6,8 @@
 -- 
 -- Types and functions for handling the legend(s) on a chart. A legend
 -- is an area on the chart used to label the plotted values.
-
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Legend(
@@ -48,12 +49,13 @@ data LegendOrientation = LORows Int
                        | LOCols Int
                        
 
-data Legend x y = Legend LegendStyle [(String, Rect -> CRender ())]
+data Legend m x y = Legend LegendStyle [(String, Rect -> m ())]
 
-instance ToRenderable (Legend x y) where
+instance ToRenderable (Legend m x y) where
+  type RenderableT m (Legend m' x y) = Legend m x y
   toRenderable = setPickFn nullPickFn.legendToRenderable
 
-legendToRenderable :: Legend x y -> Renderable String
+legendToRenderable :: forall m x y. (ChartBackend m) => Legend m x y -> Renderable m String
 legendToRenderable (Legend ls lvs) = gridToRenderable grid
   where
     grid = case legend_orientation_ ls of
@@ -65,7 +67,7 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
 
     mkGrid n join1 join2 = join1 [ join2 (map rf ps1) | ps1 <- groups n ps ]
 
-    ps  :: [(String, [Rect -> CRender ()])]
+    ps  :: (ChartBackend m) => [(String, [Rect -> m ()])]
     ps   = join_nub lvs
 
     rf (title,rfs) = besideN [gpic,ggap2,gtitle]

@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Grid
@@ -224,9 +226,9 @@ foldT f iv ft = foldr f' iv (assocs ft)
 ----------------------------------------------------------------------
 type DArray = Array Int Double
 
-getSizes :: Grid (Renderable a) -> CRender (DArray, DArray, DArray, DArray)
+getSizes :: forall m a. (ChartBackend m) => Grid (Renderable m a) -> m (DArray, DArray, DArray, DArray)
 getSizes t = do
-    szs <- mapGridM minsize t :: CRender (Grid RectSize)
+    szs <- mapGridM minsize t :: m (Grid RectSize)
     let szs'     = flatten szs
     let widths   = accumArray max 0 (0, width  t - 1)
                                                    (foldT (ef wf  fst) [] szs')
@@ -247,12 +249,13 @@ getSizes t = do
                                    | otherwise    = r
 
 instance (ToRenderable a) => ToRenderable (Grid a) where
+    type RenderableT m (Grid a) = Grid a
     toRenderable = gridToRenderable . fmap toRenderable
 
-gridToRenderable :: Grid (Renderable a) -> Renderable a
+gridToRenderable :: forall m a. (ChartBackend m) => Grid (Renderable m a) -> Renderable m a
 gridToRenderable t = Renderable minsizef renderf
   where
-    minsizef :: CRender RectSize
+    minsizef :: m RectSize
     minsizef = do
         (widths, heights, xweights, yweights) <- getSizes t
         return (sum (elems widths), sum (elems heights))
@@ -272,8 +275,8 @@ gridToRenderable t = Renderable minsizef renderf
             let (Rect p0 p1) = mkRect borders loc span
             p0'@(Point x0 y0) <- alignc p0
             p1'@(Point x1 y1) <- alignc p1
-            preserveCState $ do
-                cTranslate x0 y0
+            bLocal $ do
+                bTranslate $ Point x0 y0
                 pf <- render r (x1-x0,y1-y0)
                 return (newpf pf x0 y0)
         (Above t1 t2 _) -> do
