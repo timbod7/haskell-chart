@@ -42,8 +42,7 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , cFillPreserve
   , cSetSourceColor
   , cPaint
-  , cFontExtents
-  , cFontExtentsDescent
+  , cFontDescent
   , cShowText
 
   , cRenderToPNGFile
@@ -360,8 +359,11 @@ cFill = c $ C.fill
 cFillPreserve = c $ C.fillPreserve
 cSetSourceColor color = c $ setSourceColor color
 cPaint = c $ C.paint
-cFontExtents = c $ C.fontExtents
-cFontExtentsDescent fe = C.fontExtentsDescent fe
+cFontDescent = do
+  fe <- c $ C.fontExtents
+  return $ C.fontExtentsDescent fe
+--cFontExtents = c $ C.fontExtents
+--cFontExtentsDescent fe = C.fontExtentsDescent fe
 cShowText s = c $ C.showText s
 
 cRenderToPNGFile :: CRender a -> Int -> Int -> FilePath -> IO a

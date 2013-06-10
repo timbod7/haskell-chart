@@ -196,8 +196,8 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
     rf (w0,h0) = preserveCState $ do
        setFontStyle fs
        sz@(w,h) <- textSize s
-       fe <- cFontExtents
-       cTranslate 0 (-cFontExtentsDescent fe)
+       descent <- cFontDescent
+       cTranslate 0 (-descent)
        cTranslate (xadj sz hta 0 w0) (yadj sz vta 0 h0)
        cRotate rot'
        cMoveTo (-w/2) (h/2)
