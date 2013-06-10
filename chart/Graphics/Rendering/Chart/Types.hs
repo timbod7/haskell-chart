@@ -77,7 +77,98 @@ runCRender (DR m) e = runReaderT m e
 
 c :: C.Render a -> CRender a
 c = DR . lift
+{-
+class ChartBackend b where
+  type ChartRenderM b :: * -> *
+  type ChartOutput  b :: *
+  bNewPath :: CRender (ChartRenderM b) ()
+  bClosePath :: CRender (ChartRenderM b) ()
+  bMoveTo :: Point -> CRender (ChartRenderM b) ()
+  bLineTo :: Point -> CRender (ChartRenderM b) ()
+  bRelLineTo :: Point -> CRender (ChartRenderM b) ()
+  
+  bArc :: Point  -- ^ The center position
+       -> Double -- ^ The radius
+       -> Double -- ^ Start angle, in radians
+       -> Double -- ^ End angle, in radians
+       -> CRender (ChartRenderM b) ()
+  bArcNegative :: Point  -- ^ The center position
+               -> Double -- ^ The radius
+               -> Double -- ^ Start angle, in radians
+               -> Double -- ^ End angle, in radians
+               -> CRender (ChartRenderM b) ()
+  
+  bTranslate :: Point -> CRender (ChartRenderM b) ()
+  bRotate :: Double -> CRender (ChartRenderM b) ()
+  
+  bStroke :: CRender (ChartRenderM b) ()
+  bFill :: CRender (ChartRenderM b) ()
+  bFillPreserve :: CRender (ChartRenderM b) ()
+  bPaint :: CRender (ChartRenderM b) ()
+  
+  bLocal :: CRender (ChartRenderM b) a -> CRender (ChartRenderM b) a
+  
+  bSetSourceColor :: AlphaColour Double -> CRender (ChartRenderM b) ()
+  
+  bSetFontStyle :: FontStyle -> CRender (ChartRenderM b) ()
+  bSetFillStyle :: FillStyle -> CRender (ChartRenderM b) ()
+  bSetLineStyle :: LineStyle -> CRender (ChartRenderM b) ()
+  bSetClipRegion :: Rect -> CRender (ChartRenderM b) ()
+  
+  bTextSize :: String -> CRender (ChartRenderM b) RectSize
+  bFontExtents :: CRenter (ChartRenderM b) FontExtents
+  bShowText :: String -> CRender (ChartRenderM b) ()
+  
+  -- | Draw a single point at the given location.
+  bDrawPoint :: PointStyle -- ^ Style to use when rendering the point.
+             -> Point      -- ^ Position of the point to render.
+             -> CRender (ChartRenderM b) ()
 
+  -- | Recturn the bounding rectangle for a text string positioned
+  --   where it would be drawn by drawText
+  bTextRect :: HTextAnchor -- ^ Horizontal text anchor.
+            -> VTextAnchor -- ^ Vertical text anchor.
+            -> Point       -- ^ Anchor point.
+            -> String      -- ^ Text to render.
+            -> CRender (ChartRenderM b) Rect
+  
+  -- | Function to draw a textual label anchored by one of its corners
+  --   or edges.
+  bDrawText :: HTextAnchor -- ^ Horizontal text anchor.
+            -> VTextAnchor -- ^ Vertical text anchor.
+            -> Point       -- ^ Anchor point.
+            -> String      -- ^ Text to render.
+            -> CRender (ChartRenderM b) ()
+  
+  -- | Draw a multiline text anchored by one of its corners
+  --   or edges, with rotation.
+  bDrawTextsR :: HTextAnchor -- ^ Horizontal text anchor.
+              -> VTextAnchor -- ^ Vertical text anchor.
+              -> Double      -- ^ Rotation angle in degrees.
+              -> Point       -- ^ Anchor point to rotate around.
+              -> String      -- ^ Text to render.
+              -> CRender (ChartRenderM b) ()
+  
+  -- | Draw a textual label anchored by one of its corners
+  --   or edges, with rotation.
+  bDrawTextR :: HTextAnchor -- ^ Horizontal text anchor.
+             -> VTextAnchor -- ^ Vertical text anchor.
+             -> Double      -- ^ Rotation angle in degrees.
+             -> Point       -- ^ Anchor point to rotate around.
+             -> String      -- ^ Text to render.
+             -> CRender (ChartRenderM b) ()
+  
+  runBackend :: CRender (ChartRenderM b) a -> (ChartOutput b, a)
+-}
+
+data FontExtents = FontExtents
+  { fontExtentsAscent  :: Double
+  , fontExtentsDescent :: Double
+  , fontExtentsHeight  :: Double
+  , fontExtentsMaxXAdvance :: Double
+  , fontExtentsMaxYAdvance :: Double
+  }
+  
 -- -----------------------------------------------------------------------
 -- Line Types
 -- -----------------------------------------------------------------------
