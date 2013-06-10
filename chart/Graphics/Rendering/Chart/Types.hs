@@ -13,6 +13,7 @@ module Graphics.Rendering.Chart.Types
   
   , FontWeight(..)
   , FontSlant(..)
+  , FontExtents(..)
   , FontStyle(..)
   
   , PointShape(..)
@@ -22,7 +23,6 @@ module Graphics.Rendering.Chart.Types
 
   , HTextAnchor(..)
   , VTextAnchor(..)
-  , FontWeight(..)
   
   , line_width
   , line_color
