@@ -1,9 +1,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Types
   ( CRender
   , CEnv(..)
+  , ChartBackend(..)
   , runCRender
   , c
   
@@ -77,52 +79,51 @@ runCRender (DR m) e = runReaderT m e
 
 c :: C.Render a -> CRender a
 c = DR . lift
-{-
-class ChartBackend b where
-  type ChartRenderM b :: * -> *
-  type ChartOutput  b :: *
-  bNewPath :: CRender (ChartRenderM b) ()
-  bClosePath :: CRender (ChartRenderM b) ()
-  bMoveTo :: Point -> CRender (ChartRenderM b) ()
-  bLineTo :: Point -> CRender (ChartRenderM b) ()
-  bRelLineTo :: Point -> CRender (ChartRenderM b) ()
+
+class (Monad m) => ChartBackend m where
+  type ChartOutput a :: *
+  bNewPath :: m ()
+  bClosePath :: m ()
+  bMoveTo :: Point -> m ()
+  bLineTo :: Point -> m ()
+  bRelLineTo :: Point -> m ()
   
   bArc :: Point  -- ^ The center position
        -> Double -- ^ The radius
        -> Double -- ^ Start angle, in radians
        -> Double -- ^ End angle, in radians
-       -> CRender (ChartRenderM b) ()
+       -> m ()
   bArcNegative :: Point  -- ^ The center position
                -> Double -- ^ The radius
                -> Double -- ^ Start angle, in radians
                -> Double -- ^ End angle, in radians
-               -> CRender (ChartRenderM b) ()
+               -> m ()
   
-  bTranslate :: Point -> CRender (ChartRenderM b) ()
-  bRotate :: Double -> CRender (ChartRenderM b) ()
+  bTranslate :: Point -> m ()
+  bRotate :: Double -> m ()
   
-  bStroke :: CRender (ChartRenderM b) ()
-  bFill :: CRender (ChartRenderM b) ()
-  bFillPreserve :: CRender (ChartRenderM b) ()
-  bPaint :: CRender (ChartRenderM b) ()
+  bStroke :: m ()
+  bFill :: m ()
+  bFillPreserve :: m ()
+  bPaint :: m ()
   
-  bLocal :: CRender (ChartRenderM b) a -> CRender (ChartRenderM b) a
+  bLocal :: m a -> m a
   
-  bSetSourceColor :: AlphaColour Double -> CRender (ChartRenderM b) ()
+  bSetSourceColor :: AlphaColour Double -> m ()
   
-  bSetFontStyle :: FontStyle -> CRender (ChartRenderM b) ()
-  bSetFillStyle :: FillStyle -> CRender (ChartRenderM b) ()
-  bSetLineStyle :: LineStyle -> CRender (ChartRenderM b) ()
-  bSetClipRegion :: Rect -> CRender (ChartRenderM b) ()
+  bSetFontStyle :: FontStyle -> m ()
+  bSetFillStyle :: FillStyle -> m ()
+  bSetLineStyle :: LineStyle -> m ()
+  bSetClipRegion :: Rect -> m ()
   
-  bTextSize :: String -> CRender (ChartRenderM b) RectSize
-  bFontExtents :: CRenter (ChartRenderM b) FontExtents
-  bShowText :: String -> CRender (ChartRenderM b) ()
+  bTextSize :: String -> m RectSize
+  bFontExtents :: m FontExtents
+  bShowText :: String -> m ()
   
   -- | Draw a single point at the given location.
   bDrawPoint :: PointStyle -- ^ Style to use when rendering the point.
              -> Point      -- ^ Position of the point to render.
-             -> CRender (ChartRenderM b) ()
+             -> m ()
 
   -- | Recturn the bounding rectangle for a text string positioned
   --   where it would be drawn by drawText
@@ -130,7 +131,7 @@ class ChartBackend b where
             -> VTextAnchor -- ^ Vertical text anchor.
             -> Point       -- ^ Anchor point.
             -> String      -- ^ Text to render.
-            -> CRender (ChartRenderM b) Rect
+            -> m Rect
   
   -- | Function to draw a textual label anchored by one of its corners
   --   or edges.
@@ -138,7 +139,7 @@ class ChartBackend b where
             -> VTextAnchor -- ^ Vertical text anchor.
             -> Point       -- ^ Anchor point.
             -> String      -- ^ Text to render.
-            -> CRender (ChartRenderM b) ()
+            -> m ()
   
   -- | Draw a multiline text anchored by one of its corners
   --   or edges, with rotation.
@@ -147,7 +148,7 @@ class ChartBackend b where
               -> Double      -- ^ Rotation angle in degrees.
               -> Point       -- ^ Anchor point to rotate around.
               -> String      -- ^ Text to render.
-              -> CRender (ChartRenderM b) ()
+              -> m ()
   
   -- | Draw a textual label anchored by one of its corners
   --   or edges, with rotation.
@@ -156,10 +157,9 @@ class ChartBackend b where
              -> Double      -- ^ Rotation angle in degrees.
              -> Point       -- ^ Anchor point to rotate around.
              -> String      -- ^ Text to render.
-             -> CRender (ChartRenderM b) ()
+             -> m ()
   
-  runBackend :: CRender (ChartRenderM b) a -> (ChartOutput b, a)
--}
+  runBackend :: m a -> ChartOutput a
 
 data FontExtents = FontExtents
   { fontExtentsAscent  :: Double

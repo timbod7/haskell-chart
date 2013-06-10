@@ -1,4 +1,6 @@
 
+{-# LANGUAGE TypeFamilies #-}
+
 -- | The backend to render charts with cairo.
 module Graphics.Rendering.Chart.Backend.Cairo
   ( convertLineCap, convertLineJoin
@@ -66,11 +68,67 @@ import Graphics.Rendering.Chart.Types
   ( c
   , runCRender
   , CRender, CEnv(..)
+  , ChartBackend(..)
   , PointShape(..)
   , FillStyle(..), PointStyle(..), FontStyle(..), LineStyle(..)
   , HTextAnchor(..), VTextAnchor(..)
   )
 import Graphics.Rendering.Chart.Geometry
+
+data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
+
+instance ChartBackend CRender where
+  type ChartOutput a = CairoBackend -> Int -> Int -> FilePath -> IO ()
+  bNewPath = cNewPath
+  bClosePath = cClosePath
+  bMoveTo p = cMoveTo (p_x p) (p_y p)
+  bLineTo p = cLineTo (p_x p) (p_y p)
+  bRelLineTo p = cRelLineTo (p_x p) (p_y p)
+  
+  bArc p = cArc (p_x p) (p_y p)
+  bArcNegative p = cArcNegative (p_x p) (p_y p)
+  
+  bTranslate p = cTranslate (p_x p) (p_y p)
+  bRotate = cRotate
+  
+  bStroke = cStroke
+  bFill = cFill
+  bFillPreserve = cFillPreserve
+  bPaint = cPaint
+  
+  bLocal = preserveCState
+  
+  bSetSourceColor = cSetSourceColor
+  
+  bSetFontStyle = setFontStyle
+  bSetFillStyle = setFillStyle
+  bSetLineStyle = setLineStyle
+  bSetClipRegion (Rect tl br) = setClipRegion tl br
+  
+  bTextSize = textSize
+  bFontExtents = do
+    fe <- c $ C.fontExtents
+    return $ G.FontExtents 
+      { G.fontExtentsAscent  = C.fontExtentsAscent  fe
+      , G.fontExtentsDescent = C.fontExtentsDescent fe
+      , G.fontExtentsHeight  = C.fontExtentsHeight  fe
+      , G.fontExtentsMaxXAdvance = C.fontExtentsMaxXadvance fe
+      , G.fontExtentsMaxYAdvance = C.fontExtentsMaxYadvance fe
+      }
+  bShowText = cShowText
+  
+  bDrawPoint = drawPoint
+  
+  bTextRect = textDrawRect
+  bDrawText = drawText
+  bDrawTextsR = drawTextsR
+  bDrawTextR = drawTextR
+  
+  runBackend m b = case b of
+    CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
+    CairoSVG -> cRenderToSVGFile m
+    CairoPS  -> cRenderToPSFile  m
+    CairoPDF -> cRenderToPDFFile m
 
 -- -----------------------------------------------------------------------
 -- Type Conversions: Chart -> Cairo
