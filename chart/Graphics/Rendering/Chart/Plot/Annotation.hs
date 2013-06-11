@@ -51,17 +51,16 @@ instance ToPlot PlotAnnotation where
         vs = plot_annotation_values_ p
 
 
-renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> CRender ()
-
-renderAnnotation p pMap = preserveCState $ do
-                            setFontStyle style                            
+renderAnnotation :: (ChartBackend m) => PlotAnnotation x y -> PointMapFn x y -> m ()
+renderAnnotation p pMap = bLocal $ do
+                            bSetFontStyle style                            
                             mapM_ drawOne values
     where hta = plot_annotation_hanchor_ p
           vta = plot_annotation_vanchor_ p
           values = plot_annotation_values_ p
           angle =  plot_annotation_angle_ p
           style =  plot_annotation_style_ p
-          drawOne (x,y,s) = drawTextsR hta vta angle point s
+          drawOne (x,y,s) = bDrawTextsR hta vta angle point s
               where point = pMap (LValue x, LValue y)
 
 defaultPlotAnnotation = PlotAnnotation {

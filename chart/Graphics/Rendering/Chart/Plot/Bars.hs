@@ -122,7 +122,7 @@ defaultPlotBars = PlotBars {
     istyles   = map mkstyle defaultColorSeq
     mkstyle c = (solidFillStyle c, Just (solidLine 1.0 $ opaque black))
 
-plotBars :: (BarsPlotValue y) => PlotBars x y -> Plot x y
+plotBars :: (BarsPlotValue y, ChartBackend m) => PlotBars x y -> Plot m x y
 plotBars p = Plot {
         plot_render_     = renderPlotBars p,
         plot_legend_     = zip (plot_bars_titles_ p)
@@ -131,20 +131,20 @@ plotBars p = Plot {
         plot_all_points_ = allBarPoints p
     }
 
-renderPlotBars :: (BarsPlotValue y) =>
-                  PlotBars x y -> PointMapFn x y -> CRender ()
+renderPlotBars :: (BarsPlotValue y, ChartBackend m) =>
+                  PlotBars x y -> PointMapFn x y -> m ()
 renderPlotBars p pmap = case (plot_bars_style_ p) of
       BarsClustered -> forM_ vals clusteredBars
       BarsStacked   -> forM_ vals stackedBars
   where
-    clusteredBars (x,ys) = preserveCState $ do
+    clusteredBars (x,ys) = bLocal $ do
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
-           setFillStyle fstyle
+           bSetFillStyle fstyle
            fillPath (barPath (offset i) x yref0 y)
-           cFill
+           bFill
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
-             setLineStyle lstyle
+             bSetLineStyle lstyle
              strokePath (barPath (offset i) x yref0 y)
 
     offset = case (plot_bars_alignment_ p) of
@@ -152,7 +152,7 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
       BarsRight    -> \i -> fromIntegral (i-nys) * width
       BarsCentered -> \i -> fromIntegral (2*i-nys) * width/2
 
-    stackedBars (x,ys) =  preserveCState $ do
+    stackedBars (x,ys) =  bLocal $ do
        let y2s = zip (yref0:stack ys) (stack ys)
        let ofs = case (plot_bars_alignment_ p) of {
          BarsLeft     -> 0          ;
@@ -160,11 +160,11 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
          BarsCentered -> (-width/2)
          }
        forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
-           setFillStyle fstyle
+           bSetFillStyle fstyle
            fillPath (barPath ofs x y0 y1)
        forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
-               setLineStyle lstyle
+               bSetLineStyle lstyle
                strokePath (barPath ofs x y0 y1)
 
     barPath xos x y0 y1 = do
@@ -211,10 +211,10 @@ stack :: (BarsPlotValue y) => [y] -> [y]
 stack ys = scanl1 barsAdd ys
 
 
-renderPlotLegendBars :: (FillStyle,Maybe LineStyle) -> Rect
-                        -> CRender ()
+renderPlotLegendBars :: (ChartBackend m) => (FillStyle,Maybe LineStyle) -> Rect
+                        -> m ()
 renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
-    setFillStyle fstyle
+    bSetFillStyle fstyle
     fillPath (rectPath r)
 
 ----------------------------------------------------------------------

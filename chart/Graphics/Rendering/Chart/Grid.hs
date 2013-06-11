@@ -247,11 +247,11 @@ getSizes t = do
 
       ef f ds loc (size,span,ew) r | ds span == 1 = (f loc size ew:r)
                                    | otherwise    = r
-
+{-
 instance (ToRenderable a) => ToRenderable (Grid a) where
     type RenderableT m (Grid a) = Grid a
     toRenderable = gridToRenderable . fmap toRenderable
-
+-}
 gridToRenderable :: forall m a. (ChartBackend m) => Grid (Renderable m a) -> Renderable m a
 gridToRenderable t = Renderable minsizef renderf
   where

@@ -74,8 +74,8 @@ instance ToPlot PlotCandle where
       where
         pts = plot_candle_values_ p
 
-renderPlotCandle :: PlotCandle x y -> PointMapFn x y -> CRender ()
-renderPlotCandle p pmap = preserveCState $ do
+renderPlotCandle :: (ChartBackend m) => PlotCandle x y -> PointMapFn x y -> m ()
+renderPlotCandle p pmap = bLocal $ do
     mapM_ (drawCandle p . candlemap) (plot_candle_values_ p)
   where
     candlemap (Candle x lo op mid cl hi) =
@@ -93,47 +93,47 @@ drawCandle ps (Candle x lo open mid close hi) = do
         let ct = plot_candle_centre_ ps
         let f  = plot_candle_fill_ ps
         -- the pixel coordinate system is inverted wrt the value coords.
-        when f $ do setFillStyle (if open >= close
-                                  then plot_candle_rise_fill_style_ ps
-                                  else plot_candle_fall_fill_style_ ps)
+        when f $ do bSetFillStyle (if open >= close
+                                   then plot_candle_rise_fill_style_ ps
+                                   else plot_candle_fall_fill_style_ ps)
 
-                    cNewPath
-                    cMoveTo (x-wd) open
-                    cLineTo (x-wd) close
-                    cLineTo (x+wd) close
-                    cLineTo (x+wd) open
-                    cLineTo (x-wd) open
-                    cFill
+                    bNewPath
+                    bMoveTo $ Point (x-wd) open
+                    bLineTo $ Point (x-wd) close
+                    bLineTo $ Point (x+wd) close
+                    bLineTo $ Point (x+wd) open
+                    bLineTo $ Point (x-wd) open
+                    bFill
 
-        setLineStyle (plot_candle_line_style_ ps)
-        cNewPath
-        cMoveTo (x-wd) open
-        cLineTo (x-wd) close
-        cLineTo (x+wd) close
-        cLineTo (x+wd) open
-        cLineTo (x-wd) open
-        cStroke
+        bSetLineStyle (plot_candle_line_style_ ps)
+        bNewPath
+        bMoveTo $ Point (x-wd) open
+        bLineTo $ Point (x-wd) close
+        bLineTo $ Point (x+wd) close
+        bLineTo $ Point (x+wd) open
+        bLineTo $ Point (x-wd) open
+        bStroke
 
-        cNewPath
-        cMoveTo x (min lo hi)
-        cLineTo x (min open close)
-        cMoveTo x (max open close)
-        cLineTo x (max hi lo)
-        cStroke
+        bNewPath
+        bMoveTo $ Point x (min lo hi)
+        bLineTo $ Point x (min open close)
+        bMoveTo $ Point x (max open close)
+        bLineTo $ Point x (max hi lo)
+        bStroke
 
-        when (tl > 0) $ do cNewPath
-                           cMoveTo (x-tl) lo
-                           cLineTo (x+tl) lo
-                           cMoveTo (x-tl) hi
-                           cLineTo (x+tl) hi
-                           cStroke
+        when (tl > 0) $ do bNewPath
+                           bMoveTo $ Point (x-tl) lo
+                           bLineTo $ Point (x+tl) lo
+                           bMoveTo $ Point (x-tl) hi
+                           bLineTo $ Point (x+tl) hi
+                           bStroke
 
-        when (ct > 0) $ do cMoveTo (x-ct) mid
-                           cLineTo (x+ct) mid
-                           cStroke
+        when (ct > 0) $ do bMoveTo $ Point (x-ct) mid
+                           bLineTo $ Point (x+ct) mid
+                           bStroke
 
-renderPlotLegendCandle :: PlotCandle x y -> Rect -> CRender ()
-renderPlotLegendCandle p r@(Rect p1 p2) = preserveCState $ do
+renderPlotLegendCandle :: (ChartBackend m) => PlotCandle x y -> Rect -> m ()
+renderPlotLegendCandle p r@(Rect p1 p2) = bLocal $ do
     drawCandle p{ plot_candle_width_ = 2}
                       (Candle ((p_x p1 + p_x p2)*1/4) lo open mid close hi)
     drawCandle p{ plot_candle_width_ = 2}

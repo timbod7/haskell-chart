@@ -75,8 +75,8 @@ instance ToPlot PlotErrBars where
       where
         pts = plot_errbars_values_ p
 
-renderPlotErrBars :: PlotErrBars x y -> PointMapFn x y -> CRender ()
-renderPlotErrBars p pmap = preserveCState $ do
+renderPlotErrBars :: (ChartBackend m) => PlotErrBars x y -> PointMapFn x y -> m ()
+renderPlotErrBars p pmap = bLocal $ do
     mapM_ (drawErrBar.epmap) (plot_errbars_values_ p)
   where
     epmap (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) =
@@ -90,24 +90,24 @@ renderPlotErrBars p pmap = preserveCState $ do
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = plot_errbars_tick_length_ ps
         let oh = plot_errbars_overhang_ ps
-        setLineStyle (plot_errbars_line_style_ ps)
-        cNewPath
-        cMoveTo (xl-oh) y
-        cLineTo (xh+oh) y
-        cMoveTo x (yl-oh)
-        cLineTo x (yh+oh)
-        cMoveTo xl (y-tl)
-        cLineTo xl (y+tl)
-        cMoveTo (x-tl) yl
-        cLineTo (x+tl) yl
-        cMoveTo xh (y-tl)
-        cLineTo xh (y+tl)
-        cMoveTo (x-tl) yh
-        cLineTo (x+tl) yh
-	cStroke
+        bSetLineStyle (plot_errbars_line_style_ ps)
+        bNewPath
+        bMoveTo $ Point (xl-oh) y
+        bLineTo $ Point (xh+oh) y
+        bMoveTo $ Point x (yl-oh)
+        bLineTo $ Point x (yh+oh)
+        bMoveTo $ Point xl (y-tl)
+        bLineTo $ Point xl (y+tl)
+        bMoveTo $ Point (x-tl) yl
+        bLineTo $ Point (x+tl) yl
+        bMoveTo $ Point xh (y-tl)
+        bLineTo $ Point xh (y+tl)
+        bMoveTo $ Point (x-tl) yh
+        bLineTo $ Point (x+tl) yh
+        bStroke
 
-renderPlotLegendErrBars :: PlotErrBars x y -> Rect -> CRender ()
-renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
+renderPlotLegendErrBars :: (ChartBackend m) => PlotErrBars x y -> Rect -> m ()
+renderPlotLegendErrBars p r@(Rect p1 p2) = bLocal $ do
     drawErrBar (symErrPoint (p_x p1)              ((p_y p1 + p_y p2)/2) dx dx)
     drawErrBar (symErrPoint ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2) dx dx)
     drawErrBar (symErrPoint (p_x p2)              ((p_y p1 + p_y p2)/2) dx dx)

@@ -82,9 +82,9 @@ instance (PlotValue z) => ToPlot (AreaSpots z) where
                                          , map snd3 (area_spots_values_ p) )
                     }
 
-renderAreaSpots  :: (PlotValue z) =>
-                    AreaSpots z x y -> PointMapFn x y -> CRender ()
-renderAreaSpots p pmap = preserveCState $
+renderAreaSpots  :: (PlotValue z, ChartBackend m) =>
+                    AreaSpots z x y -> PointMapFn x y -> m ()
+renderAreaSpots p pmap = bLocal $
     forM_ (scaleMax ((area_spots_max_radius_ p)^2)
                     (area_spots_values_ p))
           (\ (x,y,z)-> do
@@ -93,11 +93,11 @@ renderAreaSpots p pmap = preserveCState $
                                                     flip withOpacity 
                                                       (area_spots_opacity_ p) $
                                                     area_spots_fillcolour_ p
-              drawPoint psSpot (pmap (LValue x, LValue y))
+              bDrawPoint psSpot (pmap (LValue x, LValue y))
               let psOutline = hollowCircles radius
                                                       (area_spots_linethick_ p)
                                                       (area_spots_linecolour_ p)
-              drawPoint psOutline (pmap (LValue x, LValue y))
+              bDrawPoint psOutline (pmap (LValue x, LValue y))
           )
   where
     scaleMax :: PlotValue z => Double -> [(x,y,z)] -> [(x,y,Double)]
@@ -105,19 +105,19 @@ renderAreaSpots p pmap = preserveCState $
                             scale v  = n * toValue v / largest
                         in map (\ (x,y,z) -> (x,y, scale z)) points
 
-renderSpotLegend :: AreaSpots z x y -> Rect -> CRender ()
-renderSpotLegend p r@(Rect p1 p2) = preserveCState $ do
+renderSpotLegend :: (ChartBackend m) => AreaSpots z x y -> Rect -> m ()
+renderSpotLegend p r@(Rect p1 p2) = bLocal $ do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2
     let psSpot    = filledCircles radius $
                                           flip withOpacity 
                                                (area_spots_opacity_ p) $
                                           area_spots_fillcolour_ p
-    drawPoint psSpot centre
+    bDrawPoint psSpot centre
     let psSpot = hollowCircles radius
                                             (area_spots_linethick_ p)
                                             (area_spots_linecolour_ p)
-    drawPoint psSpot centre
+    bDrawPoint psSpot centre
   where
     linearInterpolate (Point x0 y0) (Point x1 y1) =
         Point (x0 + abs(x1-x0)/2) (y0 + abs(y1-y0)/2)
@@ -154,9 +154,9 @@ instance (PlotValue z, PlotValue t, Show t) => ToPlot (AreaSpots4D z t) where
                                          , map snd4 (area_spots_4d_values_ p) )
                     }
 
-renderAreaSpots4D  :: (PlotValue z, PlotValue t, Show t) =>
-                      AreaSpots4D z t x y -> PointMapFn x y -> CRender ()
-renderAreaSpots4D p pmap = preserveCState $
+renderAreaSpots4D  :: (PlotValue z, PlotValue t, Show t, ChartBackend m) =>
+                      AreaSpots4D z t x y -> PointMapFn x y -> m ()
+renderAreaSpots4D p pmap = bLocal $
     forM_ (scaleMax ((area_spots_4d_max_radius_ p)^2)
                     (length (area_spots_4d_palette_ p))
                     (area_spots_4d_values_ p))
@@ -166,11 +166,11 @@ renderAreaSpots4D p pmap = preserveCState $
               let psSpot
                     = filledCircles radius $
                           flip withOpacity (area_spots_4d_opacity_ p) $ colour
-              drawPoint psSpot (pmap (LValue x, LValue y))
+              bDrawPoint psSpot (pmap (LValue x, LValue y))
               let psOutline
                     = hollowCircles radius (area_spots_4d_linethick_ p)
                                            (opaque colour)
-              drawPoint psOutline (pmap (LValue x, LValue y))
+              bDrawPoint psOutline (pmap (LValue x, LValue y))
           )
   where
     scaleMax :: (PlotValue z, PlotValue t, Show t) =>
@@ -187,20 +187,20 @@ renderAreaSpots4D p pmap = preserveCState $
                           in map (\ (x,y,z,t) -> (x,y, scale z, select t))
                                  points
 
-renderSpotLegend4D :: AreaSpots4D z t x y -> Rect -> CRender ()
-renderSpotLegend4D p r@(Rect p1 p2) = preserveCState $ do
+renderSpotLegend4D :: (ChartBackend m) => AreaSpots4D z t x y -> Rect -> m ()
+renderSpotLegend4D p r@(Rect p1 p2) = bLocal $ do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2
     let psSpot    = filledCircles radius $
                                           flip withOpacity
                                                (area_spots_4d_opacity_ p) $
                                           head $ area_spots_4d_palette_ p
-    drawPoint psSpot centre
+    bDrawPoint psSpot centre
     let psOutline = hollowCircles radius
                                             (area_spots_4d_linethick_ p)
                                             (opaque $
                                              head (area_spots_4d_palette_ p))
-    drawPoint psOutline centre
+    bDrawPoint psOutline centre
   where
     linearInterpolate (Point x0 y0) (Point x1 y1) =
         Point (x0 + abs(x1-x0)/2) (y0 + abs(y1-y0)/2)

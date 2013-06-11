@@ -107,18 +107,23 @@ defaultPieLayout = PieLayout {
 
 instance ToRenderable PieChart where
     type RenderableT m PieChart = PieChart
-    toRenderable p = Renderable {
-      minsize = minsizePie p,
-      render  = renderPie p
-    }
+    toRenderable = pieChartToRenderable
+
+pieChartToRenderable :: (ChartBackend m) => PieChart -> Renderable m ()
+pieChartToRenderable p = Renderable { minsize = minsizePie p
+                                    , render  = renderPie p
+                                    }
 
 instance ToRenderable PieLayout where
     type RenderableT m PieLayout = PieLayout
-    toRenderable p = fillBackground (pie_background_ p) (
+    toRenderable = pieToRenderable
+
+pieToRenderable :: (ChartBackend m) => PieLayout -> Renderable m ()
+pieToRenderable p = fillBackground (pie_background_ p) (
        gridToRenderable $ aboveN
          [ tval $ addMargins (lm/2,0,0,0) (setPickFn nullPickFn title)
          , weights (1,1) $ tval $ addMargins (lm,lm,lm,lm)
-                                             (toRenderable $ pie_plot_ p)
+                                             (pieChartToRenderable $ pie_plot_ p)
          ] )
       where
         title = label (pie_title_style_ p) HTA_Centre VTA_Top (pie_title_ p)

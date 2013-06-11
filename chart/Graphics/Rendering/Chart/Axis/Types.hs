@@ -197,12 +197,12 @@ maximum0 vs = maximum vs
 
 -- | Calculate the amount by which the labels extend beyond
 --   the ends of the axis.
-axisOverhang :: Ord x => AxisT x -> CRender (Double,Double)
+axisOverhang :: (Ord x, ChartBackend m) => AxisT x -> m (Double,Double)
 axisOverhang (AxisT at as rev ad) = do
     let labels = map snd . sort . concat . axis_labels_ $ ad
-    labelSizes <- preserveCState $ do
-        setFontStyle (axis_label_style_ as)
-        mapM textSize labels
+    labelSizes <- bLocal $ do
+        bSetFontStyle (axis_label_style_ as)
+        mapM bTextSize labels
     case labelSizes of
         []  -> return (0,0)
 	ls  -> let l1     = head ls
@@ -319,10 +319,10 @@ axisMapping (AxisT et as rev ad) (x2,y2) = case et of
     reverse r@(r0,r1)  = if rev then (r1,r0) else r
 
 -- 
-renderAxisGrid :: RectSize -> AxisT z -> CRender ()
+renderAxisGrid :: (ChartBackend m) => RectSize -> AxisT z -> m ()
 renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
-    preserveCState $ do
-        setLineStyle (axis_grid_style_ as)
+    bLocal $ do
+        bSetLineStyle (axis_grid_style_ as)
         mapM_ (drawGridLine re) (axis_grid_ ad)
   where
     (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
