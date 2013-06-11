@@ -1,3 +1,6 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+
 module Graphics.Rendering.Chart.Simple.Internal where
 
 import Data.Maybe ( catMaybes )
@@ -21,8 +24,8 @@ styleSymbol ind = symbolSequence !! ind
 
 -- When defaultLayout1 has been generalized, change this signature to 
 -- [InternalPlot x y] -> Layout1 x y z
-iplot :: [InternalPlot Double Double] -> Layout1 Double Double
-iplot foobar = defaultLayout1 {
+iplot :: forall m. (ChartBackend m) => [InternalPlot Double Double] -> Layout1 m Double Double
+iplot foobar = (defaultLayout1 :: Layout1 m Double Double) {
         layout1_plots_ = concat $ zipWith toplot (ip foobar) [0..]
     }
   where
@@ -138,11 +141,15 @@ data PlotKind = Name String | FilledCircle | HollowCircle
               deriving ( Eq, Show, Ord )
 data InternalPlot x y = IPY [y] [PlotKind] | IPX [x] [PlotKind]
 
-newtype Layout1DDD = Layout1DDD { plotLayout :: Layout1 Double Double }
-instance ToRenderable Layout1DDD where
- toRenderable = toRenderable . plotLayout
+newtype Layout1DDD m = Layout1DDD { plotLayout :: Layout1 m Double Double }
+instance (ChartBackend m) => ToRenderable (Layout1DDD m) where
+  type RenderableT m (Layout1DDD m') = Layout1DDD m
+  toRenderable = mapPickFn (const ()) . layout1ToRenderable . plotLayout
 
-uplot :: [UPlot] -> Layout1DDD
+layout1DddToRenderable :: (ChartBackend m) => Layout1DDD m -> Renderable m (Layout1Pick Double Double)
+layout1DddToRenderable = layout1ToRenderable . plotLayout
+
+uplot :: (ChartBackend m) => [UPlot] -> Layout1DDD m
 uplot us = Layout1DDD $ iplot $ nameDoubles $ evalfuncs us
   where
     nameDoubles :: [UPlot] -> [InternalPlot Double Double]
@@ -185,7 +192,7 @@ class PlotType t where
     pl     :: [UPlot] -> t
 instance (PlotArg a, PlotType r) => PlotType (a -> r) where
     pl args = \ a -> pl (toUPlot a ++ args)
-instance PlotType Layout1DDD where
+instance (ChartBackend m) => PlotType (Layout1DDD m) where
     pl args = uplot (reverse args)
 
 -- | Save a plot as a PDF file.
@@ -198,7 +205,7 @@ instance (PlotArg a, PlotPDFType r) => PlotPDFType (a -> r) where
     pld fn args = \ a -> pld fn (toUPlot a ++ args)
 instance PlotPDFType (IO a) where
     pld fn args = do
-        renderableToPDFFile (toRenderable $ uplot (reverse args)) 640 480 fn
+        renderableToPDFFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
         return undefined
 
 -- | Save a plot as a postscript file.
@@ -211,7 +218,7 @@ instance (PlotArg a, PlotPSType r) => PlotPSType (a -> r) where
     pls fn args = \ a -> pls fn (toUPlot a ++ args)
 instance PlotPSType (IO a) where
     pls fn args = do
-        renderableToPSFile (toRenderable $ uplot (reverse args)) 640 480 fn
+        renderableToPSFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
         return undefined
 
 -- | Save a plot as a png file.
@@ -224,7 +231,7 @@ instance (PlotArg a, PlotPNGType r) => PlotPNGType (a -> r) where
     plp fn args = \ a -> plp fn (toUPlot a ++ args)
 instance PlotPNGType (IO a) where
     plp fn args = do
-        renderableToPNGFile (toRenderable $ uplot (reverse args)) 640 480 fn
+        renderableToPNGFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
         return undefined
 
 

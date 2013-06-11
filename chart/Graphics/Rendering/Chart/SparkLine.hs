@@ -25,6 +25,8 @@
 -- >
 ---------------------------------------------------------------
 
+{-# LANGUAGE TypeFamilies #-}
+
 module Graphics.Rendering.Chart.SparkLine
   ( -- * SparkLine type
     SparkLine(..)
@@ -91,7 +93,11 @@ barSpark :: SparkOptions
 barSpark  = smoothSpark { so_smooth=False }
 
 instance ToRenderable SparkLine where
-    toRenderable sp = Renderable
+    type RenderableT m SparkLine = SparkLine
+    toRenderable = sparkLineToRenderable
+
+sparkLineToRenderable :: (ChartBackend m) => SparkLine -> Renderable m ()
+sparkLineToRenderable sp = Renderable
             { minsize = return (0, fromIntegral (so_height (sl_options sp)))
             , render  = \_rect-> renderSparkLine sp
             }
@@ -158,13 +164,13 @@ renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
 
 -- | Generate a PNG for the sparkline, using its natural size.
 sparkLineToPNG :: FilePath -> SparkLine -> IO (PickFn ())
-sparkLineToPNG fp sp = renderableToPNGFile (toRenderable sp)
+sparkLineToPNG fp sp = renderableToPNGFile (sparkLineToRenderable sp)
                                            (sparkWidth sp)
                                            (so_height (sl_options sp))
                                            fp
 -- | Generate a PDF for the sparkline, using its natural size.
 sparkLineToPDF :: FilePath -> SparkLine -> IO ()
-sparkLineToPDF fp sp = renderableToPDFFile (toRenderable sp)
+sparkLineToPDF fp sp = renderableToPDFFile (sparkLineToRenderable sp)
                                            (sparkWidth sp)
                                            (so_height (sl_options sp))
                                            fp

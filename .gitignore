@@ -4,3 +4,4 @@ chart/dist/
 chart-gtk/dist/
 chart/tests/*.png
 chart/tests/*.pdf
+chart/tests-reference/

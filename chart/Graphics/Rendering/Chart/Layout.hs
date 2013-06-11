@@ -324,9 +324,10 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
          , besideN [er,     er,  bl,    baxis,  br,    er,  er       ]
          , besideN [er,     er,  er,    btitle, er,    er,  er       ]
          ]
-
-    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_    L1P_TopAxisTitle
-    (btitle,_) = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_ L1P_BottomAxisTitle
+    
+    -- TODO: THIS IS WRONG
+    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 layout1_left_axis_    L1P_TopAxisTitle    -- Should be: layout1_top_axis_
+    (btitle,_) = atitle HTA_Centre VTA_Top      0 layout1_left_axis_ L1P_BottomAxisTitle -- Should be: layout1_bottom_axis_
     (ltitle,lam) = atitle HTA_Right  VTA_Centre 270 layout1_left_axis_   L1P_LeftAxisTitle
     (rtitle,ram) = atitle HTA_Left   VTA_Centre 270 layout1_right_axis_  L1P_RightAxisTitle
 
