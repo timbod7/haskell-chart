@@ -326,33 +326,20 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
          , besideN [er,     er,  er,    btitle, er,    er,  er       ]
          ]
     
-    (ttitle,_) = atitlex HTA_Centre VTA_Bottom   0 layout1_top_axis_    L1P_TopAxisTitle   
-    (btitle,_) = atitlex HTA_Centre VTA_Top      0 layout1_bottom_axis_ L1P_BottomAxisTitle
-    (ltitle,lam) = atitley HTA_Right  VTA_Centre 270 layout1_left_axis_   L1P_LeftAxisTitle
-    (rtitle,ram) = atitley HTA_Left   VTA_Centre 270 layout1_right_axis_  L1P_RightAxisTitle
+    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_    L1P_TopAxisTitle   
+    (btitle,_) = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_ L1P_BottomAxisTitle
+    (ltitle,lam) = atitle HTA_Right  VTA_Centre 270 layout1_left_axis_   L1P_LeftAxisTitle
+    (rtitle,ram) = atitle HTA_Left   VTA_Centre 270 layout1_right_axis_  L1P_RightAxisTitle
 
     er = tval $ emptyRenderable
     
-    atitlex :: (ChartBackend m) 
+    atitle :: (ChartBackend m) 
             => HTextAnchor -> VTextAnchor 
             -> Double 
-            -> (Layout1 m x y -> LayoutAxis x) 
+            -> (Layout1 m x y -> LayoutAxis z) 
             -> (String -> Layout1Pick x y) 
             -> (Grid (Renderable m (Layout1Pick x y)), Grid (Renderable m (Layout1Pick x y)))
-    atitlex ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
-      where
-        label = tval $ mapPickFn pf $ rlabel tstyle ha va rot ttext
-        gap = tval $ spacer (layout1_margin_ l,0)
-        tstyle = laxis_title_style_ (af l)
-        ttext  = laxis_title_       (af l)
-    
-    atitley :: (ChartBackend m) 
-            => HTextAnchor -> VTextAnchor 
-            -> Double 
-            -> (Layout1 m x y -> LayoutAxis y) 
-            -> (String -> Layout1Pick x y) 
-            -> (Grid (Renderable m (Layout1Pick x y)), Grid (Renderable m (Layout1Pick x y)))
-    atitley ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
+    atitle ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
       where
         label = tval $ mapPickFn pf $ rlabel tstyle ha va rot ttext
         gap = tval $ spacer (layout1_margin_ l,0)
