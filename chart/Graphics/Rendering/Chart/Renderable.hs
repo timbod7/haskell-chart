@@ -60,28 +60,27 @@ nullPickFn = const Nothing
 
 -- | A Renderable is a record of functions required to layout a
 --   graphic element.
-data Renderable m a = Renderable {
+data Renderable a = Renderable {
 
    -- | A Cairo action to calculate a minimum size.
-   minsize :: m RectSize,
+   minsize :: (ChartBackend m) => m RectSize,
 
    -- | A Cairo action for drawing it within a rectangle.
    --   The rectangle is from the origin to the given point.
    --
    --   The resulting "pick" function  maps a point in the image to a value.
-   render  ::  RectSize -> m (PickFn a)
+   render  :: (ChartBackend m) => RectSize -> m (PickFn a)
 }
 
 -- | A type class abtracting the conversion of a value to a Renderable.
 class ToRenderable a where
-  type RenderableT m b :: *
-  toRenderable :: (ChartBackend m) => RenderableT m a -> Renderable m ()
+  toRenderable :: a -> Renderable ()
 
-emptyRenderable :: (ChartBackend m) => Renderable m a
+emptyRenderable :: Renderable a
 emptyRenderable = spacer (0,0)
 
 -- | Create a blank renderable with a specified minimum size.
-spacer :: (ChartBackend m) => RectSize -> Renderable m a 
+spacer :: RectSize -> Renderable a 
 spacer sz  = Renderable {
    minsize = return sz,
    render  = \_ -> return nullPickFn
@@ -90,7 +89,7 @@ spacer sz  = Renderable {
 
 -- | Create a blank renderable with a minimum size the same as
 --   some other renderable.
-spacer1 :: (ChartBackend m) => Renderable m a -> Renderable m b
+spacer1 :: Renderable a -> Renderable b
 spacer1 r  = r{ render  = \_ -> return nullPickFn }
 
 -- | Replace the pick function of a renderable with another.
@@ -262,7 +261,6 @@ defaultRectangle = Rectangle {
 }
 
 instance ToRenderable Rectangle where
-   type RenderableT m Rectangle = Rectangle
    toRenderable rectangle = Renderable mf rf
      where
       mf    = return (rect_minsize_ rectangle)

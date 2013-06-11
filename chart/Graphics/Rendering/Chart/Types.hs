@@ -134,14 +134,6 @@ class (Monad m, MonadReader CEnv m) => ChartBackend m where
             -> String      -- ^ Text to render.
             -> m Rect
   
-  -- | Function to draw a textual label anchored by one of its corners
-  --   or edges.
-  bDrawText :: HTextAnchor -- ^ Horizontal text anchor.
-            -> VTextAnchor -- ^ Vertical text anchor.
-            -> Point       -- ^ Anchor point.
-            -> String      -- ^ Text to render.
-            -> m ()
-  
   -- | Draw a multiline text anchored by one of its corners
   --   or edges, with rotation.
   bDrawTextsR :: HTextAnchor -- ^ Horizontal text anchor.
@@ -150,15 +142,6 @@ class (Monad m, MonadReader CEnv m) => ChartBackend m where
               -> Point       -- ^ Anchor point to rotate around.
               -> String      -- ^ Text to render.
               -> m ()
-  
-  -- | Draw a textual label anchored by one of its corners
-  --   or edges, with rotation.
-  bDrawTextR :: HTextAnchor -- ^ Horizontal text anchor.
-             -> VTextAnchor -- ^ Vertical text anchor.
-             -> Double      -- ^ Rotation angle in degrees.
-             -> Point       -- ^ Anchor point to rotate around.
-             -> String      -- ^ Text to render.
-             -> m ()
   
   runBackend :: m a -> ChartOutput a
 

@@ -120,9 +120,7 @@ instance ChartBackend CRender where
   bDrawPoint = drawPoint
   
   bTextRect = textDrawRect
-  bDrawText = drawText
   bDrawTextsR = drawTextsR
-  bDrawTextR = drawTextR
   
   runBackend m b = case b of
     CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
@@ -309,7 +307,10 @@ drawTextR hta vta angle (Point x y) s = preserveCState $ draw
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
 drawTextsR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> CRender ()
-drawTextsR hta vta angle (Point x y) s = preserveCState $ drawAll
+drawTextsR hta vta angle p@(Point x y) s = case num of
+      0 -> return ()
+      1 -> drawTextR hta vta angle p s
+      _ -> preserveCState $ drawAll
     where
       ss   = lines s
       num  = length ss
