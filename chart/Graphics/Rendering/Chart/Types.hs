@@ -7,6 +7,7 @@ module Graphics.Rendering.Chart.Types
   ( CRender
   , CEnv(..)
   , ChartBackend(..)
+  , bDrawText, bDrawTextR
   , runCRender
   , c
   
@@ -144,6 +145,12 @@ class (Monad m, MonadReader CEnv m) => ChartBackend m where
               -> m ()
   
   runBackend :: m a -> ChartOutput a
+
+bDrawText :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
+bDrawText hta vta p s = bDrawTextR hta vta 0 p s
+
+bDrawTextR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
+bDrawTextR hta vta angle p s = bDrawTextsR hta vta angle p s
 
 data FontExtents = FontExtents
   { fontExtentsAscent  :: Double
