@@ -74,6 +74,7 @@ library
         Graphics.Rendering.Chart.Plot.Pie,
         Graphics.Rendering.Chart.Plot.Points
         Graphics.Rendering.Chart.SparkLine
+        Graphics.Rendering.Chart.Backend.Cairo
 
 source-repository head
   type:     git
