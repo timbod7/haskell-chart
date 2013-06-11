@@ -38,6 +38,7 @@ module Graphics.Rendering.Chart.SparkLine
   , sparkSize
     -- * Rendering function
   , renderSparkLine
+  , sparkLineToRenderable
   , sparkLineToPNG
   , sparkLineToPDF
   ) where
