@@ -28,6 +28,9 @@ module Graphics.Rendering.Chart.Plot.Pie(
     defaultPieLayout,
     defaultPieChart,
     defaultPieItem,
+    
+    pieToRenderable,
+    pieChartToRenderable,
 
     pie_title,
     pie_title_style,
