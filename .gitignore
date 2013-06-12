@@ -6,3 +6,4 @@ chart/tests/*.png
 chart/tests/*.pdf
 chart/tests/*.svg
 chart/tests-reference/
+chart/tests-diffs/
