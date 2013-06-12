@@ -9,6 +9,7 @@ import Data.Colour.Names
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Utils
+import Graphics.Rendering.Chart.Backend.Cairo
 
 
 styleColor :: Int -> AlphaColour Double

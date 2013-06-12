@@ -5,57 +5,11 @@
 module Graphics.Rendering.Chart.Backend.Cairo
   ( CRender
   , runCRender
-  , c
-  , convertLineCap, convertLineJoin
-  , convertFontSlant, convertFontWeight
-  
-  , preserveCState
 
-  , setSourceColor
-  
-  , setClipRegion
-  , moveTo
-  , lineTo
-  , strokePath
-  , fillPath
-  
-  , drawPoint
-  
-  , alignp
-  , alignc
-  , drawText
-  , drawTextR
-  , drawTextsR
-  , textSize
-  , textDrawRect
-  
-  , setLineStyle
-  , setFillStyle
-  , setFontStyle
-    
-  , cTranslate
-  , cRotate
-  , cNewPath
-  , cMoveTo
-  , cLineTo
-  , cRelLineTo
-  , cArc
-  , cArcNegative
-  , cClosePath
-  , cStroke
-  , cFill
-  , cFillPreserve
-  , cSetSourceColor
-  , cPaint
-  , cFontDescent
-  , cShowText
-
-  , cRenderToPNGFile
-  , cRenderToPSFile
-  , cRenderToPDFFile
-  , cRenderToSVGFile
-  , vectorEnv
-  , bitmapEnv
+  , renderableToPNGFile
+  , renderableToPDFFile
+  , renderableToPSFile
+  , renderableToSVGFile
   ) where
 
 import Data.Colour
@@ -74,7 +28,13 @@ import Graphics.Rendering.Chart.Types
   , FillStyle(..), PointStyle(..), FontStyle(..), LineStyle(..)
   , HTextAnchor(..), VTextAnchor(..)
   )
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Renderable
+
+-- -----------------------------------------------------------------------
+-- Backend and Monad
+-- -----------------------------------------------------------------------
 
 data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
 
@@ -141,6 +101,42 @@ instance ChartBackend CRender where
     CairoPDF -> cRenderToPDFFile m
 
 -- -----------------------------------------------------------------------
+-- Output rendering functions
+-- -----------------------------------------------------------------------
+
+-- | Output the given renderable to a PNG file of the specifed size
+--   (in pixels), to the specified file.
+renderableToPNGFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO (PickFn a)
+renderableToPNGFile r width height path =
+    cRenderToPNGFile cr width height path
+  where
+    cr = render r (fromIntegral width, fromIntegral height)
+
+-- | Output the given renderable to a PDF file of the specifed size
+--   (in points), to the specified file.
+renderableToPDFFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
+renderableToPDFFile r width height path =
+    cRenderToPDFFile cr width height path
+  where
+    cr = render r (fromIntegral width, fromIntegral height)
+
+-- | Output the given renderable to a postscript file of the specifed size
+--   (in points), to the specified file.
+renderableToPSFile  :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
+renderableToPSFile r width height path  = 
+    cRenderToPSFile cr width height path
+  where
+    cr = render r (fromIntegral width, fromIntegral height)
+
+-- | Output the given renderable to an SVG file of the specifed size
+--   (in points), to the specified file.
+renderableToSVGFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
+renderableToSVGFile r width height path =
+    cRenderToSVGFile cr width height path
+  where
+    cr = render r (fromIntegral width, fromIntegral height)
+
+-- -----------------------------------------------------------------------
 -- Type Conversions: Chart -> Cairo
 -- -----------------------------------------------------------------------
 
@@ -173,29 +169,10 @@ convertFontWeight fw = case fw of
 -- Assorted helper functions in Cairo Usage
 -- -----------------------------------------------------------------------
 
-alignp :: (ChartBackend m) => Point -> m Point
-alignp p = do 
-    alignfn <- liftM cenv_point_alignfn ask
-    return (alignfn p)
-
-alignc :: (ChartBackend m) => Point -> m Point
-alignc p = do 
-    alignfn <- liftM cenv_coord_alignfn ask
-    return (alignfn p)
-
 -- | Function to draw a textual label anchored by one of its corners
 --   or edges.
 drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> CRender ()
 drawText hta vta p s = drawTextR hta vta 0 p s
-
-moveTo, lineTo :: (ChartBackend m) => Point -> m ()
-moveTo p  = do
-    p' <- alignp p
-    bMoveTo p'
-
-lineTo p = do
-    p' <- alignp p
-    bLineTo p'
 
 setClipRegion :: Point -> Point -> CRender ()
 setClipRegion p2 p3 = do    
@@ -205,35 +182,6 @@ setClipRegion p2 p3 = do
     c $ C.lineTo (p_x p3) (p_y p2)
     c $ C.lineTo (p_x p2) (p_y p2)
     c $ C.clip
-
-stepPath :: (ChartBackend m) => [Point] -> m ()
-stepPath (p:ps) = do
-    bNewPath                    
-    bMoveTo p
-    mapM_ bLineTo ps
-stepPath _  = return ()
-
--- | Draw lines between the specified points.
---
--- The points will be "corrected" by the cenv_point_alignfn, so that
--- when drawing bitmaps, 1 pixel wide lines will be centred on the
--- pixels.
-strokePath :: (ChartBackend m) => [Point] -> m ()
-strokePath pts = do
-    alignfn <- liftM cenv_point_alignfn ask
-    stepPath (map alignfn pts)
-    bStroke
-
--- | Fill the region with the given corners.
---
--- The points will be "corrected" by the cenv_coord_alignfn, so that
--- when drawing bitmaps, the edges of the region will fall between
--- pixels.
-fillPath :: (ChartBackend m) => [Point] -> m ()
-fillPath pts = do
-    alignfn <- liftM cenv_coord_alignfn ask
-    stepPath (map alignfn pts)
-    bFill
 
 setFontStyle :: FontStyle -> CRender ()
 setFontStyle f = do

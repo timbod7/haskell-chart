@@ -18,11 +18,6 @@ module Graphics.Rendering.Chart.Renderable(
     
     rectangleToRenderable,
 
-    renderableToPNGFile,
-    renderableToPDFFile,
-    renderableToPSFile,
-    renderableToSVGFile,
-
     fillBackground,
     addMargins,
     emptyRenderable,
@@ -138,38 +133,6 @@ fillBackground fs r = r{ render = rf }
             bSetFillStyle fs
             bPaint
 	render r rsize
-
--- | Output the given renderable to a PNG file of the specifed size
---   (in pixels), to the specified file.
-renderableToPNGFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO (PickFn a)
-renderableToPNGFile r width height path =
-    cRenderToPNGFile cr width height path
-  where
-    cr = render r (fromIntegral width, fromIntegral height)
-
--- | Output the given renderable to a PDF file of the specifed size
---   (in points), to the specified file.
-renderableToPDFFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
-renderableToPDFFile r width height path =
-    cRenderToPDFFile cr width height path
-  where
-    cr = render r (fromIntegral width, fromIntegral height)
-
--- | Output the given renderable to a postscript file of the specifed size
---   (in points), to the specified file.
-renderableToPSFile  :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
-renderableToPSFile r width height path  = 
-    cRenderToPSFile cr width height path
-  where
-    cr = render r (fromIntegral width, fromIntegral height)
-
--- | Output the given renderable to an SVG file of the specifed size
---   (in points), to the specified file.
-renderableToSVGFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
-renderableToSVGFile r width height path =
-    cRenderToSVGFile cr width height path
-  where
-    cr = render r (fromIntegral width, fromIntegral height)
 
 -- | Helper function for using a renderable, when we generate it
 --   in the CRender monad.

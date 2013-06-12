@@ -25,28 +25,33 @@
 -- @
 --
 
-module Graphics.Rendering.Chart.Drawing(
-
-    defaultColorSeq,
+module Graphics.Rendering.Chart.Drawing
+  ( strokePath
+  , fillPath
+  , moveTo
+  , lineTo
+  , defaultColorSeq
+  
+  , alignp
+  , alignc
     
-    solidLine,
-    dashedLine,
+  , solidLine
+  , dashedLine
 
-    defaultPointStyle,
-    filledCircles,
-    hollowCircles,
-    filledPolygon,
-    hollowPolygon,
-    plusses,
-    exes,
-    stars,
+  , defaultPointStyle
+  , filledCircles
+  , hollowCircles
+  , filledPolygon
+  , hollowPolygon
+  , plusses
+  , exes
+  , stars
     
-    solidFillStyle,
+  , solidFillStyle
 
-    defaultFontStyle,
-    
-    module Graphics.Rendering.Chart.Backend.Cairo,
-    module Graphics.Rendering.Chart.Types
+  , defaultFontStyle
+  
+  , module Graphics.Rendering.Chart.Types
 ) where
 
 import Data.Accessor
@@ -56,9 +61,63 @@ import Data.Colour.SRGB
 import Data.Colour.Names
 import Data.List (unfoldr)
 
+import Control.Monad.Reader
+
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Geometry
-import Graphics.Rendering.Chart.Backend.Cairo
+
+-- -----------------------------------------------------------------------
+-- Abstract Drawing Methods
+-- -----------------------------------------------------------------------
+
+alignp :: (ChartBackend m) => Point -> m Point
+alignp p = do 
+    alignfn <- liftM cenv_point_alignfn ask
+    return (alignfn p)
+
+alignc :: (ChartBackend m) => Point -> m Point
+alignc p = do 
+    alignfn <- liftM cenv_coord_alignfn ask
+    return (alignfn p)
+
+stepPath :: (ChartBackend m) => [Point] -> m ()
+stepPath (p:ps) = do
+    bNewPath                    
+    bMoveTo p
+    mapM_ bLineTo ps
+stepPath _  = return ()
+
+-- | Draw lines between the specified points.
+--
+-- The points will be "corrected" by the cenv_point_alignfn, so that
+-- when drawing bitmaps, 1 pixel wide lines will be centred on the
+-- pixels.
+strokePath :: (ChartBackend m) => [Point] -> m ()
+strokePath pts = do
+    alignfn <- liftM cenv_point_alignfn ask
+    stepPath (map alignfn pts)
+    bStroke
+
+-- | Fill the region with the given corners.
+--
+-- The points will be "corrected" by the cenv_coord_alignfn, so that
+-- when drawing bitmaps, the edges of the region will fall between
+-- pixels.
+fillPath :: (ChartBackend m) => [Point] -> m ()
+fillPath pts = do
+    alignfn <- liftM cenv_coord_alignfn ask
+    stepPath (map alignfn pts)
+    bFill
+
+moveTo :: (ChartBackend m) => Point -> m ()
+moveTo p  = do
+    p' <- alignp p
+    bMoveTo p'
+    
+lineTo :: (ChartBackend m) => Point -> m ()
+lineTo p = do
+    p' <- alignp p
+    bLineTo p'
  
 -- -----------------------------------------------------------------------
 

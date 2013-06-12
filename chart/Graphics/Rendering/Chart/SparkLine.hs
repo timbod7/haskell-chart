@@ -52,6 +52,8 @@ import Graphics.Rendering.Chart.Renderable
 import Data.Colour
 import Data.Colour.Names
 
+import Graphics.Rendering.Chart.Backend.Cairo
+
 -- | A sparkline is a single sequence of data values, treated as y-values.
 --   The x-values are anonymous and implicit in the sequence.
 data SparkLine = SparkLine { sl_options :: SparkOptions
