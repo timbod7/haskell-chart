@@ -5,7 +5,8 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
 import System.Random
-import System.Environment(getArgs)
+
+import Utils
 
 ----------------------------------------------------------------------
 -- Example thanks to Russell O'Connor
@@ -39,10 +40,6 @@ chart lwidth = layout1ToRenderable (layout 1001 (trial bits) :: (ChartBackend m)
     s1 = solidLine lwidth $ opaque green
     s2 = solidLine lwidth $ opaque blue
 
-main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test5_small.png"
-main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test5_big.png"
-
-main = getArgs >>= main1
+main = main' "test5" (chart 0.25)
 
 

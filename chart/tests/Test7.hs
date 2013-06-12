@@ -4,7 +4,8 @@ import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
-import System.Environment(getArgs)
+
+import Utils
 
 chart :: (ChartBackend m) => Renderable m ()
 chart = layout1ToRenderable layout
@@ -25,11 +26,6 @@ chart = layout1ToRenderable layout
                                Left (toPlot points)]
            $ defaultLayout1
 
-
-main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile chart 320 240 "test7_small.png"
-main1 ["big"]    = renderableToPNGFile chart 800 600 "test7_big.png"
-
-main = getArgs >>= main1
+main = main' "test7" chart
 
 

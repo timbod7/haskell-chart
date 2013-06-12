@@ -5,8 +5,9 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
 import System.Random
-import System.Environment(getArgs)
 import Prices(prices1)
+
+import Utils
 
 -- demonstrate AreaSpots
 
@@ -39,8 +40,4 @@ chart lwidth = layout1ToRenderable layout
               $ line_color ^= opaque blue
               $ defaultPlotLines ^. plot_lines_style
 
-main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test14_small.png"
-main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test14_big.png"
-
-main = getArgs >>= main1
+main = main' "test14" (chart 0.25)

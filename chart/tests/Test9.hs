@@ -4,7 +4,8 @@ import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
-import System.Environment(getArgs)
+
+import Utils
 
 chart :: (ChartBackend m) => Bool -> Renderable m ()
 chart borders = layout1ToRenderable layout
@@ -30,10 +31,6 @@ chart borders = layout1ToRenderable layout
   bstyle = if borders then Just (solidLine 1.0 $ opaque black) else Nothing
   mkstyle c = (solidFillStyle c, bstyle)
 
-main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile (chart True) 320 240 "test9_small.png"
-main1 ["big"]    = renderableToPNGFile (chart True) 800 600 "test9_big.png"
-
-main = getArgs >>= main1
+main = main' "test9" (chart True)
 
 

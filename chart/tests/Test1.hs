@@ -5,7 +5,8 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.Accessor
-import System.Environment(getArgs)
+
+import Utils
 
 chart :: (ChartBackend m) => Double -> Renderable m ()
 chart lwidth = layout1ToRenderable (layout lwidth)
@@ -31,10 +32,6 @@ layout lwidth = layout1
               $ plot_points_title ^="am points"
               $ defaultPlotPoints
 
-main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test1_small.png"
-main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test1_big.png"
-
-main = getArgs >>= main1
+main = main' "test1" (chart 0.25)
 
 

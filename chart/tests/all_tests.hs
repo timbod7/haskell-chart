@@ -2,6 +2,7 @@ import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Simple
 import Graphics.Rendering.Chart.Grid
+import Graphics.Rendering.Chart.Backend.Cairo
 
 import System.Environment(getArgs)
 import System.Time

@@ -4,7 +4,8 @@ import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
-import System.Environment(getArgs)
+
+import Utils
 
 chart lo = layout1ToRenderable layout
  where
@@ -34,10 +35,6 @@ chart lo = layout1ToRenderable layout
   btitle = ""
   mkstyle c = (solidFillStyle c, Nothing)
 
-main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile (chart (LORows 3)) 320 240 "test15_small.png"
-main1 ["big"]    = renderableToPNGFile (chart (LORows 3)) 800 600 "test15_big.png"
-
-main = getArgs >>= main1
+main = main' "test15" (chart (LORows 3))
 
 

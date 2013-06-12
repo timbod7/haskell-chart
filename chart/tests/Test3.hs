@@ -6,8 +6,9 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.Accessor
-import System.Environment(getArgs)
 import Prices(prices1)
+
+import Utils
 
 green1 = opaque $ sRGB 0.5 1 0.5
 blue1 = opaque $ sRGB 0.5 0.5 1
@@ -31,9 +32,4 @@ chart = layout1ToRenderable layout
                                Left (toPlot price2)]
            $ defaultLayout1
 
-
-main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile chart 320 240 "test3_small.png"
-main1 ["big"]    = renderableToPNGFile chart 800 600 "test3_big.png"
-
-main = getArgs >>= main1
+main = main' "test3" chart

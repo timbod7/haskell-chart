@@ -5,8 +5,9 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
 import System.Random
-import System.Environment(getArgs)
 import ExampleStocks
+
+import Utils
 
 -- demonstrate Candles
 
@@ -73,8 +74,4 @@ chart lwidth = layout1ToRenderable layout
                        $ line_color ^= opaque colour
                        $ defaultPlotLines ^. plot_lines_style
 
-main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "test1_small.png"
-main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "test1_big.png"
-
-main = getArgs >>= main1
+main = main' "test17" (chart 0.25)

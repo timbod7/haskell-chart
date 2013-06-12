@@ -6,8 +6,9 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.Accessor
-import System.Environment(getArgs)
 import Prices(prices2)
+
+import Utils
 
 chart :: (ChartBackend m) => [(LocalTime,Double,Double)] -> Bool -> Double -> Renderable m ()
 chart prices showMinMax lwidth = layout1ToRenderable layout
@@ -55,8 +56,4 @@ chart prices showMinMax lwidth = layout1ToRenderable layout
            $ setLayout1Foreground fg
            $ defaultLayout1
 
-main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile (chart prices2 True 0.25) 320 240 "test2_small.png"
-main1 ["big"]    = renderableToPNGFile (chart prices2 True 0.25) 800 600 "test2_big.png"
-
-main = getArgs >>= main1
+main = main' "test2" (chart prices2 True 0.25)

@@ -4,7 +4,8 @@ import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
-import System.Environment(getArgs)
+
+import Utils
 
 chart :: (ChartBackend m) => Bool -> Bool -> Renderable m ()
 chart xrev yrev = layout1ToRenderable layout
@@ -28,10 +29,6 @@ chart xrev yrev = layout1ToRenderable layout
 	   $ layout1_plots ^= [Left (toPlot points), Left (toPlot lines) ]
            $ defaultLayout1
 
-main1 :: [String] -> IO (PickFn ())
-main1 ["small"]  = renderableToPNGFile (chart False False) 320 240 "test4_small.png"
-main1 ["big"]    = renderableToPNGFile (chart False False) 800 600 "test4_big.png"
-
-main = getArgs >>= main1
+main = main' "test4" (chart False False)
 
 
