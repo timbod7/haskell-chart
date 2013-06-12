@@ -147,7 +147,7 @@ instance (ChartBackend m) => ToRenderable (Layout1DDD m) where
   type RenderableT m (Layout1DDD m') = Layout1DDD m
   toRenderable = mapPickFn (const ()) . layout1ToRenderable . plotLayout
 -}
-layout1DddToRenderable :: (ChartBackend m) => Layout1DDD m -> Renderable m (Layout1Pick Double Double)
+layout1DddToRenderable :: (ChartBackend m) => Layout1DDD m -> Renderable m ()
 layout1DddToRenderable = layout1ToRenderable . plotLayout
 
 uplot :: (ChartBackend m) => [UPlot] -> Layout1DDD m
