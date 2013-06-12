@@ -362,7 +362,7 @@ drawPoint (PointStyle cl bcl bw r shape) p = do
       c $ setSourceColor cl
       c $ C.newPath
       c $ C.arc x y r 0 (2*pi)
-      c $ C.fill
+      c $ C.fillPreserve
     PointShapePolygon sides isrot -> do
       c $ setSourceColor cl
       c $ C.newPath
@@ -375,7 +375,7 @@ drawPoint (PointStyle cl bcl bw r shape) p = do
                                     (y + r * cos a)) angles
       moveTo p
       mapM_ lineTo (ps++[p])
-      c $ C.fill
+      c $ C.fillPreserve
     PointShapePlus -> do
       c $ C.newPath
       c $ C.moveTo (x+r) y
