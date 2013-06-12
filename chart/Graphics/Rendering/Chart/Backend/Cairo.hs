@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE InstanceSigs #-}
 
 -- | The backend to render charts with cairo.
 module Graphics.Rendering.Chart.Backend.Cairo
@@ -99,6 +100,21 @@ instance ChartBackend CRender where
     CairoSVG -> cRenderToSVGFile m
     CairoPS  -> cRenderToPSFile  m
     CairoPDF -> cRenderToPDFFile m
+  
+  withSourceColor :: AlphaColour Double -> CRender a -> CRender a
+  withSourceColor cl m = preserveCState $ cSetSourceColor cl >> m
+  
+  withFontStyle :: FontStyle -> CRender a -> CRender a
+  withFontStyle fs m = preserveCState $ setFontStyle fs >> m
+  
+  withFillStyle :: FillStyle -> CRender a -> CRender a
+  withFillStyle fs m = preserveCState $ setFillStyle fs >> m
+  
+  withLineStyle :: LineStyle -> CRender a -> CRender a
+  withLineStyle ls m = preserveCState $ setLineStyle ls >> m
+  
+  withClipRegion :: Rect -> CRender a -> CRender a
+  withClipRegion (Rect tl br) m = preserveCState $ setClipRegion tl br >> m
 
 -- -----------------------------------------------------------------------
 -- Output rendering functions
