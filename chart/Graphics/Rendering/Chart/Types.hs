@@ -1,15 +1,12 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Types
-  ( CRender
-  , CEnv(..)
+  ( CEnv(..)
   , ChartBackend(..)
   , bDrawText, bDrawTextR
-  , runCRender
-  , c
   
   , LineCap(..)
   , LineJoin(..)
@@ -47,8 +44,6 @@ import Data.Accessor.Template
 
 import Control.Monad.Reader
 
-import qualified Graphics.Rendering.Cairo as C
-
 import Graphics.Rendering.Chart.Geometry
 
 -- -----------------------------------------------------------------------
@@ -70,17 +65,6 @@ data CEnv = CEnv {
     --   being transformed.
     cenv_coord_alignfn :: Point -> Point
 }
-
--- | The reader monad containing context information to control
---   the rendering process.
-newtype CRender a = DR (ReaderT CEnv C.Render a)
-  deriving (Functor, Monad, MonadReader CEnv)
-
-runCRender :: CRender a -> CEnv -> C.Render a
-runCRender (DR m) e = runReaderT m e
-
-c :: C.Render a -> CRender a
-c = DR . lift
 
 class (Monad m, MonadReader CEnv m) => ChartBackend m where
   type ChartOutput a :: *

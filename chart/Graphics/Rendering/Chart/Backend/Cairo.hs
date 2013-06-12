@@ -1,9 +1,12 @@
-
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | The backend to render charts with cairo.
 module Graphics.Rendering.Chart.Backend.Cairo
-  ( convertLineCap, convertLineJoin
+  ( CRender
+  , runCRender
+  , c
+  , convertLineCap, convertLineJoin
   , convertFontSlant, convertFontWeight
   
   , preserveCState
@@ -65,9 +68,7 @@ import qualified Graphics.Rendering.Cairo as C
 
 import qualified Graphics.Rendering.Chart.Types as G
 import Graphics.Rendering.Chart.Types 
-  ( c
-  , runCRender
-  , CRender, CEnv(..)
+  ( CEnv(..)
   , ChartBackend(..)
   , PointShape(..)
   , FillStyle(..), PointStyle(..), FontStyle(..), LineStyle(..)
@@ -76,6 +77,17 @@ import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Geometry
 
 data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
+
+-- | The reader monad containing context information to control
+--   the rendering process.
+newtype CRender a = DR (ReaderT CEnv C.Render a)
+  deriving (Functor, Monad, MonadReader CEnv)
+
+runCRender :: CRender a -> CEnv -> C.Render a
+runCRender (DR m) e = runReaderT m e
+
+c :: C.Render a -> CRender a
+c = DR . lift
 
 instance ChartBackend CRender where
   type ChartOutput a = CairoBackend -> Int -> Int -> FilePath -> IO ()

@@ -42,7 +42,6 @@ module Graphics.Rendering.Chart.Renderable(
     rect_cornerStyle,
 ) where
 
-import qualified Graphics.Rendering.Cairo.Matrix as Matrix
 import Control.Monad
 import Data.Accessor
 import Data.List ( nub, transpose, sort )

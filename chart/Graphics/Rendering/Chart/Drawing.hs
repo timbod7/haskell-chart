@@ -49,8 +49,6 @@ module Graphics.Rendering.Chart.Drawing(
     module Graphics.Rendering.Chart.Types
 ) where
 
-import qualified Graphics.Rendering.Cairo as C
-
 import Data.Accessor
 import Data.Accessor.Template
 import Data.Colour
