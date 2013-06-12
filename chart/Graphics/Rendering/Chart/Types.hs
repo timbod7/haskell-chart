@@ -129,6 +129,34 @@ class (Monad m, MonadReader CEnv m) => ChartBackend m where
               -> m ()
   
   runBackend :: m a -> ChartOutput a
+  
+  -- | Use the given color as source color 
+  --   in this local environment when drawing.
+  --   Note this will override the color from fill, line or font styles
+  --   already applied.
+  withSourceColor :: AlphaColour Double -> m a -> m a
+  
+  -- | Use the given font style in this local
+  --   environment when drawing.
+  --   Note the font color will override the color 
+  --   from fill or line styles, as well as the current source color.
+  withFontStyle :: FontStyle -> m a -> m a
+  
+  -- | Use the given fill style in this local
+  --   environment when drawing.
+  --   Note the fill color (if there is one) will override the color 
+  --   from font or line styles, as well as the current source color.
+  withFillStyle :: FillStyle -> m a -> m a
+  
+  -- | Use the given line style in this local
+  --   environment when drawing.
+  --   Note the line color (if there is one) will override the color 
+  --   from font or fill styles, as well as the current source color.
+  withLineStyle :: LineStyle -> m a -> m a
+  
+  -- | Use the given clipping rectangle when drawing
+  --   in this local environment.
+  withClipRegion :: Rect -> m a -> m a
 
 bDrawText :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
 bDrawText hta vta p s = bDrawTextR hta vta 0 p s
