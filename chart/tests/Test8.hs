@@ -4,8 +4,8 @@ import Graphics.Rendering.Chart
 import Data.Accessor
 import System.Environment(getArgs)
 
-chart :: Renderable ()
-chart = toRenderable layout
+chart :: (ChartBackend m) => Renderable m ()
+chart = mapPickFn (const ()) $ pieToRenderable layout
   where
     values = [ ("eggs",38,e), ("milk",45,e), ("bread",11,e1), ("salmon",8,e) ]
     e = 0

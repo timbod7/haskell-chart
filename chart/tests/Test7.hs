@@ -6,7 +6,8 @@ import Data.Colour.Names
 import Data.Accessor
 import System.Environment(getArgs)
 
-chart = toRenderable layout
+chart :: (ChartBackend m) => Renderable m ()
+chart = layout1ToRenderable layout
   where
     vals :: [(Double,Double,Double,Double)]
     vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]

@@ -41,7 +41,7 @@ chooseLineWidth SVG = 0.25
 
 fwhite = solidFillStyle $ opaque white
 
-test1a :: Double -> Renderable ()
+test1a :: (ChartBackend m) => Double -> Renderable m ()
 test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3],
@@ -84,14 +84,14 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
        $ layout1_top_axis ^: laxis_visible ^= const True
        $ Test1.layout lwidth
 
-    rf = tval.toRenderable
+    rf = tval . layout1ToRenderable
 
     axisBorderOnly = (laxis_visible ^= const True)
                    . (laxis_override ^=  (axisGridHide.axisTicksHide.axisLabelsHide))
 
 ----------------------------------------------------------------------
-test4d :: OutputType -> Renderable ()
-test4d otype = toRenderable layout
+test4d :: (ChartBackend m) => OutputType -> Renderable m ()
+test4d otype = layout1ToRenderable layout
   where
 
     points = plot_points_style ^= filledCircles 3 (opaque red)
@@ -114,7 +114,7 @@ test4d otype = toRenderable layout
 
 ----------------------------------------------------------------------
 
-test9 :: PlotBarsAlignment -> OutputType -> Renderable ()
+test9 :: (ChartBackend m) => PlotBarsAlignment -> OutputType -> Renderable m ()
 test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g0, rf g1, rf g2],
@@ -150,7 +150,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
        $ plot_bars_spacing ^= BarsFixGap 10 5
        $ bars2
 
-    rf = tval.toRenderable
+    rf = tval . layout1ToRenderable
 
     alabels = [ "Jun", "Jul", "Aug", "Sep", "Oct" ]
 
@@ -161,7 +161,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
            $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
            $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
            $ layout1_plots ^= [ Left (plotBars bars) ]
-           $ defaultLayout1 :: Layout1 PlotIndex Double
+           $ defaultLayout1 :: (ChartBackend m) => Layout1 m PlotIndex Double
 
     bars1 = plot_bars_titles ^= ["Cash"]
           $ plot_bars_values ^= addIndexes [[20],[45],[30],[70]]
@@ -175,8 +175,8 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
 
 -------------------------------------------------------------------------------
 
-test10 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable ()
-test10 prices otype = toRenderable layout
+test10 :: (ChartBackend m) => [(LocalTime,Double,Double)] -> OutputType -> Renderable m ()
+test10 prices otype = layout1ToRenderable layout
   where
 
     lineStyle c = line_width ^= 3 * chooseLineWidth otype
@@ -242,7 +242,7 @@ test11_ f = f layout1 layout2
            $ layout1_left_axis ^: laxis_title ^= "double values"
            $ defaultLayout1
 
-test11a :: OutputType -> Renderable ()
+test11a :: (ChartBackend m) => OutputType -> Renderable m ()
 test11a otype = test11_ f
    where
      f l1 l2 = renderStackedLayouts 
@@ -251,7 +251,7 @@ test11a otype = test11_ f
              $ slayouts_compress_legend ^= False
              $ defaultStackedLayouts
  
-test11b :: OutputType -> Renderable ()
+test11b :: (ChartBackend m) => OutputType -> Renderable m ()
 test11b otype = test11_ f
    where
      f l1 l2 = renderStackedLayouts 
@@ -264,8 +264,8 @@ test11b otype = test11_ f
 -- More of an example that a test:
 -- configuring axes explicitly configured axes
 
-test12 :: OutputType -> Renderable ()
-test12 otype = toRenderable layout
+test12 :: (ChartBackend m) => OutputType -> Renderable m ()
+test12 otype = layout1ToRenderable layout
   where
     vs1 :: [(Int,Int)]
     vs1 = [ (2,10), (3,40), (8,400), (12,60) ]
@@ -310,7 +310,7 @@ test13 otype = fillBackground fwhite $ (gridToRenderable t)
                 $  plot_points_values ^= [(x,x)|x<-points]
                 $  defaultPlotPoints
     p = Left (toPlot pointPlot)
-    annotated h v = toRenderable ( layout1_plots ^= [Left (toPlot labelPlot), Left (toPlot rotPlot), p] $ defaultLayout1 )
+    annotated h v = layout1ToRenderable ( layout1_plots ^= [Left (toPlot labelPlot), Left (toPlot rotPlot), p] $ defaultLayout1 )
       where labelPlot = plot_annotation_hanchor ^= h
                       $ plot_annotation_vanchor ^= v
                       $ plot_annotation_values  ^= [(x,x,"Hello World\n(plain)")|x<-points]
@@ -347,7 +347,7 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
 ----------------------------------------------------------------------
 stdSize = (640,480)
 
-allTests :: [ (String, (Int,Int), OutputType -> Renderable ()) ]
+allTests :: (ChartBackend m) => [ (String, (Int,Int), OutputType -> Renderable m ()) ]
 allTests =
      [ ("test1",  stdSize, \o -> Test1.chart (chooseLineWidth o) )
      , ("test1a", stdSize, \o -> test1a (chooseLineWidth o) )
@@ -414,7 +414,7 @@ main1 ("--ps":tests) = showTests tests renderToPS
 main1 ("--png":tests) = showTests tests renderToPNG
 main1 tests = showTests tests renderToPNG
 
-showTests :: [String] -> ((String,(Int,Int),OutputType -> Renderable ()) -> IO()) -> IO ()
+showTests :: [String] -> ((String,(Int,Int),OutputType -> Renderable CRender ()) -> IO()) -> IO ()
 showTests tests ofn = mapM_ doTest (filter (match tests) allTests)
    where
      doTest (s,size,f) = do

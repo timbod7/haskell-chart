@@ -6,7 +6,8 @@ import Data.Colour.Names
 import Data.Accessor
 import System.Environment(getArgs)
 
-chart borders = toRenderable layout
+chart :: (ChartBackend m) => Bool -> Renderable m ()
+chart borders = layout1ToRenderable layout
  where
   layout = 
         layout1_title ^= "Sample Bars" ++ btitle
@@ -14,7 +15,7 @@ chart borders = toRenderable layout
       $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
       $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
       $ layout1_plots ^= [ Left (plotBars bars2) ]
-      $ defaultLayout1 :: Layout1 PlotIndex Double
+      $ defaultLayout1 :: (ChartBackend m) => Layout1 m PlotIndex Double
 
   bars2 = plot_bars_titles ^= ["Cash","Equity"]
       $ plot_bars_values ^= addIndexes [[20,45],[45,30],[30,20],[70,25]]

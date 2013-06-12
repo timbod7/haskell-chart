@@ -9,8 +9,8 @@ import Data.Accessor
 import System.Environment(getArgs)
 import Prices(prices2)
 
-chart :: [(LocalTime,Double,Double)] -> Bool -> Double -> Renderable ()
-chart prices showMinMax lwidth = toRenderable layout
+chart :: (ChartBackend m) => [(LocalTime,Double,Double)] -> Bool -> Double -> Renderable m ()
+chart prices showMinMax lwidth = layout1ToRenderable layout
   where
 
     lineStyle c = line_width ^= 3 * lwidth

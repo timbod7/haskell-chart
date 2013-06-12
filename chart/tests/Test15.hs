@@ -6,7 +6,7 @@ import Data.Colour.Names
 import Data.Accessor
 import System.Environment(getArgs)
 
-chart lo = toRenderable layout
+chart lo = layout1ToRenderable layout
  where
   layout = 
         layout1_title ^= "Legend Test"
@@ -15,7 +15,7 @@ chart lo = toRenderable layout
       $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
       $ layout1_plots ^= [ Left (plotBars bars2) ]
       $ layout1_legend ^= Just lstyle
-      $ defaultLayout1 :: Layout1 PlotIndex Double
+      $ defaultLayout1 :: (ChartBackend m) => Layout1 m PlotIndex Double
 
   bars2 = plot_bars_titles ^= ["A","B","C","D","E","F","G","H","I","J"]
       $ plot_bars_values ^= addIndexes [[2,3,4,2,1,5,6,4,8,1,3],

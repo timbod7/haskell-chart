@@ -7,9 +7,10 @@ import Data.Colour.SRGB
 import Data.Accessor
 import System.Environment(getArgs)
 
-chart lwidth = toRenderable (layout lwidth)
+chart :: (ChartBackend m) => Double -> Renderable m ()
+chart lwidth = layout1ToRenderable (layout lwidth)
 
-layout :: Double -> Layout1 Double Double
+layout :: (ChartBackend m) => Double -> Layout1 m Double Double
 layout lwidth = layout1
   where
     layout1 = layout1_title ^= "Amplitude Modulation"

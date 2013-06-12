@@ -10,8 +10,8 @@ import ExampleStocks
 
 -- demonstrate Candles
 
-chart :: Double -> Renderable ()
-chart lwidth = toRenderable layout
+chart :: (ChartBackend m) => Double -> Renderable m ()
+chart lwidth = layout1ToRenderable layout
   where
     layout = layout1_title ^="Stock Prices"
            $ layout1_background ^= solidFillStyle (opaque white)

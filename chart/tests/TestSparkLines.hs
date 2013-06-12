@@ -19,7 +19,8 @@ msft = SparkLine { sl_options = smoothSpark { so_limits=(bot,top), so_height=40 
     bot = minimum lowpoint
     top = maximum closing
 
-chart = toRenderable msft
+chart :: (ChartBackend m) => Renderable m ()
+chart = sparkLineToRenderable msft
 chartSize = sparkSize msft
 
 main1 :: [String] -> IO (PickFn ())

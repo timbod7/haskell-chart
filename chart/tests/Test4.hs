@@ -6,8 +6,8 @@ import Data.Colour.Names
 import Data.Accessor
 import System.Environment(getArgs)
 
-chart :: Bool -> Bool -> Renderable ()
-chart xrev yrev = toRenderable layout
+chart :: (ChartBackend m) => Bool -> Bool -> Renderable m ()
+chart xrev yrev = layout1ToRenderable layout
   where
 
     points = plot_points_style ^= filledCircles 3 (opaque red)

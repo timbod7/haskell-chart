@@ -10,8 +10,8 @@ import System.Environment(getArgs)
 ----------------------------------------------------------------------
 -- Example thanks to Russell O'Connor
 
-chart :: Double -> Renderable ()
-chart lwidth = toRenderable (layout 1001 (trial bits) :: Layout1 Double LogValue)
+chart :: (ChartBackend m) => Double -> Renderable m ()
+chart lwidth = layout1ToRenderable (layout 1001 (trial bits) :: (ChartBackend m) => Layout1 m Double LogValue)
   where
     bits = randoms $ mkStdGen 0
 

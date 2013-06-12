@@ -4,8 +4,8 @@ import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Simple
 import System.Environment(getArgs)
 
-chart :: Renderable ()
-chart = toRenderable (plotLayout pp){layout1_title_="Graphics.Rendering.Chart.Simple example"}
+chart :: (ChartBackend m) => Renderable m ()
+chart = layout1ToRenderable (plotLayout pp) {layout1_title_="Graphics.Rendering.Chart.Simple example"}
   where
     pp = plot xs sin "sin"
                  cos "cos" "o"

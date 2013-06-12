@@ -12,7 +12,8 @@ import Prices(prices1)
 green1 = opaque $ sRGB 0.5 1 0.5
 blue1 = opaque $ sRGB 0.5 0.5 1
 
-chart = toRenderable layout
+chart :: (ChartBackend m) => Renderable m ()
+chart = layout1ToRenderable layout
   where
     price1 = plot_fillbetween_style ^= solidFillStyle green1
            $ plot_fillbetween_values ^= [ (d,(0,v2)) | (d,v1,v2) <- prices1]

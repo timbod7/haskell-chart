@@ -10,8 +10,8 @@ import Prices(prices1)
 
 -- demonstrate AreaSpots
 
-chart :: Double -> Renderable ()
-chart lwidth = toRenderable layout
+chart :: (ChartBackend m) => Double -> Renderable m ()
+chart lwidth = layout1ToRenderable layout
   where
     layout = layout1_title ^="Price History"
            $ layout1_background ^= solidFillStyle (opaque white)
