@@ -92,11 +92,11 @@ smoothSpark  = SparkOptions
 -- | Default options for a barchart sparkline.
 barSpark :: SparkOptions
 barSpark  = smoothSpark { so_smooth=False }
-
+{- TODO: See class definition
 instance ToRenderable SparkLine where
     type RenderableT m SparkLine = SparkLine
     toRenderable = sparkLineToRenderable
-
+-}
 sparkLineToRenderable :: (ChartBackend m) => SparkLine -> Renderable m ()
 sparkLineToRenderable sp = Renderable
             { minsize = return (0, fromIntegral (so_height (sl_options sp)))

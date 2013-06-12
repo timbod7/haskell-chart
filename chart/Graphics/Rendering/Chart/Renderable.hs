@@ -13,8 +13,10 @@
 
 module Graphics.Rendering.Chart.Renderable(
     Renderable(..),
-    ToRenderable(..),
+    --ToRenderable(..), -- TODO: See class definition
     PickFn,
+    
+    rectangleToRenderable,
 
     renderableToPNGFile,
     renderableToPDFFile,
@@ -72,11 +74,12 @@ data Renderable m a = Renderable {
    render  :: RectSize -> m (PickFn a)
 }
 
+{- TODO: Removed this because in all example using it, it is to ambigious.
 -- | A type class abtracting the conversion of a value to a Renderable.
 class ToRenderable a where
   type RenderableT m b :: *
   toRenderable :: (ChartBackend m) => RenderableT m a -> Renderable m ()
-
+-}
 emptyRenderable :: (ChartBackend m) => Renderable m a
 emptyRenderable = spacer (0,0)
 
@@ -261,55 +264,69 @@ defaultRectangle = Rectangle {
   rect_cornerStyle_ = RCornerSquare
 }
 
+rectangleToRenderable :: (ChartBackend m) => Rectangle -> Renderable m ()
+rectangleToRenderable rectangle = Renderable mf rf
+  where
+    mf    = return (rect_minsize_ rectangle)
+    rf sz = bLocal $ do
+      maybeM () (fill sz) (rect_fillStyle_ rectangle)
+      maybeM () (stroke sz) (rect_lineStyle_ rectangle)
+      return nullPickFn
+
+    fill sz fs = do
+        bSetFillStyle fs
+        strokeRectangle sz (rect_cornerStyle_ rectangle)
+        bFill
+
+    stroke sz ls = do
+        bSetLineStyle ls
+        strokeRectangle sz (rect_cornerStyle_ rectangle)
+        bStroke
+
+    strokeRectangle (x2,y2) RCornerSquare = do
+        let (x1,y1) = (0,0)
+        bMoveTo $ Point x1 y1
+        bLineTo $ Point x1 y2
+        bLineTo $ Point x2 y2
+        bLineTo $ Point x2 y1
+        bLineTo $ Point x1 y1
+        bLineTo $ Point x1 y2
+                                
+    strokeRectangle (x2,y2) (RCornerBevel s) = do
+        let (x1,y1) = (0,0)
+        bMoveTo $ Point x1 (y1+s)
+        bLineTo $ Point x1 (y2-s)
+        bLineTo $ Point (x1+s) y2
+        bLineTo $ Point (x2-s) y2
+        bLineTo $ Point x2 (y2-s)
+        bLineTo $ Point x2 (y1+s)
+        bLineTo $ Point (x2-s) y1
+        bLineTo $ Point (x1+s) y1
+        bLineTo $ Point x1 (y1+s)
+        bLineTo $ Point x1 (y2-s)
+
+    strokeRectangle (x2,y2) (RCornerRounded s) = do
+        let (x1,y1) = (0,0)
+        bArcNegative (Point (x1+s) (y2-s)) s (pi2*2) pi2 
+        bArcNegative (Point (x2-s) (y2-s)) s pi2 0
+        bArcNegative (Point (x2-s) (y1+s)) s 0 (pi2*3)
+        bArcNegative (Point (x1+s) (y1+s)) s (pi2*3) (pi2*2)
+        bLineTo $ Point x1 (y2-s)
+    
+    pi2 = pi / 2
+
+{- TODO: See class definition
 instance ToRenderable Rectangle where
-   type RenderableT m Rectangle = Rectangle
-   toRenderable rectangle = Renderable mf rf
-     where
-      mf    = return (rect_minsize_ rectangle)
-      rf sz = bLocal $ do
-        maybeM () (fill sz) (rect_fillStyle_ rectangle)
-        maybeM () (stroke sz) (rect_lineStyle_ rectangle)
-        return nullPickFn
+  type RenderableT m Rectangle = Rectangle
+  toRenderable rectangle = rectangleToRenderable
+-}
 
-      fill sz fs = do
-          bSetFillStyle fs
-          strokeRectangle sz (rect_cornerStyle_ rectangle)
-          bFill
 
-      stroke sz ls = do
-          bSetLineStyle ls
-          strokeRectangle sz (rect_cornerStyle_ rectangle)
-          bStroke
 
-      strokeRectangle (x2,y2) RCornerSquare = do
-          let (x1,y1) = (0,0)
-          bMoveTo $ Point x1 y1
-          bLineTo $ Point x1 y2
-          bLineTo $ Point x2 y2
-          bLineTo $ Point x2 y1
-          bLineTo $ Point x1 y1
-          bLineTo $ Point x1 y2
-                                  
-      strokeRectangle (x2,y2) (RCornerBevel s) = do
-          let (x1,y1) = (0,0)
-          bMoveTo $ Point x1 (y1+s)
-          bLineTo $ Point x1 (y2-s)
-          bLineTo $ Point (x1+s) y2
-          bLineTo $ Point (x2-s) y2
-          bLineTo $ Point x2 (y2-s)
-          bLineTo $ Point x2 (y1+s)
-          bLineTo $ Point (x2-s) y1
-          bLineTo $ Point (x1+s) y1
-          bLineTo $ Point x1 (y1+s)
-          bLineTo $ Point x1 (y2-s)
 
-      strokeRectangle (x2,y2) (RCornerRounded s) = do
-          let (x1,y1) = (0,0)
-          bArcNegative (Point (x1+s) (y2-s)) s (pi2*2) pi2 
-          bArcNegative (Point (x2-s) (y2-s)) s pi2 0
-          bArcNegative (Point (x2-s) (y1+s)) s 0 (pi2*3)
-          bArcNegative (Point (x1+s) (y1+s)) s (pi2*3) (pi2*2)
-          bLineTo $ Point x1 (y2-s)
 
-      pi2 = pi / 2
+
+
+
+
 

@@ -142,10 +142,11 @@ data PlotKind = Name String | FilledCircle | HollowCircle
 data InternalPlot x y = IPY [y] [PlotKind] | IPX [x] [PlotKind]
 
 newtype Layout1DDD m = Layout1DDD { plotLayout :: Layout1 m Double Double }
+{- TODO: See class definition
 instance (ChartBackend m) => ToRenderable (Layout1DDD m) where
   type RenderableT m (Layout1DDD m') = Layout1DDD m
   toRenderable = mapPickFn (const ()) . layout1ToRenderable . plotLayout
-
+-}
 layout1DddToRenderable :: (ChartBackend m) => Layout1DDD m -> Renderable m (Layout1Pick Double Double)
 layout1DddToRenderable = layout1ToRenderable . plotLayout
 
