@@ -18,7 +18,7 @@ module Graphics.Rendering.Chart.Geometry
   , Limit(..)
   , PointMapFn
     
-  , Matrix
+  , Matrix(..)
   , identity
   , rotate
   , scale
