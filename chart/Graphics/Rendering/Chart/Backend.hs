@@ -22,7 +22,7 @@ import Graphics.Rendering.Chart.Geometry
 -- -----------------------------------------------------------------------
 
 -- | The environment present in the CRender Monad.
-data ChartBackendEnv = ChartBackendEnv {
+data ChartBackendEnv = ChartBackendEnv
   -- | An adjustment applied immediately prior to points
   --   being displayed in device coordinates.
   --
@@ -30,17 +30,17 @@ data ChartBackendEnv = ChartBackendEnv {
   --   image is created if this transform rounds to the nearest
   --   pixel. With higher-resolution output, this transform can
   --   just be the identity function.
-    cenv_point_alignfn :: Point -> Point
+  { cbePointAlignFn :: Point -> Point
 
   -- | A adjustment applied immediately prior to coordinates
   --   being transformed.
-  , cenv_coord_alignfn :: Point -> Point
+  , cbeCoordAlignFn :: Point -> Point
   
   , cbeFontStyle :: FontStyle
   , cbeFillStyle :: FillStyle
   , cbeLineStyle :: LineStyle
   , cbeClipRegion :: Maybe Rect
-}
+  }
 
 class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   type ChartOutput a :: *

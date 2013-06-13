@@ -78,12 +78,12 @@ import Graphics.Rendering.Chart.Geometry
 
 alignp :: (ChartBackend m) => Point -> m Point
 alignp p = do 
-    alignfn <- liftM cenv_point_alignfn ask
+    alignfn <- liftM cbePointAlignFn ask
     return (alignfn p)
 
 alignc :: (ChartBackend m) => Point -> m Point
 alignc p = do 
-    alignfn <- liftM cenv_coord_alignfn ask
+    alignfn <- liftM cbeCoordAlignFn ask
     return (alignfn p)
 
 stepPath :: (ChartBackend m) => [Point] -> m ()
@@ -100,7 +100,7 @@ stepPath _  = return ()
 -- pixels.
 strokePath :: (ChartBackend m) => [Point] -> m ()
 strokePath pts = do
-    alignfn <- liftM cenv_point_alignfn ask
+    alignfn <- liftM cbePointAlignFn ask
     stepPath (map alignfn pts)
     bStroke
 
@@ -111,7 +111,7 @@ strokePath pts = do
 -- pixels.
 fillPath :: (ChartBackend m) => [Point] -> m ()
 fillPath pts = do
-    alignfn <- liftM cenv_coord_alignfn ask
+    alignfn <- liftM cbeCoordAlignFn ask
     stepPath (map alignfn pts)
     bFill
 
