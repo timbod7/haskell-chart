@@ -21,6 +21,7 @@ import Data.List (unfoldr)
 import Control.Monad.Reader
 
 import qualified Graphics.Rendering.Cairo as C
+import qualified Graphics.Rendering.Cairo.Matrix as CM
 
 import qualified Graphics.Rendering.Chart.Types as G
 import Graphics.Rendering.Chart.Types 
@@ -30,7 +31,7 @@ import Graphics.Rendering.Chart.Types
   )
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Renderable
 
 -- -----------------------------------------------------------------------
@@ -101,18 +102,32 @@ instance ChartBackend CRender where
     CairoPS  -> cRenderToPSFile  m
     CairoPDF -> cRenderToPDFFile m
   
+  withTransform :: Matrix -> CRender a -> CRender a
+  withTransform t m = withTransform' t 
+                    $ preserveCState 
+                    $ cSetTransform t >> m
+  
   withFontStyle :: FontStyle -> CRender a -> CRender a
-  withFontStyle fs m = preserveCState $ setFontStyle fs >> m
+  withFontStyle fs m = withFontStyle' fs
+                     $ preserveCState 
+                     $ setFontStyle fs >> m
   
   withFillStyle :: FillStyle -> CRender a -> CRender a
-  withFillStyle fs m = preserveCState $ setFillStyle fs >> m
+  withFillStyle fs m = withFillStyle' fs
+                     $ preserveCState 
+                     $ setFillStyle fs >> m
   
   withLineStyle :: LineStyle -> CRender a -> CRender a
-  withLineStyle ls m = preserveCState $ setLineStyle ls >> m
+  withLineStyle ls m = withLineStyle' ls
+                     $ preserveCState 
+                     $ setLineStyle ls >> m
   
   withClipRegion :: Maybe Rect -> CRender a -> CRender a
-  withClipRegion (Just (Rect tl br)) m = preserveCState $ setClipRegion tl br >> m
-  withClipRegion Nothing m = preserveCState $ c C.resetClip >> m
+  withClipRegion clip m = withClipRegion' clip
+                        $ preserveCState 
+                        $ case clip of
+                            Just (Rect tl br) -> setClipRegion tl br >> m
+                            Nothing -> c C.resetClip >> m
 
 -- -----------------------------------------------------------------------
 -- Output rendering functions
@@ -178,6 +193,9 @@ convertFontWeight :: G.FontWeight -> C.FontWeight
 convertFontWeight fw = case fw of
   G.FontWeightBold   -> C.FontWeightBold
   G.FontWeightNormal -> C.FontWeightNormal
+
+convertMatrix :: G.Matrix -> CM.Matrix
+convertMatrix (G.Matrix a1 a2 b1 b2 c1 c2) = CM.Matrix a1 a2 b1 b2 c1 c2
 
 -- -----------------------------------------------------------------------
 -- Assorted helper functions in Cairo Usage
@@ -378,6 +396,7 @@ drawPoint (PointStyle cl bcl bw r shape) p = do
   c $ setSourceColor bcl
   c $ C.stroke
 
+cSetTransform t = c $ C.setMatrix $ convertMatrix t
 cTranslate x y = c $ C.translate x y
 cRotate a = c $ C.rotate a
 cNewPath = c $ C.newPath
