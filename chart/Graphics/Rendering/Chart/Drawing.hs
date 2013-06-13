@@ -26,8 +26,8 @@
 --
 
 module Graphics.Rendering.Chart.Drawing
-  ( strokePath
-  , fillPath
+  ( bStrokePath
+  , bFillPath
   , moveTo
   , lineTo
   , defaultColorSeq
@@ -98,8 +98,8 @@ stepPath _  = return ()
 -- The points will be "corrected" by the cenv_point_alignfn, so that
 -- when drawing bitmaps, 1 pixel wide lines will be centred on the
 -- pixels.
-strokePath :: (ChartBackend m) => [Point] -> m ()
-strokePath pts = do
+bStrokePath :: (ChartBackend m) => [Point] -> m ()
+bStrokePath pts = do
     alignfn <- liftM cbePointAlignFn ask
     stepPath (map alignfn pts)
     bStroke
@@ -109,8 +109,8 @@ strokePath pts = do
 -- The points will be "corrected" by the cenv_coord_alignfn, so that
 -- when drawing bitmaps, the edges of the region will fall between
 -- pixels.
-fillPath :: (ChartBackend m) => [Point] -> m ()
-fillPath pts = do
+bFillPath :: (ChartBackend m) => [Point] -> m ()
+bFillPath pts = do
     alignfn <- liftM cbeCoordAlignFn ask
     stepPath (map alignfn pts)
     bFill

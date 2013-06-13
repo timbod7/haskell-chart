@@ -61,13 +61,13 @@ renderPlotLines p pmap = bLocal $ do
     mapM_ (drawLines (mapXY pmap)) (plot_lines_values_ p)
     mapM_ (drawLines pmap) (plot_lines_limit_values_ p)
   where
-    drawLines mapfn pts = strokePath (map mapfn pts)
+    drawLines mapfn pts = bStrokePath (map mapfn pts)
 
 renderPlotLegendLines :: (ChartBackend m) => PlotLines x y -> Rect -> m ()
 renderPlotLegendLines p r@(Rect p1 p2) = bLocal $ do
     bSetLineStyle (plot_lines_style_ p)
     let y = (p_y p1 + p_y p2) / 2
-    strokePath [Point (p_x p1) y, Point (p_x p2) y]
+    bStrokePath [Point (p_x p1) y, Point (p_x p2) y]
 
 defaultPlotLineStyle :: LineStyle
 defaultPlotLineStyle = (solidLine 1 $ opaque blue){

@@ -128,6 +128,14 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   
   runBackend :: m a -> ChartOutput a
   
+  
+  -- | Stroke the outline of the given path using the 
+  --   current line style.
+  strokePath :: Path -> m ()
+  
+  -- | Fill the given path using the current fill style.
+  fillPath :: Path -> m ()
+  
   -- | Use the given transformation in this local
   --   environment when drawing.
   withTransform :: Matrix -> m a -> m a

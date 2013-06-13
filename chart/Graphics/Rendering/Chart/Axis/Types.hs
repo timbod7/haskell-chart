@@ -221,7 +221,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
    let ls = axis_line_style_ as
    bLocal $ do
        bSetLineStyle ls{line_cap_=LineCapSquare}
-       strokePath [Point sx sy,Point ex ey]
+       bStrokePath [Point sx sy,Point ex ey]
    bLocal $ do
        bSetLineStyle ls{line_cap_=LineCapButt}
        mapM_ drawTick (axis_ticks_ ad)
@@ -239,7 +239,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
    drawTick (value,length) =
        let t1 = axisPoint value
 	   t2 = t1 `pvadd` (vscale length tp)
-       in strokePath [t1,t2]
+       in bStrokePath [t1,t2]
 
    (hta,vta,coord,awayFromAxis) = case et of
        E_Top    -> (HTA_Centre, VTA_Bottom, snd, \v -> (Vector 0 (-v)))
@@ -333,10 +333,10 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
     drawGridLine E_Right  = hline
 
     vline v = let v' = p_x (axisPoint v)
-	      in strokePath [Point v' 0,Point v' h]
+	      in bStrokePath [Point v' 0,Point v' h]
 
     hline v = let v' = p_y (axisPoint v)
-	      in strokePath [Point 0 v',Point w v']
+	      in bStrokePath [Point 0 v',Point w v']
 
 
 -- | Construct an axis given the positions for ticks, grid lines, and 
