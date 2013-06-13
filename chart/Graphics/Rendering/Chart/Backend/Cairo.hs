@@ -23,12 +23,11 @@ import qualified Graphics.Rendering.Cairo as C
 
 import qualified Graphics.Rendering.Chart.Types as G
 import Graphics.Rendering.Chart.Types 
-  ( CEnv(..)
-  , ChartBackend(..)
-  , PointShape(..)
+  ( PointShape(..)
   , FillStyle(..), PointStyle(..), FontStyle(..), LineStyle(..)
   , HTextAnchor(..), VTextAnchor(..)
   )
+import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Renderable

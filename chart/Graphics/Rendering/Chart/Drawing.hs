@@ -34,6 +34,9 @@ module Graphics.Rendering.Chart.Drawing
   
   , alignp
   , alignc
+  
+  , bDrawText
+  , bDrawTextR
     
   , solidLine
   , dashedLine
@@ -52,6 +55,7 @@ module Graphics.Rendering.Chart.Drawing
   , defaultFontStyle
   
   , module Graphics.Rendering.Chart.Types
+  , module Graphics.Rendering.Chart.Backend
 ) where
 
 import Data.Accessor
@@ -64,6 +68,7 @@ import Data.List (unfoldr)
 import Control.Monad.Reader
 
 import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Geometry
 
 -- -----------------------------------------------------------------------
@@ -118,6 +123,12 @@ lineTo :: (ChartBackend m) => Point -> m ()
 lineTo p = do
     p' <- alignp p
     bLineTo p'
+
+bDrawText :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
+bDrawText hta vta p s = bDrawTextR hta vta 0 p s
+
+bDrawTextR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
+bDrawTextR hta vta angle p s = bDrawTextsR hta vta angle p s
  
 -- -----------------------------------------------------------------------
 
