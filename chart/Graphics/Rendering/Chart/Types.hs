@@ -53,7 +53,15 @@ data FontExtents = FontExtents
 -- -----------------------------------------------------------------------
 -- Path Types
 -- -----------------------------------------------------------------------
-  
+
+data PathElement
+     = MoveTo Bool Point
+     | LineTo Bool Point
+     | Arc Point Double Double Double
+     | ArcNeg Point Double Double Double
+
+newtype Path = Path [PathElement]
+
 -- -----------------------------------------------------------------------
 -- Line Types
 -- -----------------------------------------------------------------------
