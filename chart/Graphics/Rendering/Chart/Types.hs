@@ -35,6 +35,8 @@ module Graphics.Rendering.Chart.Types
   ) where
 
 import Data.Colour
+import Data.Colour.Names
+import Data.Default
 import Data.Accessor
 import Data.Accessor.Template
 
@@ -47,6 +49,10 @@ data FontExtents = FontExtents
   , fontExtentsMaxXAdvance :: Double
   , fontExtentsMaxYAdvance :: Double
   }
+
+-- -----------------------------------------------------------------------
+-- Path Types
+-- -----------------------------------------------------------------------
   
 -- -----------------------------------------------------------------------
 -- Line Types
@@ -72,6 +78,15 @@ data LineStyle = LineStyle {
    line_join_   :: LineJoin
 }
 
+instance Default LineStyle where
+  def = LineStyle 
+    { line_width_  = 1
+    , line_color_  = opaque black
+    , line_dashes_ = []
+    , line_cap_    = LineCapButt
+    , line_join_   = LineJoinBevel
+    }
+
 -- -----------------------------------------------------------------------
 -- Point Types
 -- -----------------------------------------------------------------------
@@ -94,6 +109,15 @@ data PointStyle = PointStyle
   , point_shape_ :: PointShape
   }
 
+instance Default PointStyle where
+  def = PointStyle 
+    { point_color_        = opaque black
+    , point_border_color_ = transparent
+    , point_border_width_ = 0
+    , point_radius_       = 1
+    , point_shape_        = PointShapeCircle
+    }
+
 -- -----------------------------------------------------------------------
 -- Font & Text Types
 -- -----------------------------------------------------------------------
@@ -103,9 +127,15 @@ data FontSlant = FontSlantNormal  -- ^ Normal font style without slant.
                | FontSlantItalic  -- ^ With a slight slant.
                | FontSlantOblique -- ^ With a greater slant.
 
+instance Default FontSlant where
+  def = FontSlantNormal
+
 -- | The possible weights of a font.
 data FontWeight = FontWeightNormal -- ^ Normal font style without weight.
                 | FontWeightBold   -- ^ Bold font.
+
+instance Default FontWeight where
+  def = FontWeightNormal
 
 -- | Data type for a font.
 data FontStyle = FontStyle {
@@ -115,6 +145,15 @@ data FontStyle = FontStyle {
       font_weight_ :: FontWeight,
       font_color_  :: AlphaColour Double
 }
+
+instance Default FontStyle where
+  def = FontStyle 
+    { font_name_   = "sans"
+    , font_size_   = 10
+    , font_slant_  = def
+    , font_weight_ = def
+    , font_color_  = opaque black
+    }
 
 data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right
 data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine
@@ -128,6 +167,11 @@ data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine
 --   The contained Cairo action sets the required fill
 --   style in the Cairo rendering state.
 newtype FillStyle = FillStyleSolid { fill_colour_ :: AlphaColour Double }
+
+instance Default FillStyle where
+  def = FillStyleSolid
+    { fill_colour_ = opaque white
+    }
 
 -- -----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
