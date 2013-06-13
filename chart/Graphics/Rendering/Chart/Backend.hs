@@ -27,7 +27,7 @@ data ChartBackendEnv = ChartBackendEnv {
   --   image is created if this transform rounds to the nearest
   --   pixel. With higher-resolution output, this transform can
   --   just be the identity function.
-  , cenv_point_alignfn :: Point -> Point,
+    cenv_point_alignfn :: Point -> Point
 
   -- | A adjustment applied immediately prior to coordinates
   --   being transformed.
@@ -119,13 +119,13 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   withClipRegion :: Rect -> m a -> m a
 
 getFontStyle :: ChartBackend m => m FontStyle
-getFontStyle = fmap cbeFontStyle ask
+getFontStyle = liftM cbeFontStyle ask
 
 getFillStyle :: ChartBackend m => m FillStyle
-getFillStyle = fmap cbeFillStyle ask
+getFillStyle = liftM cbeFillStyle ask
 
 getLineStyle :: ChartBackend m => m LineStyle
-getLineStyle = fmap cbeLineStyle ask
+getLineStyle = liftM cbeLineStyle ask
 
 
 
