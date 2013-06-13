@@ -7,9 +7,12 @@ module Graphics.Rendering.Chart.Backend
   , defaultEnv
   
   , ChartBackend(..)
-  , getFillStyle, getFontStyle, getLineStyle, getClipRegion
-  , withFillStyleHelper, withFontStyleHelper
-  , withLineStyleHelper, withClipRegionHelper
+  , getTransform
+  , getFillStyle, getFontStyle
+  , getLineStyle, getClipRegion
+  , withTransform'
+  , withFillStyle', withFontStyle'
+  , withLineStyle', withClipRegion'
   ) where
 
 import Data.Colour
@@ -175,18 +178,18 @@ getLineStyle = liftM cbeLineStyle ask
 getClipRegion :: ChartBackend m => m (Maybe Rect)
 getClipRegion = liftM cbeClipRegion ask
 
-withTransformHelper :: ChartBackend m => Matrix -> (Matrix -> m a) -> m a
-withTransformHelper t m = local (\s -> s { cbeTransform = t }) (m t)
+withTransform' :: ChartBackend m => Matrix -> m a -> m a
+withTransform' t m = local (\s -> s { cbeTransform = t }) m
 
-withFontStyleHelper :: ChartBackend m => FontStyle -> (FontStyle -> m a) -> m a
-withFontStyleHelper fs m = local (\s -> s { cbeFontStyle = fs }) (m fs)
+withFontStyle' :: ChartBackend m => FontStyle -> m a -> m a
+withFontStyle' fs m = local (\s -> s { cbeFontStyle = fs }) m
 
-withFillStyleHelper :: ChartBackend m => FillStyle -> (FillStyle -> m a) -> m a
-withFillStyleHelper fs m = local (\s -> s { cbeFillStyle = fs }) (m fs)
+withFillStyle' :: ChartBackend m => FillStyle -> m a -> m a
+withFillStyle' fs m = local (\s -> s { cbeFillStyle = fs }) m
 
-withLineStyleHelper :: ChartBackend m => LineStyle -> (LineStyle -> m a) -> m a
-withLineStyleHelper ls m = local (\s -> s { cbeLineStyle = ls }) (m ls)
+withLineStyle' :: ChartBackend m => LineStyle -> m a -> m a
+withLineStyle' ls m = local (\s -> s { cbeLineStyle = ls }) m
 
-withClipRegionHelper :: ChartBackend m => Maybe Rect -> (Maybe Rect -> m a) -> m a
-withClipRegionHelper clip m = local (\s -> s { cbeClipRegion = clip }) (m clip)
+withClipRegion' :: ChartBackend m => Maybe Rect -> m a -> m a
+withClipRegion' clip m = local (\s -> s { cbeClipRegion = clip }) m
 
