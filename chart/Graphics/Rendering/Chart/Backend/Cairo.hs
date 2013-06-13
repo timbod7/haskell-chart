@@ -40,10 +40,10 @@ data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
 
 -- | The reader monad containing context information to control
 --   the rendering process.
-newtype CRender a = DR (ReaderT CEnv C.Render a)
-  deriving (Functor, Monad, MonadReader CEnv)
+newtype CRender a = DR (ReaderT ChartBackendEnv C.Render a)
+  deriving (Functor, Monad, MonadReader ChartBackendEnv)
 
-runCRender :: CRender a -> CEnv -> C.Render a
+runCRender :: CRender a -> ChartBackendEnv -> C.Render a
 runCRender (DR m) e = runReaderT m e
 
 c :: C.Render a -> CRender a
@@ -422,12 +422,12 @@ cRenderToFile withSurface cr width height path =
         cr
         c $ C.showPage
 
-bitmapEnv :: CEnv
-bitmapEnv = CEnv (adjfn 0.5) (adjfn 0.0)
+bitmapEnv :: ChartBackendEnv
+bitmapEnv = ChartBackendEnv (adjfn 0.5) (adjfn 0.0)
   where
     adjfn offset (Point x y) = Point (adj x) (adj y)
       where
         adj v = (fromIntegral.round) v +offset
 
-vectorEnv :: CEnv
-vectorEnv = CEnv id id
+vectorEnv :: ChartBackendEnv
+vectorEnv = ChartBackendEnv id id

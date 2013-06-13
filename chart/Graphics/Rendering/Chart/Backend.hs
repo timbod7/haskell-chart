@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Graphics.Rendering.Chart.Backend
-  ( CEnv(..)
+  ( ChartBackendEnv(..)
   , ChartBackend(..)
   ) where
 
@@ -19,7 +19,7 @@ import Graphics.Rendering.Chart.Geometry
 -- -----------------------------------------------------------------------
 
 -- | The environment present in the CRender Monad.
-data CEnv = CEnv {
+data ChartBackendEnv = ChartBackendEnv {
     -- | An adjustment applied immediately prior to points
     --   being displayed in device coordinates.
     --
@@ -34,7 +34,7 @@ data CEnv = CEnv {
     cenv_coord_alignfn :: Point -> Point
 }
 
-class (Monad m, MonadReader CEnv m) => ChartBackend m where
+class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   type ChartOutput a :: *
   bNewPath :: m ()
   bClosePath :: m ()
