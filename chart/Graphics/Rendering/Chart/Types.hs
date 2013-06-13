@@ -4,7 +4,13 @@
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Types
-  ( LineCap(..)
+  ( Path
+  , PathElement(..)
+  --, lineTo, moveTo
+  , fromPath
+  , arc, arcNeg
+  
+  , LineCap(..)
   , LineJoin(..)
   , LineStyle(..)
   
@@ -39,6 +45,7 @@ import Data.Colour.Names
 import Data.Default
 import Data.Accessor
 import Data.Accessor.Template
+import Data.Monoid
 
 import Graphics.Rendering.Chart.Geometry
 
@@ -55,12 +62,31 @@ data FontExtents = FontExtents
 -- -----------------------------------------------------------------------
 
 data PathElement
-     = MoveTo Bool Point
-     | LineTo Bool Point
+     = MoveTo Point
+     | LineTo Point
      | Arc Point Double Double Double
      | ArcNeg Point Double Double Double
 
-newtype Path = Path [PathElement]
+newtype Path = Path ([PathElement] -> [PathElement])
+
+instance Monoid Path where
+  mappend (Path p1) (Path p2) = Path $ p1 . p2
+  mempty = Path id
+
+fromPath :: Path -> [PathElement]
+fromPath (Path p) = p []
+
+moveTo :: Point -> Path
+moveTo p = Path ((MoveTo p) :)
+
+lineTo :: Point -> Path
+lineTo p = Path ((LineTo p) :)
+
+arc :: Point -> Double -> Double -> Double -> Path
+arc p r a1 a2 = Path ((Arc p r a1 a2) :)
+
+arcNeg :: Point -> Double -> Double -> Double -> Path
+arcNeg p r a1 a2 = Path ((ArcNeg p r a1 a2) :)
 
 -- -----------------------------------------------------------------------
 -- Line Types
