@@ -128,7 +128,7 @@ identity = Matrix 1 0 0 1 0 0
 
 -- | Copied and adopted from Graphics.Rendering.Cairo.Matrix
 translate :: Vector -> Matrix -> Matrix
-translate tv m = m * (Matrix 1 0 0 1 (t_x tv) (t_y tv))
+translate tv m = m * (Matrix 1 0 0 1 (v_x tv) (v_y tv))
 
 -- | Copied and adopted from Graphics.Rendering.Cairo.Matrix
 scale :: Vector -> Matrix -> Matrix
