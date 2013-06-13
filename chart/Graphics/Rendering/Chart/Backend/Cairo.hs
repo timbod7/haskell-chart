@@ -110,8 +110,9 @@ instance ChartBackend CRender where
   withLineStyle :: LineStyle -> CRender a -> CRender a
   withLineStyle ls m = preserveCState $ setLineStyle ls >> m
   
-  withClipRegion :: Rect -> CRender a -> CRender a
-  withClipRegion (Rect tl br) m = preserveCState $ setClipRegion tl br >> m
+  withClipRegion :: Maybe Rect -> CRender a -> CRender a
+  withClipRegion (Just (Rect tl br)) m = preserveCState $ setClipRegion tl br >> m
+  withClipRegion Nothing m = preserveCState $ c C.resetClip >> m
 
 -- -----------------------------------------------------------------------
 -- Output rendering functions
@@ -424,14 +425,14 @@ cRenderToFile withSurface cr width height path =
         c $ C.showPage
 
 bitmapEnv :: ChartBackendEnv
-bitmapEnv = ChartBackendEnv (adjfn 0.5) (adjfn 0.0) def def def
+bitmapEnv = ChartBackendEnv (adjfn 0.5) (adjfn 0.0) def def def Nothing
   where
     adjfn offset (Point x y) = Point (adj x) (adj y)
       where
         adj v = (fromIntegral.round) v +offset
 
 vectorEnv :: ChartBackendEnv
-vectorEnv = ChartBackendEnv id id def def def
+vectorEnv = ChartBackendEnv id id def def def Nothing
 
 
 
