@@ -20,18 +20,22 @@ import Graphics.Rendering.Chart.Geometry
 
 -- | The environment present in the CRender Monad.
 data ChartBackendEnv = ChartBackendEnv {
-    -- | An adjustment applied immediately prior to points
-    --   being displayed in device coordinates.
-    --
-    --   When device coordinates correspond to pixels, a cleaner
-    --   image is created if this transform rounds to the nearest
-    --   pixel. With higher-resolution output, this transform can
-    --   just be the identity function.
-    cenv_point_alignfn :: Point -> Point,
+  -- | An adjustment applied immediately prior to points
+  --   being displayed in device coordinates.
+  --
+  --   When device coordinates correspond to pixels, a cleaner
+  --   image is created if this transform rounds to the nearest
+  --   pixel. With higher-resolution output, this transform can
+  --   just be the identity function.
+  , cenv_point_alignfn :: Point -> Point,
 
-    -- | A adjustment applied immediately prior to coordinates
-    --   being transformed.
-    cenv_coord_alignfn :: Point -> Point
+  -- | A adjustment applied immediately prior to coordinates
+  --   being transformed.
+  , cenv_coord_alignfn :: Point -> Point
+  
+  , cbeFontStyle :: FontStyle
+  , cbeFillStyle :: FillStyle
+  , cbeLineStyle :: LineStyle
 }
 
 class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
@@ -113,3 +117,17 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   -- | Use the given clipping rectangle when drawing
   --   in this local environment.
   withClipRegion :: Rect -> m a -> m a
+
+getFontStyle :: ChartBackend m => m FontStyle
+getFontStyle = fmap cbeFontStyle ask
+
+getFillStyle :: ChartBackend m => m FillStyle
+getFillStyle = fmap cbeFillStyle ask
+
+getLineStyle :: ChartBackend m => m LineStyle
+getLineStyle = fmap cbeLineStyle ask
+
+
+
+
+
