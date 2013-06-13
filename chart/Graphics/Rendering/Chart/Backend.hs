@@ -5,6 +5,9 @@
 module Graphics.Rendering.Chart.Backend
   ( ChartBackendEnv(..)
   , ChartBackend(..)
+  , getFillStyle, getFontStyle, getLineStyle, getClipRegion
+  , withFillStyleHelper, withFontStyleHelper
+  , withLineStyleHelper, withClipRegionHelper
   ) where
 
 import Data.Colour
@@ -36,6 +39,7 @@ data ChartBackendEnv = ChartBackendEnv {
   , cbeFontStyle :: FontStyle
   , cbeFillStyle :: FillStyle
   , cbeLineStyle :: LineStyle
+  , cbeClipRegion :: Maybe Rect
 }
 
 class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
@@ -116,7 +120,7 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   
   -- | Use the given clipping rectangle when drawing
   --   in this local environment.
-  withClipRegion :: Rect -> m a -> m a
+  withClipRegion :: Maybe Rect -> m a -> m a
 
 getFontStyle :: ChartBackend m => m FontStyle
 getFontStyle = liftM cbeFontStyle ask
@@ -127,7 +131,18 @@ getFillStyle = liftM cbeFillStyle ask
 getLineStyle :: ChartBackend m => m LineStyle
 getLineStyle = liftM cbeLineStyle ask
 
+getClipRegion :: ChartBackend m => m (Maybe Rect)
+getClipRegion = liftM cbeClipRegion ask
 
+withFontStyleHelper :: ChartBackend m => FontStyle -> (FontStyle -> m a) -> m a
+withFontStyleHelper fs m = local (\s -> s { cbeFontStyle = fs }) (m fs)
 
+withFillStyleHelper :: ChartBackend m => FillStyle -> (FillStyle -> m a) -> m a
+withFillStyleHelper fs m = local (\s -> s { cbeFillStyle = fs }) (m fs)
 
+withLineStyleHelper :: ChartBackend m => LineStyle -> (LineStyle -> m a) -> m a
+withLineStyleHelper ls m = local (\s -> s { cbeLineStyle = ls }) (m ls)
+
+withClipRegionHelper :: ChartBackend m => Maybe Rect -> (Maybe Rect -> m a) -> m a
+withClipRegionHelper clip m = local (\s -> s { cbeClipRegion = clip }) (m clip)
 
