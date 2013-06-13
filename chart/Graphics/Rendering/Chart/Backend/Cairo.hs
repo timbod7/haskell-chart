@@ -13,6 +13,7 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , renderableToSVGFile
   ) where
 
+import Data.Default
 import Data.Colour
 import Data.Colour.SRGB
 import Data.List (unfoldr)
@@ -423,11 +424,15 @@ cRenderToFile withSurface cr width height path =
         c $ C.showPage
 
 bitmapEnv :: ChartBackendEnv
-bitmapEnv = ChartBackendEnv (adjfn 0.5) (adjfn 0.0)
+bitmapEnv = ChartBackendEnv (adjfn 0.5) (adjfn 0.0) def def def
   where
     adjfn offset (Point x y) = Point (adj x) (adj y)
       where
         adj v = (fromIntegral.round) v +offset
 
 vectorEnv :: ChartBackendEnv
-vectorEnv = ChartBackendEnv id id
+vectorEnv = ChartBackendEnv id id def def def
+
+
+
+

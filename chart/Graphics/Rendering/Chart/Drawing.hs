@@ -58,6 +58,7 @@ module Graphics.Rendering.Chart.Drawing
   , module Graphics.Rendering.Chart.Backend
 ) where
 
+import Data.Default
 import Data.Accessor
 import Data.Accessor.Template
 import Data.Colour
@@ -151,7 +152,7 @@ dashedLine ::
 dashedLine w ds cl = LineStyle w cl ds LineCapButt LineJoinMiter
 
 defaultPointStyle :: PointStyle
-defaultPointStyle = PointStyle (opaque white) transparent 0 1 PointShapeCircle
+defaultPointStyle = def
 
 filledCircles :: Double             -- ^ Radius of circle.
               -> AlphaColour Double -- ^ Colour.
@@ -208,12 +209,5 @@ solidFillStyle :: AlphaColour Double -> FillStyle
 solidFillStyle cl = FillStyleSolid cl
 
 defaultFontStyle :: FontStyle
-defaultFontStyle = FontStyle {
-   font_name_   = "sans",
-   font_size_   = 10,
-   font_slant_  = FontSlantNormal,
-   font_weight_ = FontWeightNormal,
-   font_color_  = opaque black
-}
-
+defaultFontStyle = def
 
