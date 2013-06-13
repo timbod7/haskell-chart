@@ -130,28 +130,16 @@ class (Monad m, MonadReader CEnv m) => ChartBackend m where
   
   runBackend :: m a -> ChartOutput a
   
-  -- | Use the given color as source color 
-  --   in this local environment when drawing.
-  --   Note this will override the color from fill, line or font styles
-  --   already applied.
-  withSourceColor :: AlphaColour Double -> m a -> m a
-  
   -- | Use the given font style in this local
-  --   environment when drawing.
-  --   Note the font color will override the color 
-  --   from fill or line styles, as well as the current source color.
+  --   environment when drawing text.
   withFontStyle :: FontStyle -> m a -> m a
   
   -- | Use the given fill style in this local
-  --   environment when drawing.
-  --   Note the fill color (if there is one) will override the color 
-  --   from font or line styles, as well as the current source color.
+  --   environment when filling paths.
   withFillStyle :: FillStyle -> m a -> m a
   
   -- | Use the given line style in this local
-  --   environment when drawing.
-  --   Note the line color (if there is one) will override the color 
-  --   from font or fill styles, as well as the current source color.
+  --   environment when stroking paths.
   withLineStyle :: LineStyle -> m a -> m a
   
   -- | Use the given clipping rectangle when drawing

@@ -101,9 +101,6 @@ instance ChartBackend CRender where
     CairoPS  -> cRenderToPSFile  m
     CairoPDF -> cRenderToPDFFile m
   
-  withSourceColor :: AlphaColour Double -> CRender a -> CRender a
-  withSourceColor cl m = preserveCState $ cSetSourceColor cl >> m
-  
   withFontStyle :: FontStyle -> CRender a -> CRender a
   withFontStyle fs m = preserveCState $ setFontStyle fs >> m
   
