@@ -122,6 +122,21 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   --   in this local environment.
   withClipRegion :: Maybe Rect -> m a -> m a
 
+-- -----------------------------------------------------------------------
+-- Rendering Utility Types
+-- -----------------------------------------------------------------------
+
+data TextSize = TextSize 
+  { textSizeWidth     :: Double
+  , textSizeAscent    :: Double
+  , textSizeDescent   :: Double
+  , textSizeLinespace :: Double
+  }
+
+-- -----------------------------------------------------------------------
+-- Rendering Utility Functions
+-- -----------------------------------------------------------------------
+
 getFontStyle :: ChartBackend m => m FontStyle
 getFontStyle = liftM cbeFontStyle ask
 
