@@ -425,14 +425,14 @@ cRenderToFile withSurface cr width height path =
         c $ C.showPage
 
 bitmapEnv :: ChartBackendEnv
-bitmapEnv = ChartBackendEnv (adjfn 0.5) (adjfn 0.0) def def def Nothing
+bitmapEnv = defaultEnv (adjfn 0.5) (adjfn 0.0) 
   where
     adjfn offset (Point x y) = Point (adj x) (adj y)
       where
         adj v = (fromIntegral.round) v +offset
 
 vectorEnv :: ChartBackendEnv
-vectorEnv = ChartBackendEnv id id def def def Nothing
+vectorEnv = defaultEnv id id
 
 
 

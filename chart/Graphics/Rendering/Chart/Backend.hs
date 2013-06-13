@@ -4,6 +4,8 @@
 
 module Graphics.Rendering.Chart.Backend
   ( ChartBackendEnv(..)
+  , defaultEnv
+  
   , ChartBackend(..)
   , getFillStyle, getFontStyle, getLineStyle, getClipRegion
   , withFillStyleHelper, withFontStyleHelper
@@ -11,6 +13,7 @@ module Graphics.Rendering.Chart.Backend
   ) where
 
 import Data.Colour
+import Data.Default
 
 import Control.Monad.Reader
 
@@ -18,7 +21,7 @@ import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Geometry
 
 -- -----------------------------------------------------------------------
--- Rendering Backend
+-- Rendering Backend Environment
 -- -----------------------------------------------------------------------
 
 -- | The environment present in the CRender Monad.
@@ -36,11 +39,27 @@ data ChartBackendEnv = ChartBackendEnv
   --   being transformed.
   , cbeCoordAlignFn :: Point -> Point
   
+  , cbeTransform :: Matrix
   , cbeFontStyle :: FontStyle
   , cbeFillStyle :: FillStyle
   , cbeLineStyle :: LineStyle
   , cbeClipRegion :: Maybe Rect
   }
+
+defaultEnv :: (Point -> Point) -> (Point -> Point) -> ChartBackendEnv
+defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv 
+  { cbePointAlignFn = pointAlignFn
+  , cbeCoordAlignFn = coordAlignFn
+  , cbeTransform = identity 
+  , cbeFontStyle = def
+  , cbeFillStyle = def
+  , cbeLineStyle = def
+  , cbeClipRegion = Nothing
+  }
+
+-- -----------------------------------------------------------------------
+-- Rendering Backend Class
+-- -----------------------------------------------------------------------
 
 class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   type ChartOutput a :: *
@@ -106,6 +125,10 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   
   runBackend :: m a -> ChartOutput a
   
+  -- | Use the given transformation in this local
+  --   environment when drawing.
+  withTransform :: Matrix -> m a -> m a
+  
   -- | Use the given font style in this local
   --   environment when drawing text.
   withFontStyle :: FontStyle -> m a -> m a
@@ -137,6 +160,9 @@ data TextSize = TextSize
 -- Rendering Utility Functions
 -- -----------------------------------------------------------------------
 
+getTransform :: ChartBackend m => m Matrix
+getTransform = liftM cbeTransform ask
+
 getFontStyle :: ChartBackend m => m FontStyle
 getFontStyle = liftM cbeFontStyle ask
 
@@ -148,6 +174,9 @@ getLineStyle = liftM cbeLineStyle ask
 
 getClipRegion :: ChartBackend m => m (Maybe Rect)
 getClipRegion = liftM cbeClipRegion ask
+
+withTransformHelper :: ChartBackend m => Matrix -> (Matrix -> m a) -> m a
+withTransformHelper t m = local (\s -> s { cbeTransform = t }) (m t)
 
 withFontStyleHelper :: ChartBackend m => FontStyle -> (FontStyle -> m a) -> m a
 withFontStyleHelper fs m = local (\s -> s { cbeFontStyle = fs }) (m fs)
