@@ -40,6 +40,7 @@ module Graphics.Rendering.Chart.Drawing
   
   , bDrawText
   , bDrawTextR
+  , drawTextR
     
   , solidLine
   , dashedLine
@@ -154,7 +155,33 @@ bDrawText hta vta p s = bDrawTextR hta vta 0 p s
 
 bDrawTextR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
 bDrawTextR hta vta angle p s = bDrawTextsR hta vta angle p s
- 
+
+-- | Function to draw a textual label anchored by one of its corners
+--   or edges, with rotation. Rotation angle is given in degrees,
+--   rotation is performed around anchor point.
+drawTextR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
+drawTextR hta vta angle p s =
+  withTransform (translate (pointToVec p) 1) $
+    withTransform (rotate theta 1) $ do
+      ts <- textSize s
+      drawText (adjustText hta vta ts) s
+  where
+    theta = angle*pi/180.0
+
+adjustText :: HTextAnchor -> VTextAnchor -> TextSize -> Point
+adjustText hta vta ts = Point (adjustTextX hta ts) (adjustTextY vta ts)
+
+adjustTextX :: HTextAnchor -> TextSize -> Double
+adjustTextX HTA_Left   _  = 0
+adjustTextX HTA_Centre ts = (- (textSizeWidth ts / 2))
+adjustTextX HTA_Right  ts = (- textSizeWidth ts)
+
+adjustTextY :: VTextAnchor -> TextSize -> Double
+adjustTextY VTA_Top      ts = textSizeAscent ts
+adjustTextY VTA_Centre   ts = - (textSizeYBearing ts) / 2
+adjustTextY VTA_BaseLine _  = 0
+adjustTextY VTA_Bottom   ts = -(textSizeDescent ts)
+
 -- -----------------------------------------------------------------------
 
 defaultColorSeq :: [AlphaColour Double]
