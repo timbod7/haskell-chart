@@ -5,6 +5,8 @@ module Graphics.Rendering.Chart.Geometry
 
   , RectSize
   , Range
+  
+  , pointToVec
 
   , mkrect
   , rectPath
@@ -35,6 +37,9 @@ data Vector = Vector {
     v_x :: Double,
     v_y :: Double
 } deriving Show
+
+pointToVec :: Point -> Vector
+pointToVec (Point x y) = Vector x y
 
 -- | Scale a vector by a constant.
 vscale :: Double -> Vector -> Vector
