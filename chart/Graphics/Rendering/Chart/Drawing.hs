@@ -28,8 +28,8 @@
 module Graphics.Rendering.Chart.Drawing
   ( bStrokePath
   , bFillPath
-  , moveTo
-  , lineTo
+  , Graphics.Rendering.Chart.Drawing.moveTo
+  , Graphics.Rendering.Chart.Drawing.lineTo
   , defaultColorSeq
   
   , alignFillPath
@@ -71,10 +71,12 @@ import Data.Colour
 import Data.Colour.SRGB
 import Data.Colour.Names
 import Data.List (unfoldr)
+import Data.Monoid
 
 import Control.Monad.Reader
 
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Types hiding (lineTo, moveTo)
+import qualified Graphics.Rendering.Chart.Types as T
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Geometry
 
@@ -89,6 +91,16 @@ withRotation angle = withTransform (rotate angle 1)
 -- | Apply a local translation.
 withTranslation :: (ChartBackend m) => Point -> m a -> m a
 withTranslation p = withTransform (translate (pointToVec p) 1)
+
+
+-- | Changes the 'LineStyle' and 'FillStyle' to comply with
+--   the given 'PointStyle'.
+withPointStyle :: (ChartBackend m) => PointStyle -> m a -> m a
+withPointStyle (PointStyle cl bcl bw _ _) m = do
+  ls <- getLineStyle
+  withLineStyle (ls { line_color_ = bcl, line_width_ = bw }) $ do
+    fs <- getFillStyle
+    withFillStyle (solidFillStyle cl) m
 
 -- -----------------------------------------------------------------------
 -- Alignment Helpers
@@ -163,6 +175,42 @@ lineTo :: (ChartBackend m) => Point -> m ()
 lineTo p = do
     p' <- alignp p
     bLineTo p'
+
+drawPoint :: (ChartBackend m) => PointStyle -> Point -> m ()
+drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
+  p'@(Point x y) <- alignp p
+  case shape of
+    PointShapeCircle -> fillPath $ arc p' r 0 (2*pi)
+    PointShapePolygon sides isrot -> do
+      let intToAngle n =
+            if isrot
+            then       fromIntegral n * 2*pi/fromIntegral sides
+            else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
+          angles = map intToAngle [0 .. sides-1]
+          (p:ps) = map (\a -> Point (x + r * sin a)
+                                    (y + r * cos a)) angles
+      fillPath $ T.moveTo p <> mconcat (map T.lineTo ps) <> T.lineTo p
+    PointShapePlus -> do
+      strokePath $ moveTo' (x+r) y
+                <> lineTo' (x-r) y
+                <> moveTo' x (y-r)
+                <> lineTo' x (y+r)
+    PointShapeCross -> do
+      let rad = r / sqrt 2
+      strokePath $ moveTo' (x+rad) (y+rad)
+                <> lineTo' (x-rad) (y-rad)
+                <> moveTo' (x+rad) (y-rad)
+                <> lineTo' (x-rad) (y+rad)
+    PointShapeStar -> do
+      let rad = r / sqrt 2
+      strokePath $ moveTo' (x+r) y
+                <> lineTo' (x-r) y
+                <> moveTo' x (y-r)
+                <> lineTo' x (y+r)
+                <> moveTo' (x+rad) (y+rad)
+                <> lineTo' (x-rad) (y-rad)
+                <> moveTo' (x+rad) (y-rad)
+                <> lineTo' (x-rad) (y+rad)
 
 bDrawText :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
 bDrawText hta vta p s = drawTextR hta vta 0 p s
