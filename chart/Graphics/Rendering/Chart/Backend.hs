@@ -145,8 +145,9 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   --   about the given string.
   textSize :: String -> m TextSize
   
-  -- | Draw the given string using the current 'FontStyle'.
-  drawText :: String -> m ()
+  -- | Draw a single-line textual label anchored by the baseline (vertical) 
+  --   left (horizontal) point. Uses the current 'FontStyle'.
+  drawText :: Point -> String -> m ()
   
   -- | Use the given transformation in this local
   --   environment when drawing.
@@ -172,11 +173,12 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
 -- Rendering Utility Types
 -- -----------------------------------------------------------------------
 
+-- | Text metrics returned by 'textSize'.
 data TextSize = TextSize 
-  { textSizeWidth     :: Double
-  , textSizeAscent    :: Double
-  , textSizeDescent   :: Double
-  , textSizeLinespace :: Double
+  { textSizeWidth   :: Double -- ^ The total width of the text.
+  , textSizeAscent  :: Double -- ^ The ascent or space above the baseline.
+  , textSizeDescent :: Double -- ^ The decent or space below the baseline.
+  , textSizeHeight  :: Double -- ^ The total height of the text.
   }
 
 -- -----------------------------------------------------------------------
