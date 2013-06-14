@@ -31,7 +31,7 @@ import Graphics.Rendering.Chart.Types
   , HTextAnchor(..), VTextAnchor(..)
   )
 import Graphics.Rendering.Chart.Backend
-import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Drawing hiding (drawTextR)
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Renderable
 
@@ -133,10 +133,11 @@ instance ChartBackend CRender where
     te <- c $ C.textExtents s
     fe <- c $ C.fontExtents
     return $ TextSize 
-      { textSizeWidth   = C.textExtentsWidth te
-      , textSizeAscent  = C.fontExtentsAscent fe
-      , textSizeDescent = C.fontExtentsDescent fe
-      , textSizeHeight  = C.fontExtentsHeight fe
+      { textSizeWidth    = C.textExtentsWidth te
+      , textSizeAscent   = C.fontExtentsAscent fe
+      , textSizeDescent  = C.fontExtentsDescent fe
+      , textSizeYBearing = C.textExtentsYbearing te
+      , textSizeHeight   = C.fontExtentsHeight fe
       }
   
   drawText :: Point -> String -> CRender ()
@@ -148,7 +149,7 @@ instance ChartBackend CRender where
   withTransform :: Matrix -> CRender a -> CRender a
   withTransform t m = withTransform' t 
                     $ preserveCState 
-                    $ cSetTransform t >> m
+                    $ cTransform t >> m
   
   withFontStyle :: FontStyle -> CRender a -> CRender a
   withFontStyle fs m = withFontStyle' fs
@@ -446,6 +447,9 @@ cTranslate p = c $ C.translate (p_x p) (p_y p)
 
 cRotate a = c $ C.rotate a
 cNewPath = c $ C.newPath
+
+cTransform :: Matrix -> CRender ()
+cTransform t = c $ C.transform $ convertMatrix t
 
 cLineTo :: Point -> CRender ()
 cLineTo p = c $ C.lineTo (p_x p) (p_y p)
