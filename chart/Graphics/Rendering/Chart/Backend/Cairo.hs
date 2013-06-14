@@ -70,7 +70,7 @@ instance ChartBackend CRender where
   bArc = cArc
   bArcNegative = cArcNegative
   
-  bTranslate p = cTranslate (p_x p) (p_y p)
+  bTranslate = cTranslate
   bRotate = cRotate
   
   bStroke = cStroke
@@ -111,7 +111,7 @@ instance ChartBackend CRender where
     CairoPDF -> cRenderToPDFFile m
   
   strokePath :: Path -> CRender ()
-  strokePath p = do
+  strokePath p = preserveCState $ do
     p' <- alignStrokePath p
     cNewPath
     foldPath cMoveTo cLineTo cArc cArcNegative p'
@@ -120,7 +120,7 @@ instance ChartBackend CRender where
     cStroke
   
   fillPath :: Path -> CRender ()
-  fillPath p = do
+  fillPath p = preserveCState $ do
     p' <- alignFillPath p
     cNewPath
     foldPath cMoveTo cLineTo cArc cArcNegative p'
@@ -129,10 +129,21 @@ instance ChartBackend CRender where
     cStroke
   
   textSize :: String -> CRender TextSize
-  textSize = undefined
+  textSize s = do
+    te <- c $ C.textExtents s
+    fe <- c $ C.fontExtents
+    return $ TextSize 
+      { textSizeWidth   = C.textExtentsWidth te
+      , textSizeAscent  = C.fontExtentsAscent fe
+      , textSizeDescent = C.fontExtentsDescent fe
+      , textSizeHeight  = C.fontExtentsHeight fe
+      }
   
-  drawText :: String -> CRender ()
-  drawText = undefined
+  drawText :: Point -> String -> CRender ()
+  drawText p s = preserveCState $ do
+    cTranslate p
+    cMoveTo $ Point 0 0
+    cShowText s
   
   withTransform :: Matrix -> CRender a -> CRender a
   withTransform t m = withTransform' t 
@@ -429,7 +440,10 @@ drawPoint (PointStyle cl bcl bw r shape) p = do
   c $ C.stroke
 
 cSetTransform t = c $ C.setMatrix $ convertMatrix t
-cTranslate x y = c $ C.translate x y
+
+cTranslate :: Point -> CRender ()
+cTranslate p = c $ C.translate (p_x p) (p_y p)
+
 cRotate a = c $ C.rotate a
 cNewPath = c $ C.newPath
 
