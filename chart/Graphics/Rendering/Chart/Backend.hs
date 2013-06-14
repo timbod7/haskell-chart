@@ -149,8 +149,9 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   --   left (horizontal) point. Uses the current 'FontStyle'.
   drawText :: Point -> String -> m ()
   
-  -- | Use the given transformation in this local
-  --   environment when drawing.
+  -- | Apply the given transformation in this local
+  --   environment when drawing. The given transformation 
+  --   is applied to the current transformation.
   withTransform :: Matrix -> m a -> m a
   
   -- | Use the given font style in this local
@@ -175,10 +176,11 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
 
 -- | Text metrics returned by 'textSize'.
 data TextSize = TextSize 
-  { textSizeWidth   :: Double -- ^ The total width of the text.
-  , textSizeAscent  :: Double -- ^ The ascent or space above the baseline.
-  , textSizeDescent :: Double -- ^ The decent or space below the baseline.
-  , textSizeHeight  :: Double -- ^ The total height of the text.
+  { textSizeWidth    :: Double -- ^ The total width of the text.
+  , textSizeAscent   :: Double -- ^ The ascent or space above the baseline.
+  , textSizeDescent  :: Double -- ^ The decent or space below the baseline.
+  , textSizeYBearing :: Double -- ^ The Y bearing.
+  , textSizeHeight   :: Double -- ^ The total height of the text.
   }
 
 -- -----------------------------------------------------------------------
@@ -201,7 +203,7 @@ getClipRegion :: ChartBackend m => m (Maybe Rect)
 getClipRegion = liftM cbeClipRegion ask
 
 withTransform' :: ChartBackend m => Matrix -> m a -> m a
-withTransform' t m = local (\s -> s { cbeTransform = t }) m
+withTransform' t m = local (\s -> s { cbeTransform = (cbeTransform s) * t }) m
 
 withFontStyle' :: ChartBackend m => FontStyle -> m a -> m a
 withFontStyle' fs m = local (\s -> s { cbeFontStyle = fs }) m
