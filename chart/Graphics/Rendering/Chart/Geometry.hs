@@ -140,6 +140,7 @@ scale :: Vector -> Matrix -> Matrix
 scale sv m = m * (Matrix (v_x sv) 0 0 (v_y sv) 0 0)
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
+--   Rotations angle is given in radians.
 rotate :: Double -> Matrix -> Matrix
 rotate r m = m * (Matrix c s (-s) c 0 0)
   where s = sin r
