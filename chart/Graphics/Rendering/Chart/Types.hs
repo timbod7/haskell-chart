@@ -7,7 +7,7 @@ module Graphics.Rendering.Chart.Types
   ( Path
   , PathElement(..)
   --, lineTo, moveTo
-  , fromPath
+  , fromPath, toPath
   , arc, arcNeg
   
   , LineCap(..)
@@ -75,6 +75,9 @@ instance Monoid Path where
 
 fromPath :: Path -> [PathElement]
 fromPath (Path p) = p []
+
+toPath :: [PathElement] -> Path
+toPath pes = Path (pes ++)
 
 moveTo :: Point -> Path
 moveTo p = Path ((MoveTo p) :)
