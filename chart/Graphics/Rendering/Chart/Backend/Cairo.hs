@@ -99,8 +99,6 @@ instance ChartBackend CRender where
       }
   bShowText = cShowText
   
-  bDrawPoint = drawPoint
-  
   bTextRect = textDrawRect
   
   runBackend m b = case b of
@@ -111,21 +109,20 @@ instance ChartBackend CRender where
   
   strokePath :: Path -> CRender ()
   strokePath p = preserveCState $ do
-    p' <- alignStrokePath p
     cNewPath
-    foldPath cMoveTo cLineTo cArc cArcNegative p'
+    foldPath cMoveTo cLineTo cArc cArcNegative p
     cl <- line_color_ `fmap` getLineStyle
     cSetSourceColor cl
     cStroke
   
   fillPath :: Path -> CRender ()
   fillPath p = preserveCState $ do
-    p' <- alignFillPath p
     cNewPath
-    foldPath cMoveTo cLineTo cArc cArcNegative p'
-    cl <- line_color_ `fmap` getLineStyle
-    cSetSourceColor cl
-    cStroke
+    foldPath cMoveTo cLineTo cArc cArcNegative p
+    fs <- getFillStyle
+    case fs of
+      FillStyleSolid cl -> cSetSourceColor cl
+    cFill
   
   textSize :: String -> CRender TextSize
   textSize s = do
@@ -391,6 +388,7 @@ preserveCState a = do
 
 -- -----------------------------------------------------------------------
 
+{- TODO: Obsolete?
 drawPoint :: PointStyle -> Point -> CRender ()
 drawPoint (PointStyle cl bcl bw r shape) p = do
   (Point x y) <- alignp p
@@ -440,7 +438,8 @@ drawPoint (PointStyle cl bcl bw r shape) p = do
   c $ C.setLineWidth bw
   c $ setSourceColor bcl
   c $ C.stroke
-
+  -}
+  
 cSetTransform t = c $ C.setMatrix $ convertMatrix t
 
 cTranslate :: Point -> CRender ()

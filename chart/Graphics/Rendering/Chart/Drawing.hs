@@ -38,11 +38,18 @@ module Graphics.Rendering.Chart.Drawing
   , alignp
   , alignc
   
+  , withRotation
+  , withTranslation
+  , withPointStyle
+  
   , bDrawText
   , bDrawTextR
   , bDrawTextsR
   , drawTextR
   , drawTextsR
+  
+  , bDrawPoint
+  , drawPoint
     
   , solidLine
   , dashedLine
@@ -176,11 +183,22 @@ lineTo p = do
     p' <- alignp p
     bLineTo p'
 
+
+-- | Draw a single point at the given location.
+bDrawPoint :: (ChartBackend m) 
+           => PointStyle -- ^ Style to use when rendering the point.
+           -> Point      -- ^ Position of the point to render.
+           -> m ()
+bDrawPoint = drawPoint
+
 drawPoint :: (ChartBackend m) => PointStyle -> Point -> m ()
 drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
   p'@(Point x y) <- alignp p
   case shape of
-    PointShapeCircle -> fillPath $ arc p' r 0 (2*pi)
+    PointShapeCircle -> do
+      let path = arc p' r 0 (2*pi)
+      fillPath path
+      strokePath path
     PointShapePolygon sides isrot -> do
       let intToAngle n =
             if isrot
@@ -189,7 +207,9 @@ drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
           angles = map intToAngle [0 .. sides-1]
           (p:ps) = map (\a -> Point (x + r * sin a)
                                     (y + r * cos a)) angles
-      fillPath $ T.moveTo p <> mconcat (map T.lineTo ps) <> T.lineTo p
+      let path = T.moveTo p <> mconcat (map T.lineTo ps) <> T.lineTo p
+      fillPath path
+      strokePath path
     PointShapePlus -> do
       strokePath $ moveTo' (x+r) y
                 <> lineTo' (x-r) y

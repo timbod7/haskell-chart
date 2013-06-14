@@ -108,11 +108,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   bTextSize :: String -> m RectSize
   bFontExtents :: m FontExtents
   bShowText :: String -> m ()
-  
-  -- | Draw a single point at the given location.
-  bDrawPoint :: PointStyle -- ^ Style to use when rendering the point.
-             -> Point      -- ^ Position of the point to render.
-             -> m ()
 
   -- | Recturn the bounding rectangle for a text string positioned
   --   where it would be drawn by drawText
@@ -126,10 +121,13 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   
   
   -- | Stroke the outline of the given path using the 
-  --   current line style.
+  --   current line style. This function does /not/ perform
+  --   alignment operations on the path.
   strokePath :: Path -> m ()
   
   -- | Fill the given path using the current fill style.
+  --   This function does /not/ perform
+  --   alignment operations on the path.
   fillPath :: Path -> m ()
   
   -- | Calculate a 'TextSize' object with rendering information
