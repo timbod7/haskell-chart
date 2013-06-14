@@ -6,7 +6,8 @@
 module Graphics.Rendering.Chart.Types
   ( Path
   , PathElement(..)
-  --, lineTo, moveTo
+  , lineTo, moveTo
+  , lineTo', moveTo'
   , fromPath, toPath
   , arc, arcNeg
   
@@ -82,8 +83,14 @@ toPath pes = Path (pes ++)
 moveTo :: Point -> Path
 moveTo p = Path ((MoveTo p) :)
 
+moveTo' :: Double -> Double -> Path
+moveTo' x y = moveTo $ Point x y
+
 lineTo :: Point -> Path
 lineTo p = Path ((LineTo p) :)
+
+lineTo' :: Double -> Double -> Path
+lineTo' x y = lineTo $ Point x y
 
 arc :: Point -> Double -> Double -> Double -> Path
 arc p r a1 a2 = Path ((Arc p r a1 a2) :)
