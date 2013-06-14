@@ -17,6 +17,7 @@ import Data.Default
 import Data.Colour
 import Data.Colour.SRGB
 import Data.List (unfoldr)
+import Data.Monoid
 
 import Control.Monad.Reader
 
@@ -51,16 +52,23 @@ runCRender (DR m) e = runReaderT m e
 c :: C.Render a -> CRender a
 c = DR . lift
 
+instance Monoid a => Monoid (CRender a) where
+  mempty = return mempty
+  mappend ma mb = do
+    a <- ma
+    b <- mb
+    return $ a `mappend` b
+
 instance ChartBackend CRender where
   type ChartOutput a = CairoBackend -> Int -> Int -> FilePath -> IO ()
   bNewPath = cNewPath
   bClosePath = cClosePath
-  bMoveTo p = cMoveTo (p_x p) (p_y p)
-  bLineTo p = cLineTo (p_x p) (p_y p)
+  bMoveTo = cMoveTo
+  bLineTo = cLineTo
   bRelLineTo p = cRelLineTo (p_x p) (p_y p)
   
-  bArc p = cArc (p_x p) (p_y p)
-  bArcNegative p = cArcNegative (p_x p) (p_y p)
+  bArc = cArc
+  bArcNegative = cArcNegative
   
   bTranslate p = cTranslate (p_x p) (p_y p)
   bRotate = cRotate
@@ -101,6 +109,24 @@ instance ChartBackend CRender where
     CairoSVG -> cRenderToSVGFile m
     CairoPS  -> cRenderToPSFile  m
     CairoPDF -> cRenderToPDFFile m
+  
+  strokePath :: Path -> CRender ()
+  strokePath p = do
+    p' <- alignStrokePath p
+    cNewPath
+    foldPath cMoveTo cLineTo cArc cArcNegative p'
+    cl <- line_color_ `fmap` getLineStyle
+    cSetSourceColor cl
+    cStroke
+  
+  fillPath :: Path -> CRender ()
+  fillPath p = do
+    p' <- alignFillPath p
+    cNewPath
+    foldPath cMoveTo cLineTo cArc cArcNegative p'
+    cl <- line_color_ `fmap` getLineStyle
+    cSetSourceColor cl
+    cStroke
   
   withTransform :: Matrix -> CRender a -> CRender a
   withTransform t m = withTransform' t 
@@ -400,11 +426,21 @@ cSetTransform t = c $ C.setMatrix $ convertMatrix t
 cTranslate x y = c $ C.translate x y
 cRotate a = c $ C.rotate a
 cNewPath = c $ C.newPath
-cLineTo x y = c $ C.lineTo x y
-cMoveTo x y = c $ C.moveTo x y
+
+cLineTo :: Point -> CRender ()
+cLineTo p = c $ C.lineTo (p_x p) (p_y p)
+
+cMoveTo :: Point -> CRender ()
+cMoveTo p = c $ C.moveTo (p_x p) (p_y p)
+
 cRelLineTo x y = c $ C.relLineTo x y
-cArc x y r a1 a2 = c $ C.arc x y r a1 a2
-cArcNegative x y r a1 a2 = c $ C.arcNegative x y r a1 a2
+
+cArc :: Point -> Double -> Double -> Double -> CRender ()
+cArc p r a1 a2 = c $ C.arc (p_x p) (p_y p) r a1 a2
+
+cArcNegative :: Point -> Double -> Double -> Double -> CRender ()
+cArcNegative p r a1 a2 = c $ C.arcNegative (p_x p) (p_y p) r a1 a2
+
 cClosePath = c $ C.closePath
 cStroke = c $ C.stroke
 cFill = c $ C.fill
