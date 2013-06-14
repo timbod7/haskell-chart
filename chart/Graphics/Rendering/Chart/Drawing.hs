@@ -41,6 +41,7 @@ module Graphics.Rendering.Chart.Drawing
   , bDrawText
   , bDrawTextR
   , drawTextR
+  , drawTextsR
     
   , solidLine
   , dashedLine
@@ -75,6 +76,18 @@ import Control.Monad.Reader
 import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Geometry
+
+-- -----------------------------------------------------------------------
+-- Transformation helpers
+-- -----------------------------------------------------------------------
+
+-- | Apply a local rotation. The angle is given in radians.
+withRotation :: (ChartBackend m) => Double -> m a -> m a
+withRotation angle = withTransform (rotate angle 1)
+
+-- | Apply a local translation.
+withTranslation :: (ChartBackend m) => Point -> m a -> m a
+withTranslation p = withTransform (translate (pointToVec p) 1)
 
 -- -----------------------------------------------------------------------
 -- Alignment Helpers
@@ -151,22 +164,56 @@ lineTo p = do
     bLineTo p'
 
 bDrawText :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
-bDrawText hta vta p s = bDrawTextR hta vta 0 p s
+bDrawText hta vta p s = drawTextR hta vta 0 p s
 
 bDrawTextR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
-bDrawTextR hta vta angle p s = bDrawTextsR hta vta angle p s
+bDrawTextR hta vta angle p s = drawTextR hta vta angle p s
 
 -- | Function to draw a textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
 drawTextR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
 drawTextR hta vta angle p s =
-  withTransform (translate (pointToVec p) 1) $
-    withTransform (rotate theta 1) $ do
+  withTranslation p $
+    withRotation theta $ do
       ts <- textSize s
       drawText (adjustText hta vta ts) s
   where
     theta = angle*pi/180.0
+
+-- | Function to draw a multi-line textual label anchored by one of its corners
+--   or edges, with rotation. Rotation angle is given in degrees,
+--   rotation is performed around anchor point.
+drawTextsR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
+drawTextsR hta vta angle p s = case num of
+      0 -> return ()
+      1 -> drawTextR hta vta angle p s
+      _ -> do
+        withTranslation p $
+          withRotation theta $ do
+            tss <- mapM textSize ss
+            let ts = head tss
+            let widths = map textSizeWidth tss
+                maxw   = maximum widths
+                maxh   = maximum (map textSizeYBearing tss)
+                gap    = maxh / 2 -- half-line spacing
+                totalHeight = fromIntegral num*maxh +
+                              (fromIntegral num-1)*gap
+                ys = take num (unfoldr (\y-> Just (y, y-gap-maxh))
+                                       (yinit vta ts totalHeight))
+                xs = map (adjustTextX hta) tss
+            sequence_ (zipWith3 drawT xs ys ss)
+    where
+      ss   = lines s
+      num  = length ss
+
+      drawT x y s = drawText (Point x y) s
+      theta = angle*pi/180.0
+
+      yinit VTA_Top      ts height = textSizeAscent ts
+      yinit VTA_BaseLine ts height = 0
+      yinit VTA_Centre   ts height = height / 2 + textSizeAscent ts
+      yinit VTA_Bottom   ts height = height + textSizeAscent ts
 
 adjustText :: HTextAnchor -> VTextAnchor -> TextSize -> Point
 adjustText hta vta ts = Point (adjustTextX hta ts) (adjustTextY vta ts)

@@ -31,7 +31,7 @@ import Graphics.Rendering.Chart.Types
   , HTextAnchor(..), VTextAnchor(..)
   )
 import Graphics.Rendering.Chart.Backend
-import Graphics.Rendering.Chart.Drawing hiding (drawTextR)
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Renderable
 
@@ -316,6 +316,7 @@ textDrawRect hta vta (Point x y) s = preserveCState $ cTextSize s >>= rect
       yadj VTA_BaseLine te fe = 0
       yadj VTA_Bottom   te fe = -(C.fontExtentsDescent fe)
 
+{- TODO: Obsolete?
 -- | Function to draw a textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
@@ -338,7 +339,8 @@ drawTextR hta vta angle (Point x y) s = preserveCState $ draw
       yadj VTA_Centre   te fe = - (C.textExtentsYbearing te) / 2
       yadj VTA_BaseLine te fe = 0
       yadj VTA_Bottom   te fe = -(C.fontExtentsDescent fe)
-
+-}
+{- TODO: Obsolete?
 -- | Function to draw a multi-line textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
@@ -377,7 +379,7 @@ drawTextsR hta vta angle p@(Point x y) s = case num of
       yinit VTA_BaseLine fe height = 0
       yinit VTA_Centre   fe height = height / 2 + C.fontExtentsAscent fe
       yinit VTA_Bottom   fe height = height + C.fontExtentsAscent fe
-
+-}
 
 -- | Execute a rendering action in a saved context (ie bracketed
 --   between C.save and C.restore).
