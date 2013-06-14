@@ -86,15 +86,15 @@ align f pe = case pe of
   Arc p r a1 a2 -> Arc (f p) r a1 a2
   ArcNeg p r a1 a2 -> ArcNeg (f p) r a1 a2
 
-alignStrokePath :: (ChartBackend m) => [PathElement] -> m [PathElement]
+alignStrokePath :: (ChartBackend m) => Path -> m Path
 alignStrokePath p = do
   f <- liftM cbePointAlignFn ask
-  return $ map (align f) p
+  return $ toPath $ map (align f) (fromPath p)
 
-alignFillPath :: (ChartBackend m) => [PathElement] -> m [PathElement]
+alignFillPath :: (ChartBackend m) => Path -> m Path
 alignFillPath p = do
   f <- liftM cbeCoordAlignFn ask
-  return $ map (align f) p
+  return $ toPath $ map (align f) (fromPath p)
 
 alignp :: (ChartBackend m) => Point -> m Point
 alignp p = do 
