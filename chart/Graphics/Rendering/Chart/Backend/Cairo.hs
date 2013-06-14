@@ -87,7 +87,7 @@ instance ChartBackend CRender where
   bSetLineStyle = setLineStyle
   bSetClipRegion (Rect tl br) = setClipRegion tl br
   
-  bTextSize = textSize
+  bTextSize = cTextSize
   bFontExtents = do
     fe <- c $ C.fontExtents
     return $ G.FontExtents 
@@ -127,6 +127,12 @@ instance ChartBackend CRender where
     cl <- line_color_ `fmap` getLineStyle
     cSetSourceColor cl
     cStroke
+  
+  textSize :: String -> CRender TextSize
+  textSize = undefined
+  
+  drawText :: String -> CRender ()
+  drawText = undefined
   
   withTransform :: Matrix -> CRender a -> CRender a
   withTransform t m = withTransform' t 
@@ -270,8 +276,8 @@ setSourceColor c = let (RGB r g b) = toSRGB $ colourChannel c
 
 -- | Return the bounding rectangle for a text string rendered
 --   in the current context.
-textSize :: String -> CRender RectSize
-textSize s = c $ do
+cTextSize :: String -> CRender RectSize
+cTextSize s = c $ do
     te <- C.textExtents s
     fe <- C.fontExtents
     return (C.textExtentsWidth te, C.fontExtentsHeight fe)
@@ -279,7 +285,7 @@ textSize s = c $ do
 -- | Recturn the bounding rectangle for a text string positioned
 --   where it would be drawn by drawText
 textDrawRect :: HTextAnchor -> VTextAnchor -> Point -> String -> CRender Rect
-textDrawRect hta vta (Point x y) s = preserveCState $ textSize s >>= rect
+textDrawRect hta vta (Point x y) s = preserveCState $ cTextSize s >>= rect
     where
       rect (w,h) = c $ do te <- C.textExtents s
                           fe <- C.fontExtents
