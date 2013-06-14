@@ -122,15 +122,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
             -> String      -- ^ Text to render.
             -> m Rect
   
-  -- | Draw a multiline text anchored by one of its corners
-  --   or edges, with rotation.
-  bDrawTextsR :: HTextAnchor -- ^ Horizontal text anchor.
-              -> VTextAnchor -- ^ Vertical text anchor.
-              -> Double      -- ^ Rotation angle in degrees.
-              -> Point       -- ^ Anchor point to rotate around.
-              -> String      -- ^ Text to render.
-              -> m ()
-  
   runBackend :: m a -> ChartOutput a
   
   

@@ -102,7 +102,6 @@ instance ChartBackend CRender where
   bDrawPoint = drawPoint
   
   bTextRect = textDrawRect
-  bDrawTextsR = drawTextsR
   
   runBackend m b = case b of
     CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()

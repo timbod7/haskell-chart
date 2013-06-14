@@ -40,6 +40,7 @@ module Graphics.Rendering.Chart.Drawing
   
   , bDrawText
   , bDrawTextR
+  , bDrawTextsR
   , drawTextR
   , drawTextsR
     
@@ -167,7 +168,18 @@ bDrawText :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -
 bDrawText hta vta p s = drawTextR hta vta 0 p s
 
 bDrawTextR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
-bDrawTextR hta vta angle p s = drawTextR hta vta angle p s
+bDrawTextR = drawTextR
+
+-- | Draw a multiline text anchored by one of its corners
+--   or edges, with rotation.
+bDrawTextsR :: (ChartBackend m)
+            => HTextAnchor -- ^ Horizontal text anchor.
+            -> VTextAnchor -- ^ Vertical text anchor.
+            -> Double      -- ^ Rotation angle in degrees.
+            -> Point       -- ^ Anchor point to rotate around.
+            -> String      -- ^ Text to render.
+            -> m ()
+bDrawTextsR = drawTextsR
 
 -- | Function to draw a textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
