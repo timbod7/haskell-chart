@@ -32,6 +32,9 @@ module Graphics.Rendering.Chart.Drawing
   , lineTo
   , defaultColorSeq
   
+  , alignFillPath
+  , alignStrokePath
+  
   , alignp
   , alignc
   
@@ -73,8 +76,25 @@ import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Geometry
 
 -- -----------------------------------------------------------------------
--- Abstract Drawing Methods
+-- Alignment Helpers
 -- -----------------------------------------------------------------------
+
+align :: (Point -> Point) -> PathElement -> PathElement
+align f pe = case pe of
+  MoveTo p -> MoveTo $ f p
+  LineTo p -> LineTo $ f p
+  Arc p r a1 a2 -> Arc (f p) r a1 a2
+  ArcNeg p r a1 a2 -> ArcNeg (f p) r a1 a2
+
+alignStrokePath :: (ChartBackend m) => [PathElement] -> m [PathElement]
+alignStrokePath p = do
+  f <- liftM cbePointAlignFn ask
+  return $ map (align f) p
+
+alignFillPath :: (ChartBackend m) => [PathElement] -> m [PathElement]
+alignFillPath p = do
+  f <- liftM cbeCoordAlignFn ask
+  return $ map (align f) p
 
 alignp :: (ChartBackend m) => Point -> m Point
 alignp p = do 
@@ -85,6 +105,10 @@ alignc :: (ChartBackend m) => Point -> m Point
 alignc p = do 
     alignfn <- liftM cbeCoordAlignFn ask
     return (alignfn p)
+
+-- -----------------------------------------------------------------------
+-- Abstract Drawing Methods
+-- -----------------------------------------------------------------------
 
 stepPath :: (ChartBackend m) => [Point] -> m ()
 stepPath (p:ps) = do
