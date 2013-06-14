@@ -7,6 +7,8 @@ module Graphics.Rendering.Chart.Backend
   , defaultEnv
   
   , ChartBackend(..)
+  , TextSize(..)
+  
   , getTransform
   , getFillStyle, getFontStyle
   , getLineStyle, getClipRegion
@@ -138,6 +140,13 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   
   -- | Fill the given path using the current fill style.
   fillPath :: Path -> m ()
+  
+  -- | Calculate a 'TextSize' object with rendering information
+  --   about the given string.
+  textSize :: String -> m TextSize
+  
+  -- | Draw the given string using the current 'FontStyle'.
+  drawText :: String -> m ()
   
   -- | Use the given transformation in this local
   --   environment when drawing.
