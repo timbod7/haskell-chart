@@ -88,15 +88,6 @@ instance ChartBackend CRender where
   bSetClipRegion (Rect tl br) = setClipRegion tl br
   
   bTextSize = cTextSize
-  bFontExtents = do
-    fe <- c $ C.fontExtents
-    return $ G.FontExtents 
-      { G.fontExtentsAscent  = C.fontExtentsAscent  fe
-      , G.fontExtentsDescent = C.fontExtentsDescent fe
-      , G.fontExtentsHeight  = C.fontExtentsHeight  fe
-      , G.fontExtentsMaxXAdvance = C.fontExtentsMaxXadvance fe
-      , G.fontExtentsMaxYAdvance = C.fontExtentsMaxYadvance fe
-      }
   
   bTextRect = textDrawRect
   

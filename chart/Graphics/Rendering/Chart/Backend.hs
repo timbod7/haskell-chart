@@ -106,7 +106,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   bSetClipRegion :: Rect -> m ()
   
   bTextSize :: String -> m RectSize
-  bFontExtents :: m FontExtents
 
   -- | Recturn the bounding rectangle for a text string positioned
   --   where it would be drawn by drawText
