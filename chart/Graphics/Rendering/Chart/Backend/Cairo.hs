@@ -70,8 +70,6 @@ instance ChartBackend CRender where
   bArc = cArc
   bArcNegative = cArcNegative
   
-  bTranslate = cTranslate
-  
   bStroke = cStroke
   bFill = cFill
   

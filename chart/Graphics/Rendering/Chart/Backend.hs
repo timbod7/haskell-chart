@@ -88,8 +88,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
                -> Double -- ^ End angle, in radians
                -> m ()
   
-  bTranslate :: Point -> m ()
-  
   bStroke :: m ()
   bFill :: m ()
   
