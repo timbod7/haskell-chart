@@ -89,7 +89,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
                -> m ()
   
   bTranslate :: Point -> m ()
-  bRotate :: Double -> m ()
   
   bStroke :: m ()
   bFill :: m ()
