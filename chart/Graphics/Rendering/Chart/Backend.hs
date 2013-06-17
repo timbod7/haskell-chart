@@ -107,7 +107,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   
   bTextSize :: String -> m RectSize
   bFontExtents :: m FontExtents
-  bShowText :: String -> m ()
 
   -- | Recturn the bounding rectangle for a text string positioned
   --   where it would be drawn by drawText

@@ -157,21 +157,19 @@ rlabel :: (ChartBackend m) => FontStyle -> HTextAnchor -> VTextAnchor -> Double 
           -> Renderable m String
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
-    mf = bLocal $ do
-       bSetFontStyle fs
-       (w,h) <- bTextSize s
+    mf = withFontStyle fs $ do
+       ts <- textSize s
+       let (w,h) = (textSizeWidth ts, textSizeHeight ts)
        return (w*acr+h*asr,w*asr+h*acr)
-    rf (w0,h0) = bLocal $ do
-       bSetFontStyle fs
-       sz@(w,h) <- bTextSize s
-       extents <- bFontExtents
-       let descent = fontExtentsDescent extents
-       bTranslate $ Point 0 (-descent)
-       bTranslate $ Point (xadj sz hta 0 w0) (yadj sz vta 0 h0)
-       bRotate rot'
-       bMoveTo $ Point (-w/2) (h/2)
-       bShowText s
-       return (\_-> Just s)  -- PickFn String
+    rf (w0,h0) = withFontStyle fs $ do
+      ts <- textSize s
+      let sz@(w,h) = (textSizeWidth ts, textSizeHeight ts)
+      let descent = textSizeDescent ts
+      withTranslation (Point 0 (-descent)) $ do
+        withTranslation (Point (xadj sz hta 0 w0) (yadj sz vta 0 h0)) $ do
+          withRotation rot' $ do
+            drawText (Point (-w/2) (h/2)) s
+            return (\_-> Just s)  -- PickFn String
     xadj (w,h) HTA_Left   x1 x2 =  x1 +(w*acr+h*asr)/2
     xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
     xadj (w,h) HTA_Right  x1 x2 =  x2 -(w*acr+h*asr)/2

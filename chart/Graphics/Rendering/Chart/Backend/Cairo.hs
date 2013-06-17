@@ -97,7 +97,6 @@ instance ChartBackend CRender where
       , G.fontExtentsMaxXAdvance = C.fontExtentsMaxXadvance fe
       , G.fontExtentsMaxYAdvance = C.fontExtentsMaxYadvance fe
       }
-  bShowText = cShowText
   
   bTextRect = textDrawRect
   
