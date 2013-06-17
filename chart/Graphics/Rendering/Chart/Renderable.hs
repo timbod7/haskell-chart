@@ -128,11 +128,9 @@ fillBackground :: (ChartBackend m) => FillStyle -> Renderable m a -> Renderable 
 fillBackground fs r = r{ render = rf }
   where
     rf rsize@(w,h) = do
-        bLocal $ do
-            bSetClipRegion $ Rect (Point 0 0) (Point w h)
-            bSetFillStyle fs
-            bPaint
-	render r rsize
+      withClipRegion (Just $ Rect (Point 0 0) (Point w h)) $ do
+        withFillStyle fs fillClip
+      render r rsize
 
 -- | Helper function for using a renderable, when we generate it
 --   in the CRender monad.
