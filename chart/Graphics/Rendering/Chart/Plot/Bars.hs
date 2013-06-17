@@ -141,7 +141,6 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
            withFillStyle fstyle $ do
              bFillPath (barPath (offset i) x yref0 y)
-             bFill
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
              withLineStyle lstyle $ do
