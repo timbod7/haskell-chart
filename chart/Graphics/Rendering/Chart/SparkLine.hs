@@ -148,8 +148,8 @@ renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
   bFillPath (rectPath (Rect (Point 0 0) (Point (fi w) (fi h))))
   if so_smooth opt
     then do
-      bSetLineStyle (solidLine 1 (opaque grey))
-      bStrokePath coords
+      withLineStyle (solidLine 1 (opaque grey)) $ do
+        bStrokePath coords
     else do
       bSetFillStyle (solidFillStyle (opaque grey))
       forM_ coords $ \ (Point x y) ->

@@ -144,8 +144,8 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
            bFill
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
-             bSetLineStyle lstyle
-             bStrokePath (barPath (offset i) x yref0 y)
+             withLineStyle lstyle $ do
+               bStrokePath (barPath (offset i) x yref0 y)
 
     offset = case (plot_bars_alignment_ p) of
       BarsLeft     -> \i -> fromIntegral i * width
@@ -164,8 +164,8 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
            bFillPath (barPath ofs x y0 y1)
        forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
-               bSetLineStyle lstyle
-               bStrokePath (barPath ofs x y0 y1)
+              withLineStyle lstyle $ do
+                bStrokePath (barPath ofs x y0 y1)
 
     barPath xos x y0 y1 = do
       let (Point x' y') = pmap' (x,y1)

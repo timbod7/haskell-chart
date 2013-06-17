@@ -226,20 +226,20 @@ rectangleToRenderable :: (ChartBackend m) => Rectangle -> Renderable m ()
 rectangleToRenderable rectangle = Renderable mf rf
   where
     mf    = return (rect_minsize_ rectangle)
-    rf sz = bLocal $ do
+    rf sz = do
       maybeM () (fill sz) (rect_fillStyle_ rectangle)
       maybeM () (stroke sz) (rect_lineStyle_ rectangle)
       return nullPickFn
 
     fill sz fs = do
-        bSetFillStyle fs
-        strokeRectangle sz (rect_cornerStyle_ rectangle)
-        bFill
+        withFillStyle fs $ do
+          strokeRectangle sz (rect_cornerStyle_ rectangle)
+          bFill
 
     stroke sz ls = do
-        bSetLineStyle ls
-        strokeRectangle sz (rect_cornerStyle_ rectangle)
-        bStroke
+        withLineStyle ls $ do
+          strokeRectangle sz (rect_cornerStyle_ rectangle)
+          bStroke
 
     strokeRectangle (x2,y2) RCornerSquare = do
         let (x1,y1) = (0,0)

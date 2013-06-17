@@ -218,21 +218,17 @@ axisOverhang (AxisT at as rev ad) = do
 
 renderAxis :: (ChartBackend m) => AxisT x -> RectSize -> m (PickFn x)
 renderAxis at@(AxisT et as rev ad) sz = do
-   let ls = axis_line_style_ as
-   bLocal $ do
-       bSetLineStyle ls{line_cap_=LineCapSquare}
-       bStrokePath [Point sx sy,Point ex ey]
-   bLocal $ do
-       bSetLineStyle ls{line_cap_=LineCapButt}
-       mapM_ drawTick (axis_ticks_ ad)
-   bLocal $ do
-       bSetFontStyle (axis_label_style_ as)
-       labelSizes <- mapM (mapM textDimension) (labelTexts ad)
-       let sizes = map ((+ag).maximum0.map coord) labelSizes
-       let offsets = scanl (+) ag sizes
-       mapM_ drawLabels (zip offsets  (axis_labels_ ad))
-
-   return pickfn
+  let ls = axis_line_style_ as
+  withLineStyle (ls {line_cap_ = LineCapSquare}) $ do
+    bStrokePath [Point sx sy,Point ex ey]
+  withLineStyle (ls {line_cap_ = LineCapButt}) $ do
+    mapM_ drawTick (axis_ticks_ ad)
+  withFontStyle (axis_label_style_ as) $ do
+    labelSizes <- mapM (mapM textDimension) (labelTexts ad)
+    let sizes = map ((+ag).maximum0.map coord) labelSizes
+    let offsets = scanl (+) ag sizes
+    mapM_ drawLabels (zip offsets  (axis_labels_ ad))
+  return pickfn
  where
    (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
 
@@ -321,9 +317,8 @@ axisMapping (AxisT et as rev ad) (x2,y2) = case et of
 -- 
 renderAxisGrid :: (ChartBackend m) => RectSize -> AxisT z -> m ()
 renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
-    bLocal $ do
-        bSetLineStyle (axis_grid_style_ as)
-        mapM_ (drawGridLine re) (axis_grid_ ad)
+    withLineStyle (axis_grid_style_ as) $ do
+      mapM_ (drawGridLine re) (axis_grid_ ad)
   where
     (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
 

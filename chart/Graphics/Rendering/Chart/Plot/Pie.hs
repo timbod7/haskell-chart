@@ -54,10 +54,12 @@ import Data.Bits
 import Data.Accessor.Template
 import Data.Colour
 import Data.Colour.Names (black, white)
+import Data.Monoid
 import Control.Monad
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Types as T
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
@@ -181,35 +183,39 @@ renderPie p (w,h) = do
             where
                 pieLabel :: (ChartBackend m) => String -> Double -> Double -> m ()
                 pieLabel name angle offset = do
-                    bSetFontStyle (pie_label_style_ p)
-                    bSetLineStyle (pie_label_line_style_ p)
+                    withFontStyle (pie_label_style_ p) $ do
+                      withLineStyle (pie_label_line_style_ p) $ do
+                        let p1 = ray angle (radius+label_rgap+label_rlength+offset)
+                        p1a <- alignp $ p1
+                        (tw,th) <- textDimension name
+                        let (offset',anchor) = if angle < 90 || angle > 270 
+                                              then ((0+),HTA_Left)
+                                              else ((0-),HTA_Right)
+                        p0 <- alignp $ ray angle (radius + label_rgap+offset)
+                        strokePath $ T.moveTo p0
+                                  <> T.lineTo p1a
+                                  <> T.lineTo (Point (p_x p1a + (offset' (tw + label_rgap))) (p_y p1a))
 
-                    moveTo (ray angle (radius + label_rgap+offset))
-                    let p1 = ray angle (radius+label_rgap+label_rlength+offset)
-                    lineTo p1
-                    (tw,th) <- textDimension name
-                    let (offset,anchor) = if angle < 90 || angle > 270 
-                                          then ((0+),HTA_Left)
-                                          else ((0-),HTA_Right)
-                    bRelLineTo $ Point (offset (tw + label_rgap)) 0
-                    bStroke
-
-                    let p2 = p1 `pvadd` (Vector (offset label_rgap) 0)
-                    bDrawText anchor VTA_Bottom p2 name
+                        let p2 = p1 `pvadd` (Vector (offset' label_rgap) 0)
+                        bDrawText anchor VTA_Bottom p2 name
 
                 pieSlice :: (ChartBackend m) => Point -> Double -> Double -> AlphaColour Double
                             -> m ()
                 pieSlice (Point x y) a1 a2 color = do
-                    bNewPath
-                    bArc (Point x y) radius (radian a1) (radian a2)
-                    bLineTo $ Point x y
-                    bLineTo $ Point x y
-                    bClosePath
+                    let path = T.arc (Point x y) radius (radian a1) (radian a2)
+                            <> lineTo' x y
+                            <> lineTo' x y
+                    --bNewPath
+                    --bArc (Point x y) radius (radian a1) (radian a2)
+                    --bLineTo $ Point x y
+                    --bLineTo $ Point x y
+                    --bClosePath
 
-                    bSetSourceColor color
-                    bFillPreserve
-                    bSetSourceColor (withOpacity white 0.1)
-                    bStroke
+                    withFillStyle (FillStyleSolid color) $ do
+                      fillPath' path
+                    ls <- getLineStyle
+                    withLineStyle (ls { line_color_ = withOpacity white 0.1 }) $ do
+                      strokePath' path
 
                 ray :: Double -> Double -> Point
                 ray angle r = Point x' y'

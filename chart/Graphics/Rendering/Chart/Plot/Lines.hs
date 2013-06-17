@@ -56,16 +56,16 @@ instance ToPlot PlotLines where
         ys = [ y | (_,LValue y) <- concat (plot_lines_limit_values_ p)]
 
 renderPlotLines :: (ChartBackend m) => PlotLines x y -> PointMapFn x y -> m ()
-renderPlotLines p pmap = bLocal $ do
-    bSetLineStyle (plot_lines_style_ p)
+renderPlotLines p pmap = 
+  withLineStyle (plot_lines_style_ p) $ do
     mapM_ (drawLines (mapXY pmap)) (plot_lines_values_ p)
     mapM_ (drawLines pmap) (plot_lines_limit_values_ p)
   where
     drawLines mapfn pts = bStrokePath (map mapfn pts)
 
 renderPlotLegendLines :: (ChartBackend m) => PlotLines x y -> Rect -> m ()
-renderPlotLegendLines p r@(Rect p1 p2) = bLocal $ do
-    bSetLineStyle (plot_lines_style_ p)
+renderPlotLegendLines p r@(Rect p1 p2) = 
+  withLineStyle (plot_lines_style_ p) $ do
     let y = (p_y p1 + p_y p2) / 2
     bStrokePath [Point (p_x p1) y, Point (p_x p2) y]
 

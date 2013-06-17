@@ -105,32 +105,32 @@ drawCandle ps (Candle x lo open mid close hi) = do
                     bLineTo $ Point (x-wd) open
                     bFill
 
-        bSetLineStyle (plot_candle_line_style_ ps)
-        bNewPath
-        bMoveTo $ Point (x-wd) open
-        bLineTo $ Point (x-wd) close
-        bLineTo $ Point (x+wd) close
-        bLineTo $ Point (x+wd) open
-        bLineTo $ Point (x-wd) open
-        bStroke
+        withLineStyle (plot_candle_line_style_ ps) $ do
+          bNewPath
+          bMoveTo $ Point (x-wd) open
+          bLineTo $ Point (x-wd) close
+          bLineTo $ Point (x+wd) close
+          bLineTo $ Point (x+wd) open
+          bLineTo $ Point (x-wd) open
+          bStroke
 
-        bNewPath
-        bMoveTo $ Point x (min lo hi)
-        bLineTo $ Point x (min open close)
-        bMoveTo $ Point x (max open close)
-        bLineTo $ Point x (max hi lo)
-        bStroke
+          bNewPath
+          bMoveTo $ Point x (min lo hi)
+          bLineTo $ Point x (min open close)
+          bMoveTo $ Point x (max open close)
+          bLineTo $ Point x (max hi lo)
+          bStroke
 
-        when (tl > 0) $ do bNewPath
-                           bMoveTo $ Point (x-tl) lo
-                           bLineTo $ Point (x+tl) lo
-                           bMoveTo $ Point (x-tl) hi
-                           bLineTo $ Point (x+tl) hi
-                           bStroke
+          when (tl > 0) $ do bNewPath
+                             bMoveTo $ Point (x-tl) lo
+                             bLineTo $ Point (x+tl) lo
+                             bMoveTo $ Point (x-tl) hi
+                             bLineTo $ Point (x+tl) hi
+                             bStroke
 
-        when (ct > 0) $ do bMoveTo $ Point (x-ct) mid
-                           bLineTo $ Point (x+ct) mid
-                           bStroke
+          when (ct > 0) $ do bMoveTo $ Point (x-ct) mid
+                             bLineTo $ Point (x+ct) mid
+                             bStroke
 
 renderPlotLegendCandle :: (ChartBackend m) => PlotCandle x y -> Rect -> m ()
 renderPlotLegendCandle p r@(Rect p1 p2) = bLocal $ do

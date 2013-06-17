@@ -90,21 +90,21 @@ renderPlotErrBars p pmap = bLocal $ do
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = plot_errbars_tick_length_ ps
         let oh = plot_errbars_overhang_ ps
-        bSetLineStyle (plot_errbars_line_style_ ps)
-        bNewPath
-        bMoveTo $ Point (xl-oh) y
-        bLineTo $ Point (xh+oh) y
-        bMoveTo $ Point x (yl-oh)
-        bLineTo $ Point x (yh+oh)
-        bMoveTo $ Point xl (y-tl)
-        bLineTo $ Point xl (y+tl)
-        bMoveTo $ Point (x-tl) yl
-        bLineTo $ Point (x+tl) yl
-        bMoveTo $ Point xh (y-tl)
-        bLineTo $ Point xh (y+tl)
-        bMoveTo $ Point (x-tl) yh
-        bLineTo $ Point (x+tl) yh
-        bStroke
+        withLineStyle (plot_errbars_line_style_ ps) $ do
+          bNewPath
+          bMoveTo $ Point (xl-oh) y
+          bLineTo $ Point (xh+oh) y
+          bMoveTo $ Point x (yl-oh)
+          bLineTo $ Point x (yh+oh)
+          bMoveTo $ Point xl (y-tl)
+          bLineTo $ Point xl (y+tl)
+          bMoveTo $ Point (x-tl) yl
+          bLineTo $ Point (x+tl) yl
+          bMoveTo $ Point xh (y-tl)
+          bLineTo $ Point xh (y+tl)
+          bMoveTo $ Point (x-tl) yh
+          bLineTo $ Point (x+tl) yh
+          bStroke
 
 renderPlotLegendErrBars :: (ChartBackend m) => PlotErrBars x y -> Rect -> m ()
 renderPlotLegendErrBars p r@(Rect p1 p2) = bLocal $ do
