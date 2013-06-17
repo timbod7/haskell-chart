@@ -62,9 +62,6 @@ instance Monoid a => Monoid (CRender a) where
 instance ChartBackend CRender where
   type ChartOutput a = CairoBackend -> Int -> Int -> FilePath -> IO ()
   
-  bStroke = cStroke
-  bFill = cFill
-  
   runBackend m b = case b of
     CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
     CairoSVG -> cRenderToSVGFile m
