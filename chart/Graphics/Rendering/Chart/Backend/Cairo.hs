@@ -91,18 +91,20 @@ instance ChartBackend CRender where
     CairoPS  -> cRenderToPSFile  m
     CairoPDF -> cRenderToPDFFile m
   
-  strokePath :: Path -> CRender ()
-  strokePath p = preserveCState $ do
+  backendStrokePath :: Bool -> Path -> CRender ()
+  backendStrokePath close p = preserveCState $ do
     cNewPath
     foldPath cMoveTo cLineTo cArc cArcNegative p
+    when close cClosePath
     cl <- line_color_ `fmap` getLineStyle
     cSetSourceColor cl
     cStroke
   
-  fillPath :: Path -> CRender ()
-  fillPath p = preserveCState $ do
+  backendFillPath :: Bool -> Path -> CRender ()
+  backendFillPath close p = preserveCState $ do
     cNewPath
     foldPath cMoveTo cLineTo cArc cArcNegative p
+    when close cClosePath
     fs <- getFillStyle
     case fs of
       FillStyleSolid cl -> cSetSourceColor cl
