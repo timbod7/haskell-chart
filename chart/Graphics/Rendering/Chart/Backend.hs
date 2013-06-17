@@ -98,8 +98,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   
   bLocal :: m a -> m a
   
-  bSetSourceColor :: AlphaColour Double -> m ()
-  
   runBackend :: m a -> ChartOutput a
   
   

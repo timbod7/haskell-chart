@@ -80,8 +80,6 @@ instance ChartBackend CRender where
   
   bLocal = preserveCState
   
-  bSetSourceColor = cSetSourceColor
-  
   runBackend m b = case b of
     CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
     CairoSVG -> cRenderToSVGFile m
