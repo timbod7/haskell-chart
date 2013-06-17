@@ -117,6 +117,9 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   --   alignment operations on the path.
   fillPath :: Path -> m ()
   
+  -- | Fill the clip region using the current fill style.
+  fillClip :: m ()
+  
   -- | Calculate a 'TextSize' object with rendering information
   --   about the given string.
   textSize :: String -> m TextSize

@@ -109,6 +109,13 @@ instance ChartBackend CRender where
       FillStyleSolid cl -> cSetSourceColor cl
     cFill
   
+  fillClip :: CRender ()
+  fillClip = do
+    fs <- getFillStyle
+    case fs of
+      FillStyleSolid cl -> cSetSourceColor cl
+    cPaint
+  
   textSize :: String -> CRender TextSize
   textSize s = do
     te <- c $ C.textExtents s
