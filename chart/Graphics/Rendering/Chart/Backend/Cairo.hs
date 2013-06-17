@@ -78,8 +78,6 @@ instance ChartBackend CRender where
   bFillPreserve = cFillPreserve
   bPaint = cPaint
   
-  bLocal = preserveCState
-  
   runBackend m b = case b of
     CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
     CairoSVG -> cRenderToSVGFile m

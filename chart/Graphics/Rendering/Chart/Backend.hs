@@ -96,8 +96,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   bFillPreserve :: m ()
   bPaint :: m ()
   
-  bLocal :: m a -> m a
-  
   runBackend :: m a -> ChartOutput a
   
   
