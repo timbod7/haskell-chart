@@ -171,7 +171,7 @@ minsizeAxis :: (ChartBackend m) => AxisT x -> m RectSize
 minsizeAxis (AxisT at as rev ad) = do
     labelSizes <- bLocal $ do
         bSetFontStyle (axis_label_style_ as)
-        mapM (mapM bTextSize) (labelTexts ad)
+        mapM (mapM textDimension) (labelTexts ad)
 
     let ag      = axis_label_gap_ as
     let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- axis_ticks_ ad ])
@@ -202,7 +202,7 @@ axisOverhang (AxisT at as rev ad) = do
     let labels = map snd . sort . concat . axis_labels_ $ ad
     labelSizes <- bLocal $ do
         bSetFontStyle (axis_label_style_ as)
-        mapM bTextSize labels
+        mapM textDimension labels
     case labelSizes of
         []  -> return (0,0)
 	ls  -> let l1     = head ls
@@ -227,7 +227,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
        mapM_ drawTick (axis_ticks_ ad)
    bLocal $ do
        bSetFontStyle (axis_label_style_ as)
-       labelSizes <- mapM (mapM bTextSize) (labelTexts ad)
+       labelSizes <- mapM (mapM textDimension) (labelTexts ad)
        let sizes = map ((+ag).maximum0.map coord) labelSizes
        let offsets = scanl (+) ag sizes
        mapM_ drawLabels (zip offsets  (axis_labels_ ad))
@@ -263,7 +263,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
      where
        drawLabel (value,s) = do
            bDrawText hta vta (axisPoint value `pvadd` (awayFromAxis offset)) s
-           bTextSize s
+           textDimension s
 
    ag = axis_label_gap_ as
    pickfn = Just . invAxisPoint

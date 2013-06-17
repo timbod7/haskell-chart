@@ -134,7 +134,7 @@ pieToRenderable p = fillBackground (pie_background_ p) (
 
 extraSpace :: (ChartBackend m) => PieChart -> m (Double, Double)
 extraSpace p = do
-    textSizes <- mapM bTextSize (map pitem_label_ (pie_data_ p))
+    textSizes <- mapM textDimension (map pitem_label_ (pie_data_ p))
     let maxw  = foldr (max.fst) 0 textSizes
     let maxh  = foldr (max.snd) 0 textSizes
     let maxo  = foldr (max.pitem_offset_) 0 (pie_data_ p)
@@ -187,7 +187,7 @@ renderPie p (w,h) = do
                     moveTo (ray angle (radius + label_rgap+offset))
                     let p1 = ray angle (radius+label_rgap+label_rlength+offset)
                     lineTo p1
-                    (tw,th) <- bTextSize name
+                    (tw,th) <- textDimension name
                     let (offset,anchor) = if angle < 90 || angle > 270 
                                           then ((0+),HTA_Left)
                                           else ((0-),HTA_Right)

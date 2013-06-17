@@ -48,6 +48,7 @@ module Graphics.Rendering.Chart.Drawing
   , drawTextR
   , drawTextsR
   , textDrawRect
+  , textDimension
   
   , bDrawPoint
   , drawPoint
@@ -322,6 +323,11 @@ textDrawRect hta vta (Point x y) s = do
   let p1 = Point x' y'
   let p2 = Point (x' + w) (y' + h)
   return $ Rect p1 p2
+
+textDimension :: (ChartBackend m) => String -> m RectSize
+textDimension s = do
+  ts <- textSize s
+  return (textSizeWidth ts, textSizeHeight ts)
 
 -- -----------------------------------------------------------------------
 
