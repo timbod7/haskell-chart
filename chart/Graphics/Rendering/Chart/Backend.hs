@@ -72,7 +72,6 @@ defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv
 class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   type ChartOutput a :: *
   bNewPath :: m ()
-  bClosePath :: m ()
   bMoveTo :: Point -> m ()
   bLineTo :: Point -> m ()
   bRelLineTo :: Point -> m ()
