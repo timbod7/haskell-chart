@@ -40,6 +40,7 @@ module Graphics.Rendering.Chart.Renderable(
 import Control.Monad
 import Data.Accessor
 import Data.List ( nub, transpose, sort )
+import Data.Monoid
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
@@ -232,43 +233,38 @@ rectangleToRenderable rectangle = Renderable mf rf
 
     fill sz fs = do
         withFillStyle fs $ do
-          strokeRectangle sz (rect_cornerStyle_ rectangle)
-          bFill
+          fillPath $ strokeRectangleP sz (rect_cornerStyle_ rectangle)
 
     stroke sz ls = do
         withLineStyle ls $ do
-          strokeRectangle sz (rect_cornerStyle_ rectangle)
-          bStroke
+          strokePath $ strokeRectangleP sz (rect_cornerStyle_ rectangle)
 
-    strokeRectangle (x2,y2) RCornerSquare = do
-        let (x1,y1) = (0,0)
-        bMoveTo $ Point x1 y1
-        bLineTo $ Point x1 y2
-        bLineTo $ Point x2 y2
-        bLineTo $ Point x2 y1
-        bLineTo $ Point x1 y1
-        bLineTo $ Point x1 y2
+    strokeRectangleP (x2,y2) RCornerSquare =
+      let (x1,y1) = (0,0) in moveTo' x1 y1
+                          <> lineTo' x1 y2
+                          <> lineTo' x2 y2
+                          <> lineTo' x2 y1
+                          <> lineTo' x1 y1
+                          <> lineTo' x1 y2
                                 
-    strokeRectangle (x2,y2) (RCornerBevel s) = do
-        let (x1,y1) = (0,0)
-        bMoveTo $ Point x1 (y1+s)
-        bLineTo $ Point x1 (y2-s)
-        bLineTo $ Point (x1+s) y2
-        bLineTo $ Point (x2-s) y2
-        bLineTo $ Point x2 (y2-s)
-        bLineTo $ Point x2 (y1+s)
-        bLineTo $ Point (x2-s) y1
-        bLineTo $ Point (x1+s) y1
-        bLineTo $ Point x1 (y1+s)
-        bLineTo $ Point x1 (y2-s)
+    strokeRectangleP (x2,y2) (RCornerBevel s) =
+      let (x1,y1) = (0,0) in moveTo' x1 (y1+s)
+                          <> lineTo' x1 (y2-s)
+                          <> lineTo' (x1+s) y2
+                          <> lineTo' (x2-s) y2
+                          <> lineTo' x2 (y2-s)
+                          <> lineTo' x2 (y1+s)
+                          <> lineTo' (x2-s) y1
+                          <> lineTo' (x1+s) y1
+                          <> lineTo' x1 (y1+s)
+                          <> lineTo' x1 (y2-s)
 
-    strokeRectangle (x2,y2) (RCornerRounded s) = do
-        let (x1,y1) = (0,0)
-        bArcNegative (Point (x1+s) (y2-s)) s (pi2*2) pi2 
-        bArcNegative (Point (x2-s) (y2-s)) s pi2 0
-        bArcNegative (Point (x2-s) (y1+s)) s 0 (pi2*3)
-        bArcNegative (Point (x1+s) (y1+s)) s (pi2*3) (pi2*2)
-        bLineTo $ Point x1 (y2-s)
+    strokeRectangleP (x2,y2) (RCornerRounded s) =
+      let (x1,y1) = (0,0) in arcNeg (Point (x1+s) (y2-s)) s (pi2*2) pi2 
+                          <> arcNeg (Point (x2-s) (y2-s)) s pi2 0
+                          <> arcNeg (Point (x2-s) (y1+s)) s 0 (pi2*3)
+                          <> arcNeg (Point (x1+s) (y1+s)) s (pi2*3) (pi2*2)
+                          <> lineTo' x1 (y2-s)
     
     pi2 = pi / 2
 

@@ -28,8 +28,6 @@
 module Graphics.Rendering.Chart.Drawing
   ( bStrokePath
   , bFillPath
-  , Graphics.Rendering.Chart.Drawing.moveTo
-  , Graphics.Rendering.Chart.Drawing.lineTo
   , defaultColorSeq
   
   , alignFillPath
@@ -89,8 +87,7 @@ import Data.Monoid
 
 import Control.Monad.Reader
 
-import Graphics.Rendering.Chart.Types hiding (lineTo, moveTo)
-import qualified Graphics.Rendering.Chart.Types as T
+import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Geometry
 
@@ -152,8 +149,8 @@ alignc p = do
 -- -----------------------------------------------------------------------
 
 stepPath :: [Point] -> Path
-stepPath (p:ps) = T.moveTo p
-               <> mconcat (map T.lineTo ps)
+stepPath (p:ps) = moveTo p
+               <> mconcat (map lineTo ps)
 stepPath [] = mempty
 
 strokePath :: (ChartBackend m) => Path -> m ()
@@ -188,6 +185,7 @@ bFillPath pts = do
     path <- alignFillPath $ stepPath pts
     fillPath path
 
+{- TODO: Obsolete?
 moveTo :: (ChartBackend m) => Point -> m ()
 moveTo p  = do
     p' <- alignp p
@@ -197,7 +195,7 @@ lineTo :: (ChartBackend m) => Point -> m ()
 lineTo p = do
     p' <- alignp p
     bLineTo p'
-
+      -}
 
 -- | Draw a single point at the given location.
 bDrawPoint :: (ChartBackend m) 
@@ -222,7 +220,7 @@ drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
           angles = map intToAngle [0 .. sides-1]
           (p:ps) = map (\a -> Point (x + r * sin a)
                                     (y + r * cos a)) angles
-      let path = T.moveTo p <> mconcat (map T.lineTo ps) <> T.lineTo p
+      let path = moveTo p <> mconcat (map lineTo ps) <> lineTo p
       fillPath path
       strokePath path
     PointShapePlus -> do
