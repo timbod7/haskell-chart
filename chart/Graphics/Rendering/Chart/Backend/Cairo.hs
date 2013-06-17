@@ -61,11 +61,6 @@ instance Monoid a => Monoid (CRender a) where
 
 instance ChartBackend CRender where
   type ChartOutput a = CairoBackend -> Int -> Int -> FilePath -> IO ()
-  bMoveTo = cMoveTo
-  bLineTo = cLineTo
-  
-  bArc = cArc
-  bArcNegative = cArcNegative
   
   bStroke = cStroke
   bFill = cFill

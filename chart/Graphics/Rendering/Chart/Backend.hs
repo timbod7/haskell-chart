@@ -71,19 +71,6 @@ defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv
 
 class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   type ChartOutput a :: *
-  bMoveTo :: Point -> m ()
-  bLineTo :: Point -> m ()
-  
-  bArc :: Point  -- ^ The center position
-       -> Double -- ^ The radius
-       -> Double -- ^ Start angle, in radians
-       -> Double -- ^ End angle, in radians
-       -> m ()
-  bArcNegative :: Point  -- ^ The center position
-               -> Double -- ^ The radius
-               -> Double -- ^ Start angle, in radians
-               -> Double -- ^ End angle, in radians
-               -> m ()
   
   bStroke :: m ()
   bFill :: m ()
