@@ -52,8 +52,7 @@ instance ToPlot PlotAnnotation where
 
 
 renderAnnotation :: (ChartBackend m) => PlotAnnotation x y -> PointMapFn x y -> m ()
-renderAnnotation p pMap = bLocal $ do
-                            bSetFontStyle style                            
+renderAnnotation p pMap = withFontStyle style $ do                           
                             mapM_ drawOne values
     where hta = plot_annotation_hanchor_ p
           vta = plot_annotation_vanchor_ p

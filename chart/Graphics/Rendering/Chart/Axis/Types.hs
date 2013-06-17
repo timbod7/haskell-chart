@@ -169,9 +169,8 @@ axisLabelsOverride o ad = ad{ axis_labels_ = [o] }
 
 minsizeAxis :: (ChartBackend m) => AxisT x -> m RectSize
 minsizeAxis (AxisT at as rev ad) = do
-    labelSizes <- bLocal $ do
-        bSetFontStyle (axis_label_style_ as)
-        mapM (mapM textDimension) (labelTexts ad)
+    labelSizes <- withFontStyle (axis_label_style_ as) $ do
+      mapM (mapM textDimension) (labelTexts ad)
 
     let ag      = axis_label_gap_ as
     let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- axis_ticks_ ad ])
@@ -200,21 +199,19 @@ maximum0 vs = maximum vs
 axisOverhang :: (Ord x, ChartBackend m) => AxisT x -> m (Double,Double)
 axisOverhang (AxisT at as rev ad) = do
     let labels = map snd . sort . concat . axis_labels_ $ ad
-    labelSizes <- bLocal $ do
-        bSetFontStyle (axis_label_style_ as)
-        mapM textDimension labels
+    labelSizes <- withFontStyle (axis_label_style_ as) $ do
+      mapM textDimension labels
     case labelSizes of
-        []  -> return (0,0)
-	ls  -> let l1     = head ls
-		   l2     = last ls
-		   ohangv = return (snd l1 / 2, snd l2 / 2)
-		   ohangh = return (fst l1 / 2, fst l2 / 2)
-		   in
-		   case at of
-		       E_Top    -> ohangh
-		       E_Bottom -> ohangh
-		       E_Left   -> ohangv
-		       E_Right  -> ohangh
+      []  -> return (0,0)
+      ls  -> let l1     = head ls
+                 l2     = last ls
+                 ohangv = return (snd l1 / 2, snd l2 / 2)
+                 ohangh = return (fst l1 / 2, fst l2 / 2)
+             in case at of
+                 E_Top    -> ohangh
+                 E_Bottom -> ohangh
+                 E_Left   -> ohangv
+                 E_Right  -> ohangh
 
 renderAxis :: (ChartBackend m) => AxisT x -> RectSize -> m (PickFn x)
 renderAxis at@(AxisT et as rev ad) sz = do
