@@ -76,7 +76,6 @@ instance ChartBackend CRender where
   bStroke = cStroke
   bFill = cFill
   bFillPreserve = cFillPreserve
-  bPaint = cPaint
   
   runBackend m b = case b of
     CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
