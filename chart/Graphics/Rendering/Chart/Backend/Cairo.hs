@@ -87,8 +87,6 @@ instance ChartBackend CRender where
   bSetLineStyle = setLineStyle
   bSetClipRegion (Rect tl br) = setClipRegion tl br
   
-  bTextSize = cTextSize
-  
   runBackend m b = case b of
     CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
     CairoSVG -> cRenderToSVGFile m
@@ -269,14 +267,6 @@ colourChannel c = darken (recip (alphaChannel c)) (c `over` black)
 setSourceColor :: AlphaColour Double -> C.Render ()
 setSourceColor c = let (RGB r g b) = toSRGB $ colourChannel c
                    in C.setSourceRGBA r g b (alphaChannel c)
-
--- | Return the bounding rectangle for a text string rendered
---   in the current context.
-cTextSize :: String -> CRender RectSize
-cTextSize s = c $ do
-    te <- C.textExtents s
-    fe <- C.fontExtents
-    return (C.textExtentsWidth te, C.fontExtentsHeight fe)
 
 {- TODO: Obsolete?
 -- | Function to draw a textual label anchored by one of its corners

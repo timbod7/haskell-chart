@@ -105,8 +105,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   bSetLineStyle :: LineStyle -> m ()
   bSetClipRegion :: Rect -> m ()
   
-  bTextSize :: String -> m RectSize
-  
   runBackend :: m a -> ChartOutput a
   
   
