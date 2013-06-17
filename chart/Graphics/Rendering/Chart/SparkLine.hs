@@ -142,7 +142,7 @@ renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
       boxpt (Point x y) = Rect (Point (x-1)(y-1)) (Point (x+1)(y+1))
       fi    :: (Num b, Integral a) => a -> b
       fi    = fromIntegral
-  in bLocal $ do
+  in do
 
   withFillStyle (solidFillStyle (opaque (so_bgColor opt))) $ do
     bFillPath (rectPath (Rect (Point 0 0) (Point (fi w) (fi h))))

@@ -114,10 +114,9 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         return (w+l+r,h+t+b)
 
     rf (w,h) = do
-        bLocal $ do
-            bTranslate (Point l t)
-            pickf <- render rd (w-l-r,h-t-b)
-            return (mkpickf pickf (t,b,l,r) (w,h))
+        withTranslation (Point l t) $ do
+          pickf <- render rd (w-l-r,h-t-b)
+          return (mkpickf pickf (t,b,l,r) (w,h))
 
     mkpickf pickf (t,b,l,r) (w,h) (Point x y)
         | x >= l && x <= w-r && y >= t && t <= h-b = pickf (Point (x-l) (y-t))

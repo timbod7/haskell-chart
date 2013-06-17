@@ -137,7 +137,7 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
       BarsClustered -> forM_ vals clusteredBars
       BarsStacked   -> forM_ vals stackedBars
   where
-    clusteredBars (x,ys) = bLocal $ do
+    clusteredBars (x,ys) = do
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
            withFillStyle fstyle $ do
              bFillPath (barPath (offset i) x yref0 y)
@@ -152,7 +152,7 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
       BarsRight    -> \i -> fromIntegral (i-nys) * width
       BarsCentered -> \i -> fromIntegral (2*i-nys) * width/2
 
-    stackedBars (x,ys) =  bLocal $ do
+    stackedBars (x,ys) = do
        let y2s = zip (yref0:stack ys) (stack ys)
        let ofs = case (plot_bars_alignment_ p) of {
          BarsLeft     -> 0          ;

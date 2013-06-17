@@ -275,10 +275,9 @@ gridToRenderable t = Renderable minsizef renderf
             let (Rect p0 p1) = mkRect borders loc span
             p0'@(Point x0 y0) <- alignc p0
             p1'@(Point x1 y1) <- alignc p1
-            bLocal $ do
-                bTranslate $ Point x0 y0
-                pf <- render r (x1-x0,y1-y0)
-                return (newpf pf x0 y0)
+            withTranslation (Point x0 y0) $ do
+              pf <- render r (x1-x0,y1-y0)
+              return (newpf pf x0 y0)
         (Above t1 t2 _) -> do
              pf1 <- rf1 borders (i,j) t1
              pf2 <- rf1 borders (i,j+height t1) t2
