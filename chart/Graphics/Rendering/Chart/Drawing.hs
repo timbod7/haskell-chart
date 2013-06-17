@@ -42,6 +42,11 @@ module Graphics.Rendering.Chart.Drawing
   , withTranslation
   , withPointStyle
   
+  , fillPath
+  , fillPath'
+  , strokePath
+  , strokePath'
+  
   , bDrawText
   , bDrawTextR
   , bDrawTextsR
@@ -152,6 +157,18 @@ stepPath (p:ps) = do
     bMoveTo p
     mapM_ bLineTo ps
 stepPath _  = return ()
+
+strokePath :: (ChartBackend m) => Path -> m ()
+strokePath = backendStrokePath False
+
+strokePath' :: (ChartBackend m) => Path -> m ()
+strokePath' = backendStrokePath True
+
+fillPath :: (ChartBackend m) => Path -> m ()
+fillPath = backendFillPath False
+
+fillPath' :: (ChartBackend m) => Path -> m ()
+fillPath' = backendFillPath True
 
 -- | Draw lines between the specified points.
 --
