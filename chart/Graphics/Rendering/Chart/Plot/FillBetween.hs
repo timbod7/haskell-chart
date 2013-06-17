@@ -50,8 +50,8 @@ renderPlotFillBetween p pmap =
     renderPlotFillBetween' p (plot_fillbetween_values_ p) pmap
 
 renderPlotFillBetween' p [] _     = return ()
-renderPlotFillBetween' p vs pmap  = bLocal $ do
-    bSetFillStyle (plot_fillbetween_style_ p)
+renderPlotFillBetween' p vs pmap  = 
+  withFillStyle (plot_fillbetween_style_ p) $ do
     bFillPath ([p0] ++ p1s ++ reverse p2s ++ [p0])
   where
     pmap'    = mapXY pmap
@@ -59,8 +59,8 @@ renderPlotFillBetween' p vs pmap  = bLocal $ do
     p2s      = map pmap' [ (x,y2) | (x,(y1,y2)) <- vs ]
 
 renderPlotLegendFill :: (ChartBackend m) => PlotFillBetween x y -> Rect -> m ()
-renderPlotLegendFill p r = bLocal $ do
-    bSetFillStyle (plot_fillbetween_style_ p)
+renderPlotLegendFill p r = 
+  withFillStyle (plot_fillbetween_style_ p) $ do
     bFillPath (rectPath r)
 
 plotAllPointsFillBetween :: PlotFillBetween x y -> ([x],[y])

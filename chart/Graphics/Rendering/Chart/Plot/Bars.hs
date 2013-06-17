@@ -139,9 +139,9 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
   where
     clusteredBars (x,ys) = bLocal $ do
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
-           bSetFillStyle fstyle
-           bFillPath (barPath (offset i) x yref0 y)
-           bFill
+           withFillStyle fstyle $ do
+             bFillPath (barPath (offset i) x yref0 y)
+             bFill
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
              withLineStyle lstyle $ do
@@ -160,8 +160,8 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
          BarsCentered -> (-width/2)
          }
        forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
-           bSetFillStyle fstyle
-           bFillPath (barPath ofs x y0 y1)
+           withFillStyle fstyle $ do
+             bFillPath (barPath ofs x y0 y1)
        forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
               withLineStyle lstyle $ do
@@ -214,7 +214,7 @@ stack ys = scanl1 barsAdd ys
 renderPlotLegendBars :: (ChartBackend m) => (FillStyle,Maybe LineStyle) -> Rect
                         -> m ()
 renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
-    bSetFillStyle fstyle
+  withFillStyle fstyle $ do
     bFillPath (rectPath r)
 
 ----------------------------------------------------------------------

@@ -93,10 +93,9 @@ drawCandle ps (Candle x lo open mid close hi) = do
         let ct = plot_candle_centre_ ps
         let f  = plot_candle_fill_ ps
         -- the pixel coordinate system is inverted wrt the value coords.
-        when f $ do bSetFillStyle (if open >= close
+        when f $ withFillStyle (if open >= close
                                    then plot_candle_rise_fill_style_ ps
-                                   else plot_candle_fall_fill_style_ ps)
-
+                                   else plot_candle_fall_fill_style_ ps) $ do
                     bNewPath
                     bMoveTo $ Point (x-wd) open
                     bLineTo $ Point (x-wd) close
