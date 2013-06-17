@@ -63,7 +63,6 @@ instance ChartBackend CRender where
   type ChartOutput a = CairoBackend -> Int -> Int -> FilePath -> IO ()
   bMoveTo = cMoveTo
   bLineTo = cLineTo
-  bRelLineTo p = cRelLineTo (p_x p) (p_y p)
   
   bArc = cArc
   bArcNegative = cArcNegative

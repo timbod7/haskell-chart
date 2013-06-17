@@ -73,7 +73,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   type ChartOutput a :: *
   bMoveTo :: Point -> m ()
   bLineTo :: Point -> m ()
-  bRelLineTo :: Point -> m ()
   
   bArc :: Point  -- ^ The center position
        -> Double -- ^ The radius
