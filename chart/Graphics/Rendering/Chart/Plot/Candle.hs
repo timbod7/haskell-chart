@@ -25,6 +25,8 @@ module Graphics.Rendering.Chart.Plot.Candle(
 ) where
 
 import Data.Accessor.Template
+import Data.Monoid
+
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
@@ -96,40 +98,31 @@ drawCandle ps (Candle x lo open mid close hi) = do
         when f $ withFillStyle (if open >= close
                                    then plot_candle_rise_fill_style_ ps
                                    else plot_candle_fall_fill_style_ ps) $ do
-                    bNewPath
-                    bMoveTo $ Point (x-wd) open
-                    bLineTo $ Point (x-wd) close
-                    bLineTo $ Point (x+wd) close
-                    bLineTo $ Point (x+wd) open
-                    bLineTo $ Point (x-wd) open
-                    bFill
+                    fillPath $ moveTo' (x-wd) open
+                            <> lineTo' (x-wd) close
+                            <> lineTo' (x+wd) close
+                            <> lineTo' (x+wd) open
+                            <> lineTo' (x-wd) open
 
         withLineStyle (plot_candle_line_style_ ps) $ do
-          bNewPath
-          bMoveTo $ Point (x-wd) open
-          bLineTo $ Point (x-wd) close
-          bLineTo $ Point (x+wd) close
-          bLineTo $ Point (x+wd) open
-          bLineTo $ Point (x-wd) open
-          bStroke
+          strokePath $ moveTo' (x-wd) open
+                    <> lineTo' (x-wd) close
+                    <> lineTo' (x+wd) close
+                    <> lineTo' (x+wd) open
+                    <> lineTo' (x-wd) open
 
-          bNewPath
-          bMoveTo $ Point x (min lo hi)
-          bLineTo $ Point x (min open close)
-          bMoveTo $ Point x (max open close)
-          bLineTo $ Point x (max hi lo)
-          bStroke
+          strokePath $ moveTo' x (min lo hi)
+                    <> lineTo' x (min open close)
+                    <> moveTo' x (max open close)
+                    <> lineTo' x (max hi lo)
 
-          when (tl > 0) $ do bNewPath
-                             bMoveTo $ Point (x-tl) lo
-                             bLineTo $ Point (x+tl) lo
-                             bMoveTo $ Point (x-tl) hi
-                             bLineTo $ Point (x+tl) hi
-                             bStroke
-
-          when (ct > 0) $ do bMoveTo $ Point (x-ct) mid
-                             bLineTo $ Point (x+ct) mid
-                             bStroke
+          when (tl > 0) $ strokePath $ moveTo' (x-tl) lo
+                                    <> lineTo' (x+tl) lo
+                                    <> moveTo' (x-tl) hi
+                                    <> lineTo' (x+tl) hi
+          
+          when (ct > 0) $ do strokePath $ moveTo' (x-ct) mid
+                                       <> lineTo' (x+ct) mid
 
 renderPlotLegendCandle :: (ChartBackend m) => PlotCandle x y -> Rect -> m ()
 renderPlotLegendCandle p r@(Rect p1 p2) = do

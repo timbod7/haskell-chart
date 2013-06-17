@@ -26,10 +26,13 @@ module Graphics.Rendering.Chart.Plot.ErrBars(
 ) where
 
 import Data.Accessor.Template
+import Data.Monoid
+
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
+import Graphics.Rendering.Chart.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
@@ -91,20 +94,18 @@ drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = plot_errbars_tick_length_ ps
         let oh = plot_errbars_overhang_ ps
         withLineStyle (plot_errbars_line_style_ ps) $ do
-          bNewPath
-          bMoveTo $ Point (xl-oh) y
-          bLineTo $ Point (xh+oh) y
-          bMoveTo $ Point x (yl-oh)
-          bLineTo $ Point x (yh+oh)
-          bMoveTo $ Point xl (y-tl)
-          bLineTo $ Point xl (y+tl)
-          bMoveTo $ Point (x-tl) yl
-          bLineTo $ Point (x+tl) yl
-          bMoveTo $ Point xh (y-tl)
-          bLineTo $ Point xh (y+tl)
-          bMoveTo $ Point (x-tl) yh
-          bLineTo $ Point (x+tl) yh
-          bStroke
+          strokePath $ moveTo' (xl-oh) y
+                    <> lineTo' (xh+oh) y
+                    <> moveTo' x (yl-oh)
+                    <> lineTo' x (yh+oh)
+                    <> moveTo' xl (y-tl)
+                    <> lineTo' xl (y+tl)
+                    <> moveTo' (x-tl) yl
+                    <> lineTo' (x+tl) yl
+                    <> moveTo' xh (y-tl)
+                    <> lineTo' xh (y+tl)
+                    <> moveTo' (x-tl) yh
+                    <> lineTo' (x+tl) yh
 
 renderPlotLegendErrBars :: (ChartBackend m) => PlotErrBars x y -> Rect -> m ()
 renderPlotLegendErrBars p r@(Rect p1 p2) = do

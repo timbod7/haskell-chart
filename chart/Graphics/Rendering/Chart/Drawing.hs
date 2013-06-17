@@ -151,12 +151,10 @@ alignc p = do
 -- Abstract Drawing Methods
 -- -----------------------------------------------------------------------
 
-stepPath :: (ChartBackend m) => [Point] -> m ()
-stepPath (p:ps) = do
-    bNewPath                    
-    bMoveTo p
-    mapM_ bLineTo ps
-stepPath _  = return ()
+stepPath :: [Point] -> Path
+stepPath (p:ps) = T.moveTo p
+               <> mconcat (map T.lineTo ps)
+stepPath [] = mempty
 
 strokePath :: (ChartBackend m) => Path -> m ()
 strokePath = backendStrokePath False
@@ -177,9 +175,8 @@ fillPath' = backendFillPath True
 -- pixels.
 bStrokePath :: (ChartBackend m) => [Point] -> m ()
 bStrokePath pts = do
-    alignfn <- liftM cbePointAlignFn ask
-    stepPath (map alignfn pts)
-    bStroke
+    path <- alignStrokePath $ stepPath pts
+    strokePath path
 
 -- | Fill the region with the given corners.
 --
@@ -188,9 +185,8 @@ bStrokePath pts = do
 -- pixels.
 bFillPath :: (ChartBackend m) => [Point] -> m ()
 bFillPath pts = do
-    alignfn <- liftM cbeCoordAlignFn ask
-    stepPath (map alignfn pts)
-    bFill
+    path <- alignFillPath $ stepPath pts
+    fillPath path
 
 moveTo :: (ChartBackend m) => Point -> m ()
 moveTo p  = do
