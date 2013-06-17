@@ -106,14 +106,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   bSetClipRegion :: Rect -> m ()
   
   bTextSize :: String -> m RectSize
-
-  -- | Recturn the bounding rectangle for a text string positioned
-  --   where it would be drawn by drawText
-  bTextRect :: HTextAnchor -- ^ Horizontal text anchor.
-            -> VTextAnchor -- ^ Vertical text anchor.
-            -> Point       -- ^ Anchor point.
-            -> String      -- ^ Text to render.
-            -> m Rect
   
   runBackend :: m a -> ChartOutput a
   

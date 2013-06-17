@@ -47,6 +47,7 @@ module Graphics.Rendering.Chart.Drawing
   , bDrawTextsR
   , drawTextR
   , drawTextsR
+  , textDrawRect
   
   , bDrawPoint
   , drawPoint
@@ -308,6 +309,19 @@ adjustTextY VTA_Top      ts = textSizeAscent ts
 adjustTextY VTA_Centre   ts = - (textSizeYBearing ts) / 2
 adjustTextY VTA_BaseLine _  = 0
 adjustTextY VTA_Bottom   ts = -(textSizeDescent ts)
+
+-- | Recturn the bounding rectangle for a text string positioned
+--   where it would be drawn by drawText
+textDrawRect :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m Rect
+textDrawRect hta vta (Point x y) s = do
+  ts <- textSize s
+  let (w,h) = (textSizeWidth ts, textSizeHeight ts)
+  let lx = adjustTextX hta ts
+  let ly = adjustTextY vta ts
+  let (x',y') = (x + lx, y + ly)
+  let p1 = Point x' y'
+  let p2 = Point (x' + w) (y' + h)
+  return $ Rect p1 p2
 
 -- -----------------------------------------------------------------------
 

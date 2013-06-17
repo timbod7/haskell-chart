@@ -254,7 +254,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
 
    labelDrawRect (value,s) = do
        let pt = axisPoint value `pvadd` (awayFromAxis ag)
-       r <- bTextRect hta vta pt s
+       r <- textDrawRect hta vta pt s
        return (hBufferRect r,(value,s))
 
    drawLabels (offset,labels) = do

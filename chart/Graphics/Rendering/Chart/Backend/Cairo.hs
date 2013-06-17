@@ -89,8 +89,6 @@ instance ChartBackend CRender where
   
   bTextSize = cTextSize
   
-  bTextRect = textDrawRect
-  
   runBackend m b = case b of
     CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
     CairoSVG -> cRenderToSVGFile m
@@ -279,28 +277,6 @@ cTextSize s = c $ do
     te <- C.textExtents s
     fe <- C.fontExtents
     return (C.textExtentsWidth te, C.fontExtentsHeight fe)
-
--- | Recturn the bounding rectangle for a text string positioned
---   where it would be drawn by drawText
-textDrawRect :: HTextAnchor -> VTextAnchor -> Point -> String -> CRender Rect
-textDrawRect hta vta (Point x y) s = preserveCState $ cTextSize s >>= rect
-    where
-      rect (w,h) = c $ do te <- C.textExtents s
-                          fe <- C.fontExtents
-                          let lx = xadj hta (C.textExtentsWidth te)
-                          let ly = yadj vta te fe
-                          let (x',y') = (x + lx, y + ly)
-                          let p1 = Point x' y'
-                          let p2 = Point (x' + w) (y' + h)
-                          return $ Rect p1 p2
-
-      xadj HTA_Left   w = 0
-      xadj HTA_Centre w = (-w/2)
-      xadj HTA_Right  w = (-w)
-      yadj VTA_Top      te fe = C.fontExtentsAscent fe
-      yadj VTA_Centre   te fe = - (C.textExtentsYbearing te) / 2
-      yadj VTA_BaseLine te fe = 0
-      yadj VTA_Bottom   te fe = -(C.fontExtentsDescent fe)
 
 {- TODO: Obsolete?
 -- | Function to draw a textual label anchored by one of its corners
