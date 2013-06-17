@@ -85,7 +85,6 @@ instance ChartBackend CRender where
   bSetFontStyle = setFontStyle
   bSetFillStyle = setFillStyle
   bSetLineStyle = setLineStyle
-  bSetClipRegion (Rect tl br) = setClipRegion tl br
   
   runBackend m b = case b of
     CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()

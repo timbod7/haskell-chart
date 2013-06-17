@@ -103,7 +103,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   bSetFontStyle :: FontStyle -> m ()
   bSetFillStyle :: FillStyle -> m ()
   bSetLineStyle :: LineStyle -> m ()
-  bSetClipRegion :: Rect -> m ()
   
   runBackend :: m a -> ChartOutput a
   
