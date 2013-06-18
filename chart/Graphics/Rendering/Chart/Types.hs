@@ -1,5 +1,4 @@
 
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 

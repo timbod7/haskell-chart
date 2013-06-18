@@ -1,5 +1,4 @@
 
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Graphics.Rendering.Chart.Backend
@@ -68,9 +67,6 @@ defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv
 -- -----------------------------------------------------------------------
 
 class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
-  type ChartOutput a :: *
-  
-  runBackend :: m a -> ChartOutput a
   
   -- | Stroke the outline of the given path using the 
   --   current line style. This function does /not/ perform

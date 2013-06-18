@@ -1,11 +1,12 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE InstanceSigs #-}
 
 -- | The backend to render charts with cairo.
 module Graphics.Rendering.Chart.Backend.Cairo
   ( CRender
-  , runCRender
+  , CairoBackend(..)
+  , runBackend
+  , renderToFile
 
   , renderableToPNGFile
   , renderableToPDFFile
@@ -39,8 +40,6 @@ import Graphics.Rendering.Chart.Renderable
 -- Backend and Monad
 -- -----------------------------------------------------------------------
 
-data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
-
 -- | The reader monad containing context information to control
 --   the rendering process.
 newtype CRender a = DR (ReaderT ChartBackendEnv C.Render a)
@@ -60,13 +59,7 @@ instance Monoid a => Monoid (CRender a) where
     return $ a `mappend` b
 
 instance ChartBackend CRender where
-  type ChartOutput a = CairoBackend -> Int -> Int -> FilePath -> IO ()
   
-  runBackend m b = case b of
-    CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
-    CairoSVG -> cRenderToSVGFile m
-    CairoPS  -> cRenderToPSFile  m
-    CairoPDF -> cRenderToPDFFile m
   
   strokePath :: Path -> CRender ()
   strokePath p = preserveCState $ do
@@ -140,6 +133,22 @@ instance ChartBackend CRender where
 -- -----------------------------------------------------------------------
 -- Output rendering functions
 -- -----------------------------------------------------------------------
+
+-- | Run this backends renderer.
+runBackend :: (Point -> Point) -- ^ Point alignment function.
+           -> (Point -> Point) -- ^ Coordinate alignment function.
+           -> CRender a        -- ^ Chart render code.
+           -> C.Render a       -- ^ Cairo render code.
+runBackend pAlignF cAlignF m = runCRender m $ defaultEnv pAlignF cAlignF
+
+data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
+
+renderToFile :: CRender a -> CairoBackend -> Int -> Int -> FilePath -> IO ()
+renderToFile m b = case b of
+  CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
+  CairoSVG -> cRenderToSVGFile m
+  CairoPS  -> cRenderToPSFile  m
+  CairoPDF -> cRenderToPDFFile m
 
 -- | Output the given renderable to a PNG file of the specifed size
 --   (in pixels), to the specified file.
