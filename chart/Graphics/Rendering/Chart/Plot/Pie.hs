@@ -206,11 +206,6 @@ renderPie p (w,h) = do
                             <> lineTo' x y
                             <> lineTo' x y
                             <> close
-                    --bNewPath
-                    --bArc (Point x y) radius (radian a1) (radian a2)
-                    --bLineTo $ Point x y
-                    --bLineTo $ Point x y
-                    --bClosePath
 
                     withFillStyle (FillStyleSolid color) $ do
                       fillPath path

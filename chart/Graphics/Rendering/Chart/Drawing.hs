@@ -168,18 +168,6 @@ bFillPath pts = do
     path <- alignFillPath $ stepPath pts
     fillPath path
 
-{- TODO: Obsolete?
-moveTo :: (ChartBackend m) => Point -> m ()
-moveTo p  = do
-    p' <- alignp p
-    bMoveTo p'
-    
-lineTo :: (ChartBackend m) => Point -> m ()
-lineTo p = do
-    p' <- alignp p
-    bLineTo p'
-      -}
-
 -- | Draw a single point at the given location.
 bDrawPoint :: (ChartBackend m) 
            => PointStyle -- ^ Style to use when rendering the point.
