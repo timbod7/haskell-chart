@@ -205,6 +205,7 @@ renderPie p (w,h) = do
                     let path = T.arc (Point x y) radius (radian a1) (radian a2)
                             <> lineTo' x y
                             <> lineTo' x y
+                            <> close
                     --bNewPath
                     --bArc (Point x y) radius (radian a1) (radian a2)
                     --bLineTo $ Point x y
@@ -212,10 +213,10 @@ renderPie p (w,h) = do
                     --bClosePath
 
                     withFillStyle (FillStyleSolid color) $ do
-                      fillPath' path
+                      fillPath path
                     ls <- getLineStyle
                     withLineStyle (ls { line_color_ = withOpacity white 0.1 }) $ do
-                      strokePath' path
+                      strokePath path
 
                 ray :: Double -> Double -> Point
                 ray angle r = Point x' y'

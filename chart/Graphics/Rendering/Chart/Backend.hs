@@ -75,12 +75,12 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   -- | Stroke the outline of the given path using the 
   --   current line style. This function does /not/ perform
   --   alignment operations on the path.
-  backendStrokePath :: Bool -> Path -> m ()
+  strokePath :: Path -> m ()
   
   -- | Fill the given path using the current fill style.
   --   This function does /not/ perform
   --   alignment operations on the path.
-  backendFillPath :: Bool -> Path -> m ()
+  fillPath :: Path -> m ()
   
   -- | Fill the clip region using the current fill style.
   fillClip :: m ()
