@@ -108,7 +108,7 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   
   -- | Use the given clipping rectangle when drawing
   --   in this local environment.
-  withClipRegion :: Maybe Rect -> m a -> m a
+  withClipRegion :: Rect -> m a -> m a
 
 -- -----------------------------------------------------------------------
 -- Rendering Utility Types
@@ -154,5 +154,11 @@ withFillStyle' fs m = local (\s -> s { cbeFillStyle = fs }) m
 withLineStyle' :: ChartBackend m => LineStyle -> m a -> m a
 withLineStyle' ls m = local (\s -> s { cbeLineStyle = ls }) m
 
-withClipRegion' :: ChartBackend m => Maybe Rect -> m a -> m a
-withClipRegion' clip m = local (\s -> s { cbeClipRegion = clip }) m
+withClipRegion' :: ChartBackend m => Rect -> m a -> m a
+withClipRegion' clip m = local (\s -> s { 
+  cbeClipRegion = case cbeClipRegion s of
+                    Nothing -> Just clip
+                    Just clip' -> case intersectRect clip clip' of
+                      Nothing -> Just $ Rect (Point 0 0) (Point 0 0)
+                      Just intersection -> Just intersection
+  }) m

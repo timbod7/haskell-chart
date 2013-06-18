@@ -128,7 +128,7 @@ fillBackground :: (ChartBackend m) => FillStyle -> Renderable m a -> Renderable 
 fillBackground fs r = r{ render = rf }
   where
     rf rsize@(w,h) = do
-      withClipRegion (Just $ Rect (Point 0 0) (Point w h)) $ do
+      withClipRegion (Rect (Point 0 0) (Point w h)) $ do
         withFillStyle fs fillClip
       render r rsize
 

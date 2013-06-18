@@ -123,12 +123,13 @@ instance ChartBackend CRender where
                      $ preserveCState 
                      $ setLineStyle ls >> m
   
-  withClipRegion :: Maybe Rect -> CRender a -> CRender a
+  withClipRegion :: Rect -> CRender a -> CRender a
   withClipRegion clip m = withClipRegion' clip
-                        $ preserveCState 
-                        $ case clip of
-                            Just (Rect tl br) -> setClipRegion tl br >> m
-                            Nothing -> c C.resetClip >> m
+                        $ preserveCState $ do
+                            clip' <- getClipRegion
+                            case clip' of
+                              Just (Rect tl br) -> setClipRegion tl br >> m
+                              Nothing -> c C.resetClip >> m
 
 -- -----------------------------------------------------------------------
 -- Output rendering functions
@@ -223,8 +224,8 @@ convertMatrix (G.Matrix a1 a2 b1 b2 c1 c2) = CM.Matrix a1 a2 b1 b2 c1 c2
 drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> CRender ()
 drawText hta vta p s = drawTextR hta vta 0 p s
 
-setClipRegion :: Point -> Point -> CRender ()
-setClipRegion p2 p3 = do    
+setClipRegion :: Rect -> CRender ()
+setClipRegion (Rect p2 p3) = do    
     c $ C.moveTo (p_x p2) (p_y p2)
     c $ C.lineTo (p_x p2) (p_y p3)
     c $ C.lineTo (p_x p3) (p_y p3)

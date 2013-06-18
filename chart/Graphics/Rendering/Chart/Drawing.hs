@@ -114,10 +114,10 @@ withPointStyle (PointStyle cl bcl bw _ _) m = do
 
 alignPath :: (Point -> Point) -> Path -> Path
 alignPath f = foldPath (\p -> moveTo $ f p)
-                          (\p -> lineTo $ f p)
-                          (\p -> arc $ f p)
-                          (\p -> arcNeg $ f p)
-                          (close)
+                       (\p -> lineTo $ f p)
+                       (\p -> arc $ f p)
+                       (\p -> arcNeg $ f p)
+                       (close)
 
 alignStrokePath :: (ChartBackend m) => Path -> m Path
 alignStrokePath p = do

@@ -375,7 +375,7 @@ plotsToRenderable l = Renderable {
 renderPlots :: (ChartBackend m) => Layout1 m x y -> RectSize -> m (PickFn (Layout1Pick x y))
 renderPlots l sz@(w,h) = do
     when (not (layout1_grid_last_ l)) renderGrids
-    withClipRegion (Just $ Rect (Point 0 0) (Point w h)) $ do
+    withClipRegion (Rect (Point 0 0) (Point w h)) $ do
       mapM_ rPlot (layout1_plots_ l)
     when (layout1_grid_last_ l) renderGrids
     return pickfn

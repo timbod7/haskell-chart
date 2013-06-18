@@ -15,6 +15,7 @@ module Graphics.Rendering.Chart.Geometry
   , psub
   , vscale
   , within
+  , intersectRect
 
   , RectEdge(..)
   , Limit(..)
@@ -78,6 +79,17 @@ mkrect (Point x1 _) (Point _ y2) (Point x3 _) (Point _ y4) =
 within :: Point -> Rect -> Bool
 within (Point x y) (Rect (Point x1 y1) (Point x2 y2)) =
     x >= x1 && x <= x2 && y >= y1 && y <= y2
+
+-- | Intersects the both rect. If they intersect the
+--   intersection rectangle is returned, otherwise nothing is.
+intersectRect :: Rect -> Rect -> Maybe Rect
+intersectRect (Rect (Point x11 y11) (Point x12 y12)) 
+              (Rect (Point x21 y21) (Point x22 y22)) =
+  let p1@(Point x1 y1) = Point (max x11 x21) (max y11 y21)
+      p2@(Point x2 y2) = Point (min x12 x22) (min y12 y22)
+  in if x2 < x1 || y2 < y1 
+        then Nothing
+        else Just $ Rect p1 p2
 
 type Range    = (Double,Double)
 type RectSize = (Double,Double)
