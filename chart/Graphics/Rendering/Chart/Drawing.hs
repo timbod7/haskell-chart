@@ -117,22 +117,22 @@ withPointStyle (PointStyle cl bcl bw _ _) m = do
 -- Alignment Helpers
 -- -----------------------------------------------------------------------
 
-align :: (Point -> Point) -> PathElement -> PathElement
-align f pe = case pe of
-  MoveTo p -> MoveTo $ f p
-  LineTo p -> LineTo $ f p
-  Arc p r a1 a2 -> Arc (f p) r a1 a2
-  ArcNeg p r a1 a2 -> ArcNeg (f p) r a1 a2
+alignPath :: (Point -> Point) -> Path -> Path
+alignPath f = foldPath (\p -> moveTo $ f p)
+                          (\p -> lineTo $ f p)
+                          (\p -> arc $ f p)
+                          (\p -> arcNeg $ f p)
+                          (close)
 
 alignStrokePath :: (ChartBackend m) => Path -> m Path
 alignStrokePath p = do
   f <- liftM cbePointAlignFn ask
-  return $ toPath $ map (align f) (fromPath p)
+  return $ alignPath f p
 
 alignFillPath :: (ChartBackend m) => Path -> m Path
 alignFillPath p = do
   f <- liftM cbeCoordAlignFn ask
-  return $ toPath $ map (align f) (fromPath p)
+  return $ alignPath f p
 
 alignp :: (ChartBackend m) => Point -> m Point
 alignp p = do 

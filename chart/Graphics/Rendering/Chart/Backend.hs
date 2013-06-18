@@ -15,8 +15,6 @@ module Graphics.Rendering.Chart.Backend
   , withTransform'
   , withFillStyle', withFontStyle'
   , withLineStyle', withClipRegion'
-  
-  , foldPath
   ) where
 
 import Data.Colour
@@ -73,7 +71,6 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   type ChartOutput a :: *
   
   runBackend :: m a -> ChartOutput a
-  
   
   -- | Stroke the outline of the given path using the 
   --   current line style. This function does /not/ perform
@@ -163,21 +160,3 @@ withLineStyle' ls m = local (\s -> s { cbeLineStyle = ls }) m
 
 withClipRegion' :: ChartBackend m => Maybe Rect -> m a -> m a
 withClipRegion' clip m = local (\s -> s { cbeClipRegion = clip }) m
-
--- | Fold the given path to a monoid structure.
-foldPath :: (Monoid m)
-         => (Point -> m) -- ^ MoveTo
-         -> (Point -> m) -- ^ LineTo
-         -> (Point -> Double -> Double -> Double -> m) -- ^ Arc
-         -> (Point -> Double -> Double -> Double -> m) -- ^ ArcNeg
-         -> Path -- ^ Path to fold
-         -> m
-foldPath moveTo lineTo arc arcNeg path = case fromPath path of 
-  (p:ps) -> let curr = case p of
-                  MoveTo p -> moveTo p
-                  LineTo p -> lineTo p
-                  Arc p r a1 a2 -> arc p r a1 a2
-                  ArcNeg p r a1 a2 -> arcNeg p r a1 a2
-                rest = foldPath moveTo lineTo arc arcNeg (toPath ps)
-            in curr <> rest
-  [] -> mempty

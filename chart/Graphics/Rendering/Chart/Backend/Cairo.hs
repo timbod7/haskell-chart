@@ -71,8 +71,7 @@ instance ChartBackend CRender where
   backendStrokePath :: Bool -> Path -> CRender ()
   backendStrokePath close p = preserveCState $ do
     cNewPath
-    foldPath cMoveTo cLineTo cArc cArcNegative p
-    when close cClosePath
+    foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
     cl <- line_color_ `fmap` getLineStyle
     cSetSourceColor cl
     cStroke
@@ -80,8 +79,7 @@ instance ChartBackend CRender where
   backendFillPath :: Bool -> Path -> CRender ()
   backendFillPath close p = preserveCState $ do
     cNewPath
-    foldPath cMoveTo cLineTo cArc cArcNegative p
-    when close cClosePath
+    foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
     fs <- getFillStyle
     case fs of
       FillStyleSolid cl -> cSetSourceColor cl
