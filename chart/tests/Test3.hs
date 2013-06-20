@@ -6,6 +6,7 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.Accessor
+import Data.Default
 import Prices(prices1)
 
 import Utils
@@ -30,6 +31,6 @@ chart = layout1ToRenderable layout
            $ layout1_grid_last ^= True
  	   $ layout1_plots ^= [Left (toPlot price1),
                                Left (toPlot price2)]
-           $ defaultLayout1
+           $ def
 
 main = main' "test3" chart

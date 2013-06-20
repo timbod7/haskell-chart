@@ -4,6 +4,7 @@ import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
+import Data.Default
 
 import Utils
 
@@ -21,6 +22,6 @@ chart lwidth = layout1ToRenderable layout
 
     layout = layout1_title ^= "Parametric Plot"
            $ layout1_plots ^= [Left (toPlot circleP)]
-           $ defaultLayout1
+           $ def
 
 main = main' "test1" (chart 0.25)

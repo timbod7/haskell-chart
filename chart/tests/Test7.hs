@@ -4,6 +4,7 @@ import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
+import Data.Default
 
 import Utils
 
@@ -19,12 +20,12 @@ chart = layout1ToRenderable layout
     points = plot_points_style ^= filledCircles 2 (opaque red)
 	   $ plot_points_values ^= [(x,y) |  (x,y,dx,dy) <- vals]
            $ plot_points_title ^= "test data"
-           $ defaultPlotPoints
+           $ def
 
     layout = layout1_title ^= "Error Bars"
            $ layout1_plots ^= [Left (toPlot bars),
                                Left (toPlot points)]
-           $ defaultLayout1
+           $ def
 
 main = main' "test7" chart
 

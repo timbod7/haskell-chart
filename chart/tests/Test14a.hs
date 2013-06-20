@@ -5,6 +5,7 @@ import Graphics.Rendering.Chart.Plot
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
+import Data.Default
 import System.Random
 import Prices(prices1)
 
@@ -20,7 +21,7 @@ chart lwidth = layout1ToRenderable layout
            $ layout1_left_axis ^: laxis_override ^= axisTicksHide
  	   $ layout1_plots ^= [ Left (toPlot price1), Left (toPlot spots) ]
            $ setLayout1Foreground (opaque black)
-           $ defaultLayout1
+           $ def
 
     price1 = plot_lines_style ^= lineStyle
            $ plot_lines_values ^= [[ (d, v) | (d,v,_) <- prices1]]

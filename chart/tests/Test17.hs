@@ -4,6 +4,7 @@ import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
+import Data.Default
 import System.Random
 import ExampleStocks
 
@@ -24,7 +25,7 @@ chart lwidth = layout1ToRenderable layout
                               , Left  (toPlot aaplLine)
                               , Left  (toPlot aaplCandle) ]
            $ setLayout1Foreground (opaque black)
-           $ defaultLayout1
+           $ def
 
     aaplLine = plot_lines_style  ^= lineStyle 2 green
              $ plot_lines_values ^= [[ (d, cl)

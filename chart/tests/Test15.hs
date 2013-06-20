@@ -4,6 +4,7 @@ import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
+import Data.Default
 
 import Utils
 
@@ -16,7 +17,7 @@ chart lo = layout1ToRenderable layout
       $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
       $ layout1_plots ^= [ Left (plotBars bars2) ]
       $ layout1_legend ^= Just lstyle
-      $ defaultLayout1 :: (ChartBackend m) => Layout1 m PlotIndex Double
+      $ def :: (ChartBackend m) => Layout1 m PlotIndex Double
 
   bars2 = plot_bars_titles ^= ["A","B","C","D","E","F","G","H","I","J"]
       $ plot_bars_values ^= addIndexes [[2,3,4,2,1,5,6,4,8,1,3],
@@ -29,8 +30,7 @@ chart lo = layout1ToRenderable layout
 
   alabels = [ "X", "Y" ]
 
-  lstyle = legend_orientation ^= lo
-         $ defaultLegendStyle
+  lstyle = legend_orientation ^= lo $ def
 
   btitle = ""
   mkstyle c = (solidFillStyle c, Nothing)

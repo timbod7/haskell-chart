@@ -14,6 +14,7 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.List(sort,nub,scanl1)
+import Data.Default
 import qualified Data.Map as Map
 import Control.Monad
 import Prices
@@ -98,7 +99,7 @@ test4d otype = layout1ToRenderable layout
     points = plot_points_style ^= filledCircles 3 (opaque red)
            $ plot_points_values ^= [ (x, 10**x) | x <- [0.5,1,1.5,2,2.5::Double] ]
            $ plot_points_title ^= "values"
-           $ defaultPlotPoints
+           $ def
 
     lines = plot_lines_values ^= [ [(x, 10**x) | x <- [0,3]] ]
           $ plot_lines_title ^= "values"
@@ -111,7 +112,7 @@ test4d otype = layout1ToRenderable layout
            $ layout1_left_axis ^: laxis_title ^= "vertical"
            $ layout1_left_axis ^: laxis_reverse ^= False
 	   $ layout1_plots ^= [Left (toPlot points `joinPlot` toPlot lines) ]
-           $ defaultLayout1
+           $ def
 
 ----------------------------------------------------------------------
 
@@ -162,7 +163,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
            $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
            $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
            $ layout1_plots ^= [ Left (plotBars bars) ]
-           $ defaultLayout1 :: (ChartBackend m) => Layout1 m PlotIndex Double
+           $ def :: (ChartBackend m) => Layout1 m PlotIndex Double
 
     bars1 = plot_bars_titles ^= ["Cash"]
           $ plot_bars_values ^= addIndexes [[20],[45],[30],[70]]
@@ -212,7 +213,7 @@ test10 prices otype = layout1ToRenderable layout
                               , Left (toPlot price1),      Right (toPlot price2)
                               ]
            $ setLayout1Foreground fg
-           $ defaultLayout1
+           $ def
 
 -------------------------------------------------------------------------------
 -- A quick test of stacked layouts
@@ -228,12 +229,12 @@ test11_ f = f layout1 layout2
     plot1 = plot_points_style ^= filledCircles 5 (opaque red)
           $ plot_points_values ^= vs1
           $ plot_points_title ^= "spots"
-          $ defaultPlotPoints
+          $ def
 
     layout1 = layout1_title ^= "Multi typed stack"
  	   $ layout1_plots ^= [Left (toPlot plot1)]
            $ layout1_left_axis ^: laxis_title ^= "integer values"
-           $ defaultLayout1
+           $ def
 
     plot2 = plot_lines_values ^= [vs2]
           $ plot_lines_title ^= "lines"
@@ -241,7 +242,7 @@ test11_ f = f layout1 layout2
 
     layout2 = layout1_plots ^= [Left (toPlot plot2)]
            $ layout1_left_axis ^: laxis_title ^= "double values"
-           $ defaultLayout1
+           $ def
 
 test11a :: (ChartBackend m) => OutputType -> Renderable m ()
 test11a otype = test11_ f
@@ -250,7 +251,7 @@ test11a otype = test11_ f
              $ slayouts_layouts ^= [StackedLayout l1, StackedLayout l2]
              $ slayouts_compress_xlabels ^= False
              $ slayouts_compress_legend ^= False
-             $ defaultStackedLayouts
+             $ def
  
 test11b :: (ChartBackend m) => OutputType -> Renderable m ()
 test11b otype = test11_ f
@@ -259,7 +260,7 @@ test11b otype = test11_ f
              $ slayouts_layouts ^= [StackedLayout l1, StackedLayout l2]
              $ slayouts_compress_xlabels ^= True
              $ slayouts_compress_legend ^= True
-             $ defaultStackedLayouts
+             $ def
 
 -------------------------------------------------------------------------------
 -- More of an example that a test:
@@ -294,7 +295,7 @@ test12 otype = layout1ToRenderable layout
            $ layout1_bottom_axis ^: laxis_generate ^= const baxis
            $ layout1_left_axis   ^: laxis_generate ^= const laxis
            $ layout1_title ^= "Explicit Axes"
-           $ defaultLayout1
+           $ def
 
 
 -------------------------------------------------------------------------------
@@ -309,15 +310,15 @@ test13 otype = fillBackground fwhite $ (gridToRenderable t)
     pointPlot :: PlotPoints Int Int
     pointPlot = plot_points_style^= filledCircles 2 (opaque red)
                 $  plot_points_values ^= [(x,x)|x<-points]
-                $  defaultPlotPoints
+                $  def
     p = Left (toPlot pointPlot)
-    annotated h v = layout1ToRenderable ( layout1_plots ^= [Left (toPlot labelPlot), Left (toPlot rotPlot), p] $ defaultLayout1 )
+    annotated h v = layout1ToRenderable ( layout1_plots ^= [Left (toPlot labelPlot), Left (toPlot rotPlot), p] $ def )
       where labelPlot = plot_annotation_hanchor ^= h
                       $ plot_annotation_vanchor ^= v
                       $ plot_annotation_values  ^= [(x,x,"Hello World\n(plain)")|x<-points]
-                      $ defaultPlotAnnotation
+                      $ def
             rotPlot =   plot_annotation_angle ^= -45.0
-                      $ plot_annotation_style ^= defaultFontStyle{font_size_=10,font_weight_=FontWeightBold, font_color_ =(opaque blue) }
+                      $ plot_annotation_style ^= def {font_size_=10,font_weight_=FontWeightBold, font_color_ =(opaque blue) }
                       $ plot_annotation_values  ^= [(x,x,"Hello World\n(fancy)")|x<-points]
                       $ labelPlot
 
@@ -334,7 +335,7 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]
     fwhite = solidFillStyle $ opaque white
     fblue = solidFillStyle $ opaque $ sRGB 0.8 0.8 1
-    fs = defaultFontStyle{font_size_=20,font_weight_=FontWeightBold}
+    fs = def {font_size_=20,font_weight_=FontWeightBold}
     crossHairs r =Renderable {
       minsize = minsize r,
       render = \sz@(w,h) -> do

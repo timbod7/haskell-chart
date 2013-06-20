@@ -4,6 +4,7 @@ import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
+import Data.Default
 
 import Utils
 
@@ -14,7 +15,7 @@ chart xrev yrev = layout1ToRenderable layout
     points = plot_points_style ^= filledCircles 3 (opaque red)
            $ plot_points_values ^= [ (x, 10**x) | x <- [0.5,1,1.5,2,2.5 :: Double] ]
            $ plot_points_title ^= "values"
-           $ defaultPlotPoints
+           $ def
 
     lines = plot_lines_values ^= [ [(x, 10**x) | x <- [0,3]] ]
           $ plot_lines_title ^= "values"
@@ -27,7 +28,7 @@ chart xrev yrev = layout1ToRenderable layout
            $ layout1_left_axis ^: laxis_title ^= "vertical"
            $ layout1_left_axis ^: laxis_reverse ^= yrev
 	   $ layout1_plots ^= [Left (toPlot points), Left (toPlot lines) ]
-           $ defaultLayout1
+           $ def
 
 main = main' "test4" (chart False False)
 

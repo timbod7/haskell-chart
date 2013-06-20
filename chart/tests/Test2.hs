@@ -6,6 +6,7 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.Accessor
+import Data.Default
 import Prices(prices2)
 
 import Utils
@@ -54,6 +55,6 @@ chart prices showMinMax lwidth = layout1ToRenderable layout
  	   $ layout1_plots ^= ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
            $ layout1_grid_last ^= False
            $ setLayout1Foreground fg
-           $ defaultLayout1
+           $ def
 
 main = main' "test2" (chart prices2 True 0.25)

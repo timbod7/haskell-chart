@@ -4,6 +4,7 @@ import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
+import Data.Default
 import System.Random
 
 import Utils
@@ -21,7 +22,7 @@ chart lwidth = layout1ToRenderable (layout 1001 (trial bits) :: (ChartBackend m)
                       Left (toPlot (plot "f=0.05" s1 n 0 (t 0.05))),
                       Left (toPlot (plot "f=0.1" s2 n 0 (t 0.1)))
                      ]
-               $ defaultLayout1
+               $ def
 
     plot tt s n m t = plot_lines_style ^= s
                  $ plot_lines_values ^=
