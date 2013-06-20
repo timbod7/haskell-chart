@@ -6,6 +6,7 @@ module Graphics.Rendering.Chart.Simple.Internal where
 import Data.Maybe ( catMaybes )
 import Data.Colour
 import Data.Colour.Names
+import Data.Default
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Utils
@@ -26,7 +27,7 @@ styleSymbol ind = symbolSequence !! ind
 -- When defaultLayout1 has been generalized, change this signature to 
 -- [InternalPlot x y] -> Layout1 x y z
 iplot :: forall m. (ChartBackend m) => [InternalPlot Double Double] -> Layout1 m Double Double
-iplot foobar = (defaultLayout1 :: Layout1 m Double Double) {
+iplot foobar = (def :: Layout1 m Double Double) {
         layout1_plots_ = concat $ zipWith toplot (ip foobar) [0..]
     }
   where
@@ -61,45 +62,45 @@ iplot foobar = (defaultLayout1 :: Layout1 m Double Double) {
                            plot_lines_values_ = [vs],
                            plot_lines_style_  = dashedLine 1 [1,11]
                                                            (styleColor ind) }
-        plotas FilledCircle = Just $ toPlot $ defaultPlotPoints
+        plotas FilledCircle = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = filledCircles 4
                                                            (styleColor ind) }
-        plotas HollowCircle = Just $ toPlot $ defaultPlotPoints
+        plotas HollowCircle = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = hollowCircles 5 1
                                                            (styleColor ind) }
-        plotas Triangle = Just $ toPlot $ defaultPlotPoints
+        plotas Triangle = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = hollowPolygon 7 1 3 False
                                                            (styleColor ind) }
-        plotas DownTriangle = Just $ toPlot $ defaultPlotPoints
+        plotas DownTriangle = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = hollowPolygon 7 1 3 True
                                                            (styleColor ind) }
-        plotas Square = Just $ toPlot $ defaultPlotPoints
+        plotas Square = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = hollowPolygon 7 1 4 False
                                                            (styleColor ind) }
-        plotas Diamond = Just $ toPlot $ defaultPlotPoints
+        plotas Diamond = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = hollowPolygon 7 1 4 True
                                                            (styleColor ind) }
-        plotas Plus = Just $ toPlot $ defaultPlotPoints
+        plotas Plus = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = plusses 7 1 (styleColor ind) }
-        plotas Ex = Just $ toPlot $ defaultPlotPoints
+        plotas Ex = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = exes 7 1 (styleColor ind) }
-        plotas Star = Just $ toPlot $ defaultPlotPoints
+        plotas Star = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = stars 7 1 (styleColor ind) }

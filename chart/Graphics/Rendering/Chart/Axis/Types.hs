@@ -63,6 +63,7 @@ import Data.List(sort,intersperse)
 import Data.Accessor.Template
 import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
+import Data.Default
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
@@ -373,7 +374,7 @@ defaultGridLineStyle = dashedLine 1 [5,5] $ opaque lightgrey
 defaultAxisStyle :: AxisStyle
 defaultAxisStyle = AxisStyle {
     axis_line_style_  = defaultAxisLineStyle,
-    axis_label_style_ = defaultFontStyle,
+    axis_label_style_ = def,
     axis_grid_style_  = defaultGridLineStyle,
     axis_label_gap_   = 10
 }

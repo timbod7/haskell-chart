@@ -479,16 +479,16 @@ instance (PlotValue x, PlotValue y, ChartBackend m) => Default (Layout1 m x y) w
     , layout1_title_style_     = def { font_size_   = 15
                                      , font_weight_ = FontWeightBold }
 
-    , layout1_top_axis_        = defaultLayoutAxis {laxis_visible_ = const False}
-    , layout1_bottom_axis_     = defaultLayoutAxis
-    , layout1_left_axis_       = defaultLayoutAxis
-    , layout1_right_axis_      = defaultLayoutAxis
+    , layout1_top_axis_        = def {laxis_visible_ = const False}
+    , layout1_bottom_axis_     = def
+    , layout1_left_axis_       = def
+    , layout1_right_axis_      = def
 
     , layout1_yaxes_control_   = id
 
     , layout1_margin_          = 10
     , layout1_plots_           = []
-    , layout1_legend_          = Just defaultLegendStyle
+    , layout1_legend_          = Just def
     , layout1_grid_last_       = False
     }
 
