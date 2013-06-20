@@ -89,27 +89,40 @@ data PieItem = PieItem {
    pitem_value_  :: Double
 }
 
+{-# DEPRECATED defaultPieChart  "Use the according Data.Default instance!" #-}
 defaultPieChart :: PieChart
-defaultPieChart = PieChart {
-    pie_data_             = [], 
-    pie_colors_           = defaultColorSeq,
-    pie_label_style_      = def,
-    pie_label_line_style_ = solidLine 1 $ opaque black,
-    pie_start_angle_      = 0
-}
+defaultPieChart = def
 
+instance Default PieChart where
+  def = PieChart 
+    { pie_data_             = []
+    , pie_colors_           = defaultColorSeq
+    , pie_label_style_      = def
+    , pie_label_line_style_ = solidLine 1 $ opaque black
+    , pie_start_angle_      = 0
+    }
+
+{-# DEPRECATED defaultPieItem  "Use the according Data.Default instance!" #-}
 defaultPieItem :: PieItem
-defaultPieItem = PieItem "" 0 0
+defaultPieItem = def
 
+instance Default PieItem where
+  def = PieItem "" 0 0
+
+{-# DEPRECATED defaultPieLayout  "Use the according Data.Default instance!" #-}
 defaultPieLayout :: PieLayout
-defaultPieLayout = PieLayout {
-    pie_background_  = solidFillStyle $ opaque white,
-    pie_title_       = "",
-    pie_title_style_ = def { font_size_   = 15
-                           , font_weight_ = FontWeightBold },
-    pie_plot_        = defaultPieChart,
-    pie_margin_      = 10
-}
+defaultPieLayout = def
+
+instance Default PieLayout where
+  def = PieLayout 
+    { pie_background_  = solidFillStyle $ opaque white
+    , pie_title_       = ""
+    , pie_title_style_ = def { font_size_   = 15
+                             , font_weight_ = FontWeightBold }
+    , pie_plot_        = defaultPieChart
+    , pie_margin_      = 10
+    }
+
 {- TODO: See class definition
 instance ToRenderable PieChart where
     type RenderableT m PieChart = PieChart

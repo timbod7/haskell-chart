@@ -62,12 +62,16 @@ renderPlotLegendPoints p r@(Rect p1 p2) = do
   where
     ps = (plot_points_style_ p)
 
+{-# DEPRECATED defaultPlotPoints  "Use the according Data.Default instance!" #-}
 defaultPlotPoints :: PlotPoints x y
-defaultPlotPoints = PlotPoints {
-    plot_points_title_  = "",
-    plot_points_style_  = def,
-    plot_points_values_ = []
-}
+defaultPlotPoints = def
+
+instance Default (PlotPoints x y) where
+  def = PlotPoints 
+    { plot_points_title_  = ""
+    , plot_points_style_  = def
+    , plot_points_values_ = []
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

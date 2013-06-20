@@ -64,13 +64,18 @@ renderAnnotation p pMap = withFontStyle style $ do
           drawOne (x,y,s) = drawTextsR hta vta angle point s
               where point = pMap (LValue x, LValue y)
 
-defaultPlotAnnotation = PlotAnnotation {
-                          plot_annotation_hanchor_ = HTA_Centre,
-                          plot_annotation_vanchor_ = VTA_Centre,
-                          plot_annotation_angle_   = 0,
-                          plot_annotation_style_   = def,
-                          plot_annotation_values_  = []
-}
+{-# DEPRECATED defaultPlotAnnotation  "Use the according Data.Default instance!" #-}
+defaultPlotAnnotation :: PlotAnnotation x y
+defaultPlotAnnotation = def
+
+instance Default (PlotAnnotation x y) where
+  def = PlotAnnotation 
+    { plot_annotation_hanchor_ = HTA_Centre
+    , plot_annotation_vanchor_ = VTA_Centre
+    , plot_annotation_angle_   = 0
+    , plot_annotation_style_   = def
+    , plot_annotation_values_  = []
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

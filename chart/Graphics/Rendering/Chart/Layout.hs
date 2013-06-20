@@ -178,8 +178,12 @@ data StackedLayouts m x = StackedLayouts {
       slayouts_compress_legend_ :: Bool
 }
 
+{-# DEPRECATED defaultStackedLayouts  "Use the according Data.Default instance!" #-}
 defaultStackedLayouts :: StackedLayouts m x
-defaultStackedLayouts = StackedLayouts [] True True
+defaultStackedLayouts = def
+
+instance Default (StackedLayouts m x) where
+  def = StackedLayouts [] True True
 
 -- | Render several layouts with the same x-axis type and range,
 --   vertically stacked so that their origins and x-values are aligned.
@@ -462,38 +466,46 @@ allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
     xvals1 = [ x | (Right p) <- plots, x <- fst $ plot_all_points_ p]
     yvals1 = [ y | (Right p) <- plots, y <- snd $ plot_all_points_ p]
 
+{-# DEPRECATED defaultLayout1  "Use the according Data.Default instance!" #-}
 defaultLayout1 :: (PlotValue x,PlotValue y, ChartBackend m) => Layout1 m x y
-defaultLayout1 = Layout1 {
-    layout1_background_      = solidFillStyle $ opaque white,
-    layout1_plot_background_ = Nothing,
+defaultLayout1 = def
 
-    layout1_title_           = "",
-    layout1_title_style_     = def { font_size_   = 15
-                                   , font_weight_ = FontWeightBold },
+instance (PlotValue x, PlotValue y, ChartBackend m) => Default (Layout1 m x y) where
+  def = Layout1 
+    { layout1_background_      = solidFillStyle $ opaque white
+    , layout1_plot_background_ = Nothing
 
-    layout1_top_axis_        = defaultLayoutAxis {laxis_visible_ = const False},
-    layout1_bottom_axis_     = defaultLayoutAxis,
-    layout1_left_axis_       = defaultLayoutAxis,
-    layout1_right_axis_      = defaultLayoutAxis,
+    , layout1_title_           = ""
+    , layout1_title_style_     = def { font_size_   = 15
+                                     , font_weight_ = FontWeightBold }
 
-    layout1_yaxes_control_   = id,
+    , layout1_top_axis_        = defaultLayoutAxis {laxis_visible_ = const False}
+    , layout1_bottom_axis_     = defaultLayoutAxis
+    , layout1_left_axis_       = defaultLayoutAxis
+    , layout1_right_axis_      = defaultLayoutAxis
 
-    layout1_margin_          = 10,
-    layout1_plots_           = [],
-    layout1_legend_          = Just defaultLegendStyle,
-    layout1_grid_last_       = False
-}
+    , layout1_yaxes_control_   = id
 
+    , layout1_margin_          = 10
+    , layout1_plots_           = []
+    , layout1_legend_          = Just defaultLegendStyle
+    , layout1_grid_last_       = False
+    }
+
+{-# DEPRECATED defaultLayoutAxis "Use the according Data.Default instance!" #-}
 defaultLayoutAxis :: PlotValue t => LayoutAxis t
-defaultLayoutAxis = LayoutAxis {
-   laxis_title_style_ = def { font_size_=10 },
-   laxis_title_       = "",
-   laxis_style_       = defaultAxisStyle,
-   laxis_visible_     = not.null,
-   laxis_generate_    = autoAxis,
-   laxis_override_    = id,
-   laxis_reverse_     = False
-}
+defaultLayoutAxis = def
+
+instance PlotValue t => Default (LayoutAxis t) where
+  def = LayoutAxis
+    { laxis_title_style_ = def { font_size_=10 }
+    , laxis_title_       = ""
+    , laxis_style_       = defaultAxisStyle
+    , laxis_visible_     = not.null
+    , laxis_generate_    = autoAxis
+    , laxis_override_    = id
+    , laxis_reverse_     = False
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

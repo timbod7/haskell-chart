@@ -95,13 +95,17 @@ join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
                          (xs, rest) -> (x, a1:map snd xs) : join_nub rest
 join_nub []          = []
 
+{-# DEPRECATED defaultLegendStyle  "Use the according Data.Default instance!" #-}
 defaultLegendStyle :: LegendStyle
-defaultLegendStyle = LegendStyle {
-    legend_label_style_ = def,
-    legend_margin_      = 20,
-    legend_plot_size_   = 20,
-    legend_orientation_ = LORows 4
-}
+defaultLegendStyle = def
+
+instance Default LegendStyle where
+  def = LegendStyle 
+    { legend_label_style_ = def
+    , legend_margin_      = 20
+    , legend_plot_size_   = 20
+    , legend_orientation_ = LORows 4
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
