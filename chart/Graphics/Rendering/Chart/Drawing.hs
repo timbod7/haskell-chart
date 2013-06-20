@@ -40,9 +40,7 @@ module Graphics.Rendering.Chart.Drawing
   , withTranslation
   , withPointStyle
   
-  , bDrawText
-  , bDrawTextR
-  , bDrawTextsR
+  , drawTextA
   , drawTextR
   , drawTextsR
   , textDrawRect
@@ -216,22 +214,8 @@ drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
                 <> moveTo' (x+rad) (y-rad)
                 <> lineTo' (x-rad) (y+rad)
 
-bDrawText :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
-bDrawText hta vta p s = drawTextR hta vta 0 p s
-
-bDrawTextR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
-bDrawTextR = drawTextR
-
--- | Draw a multiline text anchored by one of its corners
---   or edges, with rotation.
-bDrawTextsR :: (ChartBackend m)
-            => HTextAnchor -- ^ Horizontal text anchor.
-            -> VTextAnchor -- ^ Vertical text anchor.
-            -> Double      -- ^ Rotation angle in degrees.
-            -> Point       -- ^ Anchor point to rotate around.
-            -> String      -- ^ Text to render.
-            -> m ()
-bDrawTextsR = drawTextsR
+drawTextA :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
+drawTextA hta vta p s = drawTextR hta vta 0 p s
 
 -- | Function to draw a textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
