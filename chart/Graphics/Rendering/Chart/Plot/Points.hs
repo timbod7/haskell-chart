@@ -27,6 +27,7 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
+import Data.Default
 
 -- | Value defining a series of datapoints, and a style in
 --   which to render them.
@@ -64,7 +65,7 @@ renderPlotLegendPoints p r@(Rect p1 p2) = do
 defaultPlotPoints :: PlotPoints x y
 defaultPlotPoints = PlotPoints {
     plot_points_title_  = "",
-    plot_points_style_  = defaultPointStyle,
+    plot_points_style_  = def,
     plot_points_values_ = []
 }
 

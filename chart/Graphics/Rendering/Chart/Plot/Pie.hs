@@ -55,6 +55,7 @@ import Data.Accessor.Template
 import Data.Colour
 import Data.Colour.Names (black, white)
 import Data.Monoid
+import Data.Default
 import Control.Monad
 
 import Graphics.Rendering.Chart.Geometry
@@ -92,7 +93,7 @@ defaultPieChart :: PieChart
 defaultPieChart = PieChart {
     pie_data_             = [], 
     pie_colors_           = defaultColorSeq,
-    pie_label_style_      = defaultFontStyle,
+    pie_label_style_      = def,
     pie_label_line_style_ = solidLine 1 $ opaque black,
     pie_start_angle_      = 0
 }
@@ -104,8 +105,8 @@ defaultPieLayout :: PieLayout
 defaultPieLayout = PieLayout {
     pie_background_  = solidFillStyle $ opaque white,
     pie_title_       = "",
-    pie_title_style_ = defaultFontStyle{ font_size_   = 15
-                                       , font_weight_ = FontWeightBold },
+    pie_title_style_ = def { font_size_   = 15
+                           , font_weight_ = FontWeightBold },
     pie_plot_        = defaultPieChart,
     pie_margin_      = 10
 }

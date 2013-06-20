@@ -27,6 +27,8 @@ import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
+import Data.Default
+
 -- | Value for describing a series of text annotations
 --   to be placed at arbitrary points on the graph. Annotations
 --   can be rotated and styled. Rotation angle is given in degrees,
@@ -66,7 +68,7 @@ defaultPlotAnnotation = PlotAnnotation {
                           plot_annotation_hanchor_ = HTA_Centre,
                           plot_annotation_vanchor_ = VTA_Centre,
                           plot_annotation_angle_   = 0,
-                          plot_annotation_style_   = defaultFontStyle,
+                          plot_annotation_style_   = def,
                           plot_annotation_values_  = []
 }
 

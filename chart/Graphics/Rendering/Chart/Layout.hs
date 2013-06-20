@@ -90,6 +90,7 @@ import Data.Accessor.Template
 import Data.Accessor
 import Data.Colour
 import Data.Colour.Names (white)
+import Data.Default
 
 -- | A @MAxisFn@ is a function that generates an (optional) axis
 --   given the points plotted against that axis.
@@ -467,8 +468,8 @@ defaultLayout1 = Layout1 {
     layout1_plot_background_ = Nothing,
 
     layout1_title_           = "",
-    layout1_title_style_     = defaultFontStyle{font_size_   =15
-                                               ,font_weight_ =FontWeightBold},
+    layout1_title_style_     = def { font_size_   = 15
+                                   , font_weight_ = FontWeightBold },
 
     layout1_top_axis_        = defaultLayoutAxis {laxis_visible_ = const False},
     layout1_bottom_axis_     = defaultLayoutAxis,
@@ -485,7 +486,7 @@ defaultLayout1 = Layout1 {
 
 defaultLayoutAxis :: PlotValue t => LayoutAxis t
 defaultLayoutAxis = LayoutAxis {
-   laxis_title_style_ = defaultFontStyle{font_size_=10},
+   laxis_title_style_ = def { font_size_=10 },
    laxis_title_       = "",
    laxis_style_       = defaultAxisStyle,
    laxis_visible_     = not.null,

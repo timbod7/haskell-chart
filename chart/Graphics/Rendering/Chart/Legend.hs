@@ -25,6 +25,7 @@ module Graphics.Rendering.Chart.Legend(
 import Control.Monad
 import Data.List (nub, partition,intersperse)
 import Data.Accessor.Template
+import Data.Default
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
@@ -96,7 +97,7 @@ join_nub []          = []
 
 defaultLegendStyle :: LegendStyle
 defaultLegendStyle = LegendStyle {
-    legend_label_style_ = defaultFontStyle,
+    legend_label_style_ = def,
     legend_margin_      = 20,
     legend_plot_size_   = 20,
     legend_orientation_ = LORows 4
