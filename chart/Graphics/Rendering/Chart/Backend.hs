@@ -74,6 +74,7 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   strokePath :: Path -> m ()
   
   -- | Fill the given path using the current fill style.
+  --   The given path will be closed prior to filling.
   --   This function does /not/ perform
   --   alignment operations on the path.
   fillPath :: Path -> m ()
