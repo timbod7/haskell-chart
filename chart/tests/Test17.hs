@@ -31,25 +31,25 @@ chart lwidth = layout1ToRenderable layout
              $ plot_lines_values ^= [[ (d, cl)
                                      | (d,(lo,op,cl,hi)) <- pricesAAPL]]
              $ plot_lines_title  ^= "AAPL closing"
-             $ defaultPlotLines
+             $ def
 
     msftLine = plot_lines_style  ^= lineStyle 2 purple
              $ plot_lines_values ^= [[ (d, cl)
                                      | (d,(lo,op,cl,hi)) <- pricesMSFT]]
              $ plot_lines_title  ^= "MSFT closing"
-             $ defaultPlotLines
+             $ def
 
     aaplArea = plot_fillbetween_style  ^= solidFillStyle (withOpacity green 0.4)
              $ plot_fillbetween_values ^= [ (d, (lo,hi))
                                           | (d,(lo,op,cl,hi)) <- pricesAAPL]
              $ plot_fillbetween_title  ^= "AAPL spread"
-             $ defaultPlotFillBetween
+             $ def
 
     msftArea = plot_fillbetween_style ^= solidFillStyle (withOpacity purple 0.4)
              $ plot_fillbetween_values ^= [ (d, (lo,hi))
                                           | (d,(lo,op,cl,hi)) <- pricesMSFT]
              $ plot_fillbetween_title  ^= "MSFT spread"
-             $ defaultPlotFillBetween
+             $ def
 
     aaplCandle = plot_candle_line_style  ^= lineStyle 1 blue
                $ plot_candle_fill        ^= True
@@ -58,7 +58,7 @@ chart lwidth = layout1ToRenderable layout
                $ plot_candle_values      ^= [ Candle d lo op 0 cl hi
                                             | (d,(lo,op,cl,hi)) <- pricesAAPL]
                $ plot_candle_title       ^= "AAPL candle"
-               $ defaultPlotCandle
+               $ def
 
     msftCandle = plot_candle_line_style  ^= lineStyle 1 red
                $ plot_candle_fill        ^= True
@@ -69,10 +69,10 @@ chart lwidth = layout1ToRenderable layout
                $ plot_candle_values      ^= [ Candle d lo op 0 cl hi
                                             | (d,(lo,op,cl,hi)) <- pricesMSFT]
                $ plot_candle_title       ^= "MSFT candle"
-               $ defaultPlotCandle
+               $ def
 
     lineStyle n colour = line_width ^= n * lwidth
                        $ line_color ^= opaque colour
-                       $ defaultPlotLines ^. plot_lines_style
+                       $ def ^. plot_lines_style
 
 main = main' "test17" (chart 0.25)

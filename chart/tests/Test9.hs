@@ -24,7 +24,7 @@ chart borders = layout1ToRenderable layout
       $ plot_bars_style ^= BarsClustered
       $ plot_bars_spacing ^= BarsFixGap 30 5
       $ plot_bars_item_styles ^= map mkstyle (cycle defaultColorSeq)
-      $ defaultPlotBars
+      $ def
 
   alabels = [ "Jun", "Jul", "Aug", "Sep", "Oct" ]
 

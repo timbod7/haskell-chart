@@ -74,7 +74,7 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
         axis = autoScaledAxis (
             la_nLabels ^= 5
           $ la_nTicks ^= 20
-          $ defaultLinearAxis
+          $ def
           )
 
     g5 = layout1_title ^= "y linked"
@@ -103,12 +103,12 @@ test4d otype = layout1ToRenderable layout
 
     lines = plot_lines_values ^= [ [(x, 10**x) | x <- [0,3]] ]
           $ plot_lines_title ^= "values"
-          $ defaultPlotLines
+          $ def
 
     layout = layout1_title ^= "Log/Linear Example"
            $ layout1_bottom_axis ^: laxis_title ^= "horizontal"
            $ layout1_bottom_axis ^: laxis_reverse ^= False
-           $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis defaultLogAxis
+           $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis def
            $ layout1_left_axis ^: laxis_title ^= "vertical"
            $ layout1_left_axis ^: laxis_reverse ^= False
 	   $ layout1_plots ^= [Left (toPlot points `joinPlot` toPlot lines) ]
@@ -168,12 +168,12 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
     bars1 = plot_bars_titles ^= ["Cash"]
           $ plot_bars_values ^= addIndexes [[20],[45],[30],[70]]
           $ plot_bars_alignment ^= alignment
-          $ defaultPlotBars
+          $ def
 
     bars2 = plot_bars_titles ^= ["Cash","Equity"]
           $ plot_bars_values ^= addIndexes [[20,45],[45,30],[30,20],[70,25]]
           $ plot_bars_alignment ^= alignment
-          $ defaultPlotBars
+          $ def
 
 -------------------------------------------------------------------------------
 
@@ -183,25 +183,25 @@ test10 prices otype = layout1ToRenderable layout
 
     lineStyle c = line_width ^= 3 * chooseLineWidth otype
                 $ line_color ^= c
-                $ defaultPlotLines ^. plot_lines_style
+                $ def ^. plot_lines_style
 
     price1 = plot_lines_style ^= lineStyle (opaque blue)
            $ plot_lines_values ^= [[ (d,v) | (d,v,_) <- prices]]
            $ plot_lines_title ^= "price 1"
-           $ defaultPlotLines
+           $ def
 
     price1_area = plot_fillbetween_values ^= [(d, (v * 0.95, v * 1.05)) | (d,v,_) <- prices]
                 $ plot_fillbetween_style  ^= solidFillStyle (withOpacity blue 0.2)
-                $ defaultPlotFillBetween
+                $ def
 
     price2 = plot_lines_style ^= lineStyle (opaque red)
 	   $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
            $ plot_lines_title ^= "price 2"
-           $ defaultPlotLines
+           $ def
 
     price2_area = plot_fillbetween_values ^= [(d, (v * 0.95, v * 1.05)) | (d,_,v) <- prices]
                 $ plot_fillbetween_style  ^= solidFillStyle (withOpacity red 0.2)
-                $ defaultPlotFillBetween
+                $ def
 
     fg = opaque black
     fg1 = opaque $ sRGB 0.0 0.0 0.15
@@ -238,7 +238,7 @@ test11_ f = f layout1 layout2
 
     plot2 = plot_lines_values ^= [vs2]
           $ plot_lines_title ^= "lines"
-          $ defaultPlotLines
+          $ def
 
     layout2 = layout1_plots ^= [Left (toPlot plot2)]
            $ layout1_left_axis ^: laxis_title ^= "double values"
@@ -289,7 +289,7 @@ test12 otype = layout1ToRenderable layout
     }    
 
     plot = plot_lines_values ^= [vs1]
-         $ defaultPlotLines
+         $ def
 
     layout = layout1_plots ^= [Left (toPlot plot)]
            $ layout1_bottom_axis ^: laxis_generate ^= const baxis

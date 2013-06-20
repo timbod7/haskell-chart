@@ -20,12 +20,12 @@ chart = layout1ToRenderable layout
     price1 = plot_fillbetween_style ^= solidFillStyle green1
            $ plot_fillbetween_values ^= [ (d,(0,v2)) | (d,v1,v2) <- prices1]
            $ plot_fillbetween_title ^= "price 1"
-           $ defaultPlotFillBetween
+           $ def
 
     price2 = plot_fillbetween_style ^= solidFillStyle blue1
            $ plot_fillbetween_values ^= [ (d,(0,v1)) | (d,v1,v2) <- prices1]
            $ plot_fillbetween_title ^= "price 2"
-           $ defaultPlotFillBetween
+           $ def
 
     layout = layout1_title ^= "Price History"
            $ layout1_grid_last ^= True

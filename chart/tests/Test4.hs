@@ -19,15 +19,15 @@ chart xrev yrev = layout1ToRenderable layout
 
     lines = plot_lines_values ^= [ [(x, 10**x) | x <- [0,3]] ]
           $ plot_lines_title ^= "values"
-          $ defaultPlotLines
+          $ def
 
     layout = layout1_title ^= "Log/Linear Example"
            $ layout1_bottom_axis ^: laxis_title ^= "horizontal"
            $ layout1_bottom_axis ^: laxis_reverse ^= xrev
-           $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis defaultLogAxis
+           $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis def
            $ layout1_left_axis ^: laxis_title ^= "vertical"
            $ layout1_left_axis ^: laxis_reverse ^= yrev
-	   $ layout1_plots ^= [Left (toPlot points), Left (toPlot lines) ]
+           $ layout1_plots ^= [Left (toPlot points), Left (toPlot lines) ]
            $ def
 
 main = main' "test4" (chart False False)

@@ -15,7 +15,7 @@ chart = layout1ToRenderable layout
     vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
     bars = plot_errbars_values ^= [symErrPoint x y dx dy | (x,y,dx,dy) <- vals]
          $ plot_errbars_title ^="test"
-         $ defaultPlotErrBars
+         $ def
 
     points = plot_points_style ^= filledCircles 2 (opaque red)
 	   $ plot_points_values ^= [(x,y) |  (x,y,dx,dy) <- vals]

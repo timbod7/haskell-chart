@@ -26,12 +26,12 @@ chart lwidth = layout1ToRenderable layout
     price1 = plot_lines_style ^= lineStyle
            $ plot_lines_values ^= [[ (d, v) | (d,v,_) <- prices1]]
            $ plot_lines_title ^= "price 1"
-           $ defaultPlotLines
+           $ def
 
     spots = area_spots_4d_title ^= "random value"
           $ area_spots_4d_max_radius ^= 20
           $ area_spots_4d_values ^= values
-          $ defaultAreaSpots4D
+          $ def
     
     points = map (\ (d,v,z,t)-> (d,v) ) values
     values = [ (d, v, z, t) | ((d,v,_),z,t) <- zip3 prices1 zs ts ]
@@ -41,6 +41,6 @@ chart lwidth = layout1ToRenderable layout
 
     lineStyle = line_width ^= 3 * lwidth
               $ line_color ^= opaque blue
-              $ defaultPlotLines ^. plot_lines_style
+              $ def ^. plot_lines_style
 
 main = main' "test14" (chart 0.25)

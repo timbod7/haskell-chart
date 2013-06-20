@@ -29,7 +29,7 @@ chart lwidth = layout1ToRenderable (layout 1001 (trial bits) :: (ChartBackend m)
                        [[(fromIntegral x, LogValue y) | (x,y) <-
                          filter (\(x,_)-> x `mod` (m+1)==0) $ take n $ zip [0..] t]]
                  $ plot_lines_title ^= tt
-                 $ defaultPlotLines
+                 $ def
 
     b = 0.1
 

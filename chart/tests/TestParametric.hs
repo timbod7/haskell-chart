@@ -18,7 +18,7 @@ chart lwidth = layout1ToRenderable layout
 
     circleP = plot_lines_values ^= [circle]
             $ plot_lines_style ^= solidLine lwidth (opaque blue) 
-            $ defaultPlotLines
+            $ def
 
     layout = layout1_title ^= "Parametric Plot"
            $ layout1_plots ^= [Left (toPlot circleP)]

@@ -17,22 +17,22 @@ chart prices showMinMax lwidth = layout1ToRenderable layout
 
     lineStyle c = line_width ^= 3 * lwidth
                 $ line_color ^= c
-                $ defaultPlotLines ^. plot_lines_style
+                $ def ^. plot_lines_style
 
     limitLineStyle c = line_width ^= lwidth
                 $ line_color ^= opaque c
                 $ line_dashes ^= [5,10]
-                $ defaultPlotLines ^. plot_lines_style
+                $ def ^. plot_lines_style
 
     price1 = plot_lines_style ^= lineStyle (opaque blue)
            $ plot_lines_values ^= [[ (d, v) | (d,v,_) <- prices]]
            $ plot_lines_title ^= "price 1"
-           $ defaultPlotLines
+           $ def
 
     price2 = plot_lines_style ^= lineStyle (opaque green)
 	   $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
            $ plot_lines_title ^= "price 2"
-           $ defaultPlotLines
+           $ def
 
     (min1,max1) = (minimum [v | (_,v,_) <- prices],maximum [v | (_,v,_) <- prices])
     (min2,max2) = (minimum [v | (_,_,v) <- prices],maximum [v | (_,_,v) <- prices])

@@ -26,7 +26,7 @@ layout lwidth = layout1
     sinusoid1 = plot_lines_values ^= [[ (x,(am x)) | x <- [0,(0.5)..400]]]
               $ plot_lines_style  ^= solidLine lwidth (opaque blue)
               $ plot_lines_title ^="am"
-              $ defaultPlotLines
+              $ def
 
     sinusoid2 = plot_points_style ^= filledCircles 2 (opaque red)
               $ plot_points_values ^= [ (x,(am x)) | x <- [0,7..400]]
