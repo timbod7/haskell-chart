@@ -311,6 +311,7 @@ dashedLine ::
   -> LineStyle
 dashedLine w ds cl = LineStyle w cl ds LineCapButt LineJoinMiter
 
+{-# DEPRECATED defaultPointStyle "Use the according Data.Default instance!" #-}
 defaultPointStyle :: PointStyle
 defaultPointStyle = def
 
@@ -368,6 +369,7 @@ stars radius w cl =
 solidFillStyle :: AlphaColour Double -> FillStyle
 solidFillStyle cl = FillStyleSolid cl
 
+{-# DEPRECATED defaultFontStyle  "Use the according Data.Default instance!" #-}
 defaultFontStyle :: FontStyle
 defaultFontStyle = def
 
