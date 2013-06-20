@@ -145,24 +145,24 @@ renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
   in do
 
   withFillStyle (solidFillStyle (opaque (so_bgColor opt))) $ do
-    bFillPath (rectPath (Rect (Point 0 0) (Point (fi w) (fi h))))
+    fillPointPath (rectPath (Rect (Point 0 0) (Point (fi w) (fi h))))
   if so_smooth opt
     then do
       withLineStyle (solidLine 1 (opaque grey)) $ do
-        bStrokePath coords
+        strokePointPath coords
     else do
       withFillStyle (solidFillStyle (opaque grey)) $ do
         forM_ coords $ \ (Point x y) ->
-          bFillPath (rectPath (Rect (Point (x-1) y) (Point (x+1) (fi h))))
+          fillPointPath (rectPath (Rect (Point (x-1) y) (Point (x+1) (fi h))))
   when (so_minMarker opt) $ do
       withFillStyle (solidFillStyle (opaque (so_minColor opt))) $ do
-        bFillPath (rectPath (boxpt minpt))
+        fillPointPath (rectPath (boxpt minpt))
   when (so_maxMarker opt) $ do
       withFillStyle (solidFillStyle (opaque (so_maxColor opt))) $ do
-        bFillPath (rectPath (boxpt maxpt))
+        fillPointPath (rectPath (boxpt maxpt))
   when (so_lastMarker opt) $ do
       withFillStyle (solidFillStyle (opaque (so_lastColor opt))) $ do
-        bFillPath (rectPath (boxpt endpt))
+        fillPointPath (rectPath (boxpt endpt))
   return nullPickFn
 
 -- | Generate a PNG for the sparkline, using its natural size.

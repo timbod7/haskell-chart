@@ -217,7 +217,7 @@ renderAxis :: (ChartBackend m) => AxisT x -> RectSize -> m (PickFn x)
 renderAxis at@(AxisT et as rev ad) sz = do
   let ls = axis_line_style_ as
   withLineStyle (ls {line_cap_ = LineCapSquare}) $ do
-    bStrokePath [Point sx sy,Point ex ey]
+    strokePointPath [Point sx sy,Point ex ey]
   withLineStyle (ls {line_cap_ = LineCapButt}) $ do
     mapM_ drawTick (axis_ticks_ ad)
   withFontStyle (axis_label_style_ as) $ do
@@ -232,7 +232,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
    drawTick (value,length) =
        let t1 = axisPoint value
 	   t2 = t1 `pvadd` (vscale length tp)
-       in bStrokePath [t1,t2]
+       in strokePointPath [t1,t2]
 
    (hta,vta,coord,awayFromAxis) = case et of
        E_Top    -> (HTA_Centre, VTA_Bottom, snd, \v -> (Vector 0 (-v)))
@@ -325,10 +325,10 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
     drawGridLine E_Right  = hline
 
     vline v = let v' = p_x (axisPoint v)
-	      in bStrokePath [Point v' 0,Point v' h]
+	      in strokePointPath [Point v' 0,Point v' h]
 
     hline v = let v' = p_y (axisPoint v)
-	      in bStrokePath [Point 0 v',Point w v']
+	      in strokePointPath [Point 0 v',Point w v']
 
 
 -- | Construct an axis given the positions for ticks, grid lines, and 
