@@ -46,7 +46,6 @@ module Graphics.Rendering.Chart.Drawing
   , textDrawRect
   , textDimension
   
-  , bDrawPoint
   , drawPoint
     
   , solidLine
@@ -167,13 +166,10 @@ bFillPath pts = do
     fillPath path
 
 -- | Draw a single point at the given location.
-bDrawPoint :: (ChartBackend m) 
-           => PointStyle -- ^ Style to use when rendering the point.
-           -> Point      -- ^ Position of the point to render.
-           -> m ()
-bDrawPoint = drawPoint
-
-drawPoint :: (ChartBackend m) => PointStyle -> Point -> m ()
+drawPoint :: (ChartBackend m) 
+          => PointStyle  -- ^ Style to use when rendering the point.
+          -> Point       -- ^ Position of the point to render.
+          -> m ()
 drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
   p'@(Point x y) <- alignp p
   case shape of
