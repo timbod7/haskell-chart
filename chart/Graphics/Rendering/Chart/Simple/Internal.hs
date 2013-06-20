@@ -42,22 +42,22 @@ iplot foobar = (def :: Layout1 m Double Double) {
       where
         vs = zip xs ys
         plots = case catMaybes $ map plotas yks of
-                    [] -> [ toPlot $ defaultPlotLines
+                    [] -> [ toPlot $ def
                            { plot_lines_title_  = name yks,
                              plot_lines_values_ = [vs],
                              plot_lines_style_  = solidLine 1 (styleColor ind)
                            } ]
                     xs -> xs
-        plotas Solid = Just $ toPlot $ defaultPlotLines
+        plotas Solid = Just $ toPlot $ def
                          { plot_lines_title_  = name yks,
                            plot_lines_values_ = [vs],
                            plot_lines_style_  = solidLine 1 (styleColor ind) }
-        plotas Dashed = Just $ toPlot $ defaultPlotLines
+        plotas Dashed = Just $ toPlot $ def
                          { plot_lines_title_  = name yks,
                            plot_lines_values_ = [vs],
                            plot_lines_style_  = dashedLine 1 [10,10]
                                                            (styleColor ind) }
-        plotas Dotted = Just $ toPlot $ defaultPlotLines
+        plotas Dotted = Just $ toPlot $ def
                          { plot_lines_title_  = name yks,
                            plot_lines_values_ = [vs],
                            plot_lines_style_  = dashedLine 1 [1,11]

@@ -500,7 +500,7 @@ instance PlotValue t => Default (LayoutAxis t) where
   def = LayoutAxis
     { laxis_title_style_ = def { font_size_=10 }
     , laxis_title_       = ""
-    , laxis_style_       = defaultAxisStyle
+    , laxis_style_       = def
     , laxis_visible_     = not.null
     , laxis_generate_    = autoAxis
     , laxis_override_    = id
