@@ -51,7 +51,6 @@ module Graphics.Rendering.Chart.Drawing
   , solidLine
   , dashedLine
 
-  , defaultPointStyle
   , filledCircles
   , hollowCircles
   , filledPolygon
@@ -61,8 +60,6 @@ module Graphics.Rendering.Chart.Drawing
   , stars
     
   , solidFillStyle
-
-  , defaultFontStyle
   
   , module Graphics.Rendering.Chart.Types
   , module Graphics.Rendering.Chart.Backend
@@ -311,9 +308,6 @@ dashedLine ::
   -> LineStyle
 dashedLine w ds cl = LineStyle w cl ds LineCapButt LineJoinMiter
 
-defaultPointStyle :: PointStyle
-defaultPointStyle = def
-
 filledCircles :: Double             -- ^ Radius of circle.
               -> AlphaColour Double -- ^ Colour.
               -> PointStyle
@@ -367,7 +361,4 @@ stars radius w cl =
 
 solidFillStyle :: AlphaColour Double -> FillStyle
 solidFillStyle cl = FillStyleSolid cl
-
-defaultFontStyle :: FontStyle
-defaultFontStyle = def
 
