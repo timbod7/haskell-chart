@@ -37,6 +37,7 @@ import Graphics.Rendering.Chart.Axis
 import Data.Accessor.Template
 import Data.Colour
 import Data.Colour.Names
+import Data.Default
 
 import Control.Monad
 
@@ -64,16 +65,20 @@ data AreaSpots z x y = AreaSpots
   , area_spots_values_     :: [(x,y,z)]
   }
 
+{-# DEPRECATED defaultAreaSpots "Use the according Data.Default instance!" #-}
 defaultAreaSpots :: AreaSpots z x y
-defaultAreaSpots = AreaSpots
-  { area_spots_title_      = ""
-  , area_spots_linethick_  = 0.1
-  , area_spots_linecolour_ = opaque blue
-  , area_spots_fillcolour_ = blue
-  , area_spots_opacity_    = 0.2
-  , area_spots_max_radius_ = 20  -- in pixels
-  , area_spots_values_     = []
-  }
+defaultAreaSpots = def
+
+instance Default (AreaSpots z x y) where
+  def = AreaSpots
+    { area_spots_title_      = ""
+    , area_spots_linethick_  = 0.1
+    , area_spots_linecolour_ = opaque blue
+    , area_spots_fillcolour_ = blue
+    , area_spots_opacity_    = 0.2
+    , area_spots_max_radius_ = 20  -- in pixels
+    , area_spots_values_     = []
+    }
 
 instance (PlotValue z) => ToPlot (AreaSpots z) where
     toPlot p = Plot { plot_render_ = renderAreaSpots p
@@ -136,15 +141,19 @@ data AreaSpots4D z t x y = AreaSpots4D
   , area_spots_4d_values_     :: [(x,y,z,t)]
   }
 
+{-# DEPRECATED defaultAreaSpots4D "Use the according Data.Default instance!" #-}
 defaultAreaSpots4D :: AreaSpots4D z t x y
-defaultAreaSpots4D = AreaSpots4D
-  { area_spots_4d_title_      = ""
-  , area_spots_4d_linethick_  = 0.1
-  , area_spots_4d_palette_    = [ blue, green, yellow, orange, red ]
-  , area_spots_4d_opacity_    = 0.2
-  , area_spots_4d_max_radius_ = 20  -- in pixels
-  , area_spots_4d_values_     = []
-  }
+defaultAreaSpots4D = def
+
+instance Default (AreaSpots4D z t x y) where
+  def = AreaSpots4D
+    { area_spots_4d_title_      = ""
+    , area_spots_4d_linethick_  = 0.1
+    , area_spots_4d_palette_    = [ blue, green, yellow, orange, red ]
+    , area_spots_4d_opacity_    = 0.2
+    , area_spots_4d_max_radius_ = 20  -- in pixels
+    , area_spots_4d_values_     = []
+    }
 
 instance (PlotValue z, PlotValue t, Show t) => ToPlot (AreaSpots4D z t) where
     toPlot p = Plot { plot_render_ = renderAreaSpots4D p

@@ -36,6 +36,7 @@ import Graphics.Rendering.Chart.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
+import Data.Default
 
 -- | Value for holding a point with associated error bounds for each axis.
 
@@ -117,14 +118,18 @@ renderPlotLegendErrBars p r@(Rect p1 p2) = do
     drawErrBar = drawErrBar0 p
     dx         = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
 
+{-# DEPRECATED defaultPlotErrBars "Use the according Data.Default instance!" #-}
 defaultPlotErrBars :: PlotErrBars x y
-defaultPlotErrBars = PlotErrBars {
-    plot_errbars_title_       = "",
-    plot_errbars_line_style_  = solidLine 1 $ opaque blue,
-    plot_errbars_tick_length_ = 3,
-    plot_errbars_overhang_    = 0,
-    plot_errbars_values_      = []
-}
+defaultPlotErrBars = def
+
+instance Default (PlotErrBars x y) where
+  def = PlotErrBars 
+    { plot_errbars_title_       = ""
+    , plot_errbars_line_style_  = solidLine 1 $ opaque blue
+    , plot_errbars_tick_length_ = 3
+    , plot_errbars_overhang_    = 0
+    , plot_errbars_values_      = []
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

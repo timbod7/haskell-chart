@@ -41,6 +41,7 @@ import Control.Monad
 import Data.Accessor
 import Data.List ( nub, transpose, sort )
 import Data.Monoid
+import Data.Default
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
@@ -213,14 +214,17 @@ rect_cornerStyle :: Accessor Rectangle RectCornerStyle
 rect_cornerStyle = accessor (\v->rect_cornerStyle_ v)
                             (\a v -> v{rect_cornerStyle_=a})
 
-
+{-# DEPRECATED defaultRectangle "Use the according Data.Default instance!" #-}
 defaultRectangle :: Rectangle
-defaultRectangle = Rectangle {
-  rect_minsize_     = (0,0),
-  rect_fillStyle_   = Nothing,
-  rect_lineStyle_   = Nothing,
-  rect_cornerStyle_ = RCornerSquare
-}
+defaultRectangle = def
+
+instance Default Rectangle where
+  def = Rectangle
+    { rect_minsize_     = (0,0)
+    , rect_fillStyle_   = Nothing
+    , rect_lineStyle_   = Nothing
+    , rect_cornerStyle_ = RCornerSquare
+    }
 
 rectangleToRenderable :: (ChartBackend m) => Rectangle -> Renderable m ()
 rectangleToRenderable rectangle = Renderable mf rf

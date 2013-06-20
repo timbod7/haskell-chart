@@ -27,6 +27,7 @@ import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
+import Data.Default
 
 -- | Value specifying a plot filling the area between two sets of Y
 --   coordinates, given common X coordinates.
@@ -69,13 +70,16 @@ plotAllPointsFillBetween p = ( [ x | (x,(_,_)) <- pts ]
   where
     pts = plot_fillbetween_values_ p
 
-
+{-# DEPRECATED defaultPlotFillBetween "Use the according Data.Default instance!" #-}
 defaultPlotFillBetween :: PlotFillBetween x y
-defaultPlotFillBetween = PlotFillBetween {
-    plot_fillbetween_title_  = "",
-    plot_fillbetween_style_  = solidFillStyle (opaque $ sRGB 0.5 0.5 1.0),
-    plot_fillbetween_values_ = []
-}
+defaultPlotFillBetween = def 
+
+instance Default (PlotFillBetween x y) where
+  def = PlotFillBetween 
+    { plot_fillbetween_title_  = ""
+    , plot_fillbetween_style_  = solidFillStyle (opaque $ sRGB 0.5 0.5 1.0)
+    , plot_fillbetween_values_ = []
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

@@ -35,6 +35,7 @@ import Control.Monad
 import Data.Colour (opaque)
 import Data.Colour.Names (black, white, blue)
 import Data.Colour.SRGB (sRGB)
+import Data.Default
 
 -- | Value defining a financial interval: opening and closing prices, with
 --   maxima and minima; and a style in which to render them.
@@ -137,18 +138,22 @@ renderPlotLegendCandle p r@(Rect p1 p2) = do
     open  = (lo + mid) / 2
     close = (mid + hi) / 2
 
+{-# DEPRECATED defaultPlotCandle "Use the according Data.Default instance!" #-}
 defaultPlotCandle :: PlotCandle x y
-defaultPlotCandle = PlotCandle {
-    plot_candle_title_       = "",
-    plot_candle_line_style_  = solidLine 1 $ opaque blue,
-    plot_candle_fill_        = False,
-    plot_candle_rise_fill_style_  = solidFillStyle $ opaque white,
-    plot_candle_fall_fill_style_  = solidFillStyle $ opaque blue,
-    plot_candle_tick_length_ = 2,
-    plot_candle_width_       = 5,
-    plot_candle_centre_      = 0,
-    plot_candle_values_      = []
-}
+defaultPlotCandle = def
+
+instance Default (PlotCandle x y) where
+  def = PlotCandle 
+    { plot_candle_title_       = ""
+    , plot_candle_line_style_  = solidLine 1 $ opaque blue
+    , plot_candle_fill_        = False
+    , plot_candle_rise_fill_style_  = solidFillStyle $ opaque white
+    , plot_candle_fall_fill_style_  = solidFillStyle $ opaque blue
+    , plot_candle_tick_length_ = 2
+    , plot_candle_width_       = 5
+    , plot_candle_centre_      = 0
+    , plot_candle_values_      = []
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

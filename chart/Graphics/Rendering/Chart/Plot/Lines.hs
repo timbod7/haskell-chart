@@ -28,6 +28,7 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
+import Data.Default
 
 -- | Value defining a series of (possibly disjointed) lines,
 --   and a style in which to render them.
@@ -75,13 +76,17 @@ defaultPlotLineStyle = (solidLine 1 $ opaque blue){
      line_join_ = LineJoinRound
  }
 
+{-# DEPRECATED defaultPlotLines "Use the according Data.Default instance!" #-}
 defaultPlotLines :: PlotLines x y
-defaultPlotLines = PlotLines {
-    plot_lines_title_        = "",
-    plot_lines_style_        = defaultPlotLineStyle,
-    plot_lines_values_       = [],
-    plot_lines_limit_values_ = []
-}
+defaultPlotLines = def
+
+instance Default (PlotLines x y) where
+  def = PlotLines 
+    { plot_lines_title_        = ""
+    , plot_lines_style_        = defaultPlotLineStyle
+    , plot_lines_values_       = []
+    , plot_lines_limit_values_ = []
+    }
 
 -- | Helper function to plot a single horizontal line.
 hlinePlot :: (ChartBackend m) => String -> LineStyle -> b -> Plot m a b

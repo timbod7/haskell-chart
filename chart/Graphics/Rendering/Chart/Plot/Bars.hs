@@ -39,6 +39,7 @@ import Graphics.Rendering.Chart.Axis
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
+import Data.Default
 
 class PlotValue a => BarsPlotValue a where
     barsReference :: a
@@ -107,20 +108,24 @@ data PlotBars x y = PlotBars {
    plot_bars_values_          :: [ (x,[y]) ]
 }
 
+{-# DEPRECATED defaultPlotBars "Use the according Data.Default instance!" #-}
 defaultPlotBars :: BarsPlotValue y => PlotBars x y
-defaultPlotBars = PlotBars {
-   plot_bars_style_           = BarsClustered,
-   plot_bars_item_styles_     = cycle istyles,
-   plot_bars_titles_          = [],
-   plot_bars_spacing_         = BarsFixGap 10 2,
-   plot_bars_alignment_       = BarsCentered,
-   plot_bars_values_          = [],
-   plot_bars_singleton_width_ = 20,
-   plot_bars_reference_       = barsReference
-   }
-  where
-    istyles   = map mkstyle defaultColorSeq
-    mkstyle c = (solidFillStyle c, Just (solidLine 1.0 $ opaque black))
+defaultPlotBars = def
+
+instance BarsPlotValue y => Default (PlotBars x y) where
+  def = PlotBars
+    { plot_bars_style_           = BarsClustered
+    , plot_bars_item_styles_     = cycle istyles
+    , plot_bars_titles_          = []
+    , plot_bars_spacing_         = BarsFixGap 10 2
+    , plot_bars_alignment_       = BarsCentered
+    , plot_bars_values_          = []
+    , plot_bars_singleton_width_ = 20
+    , plot_bars_reference_       = barsReference
+    }
+    where
+      istyles   = map mkstyle defaultColorSeq
+      mkstyle c = (solidFillStyle c, Just (solidLine 1.0 $ opaque black))
 
 plotBars :: (BarsPlotValue y, ChartBackend m) => PlotBars x y -> Plot m x y
 plotBars p = Plot {

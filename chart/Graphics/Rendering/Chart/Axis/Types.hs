@@ -371,13 +371,17 @@ defaultAxisLineStyle = solidLine 1 $ opaque black
 defaultGridLineStyle :: LineStyle
 defaultGridLineStyle = dashedLine 1 [5,5] $ opaque lightgrey
 
+{-# DEPRECATED defaultAxisStyle "Use the according Data.Default instance!" #-}
 defaultAxisStyle :: AxisStyle
-defaultAxisStyle = AxisStyle {
-    axis_line_style_  = defaultAxisLineStyle,
-    axis_label_style_ = def,
-    axis_grid_style_  = defaultGridLineStyle,
-    axis_label_gap_   = 10
-}
+defaultAxisStyle = def
+
+instance Default AxisStyle where
+  def = AxisStyle 
+    { axis_line_style_  = defaultAxisLineStyle
+    , axis_label_style_ = def
+    , axis_grid_style_  = defaultGridLineStyle
+    , axis_label_gap_   = 10
+    }
 
 ----------------------------------------------------------------------
 

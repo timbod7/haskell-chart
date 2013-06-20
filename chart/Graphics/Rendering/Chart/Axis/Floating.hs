@@ -32,6 +32,7 @@ module Graphics.Rendering.Chart.Axis.Floating(
 
 import Data.List(minimumBy)
 import Data.Ord (comparing)
+import Data.Default
 import Numeric (showFFloat)
 
 import Data.Accessor.Template
@@ -87,12 +88,16 @@ data LinearAxisParams a = LinearAxisParams {
     la_nTicks_  :: Int
 }
 
+{-# DEPRECATED defaultLinearAxis "Use the according Data.Default instance!" #-}
 defaultLinearAxis :: (Show a, RealFloat a) => LinearAxisParams a
-defaultLinearAxis = LinearAxisParams {
-    la_labelf_    = showD,
-    la_nLabels_   = 5,
-    la_nTicks_    = 50
-}
+defaultLinearAxis = def
+
+instance (Show a, RealFloat a) => Default (LinearAxisParams a) where
+  def = LinearAxisParams 
+    { la_labelf_    = showD
+    , la_nLabels_   = 5
+    , la_nTicks_    = 50
+    }
 
 -- | Generate a linear axis with the specified bounds
 scaledAxis :: RealFloat a => LinearAxisParams a -> (a,a) -> AxisFn a
@@ -149,10 +154,14 @@ autoSteps nSteps vs = map fromRational $ steps (fromIntegral nSteps) r
 
 ----------------------------------------------------------------------
 
+{-# DEPRECATED defaultLogAxis "Use the according Data.Default instance!" #-}
 defaultLogAxis :: (Show a, RealFloat a) => LogAxisParams a
-defaultLogAxis = LogAxisParams {
-    loga_labelf_ = showD
-}
+defaultLogAxis = def
+
+instance (Show a, RealFloat a) => Default (LogAxisParams a) where
+  def = LogAxisParams 
+    { loga_labelf_ = showD
+    }
 
 -- | Generate a log axis automatically, scaled appropriate for the
 -- input data.
