@@ -93,11 +93,11 @@ renderAreaSpots p pmap =
                                                     flip withOpacity 
                                                       (area_spots_opacity_ p) $
                                                     area_spots_fillcolour_ p
-              bDrawPoint psSpot (pmap (LValue x, LValue y))
+              drawPoint psSpot (pmap (LValue x, LValue y))
               let psOutline = hollowCircles radius
                                                       (area_spots_linethick_ p)
                                                       (area_spots_linecolour_ p)
-              bDrawPoint psOutline (pmap (LValue x, LValue y))
+              drawPoint psOutline (pmap (LValue x, LValue y))
           )
   where
     scaleMax :: PlotValue z => Double -> [(x,y,z)] -> [(x,y,Double)]
@@ -113,11 +113,11 @@ renderSpotLegend p r@(Rect p1 p2) = do
                                           flip withOpacity 
                                                (area_spots_opacity_ p) $
                                           area_spots_fillcolour_ p
-    bDrawPoint psSpot centre
+    drawPoint psSpot centre
     let psSpot = hollowCircles radius
                                             (area_spots_linethick_ p)
                                             (area_spots_linecolour_ p)
-    bDrawPoint psSpot centre
+    drawPoint psSpot centre
   where
     linearInterpolate (Point x0 y0) (Point x1 y1) =
         Point (x0 + abs(x1-x0)/2) (y0 + abs(y1-y0)/2)
@@ -166,11 +166,11 @@ renderAreaSpots4D p pmap =
               let psSpot
                     = filledCircles radius $
                           flip withOpacity (area_spots_4d_opacity_ p) $ colour
-              bDrawPoint psSpot (pmap (LValue x, LValue y))
+              drawPoint psSpot (pmap (LValue x, LValue y))
               let psOutline
                     = hollowCircles radius (area_spots_4d_linethick_ p)
                                            (opaque colour)
-              bDrawPoint psOutline (pmap (LValue x, LValue y))
+              drawPoint psOutline (pmap (LValue x, LValue y))
           )
   where
     scaleMax :: (PlotValue z, PlotValue t, Show t) =>
@@ -195,12 +195,12 @@ renderSpotLegend4D p r@(Rect p1 p2) = do
                                           flip withOpacity
                                                (area_spots_4d_opacity_ p) $
                                           head $ area_spots_4d_palette_ p
-    bDrawPoint psSpot centre
+    drawPoint psSpot centre
     let psOutline = hollowCircles radius
                                             (area_spots_4d_linethick_ p)
                                             (opaque $
                                              head (area_spots_4d_palette_ p))
-    bDrawPoint psOutline centre
+    drawPoint psOutline centre
   where
     linearInterpolate (Point x0 y0) (Point x1 y1) =
         Point (x0 + abs(x1-x0)/2) (y0 + abs(y1-y0)/2)
