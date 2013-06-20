@@ -255,7 +255,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
         mapM_ drawLabel labels'
      where
        drawLabel (value,s) = do
-           bDrawText hta vta (axisPoint value `pvadd` (awayFromAxis offset)) s
+           drawTextA hta vta (axisPoint value `pvadd` (awayFromAxis offset)) s
            textDimension s
 
    ag = axis_label_gap_ as

@@ -197,7 +197,7 @@ renderPie p (w,h) = do
                                   <> T.lineTo (Point (p_x p1a + (offset' (tw + label_rgap))) (p_y p1a))
 
                         let p2 = p1 `pvadd` (Vector (offset' label_rgap) 0)
-                        bDrawText anchor VTA_Bottom p2 name
+                        drawTextA anchor VTA_Bottom p2 name
 
                 pieSlice :: (ChartBackend m) => Point -> Double -> Double -> AlphaColour Double
                             -> m ()

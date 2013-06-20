@@ -128,7 +128,7 @@ instance ChartBackend CRender where
                         $ preserveCState $ do
                             clip' <- getClipRegion
                             case clip' of
-                              Just (Rect tl br) -> setClipRegion tl br >> m
+                              Just c -> setClipRegion c >> m
                               Nothing -> c C.resetClip >> m
 
 -- -----------------------------------------------------------------------
