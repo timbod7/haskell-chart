@@ -4,6 +4,11 @@ chart/dist/
 chart-gtk/dist/
 chart-cairo/dist/
 chart-test/dist/
+chart-test/tests/*.png
+chart-test/tests/*.pdf
+chart-test/tests/*.svg
+chart-test/tests-reference/
+chart-test/tests-diffs/
 chart/tests/*.png
 chart/tests/*.pdf
 chart/tests/*.svg
