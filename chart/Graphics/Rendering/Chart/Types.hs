@@ -3,15 +3,7 @@
 {-# OPTIONS_GHC -XTemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Types
-  ( Path
-  , lineTo, moveTo
-  , lineTo', moveTo'
-  , arc, arcNeg
-  , close
-  
-  , foldPath
-  
-  , LineCap(..)
+  ( LineCap(..)
   , LineJoin(..)
   , LineStyle(..)
   
@@ -48,67 +40,6 @@ import Data.Accessor.Template
 import Data.Monoid
 
 import Graphics.Rendering.Chart.Geometry
-
--- -----------------------------------------------------------------------
--- Path Types
--- -----------------------------------------------------------------------
-
-data Path = MoveTo Point Path 
-          | LineTo Point Path
-          | Arc Point Double Double Double Path
-          | ArcNeg Point Double Double Double Path
-          | End 
-          | Close
-
-instance Monoid Path where
-  mappend p1 p2 = case p1 of
-    MoveTo p path -> MoveTo p $ mappend path p2
-    LineTo p path -> LineTo p $ mappend path p2
-    Arc    p r a1 a2 path -> Arc p r a1 a2 $ mappend path p2
-    ArcNeg p r a1 a2 path -> ArcNeg p r a1 a2 $ mappend path p2
-    End   -> p2
-    Close -> Close
-  mempty = End
-
-moveTo :: Point -> Path
-moveTo p = MoveTo p mempty
-
-moveTo' :: Double -> Double -> Path
-moveTo' x y = moveTo $ Point x y
-
-lineTo :: Point -> Path
-lineTo p = LineTo p mempty
-
-lineTo' :: Double -> Double -> Path
-lineTo' x y = lineTo $ Point x y
-
-arc :: Point -> Double -> Double -> Double -> Path
-arc p r a1 a2 = Arc p r a1 a2 mempty
-
-arcNeg :: Point -> Double -> Double -> Double -> Path
-arcNeg p r a1 a2 = ArcNeg p r a1 a2 mempty
-
-close :: Path
-close = Close
-
--- | Fold the given path to a monoid structure.
-foldPath :: (Monoid m)
-         => (Point -> m) -- ^ MoveTo
-         -> (Point -> m) -- ^ LineTo
-         -> (Point -> Double -> Double -> Double -> m) -- ^ Arc
-         -> (Point -> Double -> Double -> Double -> m) -- ^ ArcNeg
-         -> m    -- ^ Close
-         -> Path -- ^ Path to fold
-         -> m
-foldPath moveTo lineTo arc arcNeg close path = 
-  let restF = foldPath moveTo lineTo arc arcNeg close
-  in case path of 
-    MoveTo p rest -> moveTo p <> restF rest
-    LineTo p rest -> lineTo p <> restF rest
-    Arc    p r a1 a2 rest -> arc    p r a1 a2 <> restF rest
-    ArcNeg p r a1 a2 rest -> arcNeg p r a1 a2 <> restF rest
-    End   -> mempty
-    Close -> close
 
 -- -----------------------------------------------------------------------
 -- Line Types
