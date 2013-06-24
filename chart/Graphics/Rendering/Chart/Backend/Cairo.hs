@@ -26,11 +26,6 @@ import qualified Graphics.Rendering.Cairo as C
 import qualified Graphics.Rendering.Cairo.Matrix as CM
 
 import qualified Graphics.Rendering.Chart.Types as G
-import Graphics.Rendering.Chart.Types 
-  ( PointShape(..)
-  , FillStyle(..), PointStyle(..), FontStyle(..), LineStyle(..)
-  , HTextAnchor(..), VTextAnchor(..)
-  )
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Geometry as G

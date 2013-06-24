@@ -11,9 +11,6 @@ module Graphics.Rendering.Chart.Types
   , FontSlant(..)
   , FontStyle(..)
   
-  , PointShape(..)
-  , PointStyle(..)
-  
   , FillStyle(..)
 
   , HTextAnchor(..)
@@ -72,37 +69,6 @@ instance Default LineStyle where
     , line_dashes_ = []
     , line_cap_    = LineCapButt
     , line_join_   = LineJoinBevel
-    }
-
--- -----------------------------------------------------------------------
--- Point Types
--- -----------------------------------------------------------------------
-
-data PointShape = PointShapeCircle
-                | PointShapePolygon Int Bool -- ^ Number of vertices and is right-side-up?
-                | PointShapePlus
-                | PointShapeCross
-                | PointShapeStar
-
--- | Abstract data type for the style of a plotted point.
---
---   The contained Cairo action draws a point in the desired
---   style, at the supplied device coordinates.
-data PointStyle = PointStyle 
-  { point_color_ :: AlphaColour Double
-  , point_border_color_ :: AlphaColour Double
-  , point_border_width_ :: Double
-  , point_radius_ :: Double
-  , point_shape_ :: PointShape
-  }
-
-instance Default PointStyle where
-  def = PointStyle 
-    { point_color_        = opaque black
-    , point_border_color_ = transparent
-    , point_border_width_ = 0
-    , point_radius_       = 1
-    , point_shape_        = PointShapeCircle
     }
 
 -- -----------------------------------------------------------------------

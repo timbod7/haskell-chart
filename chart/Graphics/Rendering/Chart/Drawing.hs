@@ -26,9 +26,14 @@
 --
 
 module Graphics.Rendering.Chart.Drawing
-  ( strokePointPath
+  ( -- * Point Types and Drawing
+    PointShape(..)
+  , PointStyle(..)
+  , drawPoint
+  
+  -- * Alignments and Paths
+  , strokePointPath
   , fillPointPath
-  , defaultColorSeq
   
   , alignFillPath
   , alignStrokePath
@@ -36,17 +41,20 @@ module Graphics.Rendering.Chart.Drawing
   , alignp
   , alignc
   
+  -- * Transformation Helpers
   , withRotation
   , withTranslation
   , withPointStyle
   
+  -- * Text Drawing
   , drawTextA
   , drawTextR
   , drawTextsR
   , textDrawRect
   , textDimension
   
-  , drawPoint
+  -- * Style Helpers
+  , defaultColorSeq
     
   , solidLine
   , dashedLine
@@ -165,51 +173,6 @@ fillPointPath pts = do
     path <- alignFillPath $ stepPath pts
     fillPath path
 
--- | Draw a single point at the given location.
-drawPoint :: (ChartBackend m) 
-          => PointStyle  -- ^ Style to use when rendering the point.
-          -> Point       -- ^ Position of the point to render.
-          -> m ()
-drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
-  p'@(Point x y) <- alignp p
-  case shape of
-    PointShapeCircle -> do
-      let path = arc p' r 0 (2*pi)
-      fillPath path
-      strokePath path
-    PointShapePolygon sides isrot -> do
-      let intToAngle n =
-            if isrot
-            then       fromIntegral n * 2*pi/fromIntegral sides
-            else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
-          angles = map intToAngle [0 .. sides-1]
-          (p:ps) = map (\a -> Point (x + r * sin a)
-                                    (y + r * cos a)) angles
-      let path = moveTo p <> mconcat (map lineTo ps) <> lineTo p
-      fillPath path
-      strokePath path
-    PointShapePlus -> do
-      strokePath $ moveTo' (x+r) y
-                <> lineTo' (x-r) y
-                <> moveTo' x (y-r)
-                <> lineTo' x (y+r)
-    PointShapeCross -> do
-      let rad = r / sqrt 2
-      strokePath $ moveTo' (x+rad) (y+rad)
-                <> lineTo' (x-rad) (y-rad)
-                <> moveTo' (x+rad) (y-rad)
-                <> lineTo' (x-rad) (y+rad)
-    PointShapeStar -> do
-      let rad = r / sqrt 2
-      strokePath $ moveTo' (x+r) y
-                <> lineTo' (x-r) y
-                <> moveTo' x (y-r)
-                <> lineTo' x (y+r)
-                <> moveTo' (x+rad) (y+rad)
-                <> lineTo' (x-rad) (y-rad)
-                <> moveTo' (x+rad) (y-rad)
-                <> lineTo' (x-rad) (y+rad)
-
 drawTextA :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
 drawTextA hta vta p s = drawTextR hta vta 0 p s
 
@@ -290,6 +253,82 @@ textDimension :: (ChartBackend m) => String -> m RectSize
 textDimension s = do
   ts <- textSize s
   return (textSizeWidth ts, textSizeHeight ts)
+  
+-- -----------------------------------------------------------------------
+-- Point Types and Drawing
+-- -----------------------------------------------------------------------
+
+data PointShape = PointShapeCircle
+                | PointShapePolygon Int Bool -- ^ Number of vertices and is right-side-up?
+                | PointShapePlus
+                | PointShapeCross
+                | PointShapeStar
+
+-- | Abstract data type for the style of a plotted point.
+--
+--   The contained Cairo action draws a point in the desired
+--   style, at the supplied device coordinates.
+data PointStyle = PointStyle 
+  { point_color_ :: AlphaColour Double
+  , point_border_color_ :: AlphaColour Double
+  , point_border_width_ :: Double
+  , point_radius_ :: Double
+  , point_shape_ :: PointShape
+  }
+
+instance Default PointStyle where
+  def = PointStyle 
+    { point_color_        = opaque black
+    , point_border_color_ = transparent
+    , point_border_width_ = 0
+    , point_radius_       = 1
+    , point_shape_        = PointShapeCircle
+    }
+
+-- | Draw a single point at the given location.
+drawPoint :: (ChartBackend m) 
+          => PointStyle  -- ^ Style to use when rendering the point.
+          -> Point       -- ^ Position of the point to render.
+          -> m ()
+drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
+  p'@(Point x y) <- alignp p
+  case shape of
+    PointShapeCircle -> do
+      let path = arc p' r 0 (2*pi)
+      fillPath path
+      strokePath path
+    PointShapePolygon sides isrot -> do
+      let intToAngle n =
+            if isrot
+            then       fromIntegral n * 2*pi/fromIntegral sides
+            else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
+          angles = map intToAngle [0 .. sides-1]
+          (p:ps) = map (\a -> Point (x + r * sin a)
+                                    (y + r * cos a)) angles
+      let path = moveTo p <> mconcat (map lineTo ps) <> lineTo p
+      fillPath path
+      strokePath path
+    PointShapePlus -> do
+      strokePath $ moveTo' (x+r) y
+                <> lineTo' (x-r) y
+                <> moveTo' x (y-r)
+                <> lineTo' x (y+r)
+    PointShapeCross -> do
+      let rad = r / sqrt 2
+      strokePath $ moveTo' (x+rad) (y+rad)
+                <> lineTo' (x-rad) (y-rad)
+                <> moveTo' (x+rad) (y-rad)
+                <> lineTo' (x-rad) (y+rad)
+    PointShapeStar -> do
+      let rad = r / sqrt 2
+      strokePath $ moveTo' (x+r) y
+                <> lineTo' (x-r) y
+                <> moveTo' x (y-r)
+                <> lineTo' x (y+r)
+                <> moveTo' (x+rad) (y+rad)
+                <> lineTo' (x-rad) (y-rad)
+                <> moveTo' (x+rad) (y-rad)
+                <> lineTo' (x-rad) (y+rad)
 
 -- -----------------------------------------------------------------------
 
