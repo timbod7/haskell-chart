@@ -17,7 +17,6 @@ module Graphics.Rendering.Chart.Types
   
   , FontWeight(..)
   , FontSlant(..)
-  , FontExtents(..)
   , FontStyle(..)
   
   , PointShape(..)
@@ -49,14 +48,6 @@ import Data.Accessor.Template
 import Data.Monoid
 
 import Graphics.Rendering.Chart.Geometry
-
-data FontExtents = FontExtents
-  { fontExtentsAscent  :: Double
-  , fontExtentsDescent :: Double
-  , fontExtentsHeight  :: Double
-  , fontExtentsMaxXAdvance :: Double
-  , fontExtentsMaxYAdvance :: Double
-  }
 
 -- -----------------------------------------------------------------------
 -- Path Types
