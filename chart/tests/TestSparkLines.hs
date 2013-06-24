@@ -2,6 +2,7 @@ module TestSparkLines where
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.SparkLine
+import Graphics.Rendering.Chart.Backend.Cairo
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor

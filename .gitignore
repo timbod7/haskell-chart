@@ -2,6 +2,8 @@
 cabal-dev/
 chart/dist/
 chart-gtk/dist/
+chart-cairo/dist/
+chart-test/dist/
 chart/tests/*.png
 chart/tests/*.pdf
 chart/tests/*.svg

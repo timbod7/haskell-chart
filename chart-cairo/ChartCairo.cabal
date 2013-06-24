@@ -1,0 +1,34 @@
+Name: ChartCairo
+Version: 0.1
+License: BSD3
+License-file: LICENSE
+Copyright: Tim Docker, 2006-2010
+Author: Tim Docker <tim@dockerz.net>
+Maintainer: Tim Docker <tim@dockerz.net>
+Homepage: https://github.com/timbod7/haskell-chart/wiki
+Synopsis: Cairo backend for Charts.
+Description: Cairo backend for Charts.
+Category: Graphics
+Cabal-Version: >= 1.6
+Build-Type: Simple
+
+flag splitbase
+  description: Choose the new smaller, split-up base package.
+
+library
+  if flag(splitbase)
+    Build-depends: base >= 3 && < 5, old-locale, time, mtl, array
+  else
+    Build-depends: base < 3
+  Build-depends: cairo >= 0.9.11, 
+                 time, mtl, 
+                 colour >= 2.2.1,
+                 data-default >= 0.5,
+                 Chart >= 0.17
+
+  Exposed-modules:
+        Graphics.Rendering.Chart.Backend.Cairo
+
+source-repository head
+  type:     git
+  location: https://github.com/timbod7/haskell-chart

@@ -39,8 +39,7 @@ module Graphics.Rendering.Chart.SparkLine
     -- * Rendering function
   , renderSparkLine
   , sparkLineToRenderable
-  , sparkLineToPNG
-  , sparkLineToPDF
+  , sparkWidth
   ) where
 
 import Control.Monad
@@ -51,8 +50,6 @@ import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Data.Colour
 import Data.Colour.Names
-
-import Graphics.Rendering.Chart.Backend.Cairo
 
 -- | A sparkline is a single sequence of data values, treated as y-values.
 --   The x-values are anonymous and implicit in the sequence.
@@ -165,15 +162,3 @@ renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
         fillPointPath (rectPath (boxpt endpt))
   return nullPickFn
 
--- | Generate a PNG for the sparkline, using its natural size.
-sparkLineToPNG :: FilePath -> SparkLine -> IO (PickFn ())
-sparkLineToPNG fp sp = renderableToPNGFile (sparkLineToRenderable sp)
-                                           (sparkWidth sp)
-                                           (so_height (sl_options sp))
-                                           fp
--- | Generate a PDF for the sparkline, using its natural size.
-sparkLineToPDF :: FilePath -> SparkLine -> IO ()
-sparkLineToPDF fp sp = renderableToPDFFile (sparkLineToRenderable sp)
-                                           (sparkWidth sp)
-                                           (so_height (sl_options sp))
-                                           fp

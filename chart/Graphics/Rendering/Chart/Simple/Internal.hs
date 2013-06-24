@@ -10,7 +10,6 @@ import Data.Default
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Utils
-import Graphics.Rendering.Chart.Backend.Cairo
 
 
 styleColor :: Int -> AlphaColour Double
@@ -206,10 +205,6 @@ class PlotPDFType t where
     pld        :: FilePath -> [UPlot] -> t
 instance (PlotArg a, PlotPDFType r) => PlotPDFType (a -> r) where
     pld fn args = \ a -> pld fn (toUPlot a ++ args)
-instance PlotPDFType (IO a) where
-    pld fn args = do
-        renderableToPDFFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
-        return undefined
 
 -- | Save a plot as a postscript file.
 
@@ -219,10 +214,6 @@ class PlotPSType t where
     pls        :: FilePath -> [UPlot] -> t
 instance (PlotArg a, PlotPSType r) => PlotPSType (a -> r) where
     pls fn args = \ a -> pls fn (toUPlot a ++ args)
-instance PlotPSType (IO a) where
-    pls fn args = do
-        renderableToPSFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
-        return undefined
 
 -- | Save a plot as a png file.
 plotPNG :: PlotPNGType a => String -> a
@@ -232,12 +223,6 @@ class PlotPNGType t where
     plp        :: FilePath -> [UPlot] -> t
 instance (PlotArg a, PlotPNGType r) => PlotPNGType (a -> r) where
     plp fn args = \ a -> plp fn (toUPlot a ++ args)
-instance PlotPNGType (IO a) where
-    plp fn args = do
-        renderableToPNGFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
-        return undefined
-
-
 
 data UPlot = UString String | UDoubles [Double] | UFunction (Double -> Double)
            | UKind [PlotKind] | X [Double]

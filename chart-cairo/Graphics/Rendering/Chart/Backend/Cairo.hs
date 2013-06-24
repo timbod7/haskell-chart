@@ -12,6 +12,9 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , renderableToPDFFile
   , renderableToPSFile
   , renderableToSVGFile
+  
+  , sparkLineToPDF
+  , sparkLineToPNG
   ) where
 
 import Data.Default
@@ -29,6 +32,8 @@ import Graphics.Rendering.Chart.Backend as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Renderable
+import Graphics.Rendering.Chart.Simple
+import Graphics.Rendering.Chart.SparkLine
 
 -- -----------------------------------------------------------------------
 -- Backend and Monad
@@ -264,6 +269,8 @@ preserveCState a = do
   return v
 
 -- -----------------------------------------------------------------------
+-- Cairo Operation Wrappers
+-- -----------------------------------------------------------------------
   
 cSetTransform t = c $ C.setMatrix $ convertMatrix t
 
@@ -338,6 +345,38 @@ bitmapEnv = defaultEnv (adjfn 0.5) (adjfn 0.0)
 vectorEnv :: ChartBackendEnv
 vectorEnv = defaultEnv id id
 
+-- -----------------------------------------------------------------------
+-- Simple Instances
+-- -----------------------------------------------------------------------
 
+instance PlotPDFType (IO a) where
+    pld fn args = do
+        renderableToPDFFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
+        return undefined
 
+instance PlotPSType (IO a) where
+    pls fn args = do
+        renderableToPSFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
+        return undefined
 
+instance PlotPNGType (IO a) where
+    plp fn args = do
+        renderableToPNGFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
+        return undefined
+
+-- -----------------------------------------------------------------------
+-- SparkLine Functions
+-- -----------------------------------------------------------------------
+
+-- | Generate a PNG for the sparkline, using its natural size.
+sparkLineToPNG :: FilePath -> SparkLine -> IO (PickFn ())
+sparkLineToPNG fp sp = renderableToPNGFile (sparkLineToRenderable sp)
+                                           (sparkWidth sp)
+                                           (so_height (sl_options sp))
+                                           fp
+-- | Generate a PDF for the sparkline, using its natural size.
+sparkLineToPDF :: FilePath -> SparkLine -> IO ()
+sparkLineToPDF fp sp = renderableToPDFFile (sparkLineToRenderable sp)
+                                           (sparkWidth sp)
+                                           (so_height (sl_options sp))
+                                           fp
