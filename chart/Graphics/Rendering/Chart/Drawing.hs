@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -30,6 +30,7 @@ module Graphics.Rendering.Chart.Drawing
     PointShape(..)
   , PointStyle(..)
   , drawPoint
+  , defaultPointStyle
   
   -- * Alignments and Paths
   , alignPath
@@ -60,7 +61,6 @@ module Graphics.Rendering.Chart.Drawing
   , solidLine
   , dashedLine
 
-  , defaultPointStyle
   , filledCircles
   , hollowCircles
   , filledPolygon
@@ -70,8 +70,6 @@ module Graphics.Rendering.Chart.Drawing
   , stars
     
   , solidFillStyle
-
-  , defaultFontStyle
   
   -- * Backend and general Types
   , module Graphics.Rendering.Chart.Backend
@@ -155,6 +153,8 @@ alignc p = do
     alignfn <- liftM cbeCoordAlignFn ask
     return (alignfn p)
 
+-- | Create a path by connecting all points with a line.
+--   The path is not closed.
 stepPath :: [Point] -> Path
 stepPath (p:ps) = moveTo p
                <> mconcat (map lineTo ps)
@@ -181,15 +181,18 @@ fillPointPath pts = do
     fillPath path
 
 -- -----------------------------------------------------------------------
--- Abstract Drawing Methods
+-- Text Drawing
 -- -----------------------------------------------------------------------
 
+-- | Draw a line of text that is aligned at a different anchor point.
+--   See 'drawText'.
 drawTextA :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
 drawTextA hta vta p s = drawTextR hta vta 0 p s
 
--- | Function to draw a textual label anchored by one of its corners
+-- | Draw a textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
+--   See 'drawText'.
 drawTextR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
 drawTextR hta vta angle p s =
   withTranslation p $
@@ -199,9 +202,10 @@ drawTextR hta vta angle p s =
   where
     theta = angle*pi/180.0
 
--- | Function to draw a multi-line textual label anchored by one of its corners
+-- | Draw a multi-line textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
+--   See 'drawText'.
 drawTextsR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
 drawTextsR hta vta angle p s = case num of
       0 -> return ()
@@ -233,22 +237,26 @@ drawTextsR hta vta angle p s = case num of
       yinit VTA_Centre   ts height = height / 2 + textSizeAscent ts
       yinit VTA_Bottom   ts height = height + textSizeAscent ts
 
+-- | Calculate the correct offset to align the text anchor.
 adjustText :: HTextAnchor -> VTextAnchor -> TextSize -> Point
 adjustText hta vta ts = Point (adjustTextX hta ts) (adjustTextY vta ts)
 
+-- | Calculate the correct offset to align the horizontal anchor.
 adjustTextX :: HTextAnchor -> TextSize -> Double
 adjustTextX HTA_Left   _  = 0
 adjustTextX HTA_Centre ts = (- (textSizeWidth ts / 2))
 adjustTextX HTA_Right  ts = (- textSizeWidth ts)
 
+-- | Calculate the correct offset to align the vertical anchor.
 adjustTextY :: VTextAnchor -> TextSize -> Double
 adjustTextY VTA_Top      ts = textSizeAscent ts
 adjustTextY VTA_Centre   ts = - (textSizeYBearing ts) / 2
 adjustTextY VTA_BaseLine _  = 0
 adjustTextY VTA_Bottom   ts = -(textSizeDescent ts)
 
--- | Recturn the bounding rectangle for a text string positioned
---   where it would be drawn by drawText
+-- | Return the bounding rectangle for a text string positioned
+--   where it would be drawn by 'drawText'.
+--   See 'textSize'.
 textDrawRect :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m Rect
 textDrawRect hta vta (Point x y) s = do
   ts <- textSize s
@@ -260,6 +268,8 @@ textDrawRect hta vta (Point x y) s = do
   let p2 = Point (x' + w) (y' + h)
   return $ Rect p1 p2
 
+-- | Get the width and height of the string when rendered.
+--   See 'textSize'.
 textDimension :: (ChartBackend m) => String -> m RectSize
 textDimension s = do
   ts <- textSize s
@@ -269,11 +279,12 @@ textDimension s = do
 -- Point Types and Drawing
 -- -----------------------------------------------------------------------
 
-data PointShape = PointShapeCircle
+-- | The different shapes a point can have.
+data PointShape = PointShapeCircle           -- ^ A circle.
                 | PointShapePolygon Int Bool -- ^ Number of vertices and is right-side-up?
-                | PointShapePlus
-                | PointShapeCross
-                | PointShapeStar
+                | PointShapePlus  -- ^ A plus sign.
+                | PointShapeCross -- ^ A cross.
+                | PointShapeStar  -- ^ Combination of a cross and a plus.
 
 -- | Abstract data type for the style of a plotted point.
 --
@@ -281,12 +292,18 @@ data PointShape = PointShapeCircle
 --   style, at the supplied device coordinates.
 data PointStyle = PointStyle 
   { point_color_ :: AlphaColour Double
+  -- ^ The color to fill the point with.
   , point_border_color_ :: AlphaColour Double
+  -- ^ The color to stroke the outline with.
   , point_border_width_ :: Double
+  -- ^ The width of the outline.
   , point_radius_ :: Double
+  -- ^ The radius of the tightest surrounding circle of the point.
   , point_shape_ :: PointShape
+  -- ^ The shape.
   }
 
+-- | Default style to use for points.
 instance Default PointStyle where
   def = PointStyle 
     { point_color_        = opaque black
@@ -295,6 +312,11 @@ instance Default PointStyle where
     , point_radius_       = 1
     , point_shape_        = PointShapeCircle
     }
+
+{-# DEPRECATED defaultPointStyle "Use the according Data.Default instance!" #-}
+-- | Default style for points.
+defaultPointStyle :: PointStyle
+defaultPointStyle = def
 
 -- | Draw a single point at the given location.
 drawPoint :: (ChartBackend m) 
@@ -342,84 +364,86 @@ drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
                 <> lineTo' (x-rad) (y+rad)
 
 -- -----------------------------------------------------------------------
+-- Style Helpers
+-- -----------------------------------------------------------------------
 
+-- | The default sequence of colours to use when plotings different data sets
+--   in a graph.
 defaultColorSeq :: [AlphaColour Double]
 defaultColorSeq = cycle $ map opaque [blue, red, green, yellow, cyan, magenta]
 
-----------------------------------------------------------------------
-
-solidLine ::
-     Double -- ^ Width of line.
-  -> AlphaColour Double
-  -> LineStyle
+-- | Create a solid line style (not dashed).
+solidLine :: Double             -- ^ Width of line.
+          -> AlphaColour Double -- ^ Colour of line.
+          -> LineStyle
 solidLine w cl = LineStyle w cl [] LineCapButt LineJoinMiter
 
-dashedLine ::
-     Double   -- ^ Width of line.
-  -> [Double] -- ^ The dash pattern in device coordinates.
-  -> AlphaColour Double
-  -> LineStyle
+-- | Create a dashed line style.
+dashedLine :: Double   -- ^ Width of line.
+           -> [Double] -- ^ The dash pattern in device coordinates.
+           -> AlphaColour Double -- ^ Colour of line.
+           -> LineStyle
 dashedLine w ds cl = LineStyle w cl ds LineCapButt LineJoinMiter
 
-{-# DEPRECATED defaultPointStyle "Use the according Data.Default instance!" #-}
-defaultPointStyle :: PointStyle
-defaultPointStyle = def
-
+-- | Style for filled circle points.
 filledCircles :: Double             -- ^ Radius of circle.
-              -> AlphaColour Double -- ^ Colour.
+              -> AlphaColour Double -- ^ Fill colour.
               -> PointStyle
 filledCircles radius cl = 
   PointStyle cl transparent 0 radius PointShapeCircle
 
+-- | Style for stroked circle points.
 hollowCircles :: Double -- ^ Radius of circle.
               -> Double -- ^ Thickness of line.
-              -> AlphaColour Double
+              -> AlphaColour Double -- Colour of line.
               -> PointStyle
 hollowCircles radius w cl = 
   PointStyle transparent cl w radius PointShapeCircle
 
+-- | Style for stroked polygon points.
 hollowPolygon :: Double -- ^ Radius of circle.
               -> Double -- ^ Thickness of line.
               -> Int    -- ^ Number of vertices.
               -> Bool   -- ^ Is right-side-up?
-              -> AlphaColour Double
+              -> AlphaColour Double -- ^ Colour of line.
               -> PointStyle
 hollowPolygon radius w sides isrot cl = 
   PointStyle transparent cl w radius (PointShapePolygon sides isrot)
 
+-- | Style for filled polygon points.
 filledPolygon :: Double -- ^ Radius of circle.
               -> Int    -- ^ Number of vertices.
               -> Bool   -- ^ Is right-side-up?
-              -> AlphaColour Double
+              -> AlphaColour Double -- ^ Fill color.
               -> PointStyle
 filledPolygon radius sides isrot cl = 
   PointStyle cl transparent 0 radius (PointShapePolygon sides isrot)
 
-plusses :: Double -- ^ Radius of circle.
+-- | Plus sign point style.
+plusses :: Double -- ^ Radius of tightest surrounding circle.
         -> Double -- ^ Thickness of line.
-        -> AlphaColour Double
+        -> AlphaColour Double -- ^ Color of line.
         -> PointStyle
 plusses radius w cl = 
   PointStyle transparent cl w radius PointShapePlus
 
+-- | Cross point style.
 exes :: Double -- ^ Radius of circle.
      -> Double -- ^ Thickness of line.
-     -> AlphaColour Double
+     -> AlphaColour Double -- ^ Color of line.
      -> PointStyle
 exes radius w cl =
   PointStyle transparent cl w radius PointShapeCross
 
+-- | Combination of plus and cross point style.
 stars :: Double -- ^ Radius of circle.
       -> Double -- ^ Thickness of line.
-      -> AlphaColour Double
+      -> AlphaColour Double -- ^ Color of line.
       -> PointStyle
 stars radius w cl =
   PointStyle transparent cl w radius PointShapeStar
 
+-- | Fill style that fill everything this the given colour.
 solidFillStyle :: AlphaColour Double -> FillStyle
 solidFillStyle cl = FillStyleSolid cl
-
-{-# DEPRECATED defaultFontStyle  "Use the according Data.Default instance!" #-}
-defaultFontStyle :: FontStyle
-defaultFontStyle = def
 

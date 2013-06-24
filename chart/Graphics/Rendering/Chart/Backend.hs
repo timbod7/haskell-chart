@@ -36,6 +36,8 @@ module Graphics.Rendering.Chart.Backend
   , FontWeight(..)
   , FontSlant(..)
   , FontStyle(..)
+
+  , defaultFontStyle
   
   , HTextAnchor(..)
   , VTextAnchor(..)
@@ -303,6 +305,11 @@ instance Default FontStyle where
     , font_weight_ = def
     , font_color_  = opaque black
     }
+
+{-# DEPRECATED defaultFontStyle  "Use the according Data.Default instance!" #-}
+-- | The default font style.
+defaultFontStyle :: FontStyle
+defaultFontStyle = def
 
 data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right
 data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine
