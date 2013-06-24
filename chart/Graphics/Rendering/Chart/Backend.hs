@@ -260,6 +260,7 @@ data LineStyle = LineStyle {
    line_join_   :: LineJoin
 }
 
+-- | The default line style.
 instance Default LineStyle where
   def = LineStyle 
     { line_width_  = 1
@@ -278,6 +279,7 @@ data FontSlant = FontSlantNormal  -- ^ Normal font style without slant.
                | FontSlantItalic  -- ^ With a slight slant.
                | FontSlantOblique -- ^ With a greater slant.
 
+-- | The default font slant.
 instance Default FontSlant where
   def = FontSlantNormal
 
@@ -285,6 +287,7 @@ instance Default FontSlant where
 data FontWeight = FontWeightNormal -- ^ Normal font style without weight.
                 | FontWeightBold   -- ^ Bold font.
 
+-- | The default font weight.
 instance Default FontWeight where
   def = FontWeightNormal
 
@@ -297,6 +300,7 @@ data FontStyle = FontStyle {
       font_color_  :: AlphaColour Double
 }
 
+-- | The default font style.
 instance Default FontStyle where
   def = FontStyle 
     { font_name_   = "sans"
@@ -311,7 +315,10 @@ instance Default FontStyle where
 defaultFontStyle :: FontStyle
 defaultFontStyle = def
 
+-- | Possible horizontal anchor points for text.
 data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right
+
+-- | Possible vertical anchor points for text.
 data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine
 
 -- | Text metrics returned by 'textSize'.
@@ -333,6 +340,7 @@ data TextSize = TextSize
 --   style in the Cairo rendering state.
 newtype FillStyle = FillStyleSolid { fill_colour_ :: AlphaColour Double }
 
+-- | The default fill style.
 instance Default FillStyle where
   def = FillStyleSolid
     { fill_colour_ = opaque white
