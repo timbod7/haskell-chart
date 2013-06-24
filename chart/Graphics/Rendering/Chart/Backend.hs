@@ -55,7 +55,6 @@ import Data.Accessor.Template
 
 import Control.Monad.Reader
 
-import Graphics.Rendering.Chart.Types 
 import Graphics.Rendering.Chart.Geometry
 
 -- -----------------------------------------------------------------------

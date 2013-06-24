@@ -72,7 +72,6 @@ module Graphics.Rendering.Chart.Drawing
 
   , defaultFontStyle
   
-  , module Graphics.Rendering.Chart.Types
   , module Graphics.Rendering.Chart.Backend
 ) where
 
@@ -87,7 +86,6 @@ import Data.Monoid
 
 import Control.Monad.Reader
 
-import Graphics.Rendering.Chart.Types
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Geometry
 
