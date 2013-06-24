@@ -208,7 +208,7 @@ renderPie p (w,h) = do
                         p0 <- alignp $ ray angle (radius + label_rgap+offset)
                         strokePath $ moveTo p0
                                   <> lineTo p1a
-                                  <> lineTo (Point (p_x p1a + (offset' (tw + label_rgap))) (p_y p1a))
+                                  <> lineTo' (p_x p1a + (offset' (tw + label_rgap))) (p_y p1a)
 
                         let p2 = p1 `pvadd` (Vector (offset' label_rgap) 0)
                         drawTextA anchor VTA_Bottom p2 name
@@ -216,7 +216,7 @@ renderPie p (w,h) = do
                 pieSlice :: (ChartBackend m) => Point -> Double -> Double -> AlphaColour Double
                             -> m ()
                 pieSlice (Point x y) a1 a2 color = do
-                    let path = arc (Point x y) radius (radian a1) (radian a2)
+                    let path = arc' x y radius (radian a1) (radian a2)
                             <> lineTo' x y
                             <> lineTo' x y
                             <> close

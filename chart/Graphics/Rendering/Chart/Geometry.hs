@@ -26,7 +26,8 @@ module Graphics.Rendering.Chart.Geometry
   , Path
   , lineTo, moveTo
   , lineTo', moveTo'
-  , arc, arcNeg
+  , arc, arc'
+  , arcNeg, arcNeg'
   , close
   
   , foldPath
@@ -150,8 +151,14 @@ lineTo' x y = lineTo $ Point x y
 arc :: Point -> Double -> Double -> Double -> Path
 arc p r a1 a2 = Arc p r a1 a2 mempty
 
+arc' :: Double -> Double -> Double -> Double -> Double -> Path
+arc' x y r a1 a2 = Arc (Point x y) r a1 a2 mempty
+
 arcNeg :: Point -> Double -> Double -> Double -> Path
 arcNeg p r a1 a2 = ArcNeg p r a1 a2 mempty
+
+arcNeg' :: Double -> Double -> Double -> Double -> Double -> Path
+arcNeg' x y r a1 a2 = ArcNeg (Point x y) r a1 a2 mempty
 
 close :: Path
 close = Close
