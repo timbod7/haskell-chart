@@ -60,7 +60,6 @@ import Control.Monad
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Types as T
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
@@ -137,6 +136,7 @@ instance ToRenderable PieLayout where
     type RenderableT m PieLayout = PieLayout
     toRenderable = pieToRenderable
 -}
+
 pieToRenderable :: (ChartBackend m) => PieLayout -> Renderable m ()
 pieToRenderable p = fillBackground (pie_background_ p) (
        gridToRenderable $ aboveN
@@ -206,9 +206,9 @@ renderPie p (w,h) = do
                                               then ((0+),HTA_Left)
                                               else ((0-),HTA_Right)
                         p0 <- alignp $ ray angle (radius + label_rgap+offset)
-                        strokePath $ T.moveTo p0
-                                  <> T.lineTo p1a
-                                  <> T.lineTo (Point (p_x p1a + (offset' (tw + label_rgap))) (p_y p1a))
+                        strokePath $ moveTo p0
+                                  <> lineTo p1a
+                                  <> lineTo (Point (p_x p1a + (offset' (tw + label_rgap))) (p_y p1a))
 
                         let p2 = p1 `pvadd` (Vector (offset' label_rgap) 0)
                         drawTextA anchor VTA_Bottom p2 name
@@ -216,7 +216,7 @@ renderPie p (w,h) = do
                 pieSlice :: (ChartBackend m) => Point -> Double -> Double -> AlphaColour Double
                             -> m ()
                 pieSlice (Point x y) a1 a2 color = do
-                    let path = T.arc (Point x y) radius (radian a1) (radian a2)
+                    let path = arc (Point x y) radius (radian a1) (radian a2)
                             <> lineTo' x y
                             <> lineTo' x y
                             <> close
