@@ -119,6 +119,7 @@ rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = [p1,p2,p3,p4,p1]
 -- Path Types
 -- -----------------------------------------------------------------------
 
+-- | The path type used by Charts.
 data Path = MoveTo Point Path 
           | LineTo Point Path
           | Arc Point Double Double Double Path
@@ -126,6 +127,9 @@ data Path = MoveTo Point Path
           | End 
           | Close
 
+-- | Paths are monoids. After a path is closed you can not append
+--   anything to it anymore. The empty path is open. 
+--   Use 'close' to close a path.
 instance Monoid Path where
   mappend p1 p2 = case p1 of
     MoveTo p path -> MoveTo p $ mappend path p2
@@ -136,30 +140,50 @@ instance Monoid Path where
     Close -> Close
   mempty = End
 
+-- | Move the paths pointer to the given location.
 moveTo :: Point -> Path
 moveTo p = MoveTo p mempty
 
+-- | Short-cut for 'moveTo', if you don't want to create a 'Point'.
 moveTo' :: Double -> Double -> Path
 moveTo' x y = moveTo $ Point x y
 
+-- | Move the paths pointer to the given location and draw a straight 
+--   line while doing so.
 lineTo :: Point -> Path
 lineTo p = LineTo p mempty
 
+-- | Short-cut for 'lineTo', if you don't want to create a 'Point'.
 lineTo' :: Double -> Double -> Path
 lineTo' x y = lineTo $ Point x y
 
-arc :: Point -> Double -> Double -> Double -> Path
+-- | Draw the arc of a circle. A straight line connects
+--   the end of the previous path with the beginning of the arc.
+--   The zero angle points in direction of the positive x-axis.
+--   Angles increase in clock-wise direction. If the stop angle
+--   is smaller then the start angle it is increased by multiples of
+--   @2 * pi@ until is is greater or equal.
+arc :: Point  -- ^ Center point of the circle arc.
+    -> Double -- ^ Redius of the circle.
+    -> Double -- ^ Angle to start drawing at, in radians.
+    -> Double -- ^ Angle to stop drawing at, in radians.
+    -> Path
 arc p r a1 a2 = Arc p r a1 a2 mempty
 
+-- | Short-cut for 'arc', if you don't want to create a 'Point'.
 arc' :: Double -> Double -> Double -> Double -> Double -> Path
 arc' x y r a1 a2 = Arc (Point x y) r a1 a2 mempty
 
+-- | Like 'arc', but draws from the stop angle to the start angle
+--   instead of between them.
 arcNeg :: Point -> Double -> Double -> Double -> Path
 arcNeg p r a1 a2 = ArcNeg p r a1 a2 mempty
 
+-- | Short-cut for 'arcNeg', if you don't want to create a 'Point'.
 arcNeg' :: Double -> Double -> Double -> Double -> Double -> Path
 arcNeg' x y r a1 a2 = ArcNeg (Point x y) r a1 a2 mempty
 
+-- | A closed empty path. Closes a path when appended.
 close :: Path
 close = Close
 
