@@ -48,11 +48,13 @@ data Point = Point {
     p_y :: Double
 } deriving Show
 
+-- | A vector in two dimensions.
 data Vector = Vector {
     v_x :: Double,
     v_y :: Double
 } deriving Show
 
+-- | Convert a 'Point' to a 'Vector'.
 pointToVec :: Point -> Vector
 pointToVec (Point x y) = Vector x y
 
@@ -82,6 +84,7 @@ type PointMapFn x y = (Limit x, Limit y) -> Point
 data Rect = Rect Point Point
    deriving Show
 
+-- | Edge of a rectangle.
 data RectEdge = E_Top | E_Bottom | E_Left | E_Right
 
 -- | Create a rectangle based upon the coordinates of 4 points.
