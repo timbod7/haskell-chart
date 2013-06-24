@@ -32,14 +32,15 @@ module Graphics.Rendering.Chart.Drawing
   , drawPoint
   
   -- * Alignments and Paths
-  , strokePointPath
-  , fillPointPath
-  
+  , alignPath
   , alignFillPath
   , alignStrokePath
   
   , alignp
   , alignc
+  
+  , strokePointPath
+  , fillPointPath
   
   -- * Transformation Helpers
   , withRotation
@@ -72,6 +73,7 @@ module Graphics.Rendering.Chart.Drawing
 
   , defaultFontStyle
   
+  -- * Backend and general Types
   , module Graphics.Rendering.Chart.Backend
 ) where
 
@@ -115,6 +117,7 @@ withPointStyle (PointStyle cl bcl bw _ _) m = do
 -- Alignment Helpers
 -- -----------------------------------------------------------------------
 
+-- | Align the path by applying the given function on all points.
 alignPath :: (Point -> Point) -> Path -> Path
 alignPath f = foldPath (\p -> moveTo $ f p)
                        (\p -> lineTo $ f p)
@@ -122,29 +125,35 @@ alignPath f = foldPath (\p -> moveTo $ f p)
                        (\p -> arcNeg $ f p)
                        (close)
 
+-- | Align the path using the environments alignment function for points.
+--   This is generally useful when stroking. 
+--   See 'alignPath' and 'cbePointAlignFn'.
 alignStrokePath :: (ChartBackend m) => Path -> m Path
 alignStrokePath p = do
   f <- liftM cbePointAlignFn ask
   return $ alignPath f p
 
+-- | Align the path using the environments alignment function for coordinates.
+--   This is generally useful when filling. 
+--   See 'alignPath' and 'cbeCoordAlignFn'.
 alignFillPath :: (ChartBackend m) => Path -> m Path
 alignFillPath p = do
   f <- liftM cbeCoordAlignFn ask
   return $ alignPath f p
 
+-- | Align the point using the environments alignment function for points.
+--   See 'cbePointAlignFn'.
 alignp :: (ChartBackend m) => Point -> m Point
 alignp p = do 
     alignfn <- liftM cbePointAlignFn ask
     return (alignfn p)
 
+-- | Align the point using the environments alignment function for coordinates.
+--   See 'cbeCoordAlignFn'.
 alignc :: (ChartBackend m) => Point -> m Point
 alignc p = do 
     alignfn <- liftM cbeCoordAlignFn ask
     return (alignfn p)
-
--- -----------------------------------------------------------------------
--- Abstract Drawing Methods
--- -----------------------------------------------------------------------
 
 stepPath :: [Point] -> Path
 stepPath (p:ps) = moveTo p
@@ -153,9 +162,9 @@ stepPath [] = mempty
 
 -- | Draw lines between the specified points.
 --
--- The points will be "corrected" by the cenv_point_alignfn, so that
--- when drawing bitmaps, 1 pixel wide lines will be centred on the
--- pixels.
+--   The points will be aligned by the 'cbePointAlignFn', so that
+--   when drawing bitmaps, 1 pixel wide lines will be centred on the
+--   pixels.
 strokePointPath :: (ChartBackend m) => [Point] -> m ()
 strokePointPath pts = do
     path <- alignStrokePath $ stepPath pts
@@ -163,13 +172,17 @@ strokePointPath pts = do
 
 -- | Fill the region with the given corners.
 --
--- The points will be "corrected" by the cenv_coord_alignfn, so that
--- when drawing bitmaps, the edges of the region will fall between
--- pixels.
+--   The points will be aligned by the 'cbeCoordAlignFn', so that
+--   when drawing bitmaps, the edges of the region will fall between
+--   pixels.
 fillPointPath :: (ChartBackend m) => [Point] -> m ()
 fillPointPath pts = do
     path <- alignFillPath $ stepPath pts
     fillPath path
+
+-- -----------------------------------------------------------------------
+-- Abstract Drawing Methods
+-- -----------------------------------------------------------------------
 
 drawTextA :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
 drawTextA hta vta p s = drawTextR hta vta 0 p s
