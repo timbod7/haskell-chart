@@ -7,6 +7,9 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , CairoBackend(..)
   , runBackend
   , renderToFile
+  
+  , bitmapEnv
+  , vectorEnv
 
   , renderableToPNGFile
   , renderableToPDFFile
@@ -44,8 +47,11 @@ import Graphics.Rendering.Chart.SparkLine
 newtype CRender a = DR (ReaderT ChartBackendEnv C.Render a)
   deriving (Functor, Monad, MonadReader ChartBackendEnv)
 
-runCRender :: CRender a -> ChartBackendEnv -> C.Render a
-runCRender (DR m) e = runReaderT m e
+-- | Run this backends renderer.
+runBackend :: CRender a       -- ^ Chart render code.
+           -> ChartBackendEnv -- ^ Environment to start rendering with.
+           -> C.Render a      -- ^ Cairo render code.
+runBackend (DR m) e = runReaderT m e
 
 c :: C.Render a -> CRender a
 c = DR . lift
@@ -133,13 +139,6 @@ instance ChartBackend CRender where
 -- -----------------------------------------------------------------------
 -- Output rendering functions
 -- -----------------------------------------------------------------------
-
--- | Run this backends renderer.
-runBackend :: (Point -> Point) -- ^ Point alignment function.
-           -> (Point -> Point) -- ^ Coordinate alignment function.
-           -> CRender a        -- ^ Chart render code.
-           -> C.Render a       -- ^ Cairo render code.
-runBackend pAlignF cAlignF m = runCRender m $ defaultEnv pAlignF cAlignF
 
 data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
 
@@ -313,7 +312,7 @@ cShowText s = c $ C.showText s
 cRenderToPNGFile :: CRender a -> Int -> Int -> FilePath -> IO a
 cRenderToPNGFile cr width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
-    a <- C.renderWith result $ runCRender cr bitmapEnv
+    a <- C.renderWith result $ runBackend cr bitmapEnv
     C.surfaceWriteToPNG result path
     return a
 
@@ -328,13 +327,14 @@ cRenderToSVGFile  = cRenderToFile C.withSVGSurface
 
 cRenderToFile withSurface cr width height path = 
     withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
-    C.renderWith result $ runCRender rfn vectorEnv
+    C.renderWith result $ runBackend rfn vectorEnv
     C.surfaceFinish result
   where
     rfn = do
         cr
         c $ C.showPage
 
+-- | Environment aligned to render good on bitmaps.
 bitmapEnv :: ChartBackendEnv
 bitmapEnv = defaultEnv (adjfn 0.5) (adjfn 0.0) 
   where
@@ -342,6 +342,7 @@ bitmapEnv = defaultEnv (adjfn 0.5) (adjfn 0.0)
       where
         adj v = (fromIntegral.round) v +offset
 
+-- | Environment aligned to render good on vector based graphics.
 vectorEnv :: ChartBackendEnv
 vectorEnv = defaultEnv id id
 

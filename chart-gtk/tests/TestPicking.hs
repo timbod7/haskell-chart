@@ -3,6 +3,7 @@ module Test2 where
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Layout(layout1ToRenderable)
 import Graphics.Rendering.Chart.Grid
+import Graphics.Rendering.Chart.Backend.Cairo
 import qualified Graphics.UI.Gtk as G
 import qualified Graphics.UI.Gtk.Gdk.Events as GE
 import qualified Graphics.Rendering.Cairo as C
@@ -11,6 +12,7 @@ import Data.Time.LocalTime
 import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
+import Data.Default
 import Data.Accessor
 import Data.IORef
 import System.Environment(getArgs)
@@ -18,28 +20,30 @@ import Prices(prices2)
 
 type PickType = Layout1Pick LocalTime Double
 
-chart :: [(LocalTime,Double,Double)] -> Bool -> Double -> Renderable PickType
+chart :: (ChartBackend m) 
+      => [(LocalTime,Double,Double)] 
+      -> Bool -> Double -> Renderable m ()
 chart prices showMinMax lwidth = layout1ToRenderable layout
   where
 
     lineStyle c = line_width ^= 3 * lwidth
                 $ line_color ^= c
-                $ defaultPlotLines ^. plot_lines_style
+                $ def ^. plot_lines_style
 
     limitLineStyle c = line_width ^= lwidth
                 $ line_color ^= opaque c
                 $ line_dashes ^= [5,10]
-                $ defaultPlotLines ^. plot_lines_style
+                $ def ^. plot_lines_style
 
     price1 = plot_lines_style ^= lineStyle (opaque blue)
            $ plot_lines_values ^= [[ (d, v) | (d,v,_) <- prices]]
            $ plot_lines_title ^= "price 1"
-           $ defaultPlotLines
+           $ def
 
     price2 = plot_lines_style ^= lineStyle (opaque green)
 	   $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
            $ plot_lines_title ^= "price 2"
-           $ defaultPlotLines
+           $ def
 
     (min1,max1) = (minimum [v | (_,v,_) <- prices],maximum [v | (_,v,_) <- prices])
     (min2,max2) = (minimum [v | (_,_,v) <- prices],maximum [v | (_,_,v) <- prices])
@@ -62,18 +66,18 @@ chart prices showMinMax lwidth = layout1ToRenderable layout
  	   $ layout1_plots ^= ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
            $ layout1_grid_last ^= False
            $ setLayout1Foreground fg
-           $ defaultLayout1
+           $ def
 
-updateCanvas :: Renderable a -> G.DrawingArea -> IORef (Maybe (PickFn a)) -> IO Bool
+updateCanvas :: Renderable CRender a -> G.DrawingArea -> IORef (Maybe (PickFn a)) -> IO Bool
 updateCanvas chart canvas pickfv = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
     let sz = (fromIntegral width,fromIntegral height)
-    pickf <- G.renderWithDrawable win $ runCRender (render chart sz) bitmapEnv
+    pickf <- G.renderWithDrawable win $ runBackend (render chart sz) bitmapEnv
     writeIORef pickfv (Just pickf)
     return True
 
-createRenderableWindow :: (Show a) => Renderable a -> Int -> Int -> IO G.Window
+createRenderableWindow :: (Show a) => Renderable CRender a -> Int -> Int -> IO G.Window
 createRenderableWindow chart windowWidth windowHeight = do
     pickfv <- newIORef Nothing
     window <- G.windowNew
@@ -100,12 +104,12 @@ gridWindow = do
     G.widgetShowAll window
     G.mainGUI
   where
-    testgrid :: Grid (Renderable String)
+    testgrid :: Grid (Renderable CRender String)
     testgrid = aboveN
         [ besideN [ f "AAAAA", e, f "BBBBB" ]
         , besideN [ f "CCCCC", e, f "DDDDD" ]
         ]
-    f s = tval $ setPickFn (const (Just s)) $ label defaultFontStyle HTA_Centre VTA_Centre s
+    f s = tval $ setPickFn (const (Just s)) $ label def HTA_Centre VTA_Centre s
     e = tval $ spacer (20,20)
 
                                        

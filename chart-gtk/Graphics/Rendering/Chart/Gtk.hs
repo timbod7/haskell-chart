@@ -17,6 +17,7 @@ import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Backend.Cairo
 import Data.List (isPrefixOf)
 import Data.IORef
 import Control.Monad(when)
@@ -52,7 +53,7 @@ initGuiOnce = do
 -- it's first call, but not subsequent calls. Hence it's 
 -- unlikely to be compatible with other code using gtk. In 
 -- that case use createRenderableWindow.
-renderableToWindow :: Renderable a -> Int -> Int -> IO ()
+renderableToWindow :: Renderable CRender a -> Int -> Int -> IO ()
 renderableToWindow chart windowWidth windowHeight = do
     initGuiOnce
     window <- createRenderableWindow chart windowWidth windowHeight
@@ -63,7 +64,7 @@ renderableToWindow chart windowWidth windowHeight = do
     G.mainGUI
 
 -- | Create a new GTK window displaying a renderable.
-createRenderableWindow :: Renderable a -> Int -> Int -> IO G.Window
+createRenderableWindow :: Renderable CRender a -> Int -> Int -> IO G.Window
 createRenderableWindow chart windowWidth windowHeight = do
     window <- G.windowNew
     canvas <- G.drawingAreaNew
@@ -73,10 +74,10 @@ createRenderableWindow chart windowWidth windowHeight = do
     return window
 
 
-updateCanvas :: Renderable a -> G.DrawingArea  -> IO Bool
+updateCanvas :: Renderable CRender a -> G.DrawingArea  -> IO Bool
 updateCanvas chart canvas = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
     let sz = (fromIntegral width,fromIntegral height)
-    G.renderWithDrawable win $ runCRender (render chart sz) bitmapEnv
+    G.renderWithDrawable win $ runBackend (render chart sz) bitmapEnv
     return True
