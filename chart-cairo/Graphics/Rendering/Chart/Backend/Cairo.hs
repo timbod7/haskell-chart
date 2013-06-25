@@ -129,12 +129,13 @@ instance ChartBackend CRender where
                      $ setLineStyle ls >> m
   
   withClipRegion :: Rect -> CRender a -> CRender a
-  withClipRegion clip m = withClipRegion' clip
-                        $ preserveCState $ do
-                            clip' <- getClipRegion
-                            case clip' of
-                              Just c -> setClipRegion c >> m
-                              Nothing -> c C.resetClip >> m
+  withClipRegion clip m = 
+    withClipRegion' clip $ preserveCState $ do
+      clip' <- getClipRegion
+      case clip' of
+        LMin -> setClipRegion (Rect (Point 0 0) (Point 0 0)) >> m
+        LValue c -> setClipRegion c >> m
+        LMax -> c C.resetClip >> m
 
 -- -----------------------------------------------------------------------
 -- Output rendering functions

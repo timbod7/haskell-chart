@@ -97,16 +97,22 @@ within :: Point -> Rect -> Bool
 within (Point x y) (Rect (Point x1 y1) (Point x2 y2)) =
     x >= x1 && x <= x2 && y >= y1 && y <= y2
 
--- | Intersects the both rect. If they intersect the
---   intersection rectangle is returned, otherwise nothing is.
-intersectRect :: Rect -> Rect -> Maybe Rect
-intersectRect (Rect (Point x11 y11) (Point x12 y12)) 
-              (Rect (Point x21 y21) (Point x22 y22)) =
+-- | Intersects the rectangles. If they intersect the
+--   intersection rectangle is returned.
+--   'LMin' is the empty rectangle / intersection and
+--   'LMax' is the infinite plane.
+intersectRect :: Limit Rect -> Limit Rect -> Limit Rect
+intersectRect LMax r = r
+intersectRect r LMax = r
+intersectRect LMin _ = LMin
+intersectRect _ LMin = LMin
+intersectRect (LValue (Rect (Point x11 y11) (Point x12 y12))) 
+              (LValue (Rect (Point x21 y21) (Point x22 y22))) =
   let p1@(Point x1 y1) = Point (max x11 x21) (max y11 y21)
       p2@(Point x2 y2) = Point (min x12 x22) (min y12 y22)
   in if x2 < x1 || y2 < y1 
-        then Nothing
-        else Just $ Rect p1 p2
+        then LMin
+        else LValue $ Rect p1 p2
 
 type Range    = (Double,Double)
 type RectSize = (Double,Double)

@@ -91,7 +91,7 @@ data ChartBackendEnv = ChartBackendEnv
   , cbeLineStyle :: LineStyle
   
   -- | The current clip region, if there is one.
-  , cbeClipRegion :: Maybe Rect
+  , cbeClipRegion :: Limit Rect
   }
 
 -- | Produce a environment with no transformation and clipping. 
@@ -106,7 +106,7 @@ defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv
   , cbeFontStyle = def
   , cbeFillStyle = def
   , cbeLineStyle = def
-  , cbeClipRegion = Nothing
+  , cbeClipRegion = LMax
   }
 
 -- -----------------------------------------------------------------------
@@ -202,7 +202,7 @@ getLineStyle = liftM cbeLineStyle ask
 -- | Get the current clipping region.
 --   If no clipping region was set (it is an infinite plane) 
 --   'Nothing' is returned.
-getClipRegion :: ChartBackend m => m (Maybe Rect)
+getClipRegion :: ChartBackend m => m (Limit Rect)
 getClipRegion = liftM cbeClipRegion ask
 
 -- | Helper to correctly update the backends environment when 
@@ -229,11 +229,7 @@ withLineStyle' ls m = local (\s -> s { cbeLineStyle = ls }) m
 --   implementing 'withClipRegion'.
 withClipRegion' :: ChartBackend m => Rect -> m a -> m a
 withClipRegion' clip m = local (\s -> s { 
-  cbeClipRegion = case cbeClipRegion s of
-                    Nothing -> Just clip
-                    Just clip' -> case intersectRect clip clip' of
-                      Nothing -> Just $ Rect (Point 0 0) (Point 0 0)
-                      Just intersection -> Just intersection
+  cbeClipRegion = intersectRect (cbeClipRegion s) (LValue clip)
   }) m
 
 -- -----------------------------------------------------------------------
