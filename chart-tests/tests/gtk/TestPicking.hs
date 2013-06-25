@@ -1,5 +1,3 @@
-module Test2 where
-
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Layout(layout1ToRenderable)
 import Graphics.Rendering.Chart.Grid
