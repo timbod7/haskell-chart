@@ -152,6 +152,13 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   -- | Use the given font style in this local
   --   environment when drawing text.
   --   
+  --   An implementing backend is expected to guarentee
+  --   to support the following font families: @serif@, @sans-serif@ and @monospace@;
+  --   
+  --   If the backend is not able to find or load a given font 
+  --   it is required to fall back to a custom fail-safe font
+  --   and use it instead.
+  --   
   --   Use the 'withFontStyle'' function to correctly update
   --   your environment when implementing this function.
   withFontStyle :: FontStyle -> m a -> m a
@@ -299,7 +306,7 @@ data FontStyle = FontStyle {
 -- | The default font style.
 instance Default FontStyle where
   def = FontStyle 
-    { font_name_   = "sans"
+    { font_name_   = "sans-serif"
     , font_size_   = 10
     , font_slant_  = def
     , font_weight_ = def
