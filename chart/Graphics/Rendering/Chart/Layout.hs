@@ -160,11 +160,7 @@ data Layout1Pick x y = L1P_Legend String
                      | L1P_LeftAxis y
                      | L1P_RightAxis y
     deriving (Show)
-{- TODO: See class definition
-instance (Ord x, Ord y, ChartBackend m) => ToRenderable (Layout1 m x y) where
-    type RenderableT m (Layout1 m' x y) = Layout1 m x y
-    toRenderable = setPickFn nullPickFn.layout1ToRenderable
--}
+
 type LegendItem m = (String,Rect -> m ())
 
 -- | A layout with it's y type hidded, so that it can be stacked

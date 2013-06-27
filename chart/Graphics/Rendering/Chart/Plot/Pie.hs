@@ -122,20 +122,10 @@ instance Default PieLayout where
     , pie_margin_      = 10
     }
 
-{- TODO: See class definition
-instance ToRenderable PieChart where
-    type RenderableT m PieChart = PieChart
-    toRenderable = pieChartToRenderable
--}
 pieChartToRenderable :: (ChartBackend m) => PieChart -> Renderable m ()
 pieChartToRenderable p = Renderable { minsize = minsizePie p
                                     , render  = renderPie p
                                     }
-{- TODO: See class definition
-instance ToRenderable PieLayout where
-    type RenderableT m PieLayout = PieLayout
-    toRenderable = pieToRenderable
--}
 
 pieToRenderable :: (ChartBackend m) => PieLayout -> Renderable m ()
 pieToRenderable p = fillBackground (pie_background_ p) (

@@ -51,11 +51,7 @@ data LegendOrientation = LORows Int
                        
 
 data Legend m x y = Legend LegendStyle [(String, Rect -> m ())]
-{- TODO: See class definition
-instance ToRenderable (Legend m x y) where
-  type RenderableT m (Legend m' x y) = Legend m x y
-  toRenderable = setPickFn nullPickFn.legendToRenderable
--}
+
 legendToRenderable :: forall m x y. (ChartBackend m) => Legend m x y -> Renderable m String
 legendToRenderable (Legend ls lvs) = gridToRenderable grid
   where

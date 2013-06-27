@@ -13,7 +13,6 @@
 
 module Graphics.Rendering.Chart.Renderable(
     Renderable(..),
-    --ToRenderable(..), -- TODO: See class definition
     PickFn,
     
     rectangleToRenderable,
@@ -70,12 +69,6 @@ data Renderable m a = Renderable {
    render  :: RectSize -> m (PickFn a)
 }
 
-{- TODO: Removed this because in all example using it, it is to ambigious.
--- | A type class abtracting the conversion of a value to a Renderable.
-class ToRenderable a where
-  type RenderableT m b :: *
-  toRenderable :: (ChartBackend m) => RenderableT m a -> Renderable m ()
--}
 emptyRenderable :: (ChartBackend m) => Renderable m a
 emptyRenderable = spacer (0,0)
 
@@ -272,11 +265,6 @@ rectangleToRenderable rectangle = Renderable mf rf
     
     pi2 = pi / 2
 
-{- TODO: See class definition
-instance ToRenderable Rectangle where
-  type RenderableT m Rectangle = Rectangle
-  toRenderable rectangle = rectangleToRenderable
--}
 
 
 
