@@ -46,6 +46,8 @@ module Graphics.Rendering.Chart.Drawing
   -- * Transformation Helpers
   , withRotation
   , withTranslation
+  , withScale
+  , withScaleX, withScaleY
   , withPointStyle
   
   -- * Text Drawing
@@ -101,6 +103,17 @@ withRotation angle = withTransform (rotate angle 1)
 withTranslation :: (ChartBackend m) => Point -> m a -> m a
 withTranslation p = withTransform (translate (pointToVec p) 1)
 
+-- | Apply a local scale.
+withScale :: (ChartBackend m) => Vector -> m a -> m a
+withScale v = withTransform (scale v 1)
+
+-- | Apply a local scale on the x-axis.
+withScaleX :: (ChartBackend m) => Double -> m a -> m a
+withScaleX x = withScale (Vector x 1)
+
+-- | Apply a local scale on the y-axis.
+withScaleY :: (ChartBackend m) => Double -> m a -> m a
+withScaleY y = withScale (Vector 1 y)
 
 -- | Changes the 'LineStyle' and 'FillStyle' to comply with
 --   the given 'PointStyle'.
