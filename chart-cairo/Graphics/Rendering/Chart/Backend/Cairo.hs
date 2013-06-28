@@ -103,7 +103,10 @@ instance ChartBackend CRender where
       }
   
   drawText :: Point -> String -> CRender ()
-  drawText p s = preserveCState $ do
+  drawText p s = do
+    fs <- getFontStyle
+    preserveCState $ do
+    cSetSourceColor (font_color_ fs)
     cTranslate p
     cMoveTo $ Point 0 0
     cShowText s
