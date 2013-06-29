@@ -43,15 +43,15 @@ withCenterRot a m =
 
 testText :: (ChartBackend m) => m ()
 testText = withTestEnv $ do
-  drawText (Point 10 50) "Test 1B"
+  drawText (Point 10 50) "No Scale"
   withTranslation (Point 10 70) $ do
-    withScale (Vector 2 2) $ drawText (Point 0 0) "Test 2B"
+    withScale (Vector 2 1) $ drawText (Point 0 0) "Horz. Scale"
   withTranslation (Point 10 100) $ do
-    withScale (Vector 3 3) $ drawText (Point 0 0) "Test 3B"
+    withScale (Vector 1 3) $ drawText (Point 0 0) "Vert. Scale"
   
-  drawText (Point 150 50) "Test 1B"
-  withFontStyle (def { font_size_ = font_size_ def * 2 }) $ drawText (Point 150 70) "Test 2B"
-  withFontStyle (def { font_size_ = font_size_ def * 3 }) $ drawText (Point 150 100) "Test 3B"
+  drawText (Point 150 50) "Size * 1"
+  withFontStyle (def { font_size_ = font_size_ def * 2 }) $ drawText (Point 150 70) "Size * 2"
+  withFontStyle (def { font_size_ = font_size_ def * 3 }) $ drawText (Point 150 100) "Size * 3"
   
   (flip mapM_) ([ 10, 12, 14 ] `zip` [0..]) $ \(size, n) -> do
     withFontStyle (def { font_weight_ = FontWeightNormal, font_size_ = size }) $ 
@@ -65,6 +65,15 @@ testText = withTestEnv $ do
       drawText (Point 150 $ 180 + n * 20) "Italic Slant"
     withFontStyle (def { font_slant_ = FontSlantOblique, font_size_ = size }) $ 
       drawText (Point 290 $ 180 + n * 20) "Oblique Slant"
+  
+  
+  (flip mapM_) ([ 10, 12, 14 ] `zip` [0..]) $ \(size, n) -> do
+    withFontStyle (def { font_name_ = "sans-serif", font_size_ = size }) $ 
+      drawText (Point 10 $ 240 + n * 20) "Sans-Serif"
+    withFontStyle (def { font_name_ = "serif", font_size_ = size }) $ 
+      drawText (Point 150 $ 240 + n * 20) "Serif"
+    withFontStyle (def { font_name_ = "monospace", font_size_ = size }) $ 
+      drawText (Point 290 $ 240 + n * 20) "Monospace"
   
   (flip mapM_) ([ (opaque red, 12)
                 , (withOpacity blue 0.3, 14)
