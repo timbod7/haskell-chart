@@ -4,6 +4,7 @@ import Data.Monoid
 import Data.Default
 import Data.Colour
 import Data.Colour.Names
+import Data.List
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
@@ -18,6 +19,8 @@ main = do
   render "TestLines.png" $ testLines
   render "TestArcs.png"  $ testArcs
   render "TestText.png"  $ testText
+  sequence_ $ (flip map) testEnvironments $ \(name, env) -> do
+    render ("TestEnvironment-" ++ name ++ ".png") env
   
 
 render :: FilePath -> CRender a -> IO ()
@@ -40,6 +43,23 @@ withCenterRot a m =
   withTranslation (Point ((fromIntegral $ fst size) / 2) 
                          ((fromIntegral $ snd size) / 2)) $ withRotation a $ m
 
+testEnvironments :: (ChartBackend m) => [(String, m ())]
+testEnvironments =
+  let envs = [ ("fill", withFillStyle $ solidFillStyle $ opaque green)
+             , ("font", withFontStyle $ def { font_color_ = opaque red })
+             , ("line", withLineStyle $ def { line_color_ = opaque blue, line_width_ = 10 })
+             ]
+  in (flip map) (permutations envs) $ \envPerm -> 
+    let name = concatMap fst envPerm 
+    in ( name
+       , withTestEnv $ foldr1 (.) (map snd envPerm) $ do
+            strokePath $ moveTo' 475 10
+                      <> lineTo' 475 250
+            fillPath $ arc' 450 450 40 0 (2*pi)
+            drawText (Point 10 30) name
+            drawText (Point 10 50) "Green Fill, Red Font, Blue Line"
+       )
+    
 
 testText :: (ChartBackend m) => m ()
 testText = withTestEnv $ do

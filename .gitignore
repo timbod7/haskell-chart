@@ -7,8 +7,9 @@ chart-tests/dist/
 chart-tests/tests/*.png
 chart-tests/tests/*.pdf
 chart-tests/tests/*.svg
+chart-tests/tests/drawing/*.png
 chart-tests/tests-reference/
-chart-tests/tests-diffs/
+chart-tests./tests-diffs/
 chart/tests/*.png
 chart/tests/*.pdf
 chart/tests/*.svg
