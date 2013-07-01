@@ -116,6 +116,13 @@ defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv
 -- | A 'ChartBackend' provides the capability to render a chart somewhere.
 --   
 --   You have to implement all functions of the interface.
+--   
+--   The coordinate system of the backend has its initial origin (0,0)
+--   in the top left corner of the drawing plane. The x-axis points 
+--   towards the top right corner and the y-axis points towards 
+--   the bottom left corner. The unit used by coordinates, the font size,
+--   and lengths is the always the same, but depends on the backend.
+--   All angles are measured in radians.
 class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   
   -- | Stroke the outline of the given path using the 
