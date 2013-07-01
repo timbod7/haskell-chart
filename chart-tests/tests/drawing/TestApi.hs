@@ -22,6 +22,7 @@ main = do
   sequence_ $ (flip map) testEnvironments $ \(name, env) -> do
     render ("TestEnvironment-" ++ name ++ ".png") env
   render "TestFill.png"  $ testFill
+  render "TestClip.png"  $ testClip
   
 
 render :: FilePath -> CRender a -> IO ()
@@ -43,6 +44,16 @@ withCenterRot :: (ChartBackend m) => Double -> m a -> m a
 withCenterRot a m = 
   withTranslation (Point ((fromIntegral $ fst size) / 2) 
                          ((fromIntegral $ snd size) / 2)) $ withRotation a $ m
+
+testClip :: (ChartBackend m) => m ()
+testClip = withTestEnv $ do
+  withFillStyle (solidFillStyle $ opaque blue) fillClip
+  withClipRegion (Rect (Point 100 100) (Point 300 300)) $ do
+    withFillStyle (solidFillStyle $ opaque green) fillClip
+    withClipRegion (Rect (Point 200 200) (Point 400 400)) $ do
+      withFillStyle (solidFillStyle $ withOpacity red 0.5) fillClip
+  withClipRegion (Rect (Point 150 50) (Point 400 150)) $ do
+    withFillStyle (solidFillStyle $ opaque red) fillClip
 
 testFill :: (ChartBackend m) => m ()
 testFill = withTestEnv $ do
