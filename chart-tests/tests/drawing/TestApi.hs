@@ -42,9 +42,48 @@ tests = [ ("lines", 500, 500, testLines)
         , ("text" , 500, 500, testText)
         , ("fill" , 500, 500, testFill)
         , ("clip" , 500, 500, testClip)
+        , ("text-metrics" , 500, 500, testTextMetrics)
         ] ++ ( (flip map) testEnvironments 
                $ \(name, env) -> ("environment-" ++ name, 500, 500, env)
              )
+
+testTextMetrics :: (ChartBackend m) => m ()
+testTextMetrics = withTestEnv $ do
+  
+  withFontStyle (def { font_size_ = 20 }) $ do
+    let text = "Text Example"
+    tm <- textSize text
+    drawText (Point 100 125) text
+    -- Support Lines
+    withLineStyle supportLineStyle $ do
+      -- Baseline
+      strokePath $ moveTo' 0 125 <> lineTo' 500 125
+      -- Above the text
+      strokePath $ moveTo' 0 (125 - textSizeAscent tm) <> lineTo' 500 (125 - textSizeAscent tm)
+      -- Beneath the text
+      strokePath $ moveTo' 0 (125 + textSizeDescent tm) <> lineTo' 500 (125 + textSizeDescent tm)
+      -- Right side of text
+      strokePath $ moveTo' (100 + textSizeWidth tm) 0 <> lineTo' (100 + textSizeWidth tm) 250
+      -- Left side of text
+      strokePath $ moveTo' 100 0 <> lineTo' 100 250
+  
+  withFontStyle (def { font_size_ = 15 }) $ do
+    (flip mapM_) [ (VTA_Top, "Top", 10)
+                 , (VTA_Centre, "Centre", 50)
+                 , (VTA_BaseLine, "BaseLine", 110)
+                 , (VTA_Bottom, "Bottom", 190) ] $ \(vta, name, offset) -> do
+      drawTextA HTA_Left vta (Point offset 375) name
+  
+  withFontStyle (def { font_size_ = 15 }) $ do
+    (flip mapM_) [ (HTA_Left, "Left", 10)
+                 , (HTA_Centre, "Centre", 40)
+                 , (HTA_Right, "Right", 70) ] $ \(hta, name, offset) -> do
+      drawTextA hta VTA_Top (Point 375 $ 250 + offset) name
+  
+  withLineStyle supportLineStyle $ do
+    strokePath $ moveTo' 0 375 <> lineTo' 250 375
+    strokePath $ moveTo' 375 250 <> lineTo' 375 500
+
 
 testClip :: (ChartBackend m) => m ()
 testClip = withTestEnv $ do
