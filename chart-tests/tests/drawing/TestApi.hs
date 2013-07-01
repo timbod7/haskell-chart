@@ -21,6 +21,7 @@ main = do
   render "TestText.png"  $ testText
   sequence_ $ (flip map) testEnvironments $ \(name, env) -> do
     render ("TestEnvironment-" ++ name ++ ".png") env
+  render "TestFill.png"  $ testFill
   
 
 render :: FilePath -> CRender a -> IO ()
@@ -42,6 +43,23 @@ withCenterRot :: (ChartBackend m) => Double -> m a -> m a
 withCenterRot a m = 
   withTranslation (Point ((fromIntegral $ fst size) / 2) 
                          ((fromIntegral $ snd size) / 2)) $ withRotation a $ m
+
+testFill :: (ChartBackend m) => m ()
+testFill = withTestEnv $ do
+  withFillStyle (solidFillStyle $ opaque green) $ do
+    fillPath $ arc' 100 100 75 0 (1.5 * pi)
+  withFillStyle (solidFillStyle $ opaque blue) $ do
+    fillPath $ moveTo' 475 475
+            <> lineTo' 325 475
+            <> lineTo' 325 325
+            <> close
+    withFillStyle (solidFillStyle $ withOpacity teal 0.6) $ do
+      fillPath $ moveTo' 125 125
+              <> lineTo' 400 125
+              <> lineTo' 400 400
+              <> lineTo' 125 400
+    fillPath $ arcNeg' 125 400 75 0 (1.5 * pi)
+            <> lineTo' 125 400
 
 testEnvironments :: (ChartBackend m) => [(String, m ())]
 testEnvironments =
