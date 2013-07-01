@@ -11,22 +11,13 @@ import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Cairo
 
-size :: (Int, Int)
-size = (500, 500)
-
 main :: IO ()
-main = do
-  render "TestLines.png" $ testLines
-  render "TestArcs.png"  $ testArcs
-  render "TestText.png"  $ testText
-  sequence_ $ (flip map) testEnvironments $ \(name, env) -> do
-    render ("TestEnvironment-" ++ name ++ ".png") env
-  render "TestFill.png"  $ testFill
-  render "TestClip.png"  $ testClip
+main = (flip mapM_) tests $ \(name, w, h, draw) -> do
+  render (name ++ ".png") w h draw
   
 
-render :: FilePath -> CRender a -> IO ()
-render f m = renderToFile m CairoPNG (fst size) (snd size) f
+render :: FilePath -> Int -> Int -> CRender a -> IO ()
+render f w h m = renderToFile m CairoPNG w h f
 
 supportLineStyle :: LineStyle
 supportLineStyle = def 
@@ -40,10 +31,20 @@ supportLineStyle = def
 withTestEnv :: (ChartBackend m) => m a -> m a
 withTestEnv m = withFillStyle (solidFillStyle $ opaque white) $ fillClip >> m
 
-withCenterRot :: (ChartBackend m) => Double -> m a -> m a
-withCenterRot a m = 
-  withTranslation (Point ((fromIntegral $ fst size) / 2) 
-                         ((fromIntegral $ snd size) / 2)) $ withRotation a $ m
+withCenterRot :: (ChartBackend m) => Double -> Int -> Int -> m a -> m a
+withCenterRot a x y m = 
+  withTranslation (Point (fromIntegral x) 
+                         (fromIntegral y)) $ withRotation a $ m
+
+tests :: (ChartBackend m) => [(String, Int, Int, m ())]
+tests = [ ("lines", 500, 500, testLines)
+        , ("arcs" , 500, 500, testArcs)
+        , ("text" , 500, 500, testText)
+        , ("fill" , 500, 500, testFill)
+        , ("clip" , 500, 500, testClip)
+        ] ++ ( (flip map) testEnvironments 
+               $ \(name, env) -> ("environment-" ++ name, 500, 500, env)
+             )
 
 testClip :: (ChartBackend m) => m ()
 testClip = withTestEnv $ do
@@ -159,10 +160,10 @@ testArcs = withTestEnv $ do
     strokePath $ moveTo' 0 250 <> lineTo' 500 250 
     strokePath $ moveTo' 0 0 <> lineTo' 500 500
     strokePath $ moveTo' 500 0 <> lineTo' 0 500
-    withCenterRot (0.0 * pi) $ drawText (Point 100 0) $ "0"
-    withCenterRot (0.5 * pi) $ drawText (Point  50 0) $ "1/2 * pi"
-    withCenterRot (1.0 * pi) $ drawText (Point  75 0) $ "1 * pi"
-    withCenterRot (1.5 * pi) $ drawText (Point 100 0) $ "3/2 * pi"
+    withCenterRot (0.0 * pi) 250 250 $ drawText (Point 100 0) $ "0"
+    withCenterRot (0.5 * pi) 250 250 $ drawText (Point  50 0) $ "1/2 * pi"
+    withCenterRot (1.0 * pi) 250 250 $ drawText (Point  75 0) $ "1 * pi"
+    withCenterRot (1.5 * pi) 250 250 $ drawText (Point 100 0) $ "3/2 * pi"
 
 testLines :: (ChartBackend m) => m ()
 testLines = withTestEnv $ do
