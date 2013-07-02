@@ -5,6 +5,7 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
 import Data.Default
+import Data.Time.LocalTime
 import System.Random
 import Prices(prices1)
 
@@ -12,7 +13,7 @@ import Utils
 
 -- demonstrate AreaSpots
 
-chart :: (ChartBackend m) => Double -> Renderable m ()
+chart :: (ChartBackend m) => Double -> Renderable m (Layout1Pick LocalTime Double)
 chart lwidth = layout1ToRenderable layout
   where
     layout = layout1_title ^="Price History"

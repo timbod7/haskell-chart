@@ -9,7 +9,7 @@ import Data.Default
 
 import Utils
 
-chart :: (ChartBackend m) => Double -> Renderable m ()
+chart :: (ChartBackend m) => Double -> Renderable m (Layout1Pick Double Double)
 chart lwidth = layout1ToRenderable (layout lwidth)
 
 layout :: (ChartBackend m) => Double -> Layout1 m Double Double

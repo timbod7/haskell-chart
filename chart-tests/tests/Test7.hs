@@ -8,7 +8,7 @@ import Data.Default
 
 import Utils
 
-chart :: (ChartBackend m) => Renderable m ()
+chart :: (ChartBackend m) => Renderable m (Layout1Pick Double Double)
 chart = layout1ToRenderable layout
   where
     vals :: [(Double,Double,Double,Double)]

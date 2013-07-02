@@ -20,7 +20,7 @@ type PickType = Layout1Pick LocalTime Double
 
 chart :: (ChartBackend m) 
       => [(LocalTime,Double,Double)] 
-      -> Bool -> Double -> Renderable m ()
+      -> Bool -> Double -> Renderable m (Layout1Pick LocalTime Double)
 chart prices showMinMax lwidth = layout1ToRenderable layout
   where
 

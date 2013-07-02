@@ -43,7 +43,7 @@ chooseLineWidth SVG = 0.25
 
 fwhite = solidFillStyle $ opaque white
 
-test1a :: (ChartBackend m) => Double -> Renderable m ()
+test1a :: (ChartBackend m) => Double -> Renderable m (Layout1Pick Double Double)
 test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3],
@@ -92,7 +92,7 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
                    . (laxis_override ^=  (axisGridHide.axisTicksHide.axisLabelsHide))
 
 ----------------------------------------------------------------------
-test4d :: (ChartBackend m) => OutputType -> Renderable m ()
+test4d :: (ChartBackend m) => OutputType -> Renderable m (Layout1Pick Double Double)
 test4d otype = layout1ToRenderable layout
   where
 
@@ -116,7 +116,7 @@ test4d otype = layout1ToRenderable layout
 
 ----------------------------------------------------------------------
 
-test9 :: (ChartBackend m) => PlotBarsAlignment -> OutputType -> Renderable m ()
+test9 :: (ChartBackend m) => PlotBarsAlignment -> OutputType -> Renderable m (Layout1Pick PlotIndex Double)
 test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g0, rf g1, rf g2],
@@ -177,7 +177,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
 
 -------------------------------------------------------------------------------
 
-test10 :: (ChartBackend m) => [(LocalTime,Double,Double)] -> OutputType -> Renderable m ()
+test10 :: (ChartBackend m) => [(LocalTime,Double,Double)] -> OutputType -> Renderable m (Layout1Pick LocalTime Double)
 test10 prices otype = layout1ToRenderable layout
   where
 
@@ -266,7 +266,7 @@ test11b otype = test11_ f
 -- More of an example that a test:
 -- configuring axes explicitly configured axes
 
-test12 :: (ChartBackend m) => OutputType -> Renderable m ()
+test12 :: (ChartBackend m) => OutputType -> Renderable m (Layout1Pick Int Int)
 test12 otype = layout1ToRenderable layout
   where
     vs1 :: [(Int,Int)]
@@ -351,59 +351,61 @@ stdSize = (640,480)
 
 allTests :: (ChartBackend m) => [ (String, (Int,Int), OutputType -> Renderable m ()) ]
 allTests =
-     [ ("test1",  stdSize, \o -> Test1.chart (chooseLineWidth o) )
-     , ("test1a", stdSize, \o -> test1a (chooseLineWidth o) )
-     , ("test2a", stdSize, \o -> Test2.chart prices    False (chooseLineWidth o))
-     , ("test2b", stdSize, \o -> Test2.chart prices1   False (chooseLineWidth o))
-     , ("test2c", stdSize, \o -> Test2.chart prices2   False (chooseLineWidth o))
-     , ("test2d", stdSize, \o -> Test2.chart prices5   True  (chooseLineWidth o))
-     , ("test2e", stdSize, \o -> Test2.chart prices6   True  (chooseLineWidth o))
-     , ("test2f", stdSize, \o -> Test2.chart prices7   True  (chooseLineWidth o))
-     , ("test2g", stdSize, \o -> Test2.chart prices3   False (chooseLineWidth o))
-     , ("test2h", stdSize, \o -> Test2.chart prices8   True  (chooseLineWidth o))
-     , ("test2i", stdSize, \o -> Test2.chart prices9   True  (chooseLineWidth o))
-     , ("test2j", stdSize, \o -> Test2.chart prices10  True  (chooseLineWidth o))
-     , ("test2k", stdSize, \o -> Test2.chart prices10a True  (chooseLineWidth o))
-     , ("test2m", stdSize, \o -> Test2.chart prices11  True  (chooseLineWidth o))
-     , ("test2n", stdSize, \o -> Test2.chart prices10b True  (chooseLineWidth o))
-     , ("test2o", stdSize, \o -> Test2.chart prices12  True  (chooseLineWidth o))
-     , ("test2p", stdSize, \o -> Test2.chart prices13  True  (chooseLineWidth o))
-     , ("test2q", stdSize, \o -> Test2.chart prices13a True  (chooseLineWidth o))
-     , ("test2r", stdSize, \o -> Test2.chart prices13b True  (chooseLineWidth o))
-     , ("test2s", stdSize, \o -> Test2.chart prices14  True  (chooseLineWidth o))
-     , ("test2t", stdSize, \o -> Test2.chart prices14a True  (chooseLineWidth o))
-     , ("test2u", stdSize, \o -> Test2.chart prices14b True  (chooseLineWidth o))
-     , ("test2v", stdSize, \o -> Test2.chart prices14c True  (chooseLineWidth o))
-     , ("test2w", stdSize, \o -> Test2.chart prices14d True  (chooseLineWidth o))
-     , ("test3",  stdSize,  const Test3.chart)
-     , ("test4a", stdSize, const (Test4.chart False False))
-     , ("test4b", stdSize, const (Test4.chart True False))
-     , ("test4c", stdSize, const (Test4.chart False True))
-     , ("test4d", stdSize, test4d)
-     , ("test5",  stdSize, \o -> Test5.chart (chooseLineWidth o))
-     , ("test6",  stdSize, const Test6.chart)
-     , ("test7",  stdSize, const Test7.chart)
-     , ("test8",  stdSize, const Test8.chart)
-     , ("test9",  stdSize, const (Test9.chart True))
-     , ("test9b", stdSize, const (Test9.chart False))
-     , ("test9c", stdSize, test9 BarsCentered)
-     , ("test9l", stdSize, test9 BarsLeft)
-     , ("test9r", stdSize, test9 BarsRight)
-     , ("test10", stdSize, test10 prices1)
-     , ("test11a", stdSize, test11a)
-     , ("test11b", stdSize, test11b)
-     , ("test12", stdSize, test12)
-     , ("test13", stdSize, test13)
-     , ("test14", stdSize, \o -> Test14.chart (chooseLineWidth o) )
-     , ("test14a", stdSize, \o -> Test14a.chart (chooseLineWidth o) )
-     , ("test15a", stdSize, const (Test15.chart (LORows 2)))
-     , ("test15b", stdSize, const (Test15.chart (LOCols 2)))
-     , ("test17", stdSize,  \o -> Test17.chart (chooseLineWidth o))
+     [ ("test1",  stdSize, \o -> simple $ Test1.chart (chooseLineWidth o) )
+     , ("test1a", stdSize, \o -> simple $ test1a (chooseLineWidth o) )
+     , ("test2a", stdSize, \o -> simple $ Test2.chart prices    False (chooseLineWidth o))
+     , ("test2b", stdSize, \o -> simple $ Test2.chart prices1   False (chooseLineWidth o))
+     , ("test2c", stdSize, \o -> simple $ Test2.chart prices2   False (chooseLineWidth o))
+     , ("test2d", stdSize, \o -> simple $ Test2.chart prices5   True  (chooseLineWidth o))
+     , ("test2e", stdSize, \o -> simple $ Test2.chart prices6   True  (chooseLineWidth o))
+     , ("test2f", stdSize, \o -> simple $ Test2.chart prices7   True  (chooseLineWidth o))
+     , ("test2g", stdSize, \o -> simple $ Test2.chart prices3   False (chooseLineWidth o))
+     , ("test2h", stdSize, \o -> simple $ Test2.chart prices8   True  (chooseLineWidth o))
+     , ("test2i", stdSize, \o -> simple $ Test2.chart prices9   True  (chooseLineWidth o))
+     , ("test2j", stdSize, \o -> simple $ Test2.chart prices10  True  (chooseLineWidth o))
+     , ("test2k", stdSize, \o -> simple $ Test2.chart prices10a True  (chooseLineWidth o))
+     , ("test2m", stdSize, \o -> simple $ Test2.chart prices11  True  (chooseLineWidth o))
+     , ("test2n", stdSize, \o -> simple $ Test2.chart prices10b True  (chooseLineWidth o))
+     , ("test2o", stdSize, \o -> simple $ Test2.chart prices12  True  (chooseLineWidth o))
+     , ("test2p", stdSize, \o -> simple $ Test2.chart prices13  True  (chooseLineWidth o))
+     , ("test2q", stdSize, \o -> simple $ Test2.chart prices13a True  (chooseLineWidth o))
+     , ("test2r", stdSize, \o -> simple $ Test2.chart prices13b True  (chooseLineWidth o))
+     , ("test2s", stdSize, \o -> simple $ Test2.chart prices14  True  (chooseLineWidth o))
+     , ("test2t", stdSize, \o -> simple $ Test2.chart prices14a True  (chooseLineWidth o))
+     , ("test2u", stdSize, \o -> simple $ Test2.chart prices14b True  (chooseLineWidth o))
+     , ("test2v", stdSize, \o -> simple $ Test2.chart prices14c True  (chooseLineWidth o))
+     , ("test2w", stdSize, \o -> simple $ Test2.chart prices14d True  (chooseLineWidth o))
+     , ("test3",  stdSize, const $ simple Test3.chart)
+     , ("test4a", stdSize, const $ simple (Test4.chart False False))
+     , ("test4b", stdSize, const $ simple (Test4.chart True False))
+     , ("test4c", stdSize, const $ simple (Test4.chart False True))
+     , ("test4d", stdSize, \o -> simple $ test4d o)
+     , ("test5",  stdSize, \o -> simple $ Test5.chart (chooseLineWidth o))
+     , ("test6",  stdSize, const $ simple Test6.chart)
+     , ("test7",  stdSize, const $ simple Test7.chart)
+     , ("test8",  stdSize, const $ simple Test8.chart)
+     , ("test9",  stdSize, const $ simple (Test9.chart True))
+     , ("test9b", stdSize, const $ simple (Test9.chart False))
+     , ("test9c", stdSize, \o -> simple $ test9 BarsCentered o)
+     , ("test9l", stdSize, \o -> simple $ test9 BarsLeft o)
+     , ("test9r", stdSize, \o -> simple $ test9 BarsRight o)
+     , ("test10", stdSize, \o -> simple $ test10 prices1 o)
+     , ("test11a", stdSize, \o -> simple $ test11a o)
+     , ("test11b", stdSize, \o -> simple $ test11b o)
+     , ("test12", stdSize, \o -> simple $ test12 o)
+     , ("test13", stdSize, \o -> simple $ test13 o)
+     , ("test14", stdSize, \o -> simple $ Test14.chart (chooseLineWidth o) )
+     , ("test14a", stdSize, \o -> simple $ Test14a.chart (chooseLineWidth o) )
+     , ("test15a", stdSize, const $ simple (Test15.chart (LORows 2)))
+     , ("test15b", stdSize, const $ simple (Test15.chart (LOCols 2)))
+     , ("test17", stdSize,  \o -> simple $ Test17.chart (chooseLineWidth o))
      , ("misc1",  stdSize, setPickFn nullPickFn . misc1 0)
      , ("misc1a", stdSize, setPickFn nullPickFn . misc1 45)
-     , ("parametric", stdSize, \o -> TestParametric.chart (chooseLineWidth o) )
-     , ("sparklines", TestSparkLines.chartSize, const TestSparkLines.chart )
+     , ("parametric", stdSize, \o -> simple $ TestParametric.chart (chooseLineWidth o) )
+     , ("sparklines", TestSparkLines.chartSize, const $ simple TestSparkLines.chart )
      ]
+  where simple :: (ChartBackend m) => Renderable m a -> Renderable m ()
+        simple = mapPickFn (const ())
 
 main = do
     args <- getArgs
