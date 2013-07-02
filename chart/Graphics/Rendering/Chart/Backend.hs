@@ -14,9 +14,6 @@ module Graphics.Rendering.Chart.Backend
   , getTransform
   , getFillStyle, getFontStyle
   , getLineStyle, getClipRegion
-  , withTransform'
-  , withFillStyle', withFontStyle'
-  , withLineStyle', withClipRegion'
   
   -- * Line Types
   , LineCap(..)
@@ -123,6 +120,10 @@ defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv
 --   the bottom left corner. The unit used by coordinates, the font size,
 --   and lengths is the always the same, but depends on the backend.
 --   All angles are measured in radians.
+--   
+--   There are some useful utility functions in the
+--   "Graphics.Rendering.Chart.Backend.Utils" module to aid implementors 
+--   of backends.
 class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   
   -- | Stroke the outline of the given path using the 
@@ -152,7 +153,8 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   --   is applied after the current transformation. This
   --   means both are combined.
   --   
-  --   Use the 'withTransform'' function to correctly update
+  --   Use the 'Graphics.Rendering.Chart.Backend.Utils.withTransform'' 
+  --   function to correctly update
   --   your environment when implementing this function.
   withTransform :: Matrix -> m a -> m a
   
@@ -166,21 +168,24 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   --   it is required to fall back to a custom fail-safe font
   --   and use it instead.
   --   
-  --   Use the 'withFontStyle'' function to correctly update
+  --   Use the 'Graphics.Rendering.Chart.Backend.Utils.withFontStyle'' 
+  --   function to correctly update
   --   your environment when implementing this function.
   withFontStyle :: FontStyle -> m a -> m a
   
   -- | Use the given fill style in this local
   --   environment when filling paths.
   --   
-  --   Use the 'withFillStyle'' function to correctly update
+  --   Use the 'Graphics.Rendering.Chart.Backend.Utils.withFillStyle'' 
+  --   function to correctly update
   --   your environment when implementing this function.
   withFillStyle :: FillStyle -> m a -> m a
   
   -- | Use the given line style in this local
   --   environment when stroking paths.
   --   
-  --   Use the 'withLineStyle'' function to correctly update
+  --   Use the 'Graphics.Rendering.Chart.Backend.Utils.withLineStyle'' 
+  --   function to correctly update
   --   your environment when implementing this function.
   withLineStyle :: LineStyle -> m a -> m a
   
@@ -189,7 +194,8 @@ class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
   --   is intersected with the given clip region. You cannot 
   --   escape the clip!
   --   
-  --   Use the 'withClipRegion'' function to correctly update
+  --   Use the 'Graphics.Rendering.Chart.Backend.Utils.withClipRegion'' 
+  --   function to correctly update
   --   your environment when implementing this function.
   withClipRegion :: Rect -> m a -> m a
 
@@ -218,33 +224,6 @@ getLineStyle = liftM cbeLineStyle ask
 --   'Nothing' is returned.
 getClipRegion :: ChartBackend m => m (Limit Rect)
 getClipRegion = liftM cbeClipRegion ask
-
--- | Helper to correctly update the backends environment when 
---   implementing 'withTransform'.
-withTransform' :: ChartBackend m => Matrix -> m a -> m a
-withTransform' t m = local (\s -> s { cbeTransform = (cbeTransform s) * t }) m
-
--- | Helper to correctly update the backends environment when 
---   implementing 'withFontStyle'.
-withFontStyle' :: ChartBackend m => FontStyle -> m a -> m a
-withFontStyle' fs m = local (\s -> s { cbeFontStyle = fs }) m
-
--- | Helper to correctly update the backends environment when 
---   implementing 'withFillStyle'.
-withFillStyle' :: ChartBackend m => FillStyle -> m a -> m a
-withFillStyle' fs m = local (\s -> s { cbeFillStyle = fs }) m
-
--- | Helper to correctly update the backends environment when 
---   implementing 'withLineStyle'.
-withLineStyle' :: ChartBackend m => LineStyle -> m a -> m a
-withLineStyle' ls m = local (\s -> s { cbeLineStyle = ls }) m
-
--- | Helper to correctly update the backends environment when 
---   implementing 'withClipRegion'.
-withClipRegion' :: ChartBackend m => Rect -> m a -> m a
-withClipRegion' clip m = local (\s -> s { 
-  cbeClipRegion = intersectRect (cbeClipRegion s) (LValue clip)
-  }) m
 
 -- -----------------------------------------------------------------------
 -- Line Types
