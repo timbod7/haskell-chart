@@ -1,4 +1,4 @@
-Name: ChartTests
+Name: Chart-tests
 Version: 0.17
 License: BSD3
 License-file: LICENSE
@@ -56,7 +56,7 @@ Executable charts-test-cairo-all
        containers      >= 0.5,
        old-time        >= 1.0,
        Chart           >= 0.17,
-       ChartCairo      >= 0.1
+       Chart-cairo      >= 0.1
        
   Main-is: all_tests.hs
   Hs-Source-Dirs: tests
@@ -81,7 +81,7 @@ Executable charts-test-gtk
        cairo           >= 0.9.11,
        Chart           >= 0.17,
        Chart-gtk       >= 0.17,
-       ChartCairo      >= 0.1
+       Chart-cairo      >= 0.1
        
   Main-is: TestPicking.hs
   Hs-Source-Dirs: tests/gtk

@@ -23,7 +23,7 @@ library
   Build-depends: cairo >= 0.9.11, time, mtl, array, data-accessor == 0.2.*, 
                  data-accessor-template >= 0.2.1.1 && < 0.3, colour >= 2.2.1,
                  gtk >= 0.9.11, Chart == 0.17,
-                 ChartCairo >= 0.1
+                 Chart-cairo >= 0.1
 
   Exposed-modules:
         Graphics.Rendering.Chart.Gtk
