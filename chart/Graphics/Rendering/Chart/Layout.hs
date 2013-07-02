@@ -251,9 +251,9 @@ addMarginsToGrid (t,b,l,r) g = aboveN [
     rs = tval $ spacer (r,0)
 
 layout1ToRenderable :: (Ord x, Ord y, ChartBackend m) =>
-                       Layout1 m x y -> Renderable m ()
-layout1ToRenderable l = mapPickFn (const ()) $
-   fillBackground (layout1_background_ l) $ gridToRenderable (layout1ToGrid l)
+                       Layout1 m x y -> Renderable m (Layout1Pick x y)
+layout1ToRenderable l = 
+  fillBackground (layout1_background_ l) $ gridToRenderable (layout1ToGrid l)
 
 layout1ToGrid :: (Ord x, Ord y, ChartBackend m) =>
                  Layout1 m x y -> Grid (Renderable m (Layout1Pick x y))

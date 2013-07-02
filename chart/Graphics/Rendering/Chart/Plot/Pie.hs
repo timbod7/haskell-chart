@@ -122,12 +122,12 @@ instance Default PieLayout where
     , pie_margin_      = 10
     }
 
-pieChartToRenderable :: (ChartBackend m) => PieChart -> Renderable m ()
+pieChartToRenderable :: (ChartBackend m) => PieChart -> Renderable m (PickFn a)
 pieChartToRenderable p = Renderable { minsize = minsizePie p
                                     , render  = renderPie p
                                     }
 
-pieToRenderable :: (ChartBackend m) => PieLayout -> Renderable m ()
+pieToRenderable :: (ChartBackend m) => PieLayout -> Renderable m (PickFn a)
 pieToRenderable p = fillBackground (pie_background_ p) (
        gridToRenderable $ aboveN
          [ tval $ addMargins (lm/2,0,0,0) (setPickFn nullPickFn title)

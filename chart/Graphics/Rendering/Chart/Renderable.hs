@@ -219,7 +219,7 @@ instance Default Rectangle where
     , rect_cornerStyle_ = RCornerSquare
     }
 
-rectangleToRenderable :: (ChartBackend m) => Rectangle -> Renderable m ()
+rectangleToRenderable :: (ChartBackend m) => Rectangle -> Renderable m a
 rectangleToRenderable rectangle = Renderable mf rf
   where
     mf    = return (rect_minsize_ rectangle)

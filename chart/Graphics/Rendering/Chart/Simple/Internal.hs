@@ -144,7 +144,7 @@ data InternalPlot x y = IPY [y] [PlotKind] | IPX [x] [PlotKind]
 
 newtype Layout1DDD m = Layout1DDD { plotLayout :: Layout1 m Double Double }
 
-layout1DddToRenderable :: (ChartBackend m) => Layout1DDD m -> Renderable m ()
+layout1DddToRenderable :: (ChartBackend m) => Layout1DDD m -> Renderable m (Layout1Pick Double Double)
 layout1DddToRenderable = layout1ToRenderable . plotLayout
 
 uplot :: (ChartBackend m) => [UPlot] -> Layout1DDD m
