@@ -6,9 +6,8 @@
 -- 
 -- Types and functions for handling the legend(s) on a chart. A legend
 -- is an area on the chart used to label the plotted values.
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Legend(
     Legend(..),

@@ -9,8 +9,6 @@
 -- them.
 --
 
-{-# LANGUAGE TypeFamilies #-}
-
 module Graphics.Rendering.Chart.Renderable(
     Renderable(..),
     PickFn,

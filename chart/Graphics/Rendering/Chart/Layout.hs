@@ -24,10 +24,9 @@
 --   f :: Data.Accessor.Accessor D F
 -- @
 --
-
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -XTemplateHaskell -XExistentialQuantification #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ExistentialQuantification #-}
 
 module Graphics.Rendering.Chart.Layout(
     Layout1(..),

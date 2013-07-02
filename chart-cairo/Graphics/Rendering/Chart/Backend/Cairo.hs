@@ -1,5 +1,4 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE InstanceSigs #-}
 
 -- | The backend to render charts with cairo.
 module Graphics.Rendering.Chart.Backend.Cairo
@@ -65,8 +64,6 @@ instance Monoid a => Monoid (CRender a) where
 
 instance ChartBackend CRender where
   
-  
-  strokePath :: Path -> CRender ()
   strokePath p = preserveCState $ do
     cNewPath
     foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
@@ -74,7 +71,6 @@ instance ChartBackend CRender where
     cSetSourceColor cl
     cStroke
   
-  fillPath :: Path -> CRender ()
   fillPath p = preserveCState $ do
     cNewPath
     foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
@@ -83,14 +79,12 @@ instance ChartBackend CRender where
       FillStyleSolid cl -> cSetSourceColor cl
     cFill
   
-  fillClip :: CRender ()
   fillClip = do
     fs <- getFillStyle
     case fs of
       FillStyleSolid cl -> cSetSourceColor cl
     cPaint
   
-  textSize :: String -> CRender TextSize
   textSize s = do
     te <- c $ C.textExtents s
     fe <- c $ C.fontExtents
@@ -102,7 +96,6 @@ instance ChartBackend CRender where
       , textSizeHeight   = C.fontExtentsHeight fe
       }
   
-  drawText :: Point -> String -> CRender ()
   drawText p s = do
     fs <- getFontStyle
     preserveCState $ do
@@ -111,27 +104,22 @@ instance ChartBackend CRender where
     cMoveTo $ Point 0 0
     cShowText s
   
-  withTransform :: Matrix -> CRender a -> CRender a
   withTransform t m = withTransform' t 
                     $ preserveCState 
                     $ cTransform t >> m
   
-  withFontStyle :: FontStyle -> CRender a -> CRender a
   withFontStyle fs m = withFontStyle' fs
                      $ preserveCState 
                      $ setFontStyle fs >> m
   
-  withFillStyle :: FillStyle -> CRender a -> CRender a
   withFillStyle fs m = withFillStyle' fs
                      $ preserveCState 
                      $ setFillStyle fs >> m
   
-  withLineStyle :: LineStyle -> CRender a -> CRender a
   withLineStyle ls m = withLineStyle' ls
                      $ preserveCState 
                      $ setLineStyle ls >> m
   
-  withClipRegion :: Rect -> CRender a -> CRender a
   withClipRegion clip m = 
     withClipRegion' clip $ preserveCState $ do
       clip' <- getClipRegion

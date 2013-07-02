@@ -25,8 +25,6 @@
 -- >
 ---------------------------------------------------------------
 
-{-# LANGUAGE TypeFamilies #-}
-
 module Graphics.Rendering.Chart.SparkLine
   ( -- * SparkLine type
     SparkLine(..)

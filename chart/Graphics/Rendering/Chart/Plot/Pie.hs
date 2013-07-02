@@ -18,8 +18,7 @@
 --        $ defaultPieLayout
 -- renderable = toRenderable layout
 -- @
-{-# LANGUAGE TypeFamilies #-}
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Pie(
     PieLayout(..),
