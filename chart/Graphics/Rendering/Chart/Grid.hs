@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Grid
@@ -225,9 +224,9 @@ foldT f iv ft = foldr f' iv (assocs ft)
 ----------------------------------------------------------------------
 type DArray = Array Int Double
 
-getSizes :: forall m a. (ChartBackend m) => Grid (Renderable m a) -> m (DArray, DArray, DArray, DArray)
+getSizes :: Grid (Renderable a) -> ChartBackend (DArray, DArray, DArray, DArray)
 getSizes t = do
-    szs <- mapGridM minsize t :: m (Grid RectSize)
+    szs <- mapGridM minsize t :: ChartBackend (Grid RectSize)
     let szs'     = flatten szs
     let widths   = accumArray max 0 (0, width  t - 1)
                                                    (foldT (ef wf  fst) [] szs')
@@ -247,10 +246,10 @@ getSizes t = do
       ef f ds loc (size,span,ew) r | ds span == 1 = (f loc size ew:r)
                                    | otherwise    = r
 
-gridToRenderable :: forall m a. (ChartBackend m) => Grid (Renderable m a) -> Renderable m a
+gridToRenderable :: Grid (Renderable a) -> Renderable a
 gridToRenderable t = Renderable minsizef renderf
   where
-    minsizef :: m RectSize
+    minsizef :: ChartBackend RectSize
     minsizef = do
         (widths, heights, xweights, yweights) <- getSizes t
         return (sum (elems widths), sum (elems heights))
