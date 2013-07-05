@@ -43,7 +43,7 @@ chooseLineWidth SVG = 0.25
 
 fwhite = solidFillStyle $ opaque white
 
-test1a :: (ChartBackend m) => Double -> Renderable m (Layout1Pick Double Double)
+test1a :: Double -> Renderable (Layout1Pick Double Double)
 test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3],
@@ -92,7 +92,7 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
                    . (laxis_override ^=  (axisGridHide.axisTicksHide.axisLabelsHide))
 
 ----------------------------------------------------------------------
-test4d :: (ChartBackend m) => OutputType -> Renderable m (Layout1Pick Double Double)
+test4d :: OutputType -> Renderable (Layout1Pick Double Double)
 test4d otype = layout1ToRenderable layout
   where
 
@@ -116,7 +116,7 @@ test4d otype = layout1ToRenderable layout
 
 ----------------------------------------------------------------------
 
-test9 :: (ChartBackend m) => PlotBarsAlignment -> OutputType -> Renderable m (Layout1Pick PlotIndex Double)
+test9 :: PlotBarsAlignment -> OutputType -> Renderable (Layout1Pick PlotIndex Double)
 test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g0, rf g1, rf g2],
@@ -163,7 +163,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
            $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
            $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
            $ layout1_plots ^= [ Left (plotBars bars) ]
-           $ def :: (ChartBackend m) => Layout1 m PlotIndex Double
+           $ def :: Layout1 PlotIndex Double
 
     bars1 = plot_bars_titles ^= ["Cash"]
           $ plot_bars_values ^= addIndexes [[20],[45],[30],[70]]
@@ -177,7 +177,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
 
 -------------------------------------------------------------------------------
 
-test10 :: (ChartBackend m) => [(LocalTime,Double,Double)] -> OutputType -> Renderable m (Layout1Pick LocalTime Double)
+test10 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable (Layout1Pick LocalTime Double)
 test10 prices otype = layout1ToRenderable layout
   where
 
@@ -244,7 +244,7 @@ test11_ f = f layout1 layout2
            $ layout1_left_axis ^: laxis_title ^= "double values"
            $ def
 
-test11a :: (ChartBackend m) => OutputType -> Renderable m ()
+test11a :: OutputType -> Renderable ()
 test11a otype = test11_ f
    where
      f l1 l2 = renderStackedLayouts 
@@ -253,7 +253,7 @@ test11a otype = test11_ f
              $ slayouts_compress_legend ^= False
              $ def
  
-test11b :: (ChartBackend m) => OutputType -> Renderable m ()
+test11b :: OutputType -> Renderable ()
 test11b otype = test11_ f
    where
      f l1 l2 = renderStackedLayouts 
@@ -266,7 +266,7 @@ test11b otype = test11_ f
 -- More of an example that a test:
 -- configuring axes explicitly configured axes
 
-test12 :: (ChartBackend m) => OutputType -> Renderable m (Layout1Pick Int Int)
+test12 :: OutputType -> Renderable (Layout1Pick Int Int)
 test12 otype = layout1ToRenderable layout
   where
     vs1 :: [(Int,Int)]
@@ -349,7 +349,7 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
 ----------------------------------------------------------------------
 stdSize = (640,480)
 
-allTests :: (ChartBackend m) => [ (String, (Int,Int), OutputType -> Renderable m ()) ]
+allTests :: [ (String, (Int,Int), OutputType -> Renderable ()) ]
 allTests =
      [ ("test1",  stdSize, \o -> simple $ Test1.chart (chooseLineWidth o) )
      , ("test1a", stdSize, \o -> simple $ test1a (chooseLineWidth o) )
@@ -404,7 +404,7 @@ allTests =
      , ("parametric", stdSize, \o -> simple $ TestParametric.chart (chooseLineWidth o) )
      , ("sparklines", TestSparkLines.chartSize, const $ simple TestSparkLines.chart )
      ]
-  where simple :: (ChartBackend m) => Renderable m a -> Renderable m ()
+  where simple :: Renderable a -> Renderable ()
         simple = mapPickFn (const ())
 
 main = do
@@ -418,7 +418,7 @@ main1 ("--ps":tests) = showTests tests renderToPS
 main1 ("--png":tests) = showTests tests renderToPNG
 main1 tests = showTests tests renderToPNG
 
-showTests :: [String] -> ((String,(Int,Int),OutputType -> Renderable CRender ()) -> IO()) -> IO ()
+showTests :: [String] -> ((String,(Int,Int),OutputType -> Renderable ()) -> IO()) -> IO ()
 showTests tests ofn = mapM_ doTest (filter (match tests) allTests)
    where
      doTest (s,size,f) = do

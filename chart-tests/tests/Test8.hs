@@ -6,7 +6,7 @@ import Data.Default
 
 import Utils
 
-chart :: (ChartBackend m) => Renderable m ()
+chart :: Renderable ()
 chart = mapPickFn (const ()) $ pieToRenderable layout
   where
     values = [ ("eggs",38,e), ("milk",45,e), ("bread",11,e1), ("salmon",8,e) ]

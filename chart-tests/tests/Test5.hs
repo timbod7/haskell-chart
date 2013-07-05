@@ -12,8 +12,8 @@ import Utils
 ----------------------------------------------------------------------
 -- Example thanks to Russell O'Connor
 
-chart :: (ChartBackend m) => Double -> Renderable m (Layout1Pick Double LogValue)
-chart lwidth = layout1ToRenderable (layout 1001 (trial bits) :: (ChartBackend m) => Layout1 m Double LogValue)
+chart :: Double -> Renderable (Layout1Pick Double LogValue)
+chart lwidth = layout1ToRenderable (layout 1001 (trial bits) :: Layout1 Double LogValue)
   where
     bits = randoms $ mkStdGen 0
 

@@ -8,7 +8,7 @@ import Data.Default
 
 import Utils
 
-chart :: (ChartBackend m) => Bool -> Bool -> Renderable m (Layout1Pick Double Double)
+chart :: Bool -> Bool -> Renderable (Layout1Pick Double Double)
 chart xrev yrev = layout1ToRenderable layout
   where
 
