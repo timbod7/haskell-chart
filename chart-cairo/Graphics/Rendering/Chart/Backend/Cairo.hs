@@ -46,17 +46,17 @@ import Graphics.Rendering.Chart.SparkLine
 
 -- | The reader monad containing context information to control
 --   the rendering process.
-newtype CRender a = DR (ReaderT ChartBackendEnv C.Render a)
-  deriving (Functor, Monad, MonadReader ChartBackendEnv)
+newtype CRender a = DR (C.Render a)
+  deriving (Functor, Monad)
 
 -- | Run this backends renderer.
-runBackend :: CRender a       -- ^ Chart render code.
-           -> ChartBackendEnv -- ^ Environment to start rendering with.
+runBackend :: ChartBackendEnv -- ^ Environment to start rendering with.
+           -> ChartBackend a       -- ^ Chart render code.
            -> C.Render a      -- ^ Cairo render code.
-runBackend (DR m) e = runReaderT m e
+runBackend env m = let (DR c) = interpret env m in c
 
 c :: C.Render a -> CRender a
-c = DR . lift
+c = DR
 
 instance Monoid a => Monoid (CRender a) where
   mempty = return mempty
@@ -143,7 +143,7 @@ interpret env m = eval $ runChartBackend env m
 
 data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
 
-renderToFile :: CRender a -> CairoBackend -> Int -> Int -> FilePath -> IO ()
+renderToFile :: ChartBackend a -> CairoBackend -> Int -> Int -> FilePath -> IO ()
 renderToFile m b = case b of
   CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
   CairoSVG -> cRenderToSVGFile m
@@ -154,7 +154,7 @@ renderToFile m b = case b of
 --   (in pixels), to the specified file.
 renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
 renderableToPNGFile r width height path =
-    cRenderToPNGFile (interpret bitmapEnv cr) width height path
+    cRenderToPNGFile cr width height path
   where
     cr = render r (fromIntegral width, fromIntegral height)
 
@@ -162,7 +162,7 @@ renderableToPNGFile r width height path =
 --   (in points), to the specified file.
 renderableToPDFFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToPDFFile r width height path =
-    cRenderToPDFFile (interpret vectorEnv cr) width height path
+    cRenderToPDFFile cr width height path
   where
     cr = render r (fromIntegral width, fromIntegral height)
 
@@ -170,7 +170,7 @@ renderableToPDFFile r width height path =
 --   (in points), to the specified file.
 renderableToPSFile  :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToPSFile r width height path  = 
-    cRenderToPSFile (interpret vectorEnv cr) width height path
+    cRenderToPSFile cr width height path
   where
     cr = render r (fromIntegral width, fromIntegral height)
 
@@ -178,7 +178,7 @@ renderableToPSFile r width height path  =
 --   (in points), to the specified file.
 renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToSVGFile r width height path =
-    cRenderToSVGFile (interpret vectorEnv cr) width height path
+    cRenderToSVGFile cr width height path
   where
     cr = render r (fromIntegral width, fromIntegral height)
 
@@ -305,30 +305,28 @@ cFontDescent = do
 --cFontExtentsDescent fe = C.fontExtentsDescent fe
 cShowText s = c $ C.showText s
 
-cRenderToPNGFile :: CRender a -> Int -> Int -> FilePath -> IO a
+cRenderToPNGFile :: ChartBackend a -> Int -> Int -> FilePath -> IO a
 cRenderToPNGFile cr width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
-    a <- C.renderWith result $ runBackend cr bitmapEnv
+    a <- C.renderWith result $ runBackend bitmapEnv cr 
     C.surfaceWriteToPNG result path
     return a
 
-cRenderToPDFFile :: CRender a -> Int -> Int -> FilePath -> IO ()
+cRenderToPDFFile :: ChartBackend a -> Int -> Int -> FilePath -> IO ()
 cRenderToPDFFile = cRenderToFile C.withPDFSurface
 
-cRenderToPSFile  ::  CRender a -> Int -> Int -> FilePath -> IO ()
+cRenderToPSFile  ::  ChartBackend a -> Int -> Int -> FilePath -> IO ()
 cRenderToPSFile  = cRenderToFile C.withPSSurface
 
-cRenderToSVGFile  ::  CRender a -> Int -> Int -> FilePath -> IO ()
+cRenderToSVGFile  ::  ChartBackend a -> Int -> Int -> FilePath -> IO ()
 cRenderToSVGFile  = cRenderToFile C.withSVGSurface
 
 cRenderToFile withSurface cr width height path = 
     withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
-    C.renderWith result $ runBackend rfn vectorEnv
+    C.renderWith result $ do
+      runBackend vectorEnv cr
+      C.showPage
     C.surfaceFinish result
-  where
-    rfn = do
-        cr
-        c $ C.showPage
 
 -- | Environment aligned to render good on bitmaps.
 bitmapEnv :: ChartBackendEnv
