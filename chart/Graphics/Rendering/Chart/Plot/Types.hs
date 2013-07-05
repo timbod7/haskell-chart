@@ -7,7 +7,7 @@
 -- Datatypes and functions common to the implementation of the various
 -- plot types.
 --
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Types(
     Plot(..),

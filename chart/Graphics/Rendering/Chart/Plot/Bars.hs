@@ -6,7 +6,7 @@
 --
 -- Bar Charts
 --
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Bars(
     PlotBars(..),

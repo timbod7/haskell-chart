@@ -7,7 +7,7 @@
 -- with x,y position, and an independent z value to be represented
 -- by the relative area of the spots.
 
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.AreaSpots
   ( AreaSpots(..)

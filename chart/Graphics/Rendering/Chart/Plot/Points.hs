@@ -6,7 +6,7 @@
 --
 -- Functions to plot sets of points, marked in various styles.
 
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Points(
     PlotPoints(..),

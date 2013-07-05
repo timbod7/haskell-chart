@@ -6,7 +6,7 @@
 --
 -- Show textual annotations on a chart.
 
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Annotation(
     PlotAnnotation(..),

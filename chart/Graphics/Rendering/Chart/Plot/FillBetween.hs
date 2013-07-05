@@ -6,7 +6,7 @@
 --
 -- Plots that fill the area between two lines.
 --
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.FillBetween(
     PlotFillBetween(..),
