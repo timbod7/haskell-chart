@@ -1,13 +1,25 @@
 
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -- | This module provides the interface class for 'ChartBackend's.
 module Graphics.Rendering.Chart.Backend
   ( -- * Backend Types
-    ChartBackendEnv(..)
+    ChartBackendInstr(..)
+  , ChartBackendEnv(..)
   , ChartBackend(..)
   , TextSize(..)
+  
+  -- * Backend Operations
+  , fillPath
+  , strokePath
+  , fillClip
+  , drawText, textSize
+  , withTransform
+  , withClipRegion
+  , withFontStyle, withFillStyle, withLineStyle
   
   -- * Backend Helpers
   , defaultEnv
@@ -52,7 +64,9 @@ import Data.Monoid
 import Data.Colour.Names
 import Data.Accessor.Template
 
+import Control.Applicative
 import Control.Monad.Reader
+import Control.Monad.Operational
 
 import Graphics.Rendering.Chart.Geometry
 
@@ -110,9 +124,22 @@ defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv
 -- Rendering Backend Class
 -- -----------------------------------------------------------------------
 
+data ChartBackendInstr m a where
+  StrokePath :: Path -> ChartBackendInstr m ()
+  FillPath   :: Path -> ChartBackendInstr m ()
+  FillClip   :: ChartBackendInstr m ()
+  GetTextSize :: String -> ChartBackendInstr m TextSize
+  DrawText    :: Point -> String -> ChartBackendInstr m ()
+  WithTransform  :: Matrix    -> m a -> ChartBackendInstr m a
+  WithFontStyle  :: FontStyle -> m a -> ChartBackendInstr m a
+  WithFillStyle  :: FillStyle -> m a -> ChartBackendInstr m a
+  WithLineStyle  :: LineStyle -> m a -> ChartBackendInstr m a
+  WithClipRegion :: Rect      -> m a -> ChartBackendInstr m a
+
+type ChartProgram a = ProgramT (ChartBackendInstr ChartBackend) 
+                               (Reader ChartBackendEnv) a
+
 -- | A 'ChartBackend' provides the capability to render a chart somewhere.
---   
---   You have to implement all functions of the interface.
 --   
 --   The coordinate system of the backend has its initial origin (0,0)
 --   in the top left corner of the drawing plane. The x-axis points 
@@ -124,105 +151,137 @@ defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv
 --   There are some useful utility functions in the
 --   "Graphics.Rendering.Chart.Backend.Utils" module to aid implementors 
 --   of backends.
-class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
+newtype ChartBackend a = ChartBackend {
+  toProgram :: ChartProgram a
+}
+--class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
+
+instance Monad ChartBackend where
+  (>>=) (ChartBackend ma) f = ChartBackend $ ma >>= toProgram . f
+  return = ChartBackend . return
+
+instance MonadReader ChartBackendEnv ChartBackend where
+  ask = ChartBackend $ lift ask
+  local f ma = ChartBackend $ (toProgram ma) >>= \a -> lift $ local f (return a)
+  reader f = ChartBackend $ lift $ reader f
+
+instance Functor ChartBackend where
+  fmap f ma = ChartBackend $ fmap f (toProgram ma)
+
+instance Applicative ChartBackend where
+  pure = ChartBackend . pure
+  (<*>) f m = ChartBackend $ (toProgram f) <*> (toProgram m)
+
+chartSingleton :: ChartBackendInstr ChartBackend a -> ChartBackend a
+chartSingleton = ChartBackend . singleton
   
-  -- | Stroke the outline of the given path using the 
-  --   current 'LineStyle'. This function does /not/ perform
-  --   alignment operations on the path.
-  strokePath :: Path -> m ()
-  
-  -- | Fill the given path using the current 'FillStyle'.
-  --   The given path will be closed prior to filling.
-  --   This function does /not/ perform
-  --   alignment operations on the path.
-  fillPath :: Path -> m ()
-  
-  -- | Fill the clip region using the current 'FillStyle'.
-  fillClip :: m ()
-  
-  -- | Calculate a 'TextSize' object with rendering information
-  --   about the given string without actually rendering it.
-  textSize :: String -> m TextSize
-  
-  -- | Draw a single-line textual label anchored by the baseline (vertical) 
-  --   left (horizontal) point. Uses the current 'FontStyle' for drawing.
-  drawText :: Point -> String -> m ()
-  
-  -- | Apply the given transformation in this local
-  --   environment when drawing. The given transformation 
-  --   is applied after the current transformation. This
-  --   means both are combined.
-  --   
-  --   Use the 'Graphics.Rendering.Chart.Backend.Utils.withTransform'' 
-  --   function to correctly update
-  --   your environment when implementing this function.
-  withTransform :: Matrix -> m a -> m a
-  
-  -- | Use the given font style in this local
-  --   environment when drawing text.
-  --   
-  --   An implementing backend is expected to guarentee
-  --   to support the following font families: @serif@, @sans-serif@ and @monospace@;
-  --   
-  --   If the backend is not able to find or load a given font 
-  --   it is required to fall back to a custom fail-safe font
-  --   and use it instead.
-  --   
-  --   Use the 'Graphics.Rendering.Chart.Backend.Utils.withFontStyle'' 
-  --   function to correctly update
-  --   your environment when implementing this function.
-  withFontStyle :: FontStyle -> m a -> m a
-  
-  -- | Use the given fill style in this local
-  --   environment when filling paths.
-  --   
-  --   Use the 'Graphics.Rendering.Chart.Backend.Utils.withFillStyle'' 
-  --   function to correctly update
-  --   your environment when implementing this function.
-  withFillStyle :: FillStyle -> m a -> m a
-  
-  -- | Use the given line style in this local
-  --   environment when stroking paths.
-  --   
-  --   Use the 'Graphics.Rendering.Chart.Backend.Utils.withLineStyle'' 
-  --   function to correctly update
-  --   your environment when implementing this function.
-  withLineStyle :: LineStyle -> m a -> m a
-  
-  -- | Use the given clipping rectangle when drawing
-  --   in this local environment. The new clipping region
-  --   is intersected with the given clip region. You cannot 
-  --   escape the clip!
-  --   
-  --   Use the 'Graphics.Rendering.Chart.Backend.Utils.withClipRegion'' 
-  --   function to correctly update
-  --   your environment when implementing this function.
-  withClipRegion :: Rect -> m a -> m a
+-- | Stroke the outline of the given path using the 
+--   current 'LineStyle'. This function does /not/ perform
+--   alignment operations on the path.
+strokePath :: Path -> ChartBackend ()
+strokePath = chartSingleton . StrokePath
+
+-- | Fill the given path using the current 'FillStyle'.
+--   The given path will be closed prior to filling.
+--   This function does /not/ perform
+--   alignment operations on the path.
+fillPath :: Path -> ChartBackend ()
+fillPath = chartSingleton . FillPath 
+
+-- | Fill the clip region using the current 'FillStyle'.
+fillClip :: ChartBackend ()
+fillClip = chartSingleton FillClip
+
+-- | Calculate a 'TextSize' object with rendering information
+--   about the given string without actually rendering it.
+textSize :: String -> ChartBackend TextSize
+textSize = chartSingleton . GetTextSize
+
+-- | Draw a single-line textual label anchored by the baseline (vertical) 
+--   left (horizontal) point. Uses the current 'FontStyle' for drawing.
+drawText :: Point -> String -> ChartBackend ()
+drawText p = chartSingleton . DrawText p
+
+-- | Apply the given transformation in this local
+--   environment when drawing. The given transformation 
+--   is applied after the current transformation. This
+--   means both are combined.
+--   
+--   Use the 'Graphics.Rendering.Chart.Backend.Utils.withTransform'' 
+--   function to correctly update
+--   your environment when implementing this function.
+withTransform :: Matrix -> ChartBackend a -> ChartBackend a
+withTransform m = chartSingleton . WithTransform m
+
+-- | Use the given font style in this local
+--   environment when drawing text.
+--   
+--   An implementing backend is expected to guarentee
+--   to support the following font families: @serif@, @sans-serif@ and @monospace@;
+--   
+--   If the backend is not able to find or load a given font 
+--   it is required to fall back to a custom fail-safe font
+--   and use it instead.
+--   
+--   Use the 'Graphics.Rendering.Chart.Backend.Utils.withFontStyle'' 
+--   function to correctly update
+--   your environment when implementing this function.
+withFontStyle :: FontStyle -> ChartBackend a -> ChartBackend a
+withFontStyle fs = chartSingleton . WithFontStyle fs
+
+-- | Use the given fill style in this local
+--   environment when filling paths.
+--   
+--   Use the 'Graphics.Rendering.Chart.Backend.Utils.withFillStyle'' 
+--   function to correctly update
+--   your environment when implementing this function.
+withFillStyle :: FillStyle -> ChartBackend a -> ChartBackend a
+withFillStyle fs = chartSingleton . WithFillStyle fs
+
+-- | Use the given line style in this local
+--   environment when stroking paths.
+--   
+--   Use the 'Graphics.Rendering.Chart.Backend.Utils.withLineStyle'' 
+--   function to correctly update
+--   your environment when implementing this function.
+withLineStyle :: LineStyle -> ChartBackend a -> ChartBackend a
+withLineStyle ls = chartSingleton . WithLineStyle ls
+
+-- | Use the given clipping rectangle when drawing
+--   in this local environment. The new clipping region
+--   is intersected with the given clip region. You cannot 
+--   escape the clip!
+--   
+--   Use the 'Graphics.Rendering.Chart.Backend.Utils.withClipRegion'' 
+--   function to correctly update
+--   your environment when implementing this function.
+withClipRegion :: Rect -> ChartBackend a -> ChartBackend a
+withClipRegion c = chartSingleton . WithClipRegion c
 
 -- -----------------------------------------------------------------------
 -- Rendering Utility Functions
 -- -----------------------------------------------------------------------
 
 -- | Get the current transformation.
-getTransform :: ChartBackend m => m Matrix
+getTransform :: ChartBackend Matrix
 getTransform = liftM cbeTransform ask
 
 -- | Get the current font style.
-getFontStyle :: ChartBackend m => m FontStyle
+getFontStyle :: ChartBackend FontStyle
 getFontStyle = liftM cbeFontStyle ask
 
 -- | Get the current fill style.
-getFillStyle :: ChartBackend m => m FillStyle
+getFillStyle :: ChartBackend FillStyle
 getFillStyle = liftM cbeFillStyle ask
 
 -- | Get the current line style.
-getLineStyle :: ChartBackend m => m LineStyle
+getLineStyle :: ChartBackend LineStyle
 getLineStyle = liftM cbeLineStyle ask
 
 -- | Get the current clipping region.
 --   If no clipping region was set (it is an infinite plane) 
 --   'Nothing' is returned.
-getClipRegion :: ChartBackend m => m (Limit Rect)
+getClipRegion :: ChartBackend (Limit Rect)
 getClipRegion = liftM cbeClipRegion ask
 
 -- -----------------------------------------------------------------------
