@@ -122,7 +122,7 @@ data LayoutAxis x = LayoutAxis {
 --   each of the 4 sides; title at the top; legend at the bottom. It's
 --   parameterised by the types of values to be plotted on the horizonal
 --   and vertical axes.
-data Layout1 m x y = Layout1 {
+data Layout1 x y = Layout1 {
 
     layout1_background_      :: FillStyle,
     layout1_plot_background_ :: Maybe FillStyle,
@@ -140,7 +140,7 @@ data Layout1 m x y = Layout1 {
     layout1_yaxes_control_   :: ([y],[y]) -> ([y],[y]),
 
     layout1_margin_          :: Double,
-    layout1_plots_           :: [Either (Plot m x y) (Plot m x y)],
+    layout1_plots_           :: [Either (Plot x y) (Plot x y)],
     layout1_legend_          :: Maybe LegendStyle,
 
     -- | True if the grid is to be rendered on top of the Plots.
@@ -160,24 +160,24 @@ data Layout1Pick x y = L1P_Legend String
                      | L1P_RightAxis y
     deriving (Show)
 
-type LegendItem m = (String,Rect -> m ())
+type LegendItem = (String,Rect -> ChartBackend ())
 
 -- | A layout with it's y type hidded, so that it can be stacked
 -- with other layouts (with differing y types)
-data StackedLayout m x = forall y . Ord y => StackedLayout (Layout1 m x y)
+data StackedLayout x = forall y . Ord y => StackedLayout (Layout1 x y)
 
 -- | A holder for a set of vertically stacked layouts
-data StackedLayouts m x = StackedLayouts {
-      slayouts_layouts_ :: [StackedLayout m x],
+data StackedLayouts x = StackedLayouts {
+      slayouts_layouts_ :: [StackedLayout x],
       slayouts_compress_xlabels_ :: Bool,
       slayouts_compress_legend_ :: Bool
 }
 
 {-# DEPRECATED defaultStackedLayouts  "Use the according Data.Default instance!" #-}
-defaultStackedLayouts :: StackedLayouts m x
+defaultStackedLayouts :: StackedLayouts x
 defaultStackedLayouts = def
 
-instance Default (StackedLayouts m x) where
+instance Default (StackedLayouts x) where
   def = StackedLayouts [] True True
 
 -- | Render several layouts with the same x-axis type and range,
@@ -186,7 +186,7 @@ instance Default (StackedLayouts m x) where
 -- The legends from all the charts may be optionally combined, and shown
 -- once on the bottom chart.   The x labels may be optionally removed so that
 -- they are only shown once.
-renderStackedLayouts :: (Ord x, ChartBackend m) => StackedLayouts m x -> Renderable m ()
+renderStackedLayouts :: (Ord x) => StackedLayouts x -> Renderable ()
 renderStackedLayouts (StackedLayouts{slayouts_layouts_=[]}) = emptyRenderable
 renderStackedLayouts slp@(StackedLayouts{slayouts_layouts_=sls@(sl1:_)}) = gridToRenderable g
   where
@@ -231,12 +231,11 @@ renderStackedLayouts slp@(StackedLayouts{slayouts_layouts_=sls@(sl1:_)}) = gridT
     alllegendItems = (concatMap (fst.legendItems) sls, concatMap (snd.legendItems) sls)
     legendItems (StackedLayout l) = (getLegendItems l)
     
-    noPickFn :: (ChartBackend m) => Renderable m a -> Renderable m ()
+    noPickFn :: Renderable a -> Renderable ()
     noPickFn = mapPickFn (const ())
 
-addMarginsToGrid :: (ChartBackend m) 
-                 => (Double,Double,Double,Double) -> Grid (Renderable m a)
-                 -> Grid (Renderable m a)
+addMarginsToGrid :: (Double,Double,Double,Double) -> Grid (Renderable a)
+                 -> Grid (Renderable a)
 addMarginsToGrid (t,b,l,r) g = aboveN [
      besideN [er, ts, er],
      besideN [ls, g,  rs],
@@ -249,13 +248,13 @@ addMarginsToGrid (t,b,l,r) g = aboveN [
     bs = tval $ spacer (0,b)
     rs = tval $ spacer (r,0)
 
-layout1ToRenderable :: (Ord x, Ord y, ChartBackend m) =>
-                       Layout1 m x y -> Renderable m (Layout1Pick x y)
+layout1ToRenderable :: (Ord x, Ord y) =>
+                       Layout1 x y -> Renderable (Layout1Pick x y)
 layout1ToRenderable l = 
   fillBackground (layout1_background_ l) $ gridToRenderable (layout1ToGrid l)
 
-layout1ToGrid :: (Ord x, Ord y, ChartBackend m) =>
-                 Layout1 m x y -> Grid (Renderable m (Layout1Pick x y))
+layout1ToGrid :: (Ord x, Ord y) =>
+                 Layout1 x y -> Grid (Renderable (Layout1Pick x y))
 layout1ToGrid l = aboveN
        [  tval $ layout1TitleToRenderable l
        ,  weights (1,1) $ tval $ gridToRenderable $
@@ -265,8 +264,8 @@ layout1ToGrid l = aboveN
   where
     lm = layout1_margin_ l
 
-layout1TitleToRenderable :: (Ord x, Ord y, ChartBackend m) => Layout1 m x y
-                                           -> Renderable m (Layout1Pick x y)
+layout1TitleToRenderable :: (Ord x, Ord y) => Layout1 x y
+                                           -> Renderable (Layout1Pick x y)
 layout1TitleToRenderable l | null (layout1_title_ l) = emptyRenderable
 layout1TitleToRenderable l = addMargins (lm/2,0,0,0)
                                         (mapPickFn L1P_Title title)
@@ -275,20 +274,20 @@ layout1TitleToRenderable l = addMargins (lm/2,0,0,0)
                   (layout1_title_ l)
     lm    = layout1_margin_ l
 
-getLayout1XVals :: (ChartBackend m) => Layout1 m x y -> [x]
+getLayout1XVals :: Layout1 x y -> [x]
 getLayout1XVals l = concatMap (fst.plot_all_points_.deEither) (layout1_plots_ l)
   where
     deEither (Left x)  = x
     deEither (Right x) = x
 
 
-getLegendItems :: (ChartBackend m) => Layout1 m x y -> ([LegendItem m],[LegendItem m])
+getLegendItems :: Layout1 x y -> ([LegendItem],[LegendItem])
 getLegendItems l = (
     concat [ plot_legend_ p | (Left p ) <- (layout1_plots_ l) ],
     concat [ plot_legend_ p | (Right p) <- (layout1_plots_ l) ]
     )
 
-renderLegend :: (ChartBackend m) => Layout1 m x y -> ([LegendItem m],[LegendItem m]) -> Renderable m (Layout1Pick x y)
+renderLegend :: Layout1 x y -> ([LegendItem],[LegendItem]) -> Renderable (Layout1Pick x y)
 renderLegend l (lefts,rights) = gridToRenderable g
   where
     g      = besideN [ tval $ mkLegend lefts
@@ -304,12 +303,12 @@ renderLegend l (lefts,rights) = gridToRenderable g
             lvs -> addMargins (0,lm,lm,lm) $
                        mapPickFn L1P_Legend $ legendToRenderable (Legend ls lvs)
 
-layout1LegendsToRenderable :: (Ord x, Ord y, ChartBackend m) =>
-                              Layout1 m x y -> Renderable m (Layout1Pick x y)
+layout1LegendsToRenderable :: (Ord x, Ord y) =>
+                              Layout1 x y -> Renderable (Layout1Pick x y)
 layout1LegendsToRenderable l = renderLegend l (getLegendItems l)
 
-layout1PlotAreaToGrid :: forall x y m. (Ord x, Ord y, ChartBackend m) =>
-                          Layout1 m x y -> Grid (Renderable m (Layout1Pick x y))
+layout1PlotAreaToGrid :: forall x y. (Ord x, Ord y) =>
+                          Layout1 x y -> Grid (Renderable (Layout1Pick x y))
 layout1PlotAreaToGrid l = layer2 `overlay` layer1
   where
     layer1 = aboveN
@@ -333,12 +332,11 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
 
     er = tval $ emptyRenderable
     
-    atitle :: (ChartBackend m) 
-            => HTextAnchor -> VTextAnchor 
+    atitle :: HTextAnchor -> VTextAnchor 
             -> Double 
-            -> (Layout1 m x y -> LayoutAxis z) 
+            -> (Layout1 x y -> LayoutAxis z) 
             -> (String -> Layout1Pick x y) 
-            -> (Grid (Renderable m (Layout1Pick x y)), Grid (Renderable m (Layout1Pick x y)))
+            -> (Grid (Renderable (Layout1Pick x y)), Grid (Renderable (Layout1Pick x y)))
     atitle ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
       where
         label = tval $ mapPickFn pf $ rlabel tstyle ha va rot ttext
@@ -366,13 +364,13 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
     tr = tval $ axesSpacer snd ta fst ra
     br = tval $ axesSpacer snd ba snd ra
 
-plotsToRenderable :: (ChartBackend m) => Layout1 m x y -> Renderable m (Layout1Pick x y)
+plotsToRenderable :: Layout1 x y -> Renderable (Layout1Pick x y)
 plotsToRenderable l = Renderable {
         minsize = return (0,0),
         render  = renderPlots l
     }
 
-renderPlots :: (ChartBackend m) => Layout1 m x y -> RectSize -> m (PickFn (Layout1Pick x y))
+renderPlots :: Layout1 x y -> RectSize -> ChartBackend (PickFn (Layout1Pick x y))
 renderPlots l sz@(w,h) = do
     when (not (layout1_grid_last_ l)) renderGrids
     withClipRegion (Rect (Point 0 0) (Point w h)) $ do
@@ -431,7 +429,7 @@ axesSpacer f1 a1 f2 a2 = embedRenderable $ do
     oh2 <- maybeM (0,0) axisOverhang a2
     return (spacer (f1 oh1, f2 oh2))
 
-getAxes :: (ChartBackend m) => Layout1 m x y ->
+getAxes :: Layout1 x y ->
            (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
 getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where
@@ -452,7 +450,7 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
         rev   = laxis_reverse_ laxis
         adata = (laxis_override_ laxis) (laxis_generate_ laxis vals)
 
-allPlottedValues :: (ChartBackend m) => [(Either (Plot m x y) (Plot m x' y'))]
+allPlottedValues :: [(Either (Plot x y) (Plot x' y'))]
                     -> ( [x], [x'], [y], [y'] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
   where
@@ -462,10 +460,10 @@ allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
     yvals1 = [ y | (Right p) <- plots, y <- snd $ plot_all_points_ p]
 
 {-# DEPRECATED defaultLayout1  "Use the according Data.Default instance!" #-}
-defaultLayout1 :: (PlotValue x,PlotValue y, ChartBackend m) => Layout1 m x y
+defaultLayout1 :: (PlotValue x,PlotValue y) => Layout1 x y
 defaultLayout1 = def
 
-instance (PlotValue x, PlotValue y, ChartBackend m) => Default (Layout1 m x y) where
+instance (PlotValue x, PlotValue y) => Default (Layout1 x y) where
   def = Layout1 
     { layout1_background_      = solidFillStyle $ opaque white
     , layout1_plot_background_ = Nothing
@@ -510,14 +508,14 @@ $( deriveAccessors ''LayoutAxis )
 $( deriveAccessors ''StackedLayouts )
 
 -- | Helper to update all axis styles on a Layout1 simultaneously.
-updateAllAxesStyles :: (ChartBackend m) => (AxisStyle -> AxisStyle) -> Layout1 m x y -> Layout1 m x y
+updateAllAxesStyles :: (AxisStyle -> AxisStyle) -> Layout1 x y -> Layout1 x y
 updateAllAxesStyles uf = (layout1_top_axis    .> laxis_style ^: uf) .
                          (layout1_bottom_axis .> laxis_style ^: uf) .
                          (layout1_left_axis   .> laxis_style ^: uf) .
                          (layout1_right_axis  .> laxis_style ^: uf)
 
 -- | Helper to set the forground color uniformly on a Layout1.
-setLayout1Foreground :: (ChartBackend m) => AlphaColour Double -> Layout1 m x y -> Layout1 m x y
+setLayout1Foreground :: AlphaColour Double -> Layout1 x y -> Layout1 x y
 setLayout1Foreground fg =
     updateAllAxesStyles  ( (axis_line_style  .> line_color ^= fg)
                          . (axis_label_style .> font_color ^= fg))
