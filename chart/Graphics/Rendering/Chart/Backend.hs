@@ -130,11 +130,11 @@ data ChartBackendInstr m a where
   FillClip   :: ChartBackendInstr m ()
   GetTextSize :: String -> ChartBackendInstr m TextSize
   DrawText    :: Point -> String -> ChartBackendInstr m ()
-  WithTransform  :: Matrix    -> m a -> ChartBackendInstr m a
-  WithFontStyle  :: FontStyle -> m a -> ChartBackendInstr m a
-  WithFillStyle  :: FillStyle -> m a -> ChartBackendInstr m a
-  WithLineStyle  :: LineStyle -> m a -> ChartBackendInstr m a
-  WithClipRegion :: Rect      -> m a -> ChartBackendInstr m a
+  WithTransform  :: Matrix     -> m a -> ChartBackendInstr m a
+  WithFontStyle  :: FontStyle  -> m a -> ChartBackendInstr m a
+  WithFillStyle  :: FillStyle  -> m a -> ChartBackendInstr m a
+  WithLineStyle  :: LineStyle  -> m a -> ChartBackendInstr m a
+  WithClipRegion :: Limit Rect -> m a -> ChartBackendInstr m a
 
 type ChartProgram a = ProgramT (ChartBackendInstr ChartBackend) 
                                (Reader ChartBackendEnv) a
@@ -268,9 +268,9 @@ withLineStyle ls m = chartSingleton
 withClipRegion :: Rect -> ChartBackend a -> ChartBackend a
 withClipRegion c m = do
   oldClip <- getClipRegion
-  let newClip = intersectRect oldClip (LValue clip)
-  in chartSingleton $ WithClipRegion newClip 
-                    $ local (\s -> s { cbeClipRegion = newClip }) m
+  let newClip = intersectRect oldClip (LValue c)
+  chartSingleton $ WithClipRegion newClip 
+                 $ local (\s -> s { cbeClipRegion = newClip }) m
 
 -- -----------------------------------------------------------------------
 -- Rendering Utility Functions
