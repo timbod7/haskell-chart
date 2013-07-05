@@ -211,7 +211,11 @@ drawText p = chartSingleton . DrawText p
 --   function to correctly update
 --   your environment when implementing this function.
 withTransform :: Matrix -> ChartBackend a -> ChartBackend a
-withTransform m = chartSingleton . WithTransform m
+withTransform t m = do
+  oldTrans <- getTransform
+  let newTrans = oldTrans * t
+  chartSingleton $ WithTransform newTrans 
+                 $ local (\s -> s { cbeTransform = newTrans }) m
 
 -- | Use the given font style in this local
 --   environment when drawing text.
@@ -227,7 +231,9 @@ withTransform m = chartSingleton . WithTransform m
 --   function to correctly update
 --   your environment when implementing this function.
 withFontStyle :: FontStyle -> ChartBackend a -> ChartBackend a
-withFontStyle fs = chartSingleton . WithFontStyle fs
+withFontStyle fs m = chartSingleton 
+                   $ WithFontStyle fs 
+                   $ local (\s -> s { cbeFontStyle = fs }) m
 
 -- | Use the given fill style in this local
 --   environment when filling paths.
@@ -236,7 +242,9 @@ withFontStyle fs = chartSingleton . WithFontStyle fs
 --   function to correctly update
 --   your environment when implementing this function.
 withFillStyle :: FillStyle -> ChartBackend a -> ChartBackend a
-withFillStyle fs = chartSingleton . WithFillStyle fs
+withFillStyle fs m = chartSingleton 
+                   $ WithFillStyle fs 
+                   $ local (\s -> s { cbeFillStyle = fs }) m
 
 -- | Use the given line style in this local
 --   environment when stroking paths.
@@ -245,7 +253,9 @@ withFillStyle fs = chartSingleton . WithFillStyle fs
 --   function to correctly update
 --   your environment when implementing this function.
 withLineStyle :: LineStyle -> ChartBackend a -> ChartBackend a
-withLineStyle ls = chartSingleton . WithLineStyle ls
+withLineStyle ls m = chartSingleton 
+                   $ WithLineStyle ls 
+                   $ local (\s -> s { cbeLineStyle = ls }) m
 
 -- | Use the given clipping rectangle when drawing
 --   in this local environment. The new clipping region
@@ -256,7 +266,11 @@ withLineStyle ls = chartSingleton . WithLineStyle ls
 --   function to correctly update
 --   your environment when implementing this function.
 withClipRegion :: Rect -> ChartBackend a -> ChartBackend a
-withClipRegion c = chartSingleton . WithClipRegion c
+withClipRegion c m = do
+  oldClip <- getClipRegion
+  let newClip = intersectRect oldClip (LValue clip)
+  in chartSingleton $ WithClipRegion newClip 
+                    $ local (\s -> s { cbeClipRegion = newClip }) m
 
 -- -----------------------------------------------------------------------
 -- Rendering Utility Functions
