@@ -45,12 +45,12 @@ flag cairo
   manual:      True
 
 flag gtk
-  decription: Install GTK backend tests. This will also install cairo backend tests.
-  default:    False
-  manual:     True
+  description: Install GTK backend tests. This also requires the cairo backend.
+  default:     False
+  manual:      True
 
 Executable charts-test-cairo-all
-  if flag(cairo) || flag(gtk)
+  if flag(cairo)
     Build-Depends:
       base >= 3 && < 5, 
       old-locale, 
@@ -65,7 +65,7 @@ Executable charts-test-cairo-all
       old-time        >= 1.0,
       Chart           >= 0.17,
       Chart-cairo     >= 0.1
-  if !flag(cairo) && !flag(gtk)
+  if !flag(cairo)
     Buildable: False
   Main-is: all_tests.hs
   Hs-Source-Dirs: tests
