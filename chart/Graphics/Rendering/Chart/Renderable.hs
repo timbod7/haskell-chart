@@ -55,23 +55,23 @@ nullPickFn = const Nothing
 
 -- | A Renderable is a record of functions required to layout a
 --   graphic element.
-data Renderable m a = Renderable {
+data Renderable a = Renderable {
 
    -- | A Cairo action to calculate a minimum size.
-   minsize :: m RectSize,
+   minsize :: ChartBackend RectSize,
 
    -- | A Cairo action for drawing it within a rectangle.
    --   The rectangle is from the origin to the given point.
    --
    --   The resulting "pick" function  maps a point in the image to a value.
-   render  :: RectSize -> m (PickFn a)
+   render  :: RectSize -> ChartBackend (PickFn a)
 }
 
-emptyRenderable :: (ChartBackend m) => Renderable m a
+emptyRenderable :: Renderable a
 emptyRenderable = spacer (0,0)
 
 -- | Create a blank renderable with a specified minimum size.
-spacer :: (ChartBackend m) => RectSize -> Renderable m a 
+spacer :: RectSize -> Renderable a 
 spacer sz  = Renderable {
    minsize = return sz,
    render  = \_ -> return nullPickFn
@@ -80,26 +80,26 @@ spacer sz  = Renderable {
 
 -- | Create a blank renderable with a minimum size the same as
 --   some other renderable.
-spacer1 :: (ChartBackend m) => Renderable m a -> Renderable m b
+spacer1 :: Renderable a -> Renderable b
 spacer1 r  = r{ render  = \_ -> return nullPickFn }
 
 -- | Replace the pick function of a renderable with another.
-setPickFn :: (ChartBackend m) => PickFn b -> Renderable m a -> Renderable m b
+setPickFn :: PickFn b -> Renderable a -> Renderable b
 setPickFn pickfn r = r{ render  = \sz -> do { render r sz; return pickfn; } }
 
 -- | Map a function over the result of a renderable's pickfunction, keeping only 'Just' results.
-mapMaybePickFn :: (ChartBackend m) => (a -> Maybe b) -> Renderable m a -> Renderable m b
+mapMaybePickFn :: (a -> Maybe b) -> Renderable a -> Renderable b
 mapMaybePickFn f r = r{ render = \sz -> do pf <- render r sz
                                            return (join . fmap f . pf) }
 
 -- | Map a function over result of a renderable's pickfunction.
-mapPickFn :: (ChartBackend m) => (a -> b) -> Renderable m a -> Renderable m b
+mapPickFn :: (a -> b) -> Renderable a -> Renderable b
 mapPickFn f = mapMaybePickFn (Just . f)
 
 -- | Add some spacing at the edges of a renderable.
-addMargins :: (ChartBackend m) => (Double,Double,Double,Double) -- ^ The spacing to be added.
-           -> Renderable m a                  -- ^ The source renderable.
-           -> Renderable m a
+addMargins :: (Double,Double,Double,Double) -- ^ The spacing to be added.
+           -> Renderable a                  -- ^ The source renderable.
+           -> Renderable a
 addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
   where
     mf = do
@@ -116,7 +116,7 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         | otherwise                                = Nothing
 
 -- | Overlay a renderable over a solid background fill.
-fillBackground :: (ChartBackend m) => FillStyle -> Renderable m a -> Renderable m a
+fillBackground :: FillStyle -> Renderable a -> Renderable a
 fillBackground fs r = r{ render = rf }
   where
     rf rsize@(w,h) = do
@@ -126,7 +126,7 @@ fillBackground fs r = r{ render = rf }
 
 -- | Helper function for using a renderable, when we generate it
 --   in the CRender monad.
-embedRenderable :: (ChartBackend m) => m (Renderable m a) -> Renderable m a
+embedRenderable :: ChartBackend (Renderable a) -> Renderable a
 embedRenderable ca = Renderable {
    minsize = do { a <- ca; minsize a },
    render  = \ r -> do { a <- ca; render a r }
@@ -137,14 +137,12 @@ embedRenderable ca = Renderable {
 -- Labels
 
 -- | Construct a renderable from a text string, aligned with the axes.
-label :: (ChartBackend m) => FontStyle -> HTextAnchor -> VTextAnchor -> String
-         -> Renderable m String
+label :: FontStyle -> HTextAnchor -> VTextAnchor -> String -> Renderable String
 label fs hta vta = rlabel fs hta vta 0
 
 -- | Construct a renderable from a text string, rotated wrt to axes. The angle
 --   of rotation is in degrees.
-rlabel :: (ChartBackend m) => FontStyle -> HTextAnchor -> VTextAnchor -> Double -> String
-          -> Renderable m String
+rlabel :: FontStyle -> HTextAnchor -> VTextAnchor -> Double -> String -> Renderable String
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
     mf = withFontStyle fs $ do
@@ -217,7 +215,7 @@ instance Default Rectangle where
     , rect_cornerStyle_ = RCornerSquare
     }
 
-rectangleToRenderable :: (ChartBackend m) => Rectangle -> Renderable m a
+rectangleToRenderable :: Rectangle -> Renderable a
 rectangleToRenderable rectangle = Renderable mf rf
   where
     mf    = return (rect_minsize_ rectangle)
