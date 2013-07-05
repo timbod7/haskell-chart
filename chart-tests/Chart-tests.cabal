@@ -32,57 +32,67 @@ Extra-Source-Files:
      tests/ExampleStocks.hs,
      tests/gtk/Prices.hs,
      tests/gtk/TestPicking.hs,
-     tests/gtk/darcs_usage.hs
+     tests/gtk/darcs_usage.hs,
+     tests/drawing/TestApi.hs
 
 source-repository head
   type:     git
   location: https://github.com/timbod7/haskell-chart
 
-flag splitbase
-  description: Choose the new smaller, split-up base package.
+flag cairo
+  description: Install cairo backend tests.
+  default:     False
+  manual:      True
+
+flag gtk
+  decription: Install GTK backend tests. This will also install cairo backend tests.
+  default:    False
+  manual:     True
 
 Executable charts-test-cairo-all
-  if flag(splitbase)
-    Build-depends: base >= 3 && < 5, old-locale, time, mtl, array
-  else
-    Build-depends: base < 3
-  Build-Depends:
-       time, 
-       mtl, 
-       colour          >= 2.2.1,
-       data-accessor   == 0.2.*,
-       data-default    >= 0.5,
-       random          >= 1.0,
-       containers      >= 0.5,
-       old-time        >= 1.0,
-       Chart           >= 0.17,
-       Chart-cairo      >= 0.1
-       
+  if flag(cairo) || flag(gtk)
+    Build-Depends:
+      base >= 3 && < 5, 
+      old-locale, 
+      array,
+      time, 
+      mtl, 
+      colour          >= 2.2.1,
+      data-accessor   == 0.2.*,
+      data-default    >= 0.5,
+      random          >= 1.0,
+      containers      >= 0.5,
+      old-time        >= 1.0,
+      Chart           >= 0.17,
+      Chart-cairo     >= 0.1
+  if !flag(cairo) && !flag(gtk)
+    Buildable: False
   Main-is: all_tests.hs
   Hs-Source-Dirs: tests
   Ghc-Options: -threaded
   default-language:    Haskell2010
 
 Executable charts-test-gtk
-  if flag(splitbase)
-    Build-depends: base >= 3 && < 5, old-locale, time, mtl, array
-  else
-    Build-depends: base < 3
-  Build-Depends: 
-       time, 
-       mtl, 
-       colour          >= 2.2.1,
-       data-accessor   == 0.2.*,
-       data-default    >= 0.5,
-       random          >= 1.0,
-       containers      >= 0.5,
-       old-time        >= 1.0,
-       gtk             >= 0.9.11,
-       cairo           >= 0.9.11,
-       Chart           >= 0.17,
-       Chart-gtk       >= 0.17,
-       Chart-cairo      >= 0.1
-       
+  if flag(gtk)
+    Build-Depends: 
+      base >= 3 && < 5, 
+      old-locale, 
+      array,
+      time, 
+      mtl, 
+      colour          >= 2.2.1,
+      data-accessor   == 0.2.*,
+      data-default    >= 0.5,
+      random          >= 1.0,
+      containers      >= 0.5,
+      old-time        >= 1.0,
+      gtk             >= 0.9.11,
+      cairo           >= 0.9.11,
+      Chart           >= 0.17,
+      Chart-gtk       >= 0.17,
+      Chart-cairo      >= 0.1
+  if !flag(gtk)
+    Buildable: False
   Main-is: TestPicking.hs
   Hs-Source-Dirs: tests/gtk
   Ghc-Options: -threaded
