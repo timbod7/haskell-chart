@@ -127,7 +127,7 @@ instance BarsPlotValue y => Default (PlotBars x y) where
       istyles   = map mkstyle defaultColorSeq
       mkstyle c = (solidFillStyle c, Just (solidLine 1.0 $ opaque black))
 
-plotBars :: (BarsPlotValue y, ChartBackend m) => PlotBars x y -> Plot m x y
+plotBars :: (BarsPlotValue y) => PlotBars x y -> Plot x y
 plotBars p = Plot {
         plot_render_     = renderPlotBars p,
         plot_legend_     = zip (plot_bars_titles_ p)
@@ -136,8 +136,7 @@ plotBars p = Plot {
         plot_all_points_ = allBarPoints p
     }
 
-renderPlotBars :: (BarsPlotValue y, ChartBackend m) =>
-                  PlotBars x y -> PointMapFn x y -> m ()
+renderPlotBars :: (BarsPlotValue y) => PlotBars x y -> PointMapFn x y -> ChartBackend ()
 renderPlotBars p pmap = case (plot_bars_style_ p) of
       BarsClustered -> forM_ vals clusteredBars
       BarsStacked   -> forM_ vals stackedBars
@@ -215,8 +214,7 @@ stack :: (BarsPlotValue y) => [y] -> [y]
 stack ys = scanl1 barsAdd ys
 
 
-renderPlotLegendBars :: (ChartBackend m) => (FillStyle,Maybe LineStyle) -> Rect
-                        -> m ()
+renderPlotLegendBars :: (FillStyle,Maybe LineStyle) -> Rect -> ChartBackend ()
 renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
   withFillStyle fstyle $ do
     fillPointPath (rectPath r)
