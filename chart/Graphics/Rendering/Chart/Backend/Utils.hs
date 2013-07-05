@@ -1,10 +1,7 @@
 
 -- | This module provides the utilities to implement 'ChartBackend's.
 module Graphics.Rendering.Chart.Backend.Utils
-  ( withTransform'
-  , withFillStyle', withFontStyle'
-  , withLineStyle', withClipRegion'
-  ) where
+  ( ) where
 
 import Control.Monad.Reader
 
