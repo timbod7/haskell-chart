@@ -125,16 +125,16 @@ defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv
 -- -----------------------------------------------------------------------
 
 data ChartBackendInstr m a where
-  StrokePath :: Path -> ChartBackendInstr m ()
-  FillPath   :: Path -> ChartBackendInstr m ()
-  FillClip   :: ChartBackendInstr m ()
-  GetTextSize :: String -> ChartBackendInstr m TextSize
-  DrawText    :: Point -> String -> ChartBackendInstr m ()
-  WithTransform  :: Matrix     -> m a -> ChartBackendInstr m a
-  WithFontStyle  :: FontStyle  -> m a -> ChartBackendInstr m a
-  WithFillStyle  :: FillStyle  -> m a -> ChartBackendInstr m a
-  WithLineStyle  :: LineStyle  -> m a -> ChartBackendInstr m a
-  WithClipRegion :: Limit Rect -> m a -> ChartBackendInstr m a
+  StrokePath :: LineStyle -> Path -> ChartBackendInstr m ()
+  FillPath   :: FillStyle -> Path -> ChartBackendInstr m ()
+  FillClip   :: FillStyle -> ChartBackendInstr m ()
+  GetTextSize :: FontStyle -> String -> ChartBackendInstr m TextSize
+  DrawText    :: FontStyle -> Point -> String -> ChartBackendInstr m ()
+  WithTransform  :: ChartBackendEnv -> Matrix     -> m a -> ChartBackendInstr m a
+  WithFontStyle  :: ChartBackendEnv -> FontStyle  -> m a -> ChartBackendInstr m a
+  WithFillStyle  :: ChartBackendEnv -> FillStyle  -> m a -> ChartBackendInstr m a
+  WithLineStyle  :: ChartBackendEnv -> LineStyle  -> m a -> ChartBackendInstr m a
+  WithClipRegion :: ChartBackendEnv -> Limit Rect -> m a -> ChartBackendInstr m a
 
 type ChartProgram a = ProgramT (ChartBackendInstr ChartBackend) 
                                (Reader ChartBackendEnv) a
@@ -178,28 +178,38 @@ chartSingleton = ChartBackend . singleton
 --   current 'LineStyle'. This function does /not/ perform
 --   alignment operations on the path.
 strokePath :: Path -> ChartBackend ()
-strokePath = chartSingleton . StrokePath
+strokePath p = do
+  ls <- getLineStyle
+  chartSingleton $ StrokePath ls p
 
 -- | Fill the given path using the current 'FillStyle'.
 --   The given path will be closed prior to filling.
 --   This function does /not/ perform
 --   alignment operations on the path.
 fillPath :: Path -> ChartBackend ()
-fillPath = chartSingleton . FillPath 
+fillPath p = do
+  fs <- getFillStyle
+  chartSingleton $ FillPath fs p
 
 -- | Fill the clip region using the current 'FillStyle'.
 fillClip :: ChartBackend ()
-fillClip = chartSingleton FillClip
+fillClip = do
+  fs <- getFillStyle
+  chartSingleton $ FillClip fs
 
 -- | Calculate a 'TextSize' object with rendering information
 --   about the given string without actually rendering it.
 textSize :: String -> ChartBackend TextSize
-textSize = chartSingleton . GetTextSize
+textSize text = do
+  fs <- getFontStyle
+  chartSingleton $ GetTextSize fs text
 
 -- | Draw a single-line textual label anchored by the baseline (vertical) 
 --   left (horizontal) point. Uses the current 'FontStyle' for drawing.
 drawText :: Point -> String -> ChartBackend ()
-drawText p = chartSingleton . DrawText p
+drawText p text = do
+  fs <- getFontStyle
+  chartSingleton $ DrawText fs p text
 
 -- | Apply the given transformation in this local
 --   environment when drawing. The given transformation 
@@ -209,8 +219,9 @@ withTransform :: Matrix -> ChartBackend a -> ChartBackend a
 withTransform t m = do
   oldTrans <- getTransform
   let newTrans = oldTrans * t
-  chartSingleton $ WithTransform newTrans 
-                 $ local (\s -> s { cbeTransform = newTrans }) m
+  env <- (\s -> s { cbeTransform = newTrans }) <$> ask
+  chartSingleton $ WithTransform env newTrans 
+                 $ local (const env) m
 
 -- | Use the given font style in this local
 --   environment when drawing text.
@@ -222,23 +233,26 @@ withTransform t m = do
 --   it is required to fall back to a custom fail-safe font
 --   and use it instead.
 withFontStyle :: FontStyle -> ChartBackend a -> ChartBackend a
-withFontStyle fs m = chartSingleton 
-                   $ WithFontStyle fs 
-                   $ local (\s -> s { cbeFontStyle = fs }) m
+withFontStyle fs m = do
+  env <- (\s -> s { cbeFontStyle = fs }) <$> ask
+  chartSingleton $ WithFontStyle env fs 
+                 $ local (const env) m
 
 -- | Use the given fill style in this local
 --   environment when filling paths.
 withFillStyle :: FillStyle -> ChartBackend a -> ChartBackend a
-withFillStyle fs m = chartSingleton 
-                   $ WithFillStyle fs 
-                   $ local (\s -> s { cbeFillStyle = fs }) m
+withFillStyle fs m = do
+  env <- (\s -> s { cbeFillStyle = fs }) <$> ask
+  chartSingleton $ WithFillStyle env fs 
+                 $ local (const env) m
 
 -- | Use the given line style in this local
 --   environment when stroking paths.
 withLineStyle :: LineStyle -> ChartBackend a -> ChartBackend a
-withLineStyle ls m = chartSingleton 
-                   $ WithLineStyle ls 
-                   $ local (\s -> s { cbeLineStyle = ls }) m
+withLineStyle ls m = do
+  env <- (\s -> s { cbeLineStyle = ls }) <$> ask
+  chartSingleton $ WithLineStyle env ls 
+                 $ local (const env) m
 
 -- | Use the given clipping rectangle when drawing
 --   in this local environment. The new clipping region
@@ -248,8 +262,9 @@ withClipRegion :: Rect -> ChartBackend a -> ChartBackend a
 withClipRegion c m = do
   oldClip <- getClipRegion
   let newClip = intersectRect oldClip (LValue c)
-  chartSingleton $ WithClipRegion newClip 
-                 $ local (\s -> s { cbeClipRegion = newClip }) m
+  env <- (\s -> s { cbeClipRegion = newClip }) <$> ask
+  chartSingleton $ WithClipRegion env newClip 
+                 $ local (const env) m
 
 -- -----------------------------------------------------------------------
 -- Rendering Utility Functions
