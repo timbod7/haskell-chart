@@ -7,9 +7,6 @@
 -- Code to calculate and render axes.
 --
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# OPTIONS_GHC -XTemplateHaskell #-}
-
 module Graphics.Rendering.Chart.Axis(
     module Graphics.Rendering.Chart.Axis.Types,
     module Graphics.Rendering.Chart.Axis.Floating,

@@ -6,7 +6,7 @@
 --
 -- Candlestick charts for financial plotting
 --
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Candle(
     PlotCandle(..),

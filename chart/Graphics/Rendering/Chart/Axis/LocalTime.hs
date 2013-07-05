@@ -7,7 +7,7 @@
 -- Calculate and render time axes
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Axis.LocalTime(
     timeAxis,

@@ -7,7 +7,7 @@
 -- Plots that don't show, but occupy space so as to effect axis
 -- scaling
 --
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Hidden(
     PlotHidden(..),

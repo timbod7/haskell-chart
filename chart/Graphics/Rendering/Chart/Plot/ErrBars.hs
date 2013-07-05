@@ -6,7 +6,7 @@
 --
 -- Plot series of points with associated error bars.
 --
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.ErrBars(
     PlotErrBars(..),
