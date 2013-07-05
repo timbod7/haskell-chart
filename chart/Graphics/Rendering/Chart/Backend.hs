@@ -154,7 +154,6 @@ type ChartProgram a = ProgramT (ChartBackendInstr ChartBackend)
 newtype ChartBackend a = ChartBackend {
   toProgram :: ChartProgram a
 }
---class (Monad m, MonadReader ChartBackendEnv m) => ChartBackend m where
 
 instance Monad ChartBackend where
   (>>=) (ChartBackend ma) f = ChartBackend $ ma >>= toProgram . f
@@ -206,10 +205,6 @@ drawText p = chartSingleton . DrawText p
 --   environment when drawing. The given transformation 
 --   is applied after the current transformation. This
 --   means both are combined.
---   
---   Use the 'Graphics.Rendering.Chart.Backend.Utils.withTransform'' 
---   function to correctly update
---   your environment when implementing this function.
 withTransform :: Matrix -> ChartBackend a -> ChartBackend a
 withTransform t m = do
   oldTrans <- getTransform
@@ -226,10 +221,6 @@ withTransform t m = do
 --   If the backend is not able to find or load a given font 
 --   it is required to fall back to a custom fail-safe font
 --   and use it instead.
---   
---   Use the 'Graphics.Rendering.Chart.Backend.Utils.withFontStyle'' 
---   function to correctly update
---   your environment when implementing this function.
 withFontStyle :: FontStyle -> ChartBackend a -> ChartBackend a
 withFontStyle fs m = chartSingleton 
                    $ WithFontStyle fs 
@@ -237,10 +228,6 @@ withFontStyle fs m = chartSingleton
 
 -- | Use the given fill style in this local
 --   environment when filling paths.
---   
---   Use the 'Graphics.Rendering.Chart.Backend.Utils.withFillStyle'' 
---   function to correctly update
---   your environment when implementing this function.
 withFillStyle :: FillStyle -> ChartBackend a -> ChartBackend a
 withFillStyle fs m = chartSingleton 
                    $ WithFillStyle fs 
@@ -248,10 +235,6 @@ withFillStyle fs m = chartSingleton
 
 -- | Use the given line style in this local
 --   environment when stroking paths.
---   
---   Use the 'Graphics.Rendering.Chart.Backend.Utils.withLineStyle'' 
---   function to correctly update
---   your environment when implementing this function.
 withLineStyle :: LineStyle -> ChartBackend a -> ChartBackend a
 withLineStyle ls m = chartSingleton 
                    $ WithLineStyle ls 
@@ -261,10 +244,6 @@ withLineStyle ls m = chartSingleton
 --   in this local environment. The new clipping region
 --   is intersected with the given clip region. You cannot 
 --   escape the clip!
---   
---   Use the 'Graphics.Rendering.Chart.Backend.Utils.withClipRegion'' 
---   function to correctly update
---   your environment when implementing this function.
 withClipRegion :: Rect -> ChartBackend a -> ChartBackend a
 withClipRegion c m = do
   oldClip <- getClipRegion
