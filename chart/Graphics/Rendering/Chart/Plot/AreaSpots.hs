@@ -87,8 +87,7 @@ instance (PlotValue z) => ToPlot (AreaSpots z) where
                                          , map snd3 (area_spots_values_ p) )
                     }
 
-renderAreaSpots  :: (PlotValue z, ChartBackend m) =>
-                    AreaSpots z x y -> PointMapFn x y -> m ()
+renderAreaSpots  :: (PlotValue z) => AreaSpots z x y -> PointMapFn x y -> ChartBackend ()
 renderAreaSpots p pmap = 
     forM_ (scaleMax ((area_spots_max_radius_ p)^2)
                     (area_spots_values_ p))
@@ -110,7 +109,7 @@ renderAreaSpots p pmap =
                             scale v  = n * toValue v / largest
                         in map (\ (x,y,z) -> (x,y, scale z)) points
 
-renderSpotLegend :: (ChartBackend m) => AreaSpots z x y -> Rect -> m ()
+renderSpotLegend :: AreaSpots z x y -> Rect -> ChartBackend ()
 renderSpotLegend p r@(Rect p1 p2) = do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2
@@ -163,8 +162,8 @@ instance (PlotValue z, PlotValue t, Show t) => ToPlot (AreaSpots4D z t) where
                                          , map snd4 (area_spots_4d_values_ p) )
                     }
 
-renderAreaSpots4D  :: (PlotValue z, PlotValue t, Show t, ChartBackend m) =>
-                      AreaSpots4D z t x y -> PointMapFn x y -> m ()
+renderAreaSpots4D  :: (PlotValue z, PlotValue t, Show t) =>
+                      AreaSpots4D z t x y -> PointMapFn x y -> ChartBackend ()
 renderAreaSpots4D p pmap = 
     forM_ (scaleMax ((area_spots_4d_max_radius_ p)^2)
                     (length (area_spots_4d_palette_ p))
@@ -196,7 +195,7 @@ renderAreaSpots4D p pmap =
                           in map (\ (x,y,z,t) -> (x,y, scale z, select t))
                                  points
 
-renderSpotLegend4D :: (ChartBackend m) => AreaSpots4D z t x y -> Rect -> m ()
+renderSpotLegend4D :: AreaSpots4D z t x y -> Rect -> ChartBackend ()
 renderSpotLegend4D p r@(Rect p1 p2) = do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2
