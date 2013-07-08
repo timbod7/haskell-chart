@@ -66,9 +66,9 @@ instance Monoid a => Monoid (CRender a) where
     return $ a `mappend` b
 
 interpret :: ChartBackendEnv -> ChartBackend a -> CRender a
-interpret env m = eval $ runChartBackend env m 
+interpret e m = eval e $ runChartBackend e m 
   where
-    eval m = case m of
+    eval env m = case m of
       Return x -> return x
       (StrokePath ls p) :>>= k -> do
         preserveCState $ do
@@ -76,7 +76,7 @@ interpret env m = eval $ runChartBackend env m
           foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
           cSetSourceColor $ line_color_ ls
           cStroke
-        interpret env $ ChartBackend $ k ()
+        eval env $ view $ k ()
       (FillPath fs p) :>>= k -> do
         preserveCState $ do
           cNewPath
@@ -84,17 +84,17 @@ interpret env m = eval $ runChartBackend env m
           case fs of
             FillStyleSolid cl -> cSetSourceColor cl
           cFill
-        interpret env $ ChartBackend $ k ()
+        eval env $ view $ k ()
       (FillClip fs) :>>= k -> do
         preserveCState $ do
           case fs of
             FillStyleSolid cl -> cSetSourceColor cl
           cPaint
-        interpret env $ ChartBackend $ k ()
+        eval env $ view $ k ()
       (GetTextSize _fs text) :>>= k -> do
         te <- c $ C.textExtents text
         fe <- c $ C.fontExtents
-        interpret env $ ChartBackend $ k $ TextSize 
+        eval env $ view $ k $ TextSize 
           { textSizeWidth    = C.textExtentsWidth te
           , textSizeAscent   = C.fontExtentsAscent fe
           , textSizeDescent  = C.fontExtentsDescent fe
@@ -107,27 +107,27 @@ interpret env m = eval $ runChartBackend env m
           cTranslate p
           cMoveTo $ Point 0 0
           cShowText text
-        interpret env $ ChartBackend $ k ()
+        eval env $ view $ k ()
       (WithTransform env' t m) :>>= k -> do
         x <- preserveCState $ do
-          cTransform t
+          cSetTransform t
           interpret env' m
-        interpret env $ ChartBackend $ k x
+        eval env $ view $ k x
       (WithLineStyle env' ls m) :>>= k -> do
         x <- preserveCState $ do
           setLineStyle ls
           interpret env' m
-        interpret env $ ChartBackend $ k x
+        eval env $ view $ k x
       (WithFillStyle env' fs m) :>>= k -> do
         x <- preserveCState $ do
           setFillStyle fs
           interpret env' m
-        interpret env $ ChartBackend $ k x
+        eval env $ view $ k x
       (WithFontStyle env' fs m) :>>= k -> do
         x <- preserveCState $ do
           setFontStyle fs
           interpret env' m
-        interpret env $ ChartBackend $ k x
+        eval env $ view $ k x
       (WithClipRegion env' clip m) :>>= k -> do
         x <- preserveCState $ do
           case clip of
@@ -135,7 +135,7 @@ interpret env m = eval $ runChartBackend env m
             LValue c -> setClipRegion c
             LMax -> c C.resetClip
           interpret env' m
-        interpret env $ ChartBackend $ k x
+        eval env $ view $ k x
 
 -- -----------------------------------------------------------------------
 -- Output rendering functions
