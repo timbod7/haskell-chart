@@ -223,6 +223,7 @@ foldPath moveTo lineTo arc arcNeg close path =
 data Matrix = Matrix { xx :: !Double, yx :: !Double,
                        xy :: !Double, yy :: !Double,
                        x0 :: !Double, y0 :: !Double }
+                     deriving Show
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
 instance Num Matrix where

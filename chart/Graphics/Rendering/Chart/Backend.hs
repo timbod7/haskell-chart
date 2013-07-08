@@ -136,8 +136,8 @@ data ChartBackendInstr m a where
   WithLineStyle  :: ChartBackendEnv -> LineStyle  -> m a -> ChartBackendInstr m a
   WithClipRegion :: ChartBackendEnv -> Limit Rect -> m a -> ChartBackendInstr m a
 
-type ChartProgram a = ProgramT (ChartBackendInstr ChartBackend) 
-                               (Reader ChartBackendEnv) a
+type ChartProgram a = ReaderT ChartBackendEnv
+                              (Program (ChartBackendInstr ChartBackend)) a
 
 -- | A 'ChartBackend' provides the capability to render a chart somewhere.
 --   
@@ -160,9 +160,9 @@ instance Monad ChartBackend where
   return = ChartBackend . return
 
 instance MonadReader ChartBackendEnv ChartBackend where
-  ask = ChartBackend $ lift ask
-  local f ma = ChartBackend $ (toProgram ma) >>= \a -> lift $ local f (return a)
-  reader f = ChartBackend $ lift $ reader f
+  ask = ChartBackend $ ask
+  local f ma = ChartBackend $ (toProgram ma) >>= \a -> local f (return a)
+  reader f = ChartBackend $ reader f
 
 instance Functor ChartBackend where
   fmap f ma = ChartBackend $ fmap f (toProgram ma)
@@ -172,7 +172,7 @@ instance Applicative ChartBackend where
   (<*>) f m = ChartBackend $ (toProgram f) <*> (toProgram m)
 
 chartSingleton :: ChartBackendInstr ChartBackend a -> ChartBackend a
-chartSingleton = ChartBackend . singleton
+chartSingleton = ChartBackend . lift . singleton
   
 -- | Stroke the outline of the given path using the 
 --   current 'LineStyle'. This function does /not/ perform
@@ -300,12 +300,14 @@ getClipRegion = liftM cbeClipRegion ask
 data LineCap = LineCapButt   -- ^ Just cut the line straight.
              | LineCapRound  -- ^ Make a rounded line end.
              | LineCapSquare -- ^ Make a square that ends the line.
+             deriving Show
 
 -- | The different supported ways to join line ends.
 data LineJoin = LineJoinMiter -- ^ Extends the outline until they meet each other.
               | LineJoinRound -- ^ Draw a circle fragment to connet line end.
               | LineJoinBevel -- ^ Like miter, but cuts it off if a certain 
                               --   threshold is exceeded.
+              deriving Show
 
 -- | Data type for the style of a line.
 data LineStyle = LineStyle {
@@ -314,7 +316,7 @@ data LineStyle = LineStyle {
    line_dashes_ :: [Double],
    line_cap_    :: LineCap,
    line_join_   :: LineJoin
-}
+} deriving Show
 
 -- | The default line style.
 instance Default LineStyle where
@@ -334,6 +336,7 @@ instance Default LineStyle where
 data FontSlant = FontSlantNormal  -- ^ Normal font style without slant.
                | FontSlantItalic  -- ^ With a slight slant.
                | FontSlantOblique -- ^ With a greater slant.
+               deriving Show
 
 -- | The default font slant.
 instance Default FontSlant where
@@ -342,6 +345,7 @@ instance Default FontSlant where
 -- | The possible weights of a font.
 data FontWeight = FontWeightNormal -- ^ Normal font style without weight.
                 | FontWeightBold   -- ^ Bold font.
+                deriving Show
 
 -- | The default font weight.
 instance Default FontWeight where
@@ -354,7 +358,7 @@ data FontStyle = FontStyle {
       font_slant_  :: FontSlant,
       font_weight_ :: FontWeight,
       font_color_  :: AlphaColour Double
-}
+} deriving Show
 
 -- | The default font style.
 instance Default FontStyle where
@@ -372,10 +376,10 @@ defaultFontStyle :: FontStyle
 defaultFontStyle = def
 
 -- | Possible horizontal anchor points for text.
-data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right
+data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right deriving Show
 
 -- | Possible vertical anchor points for text.
-data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine
+data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine deriving Show
 
 -- | Text metrics returned by 'textSize'.
 data TextSize = TextSize 
@@ -384,7 +388,7 @@ data TextSize = TextSize
   , textSizeDescent  :: Double -- ^ The decent or space below the baseline.
   , textSizeYBearing :: Double -- ^ The Y bearing.
   , textSizeHeight   :: Double -- ^ The total height of the text.
-  }
+  } deriving Show
 
 -- -----------------------------------------------------------------------
 -- Fill Types
@@ -394,7 +398,7 @@ data TextSize = TextSize
 --
 --   The contained Cairo action sets the required fill
 --   style in the Cairo rendering state.
-newtype FillStyle = FillStyleSolid { fill_colour_ :: AlphaColour Double }
+newtype FillStyle = FillStyleSolid { fill_colour_ :: AlphaColour Double } deriving Show
 
 -- | The default fill style.
 instance Default FillStyle where

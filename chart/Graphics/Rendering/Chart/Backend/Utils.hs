@@ -11,8 +11,8 @@ import Graphics.Rendering.Chart.Backend
 
 runChartBackend :: ChartBackendEnv 
                 -> ChartBackend a 
-                -> ProgramViewT (ChartBackendInstr ChartBackend) (Reader ChartBackendEnv) a
-runChartBackend env m = runReader (viewT $ toProgram m) env
+                -> ProgramView (ChartBackendInstr ChartBackend) a
+runChartBackend env m = view $ runReaderT (toProgram m) env
 
 
 
