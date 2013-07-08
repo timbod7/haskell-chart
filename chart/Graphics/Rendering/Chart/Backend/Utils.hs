@@ -14,7 +14,7 @@ import Graphics.Rendering.Chart.Backend
 -- | Helper to correctly update the backends environment when 
 --   implementing 'withTransform'.
 withTransform' :: ChartBackend m => Matrix -> m a -> m a
-withTransform' t m = local (\s -> s { cbeTransform = (cbeTransform s) * t }) m
+withTransform' t m = local (\s -> s { cbeTransform = t * (cbeTransform s) }) m
 
 -- | Helper to correctly update the backends environment when 
 --   implementing 'withFontStyle'.
