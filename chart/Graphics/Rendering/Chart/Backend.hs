@@ -218,7 +218,7 @@ drawText p text = do
 withTransform :: Matrix -> ChartBackend a -> ChartBackend a
 withTransform t m = do
   oldTrans <- getTransform
-  let newTrans = oldTrans * t
+  let newTrans = t * oldTrans
   env <- (\s -> s { cbeTransform = newTrans }) <$> ask
   chartSingleton $ WithTransform env newTrans 
                  $ local (const env) m
