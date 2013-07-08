@@ -53,7 +53,14 @@ newtype CRender a = DR (C.Render a)
 runBackend :: ChartBackendEnv -- ^ Environment to start rendering with.
            -> ChartBackend a       -- ^ Chart render code.
            -> C.Render a      -- ^ Cairo render code.
-runBackend env m = let (DR c) = interpret env m in c
+runBackend env m = 
+  let (DR c) = compileBackendM cStrokePath cFillPath cFillClip 
+                               cTextSize cDrawText 
+                               cWithTransform 
+                               cWithLineStyle cWithFillStyle cWithFontStyle 
+                               cWithClipRegion
+                               env m
+  in c
 
 c :: C.Render a -> CRender a
 c = DR
@@ -64,78 +71,66 @@ instance Monoid a => Monoid (CRender a) where
     a <- ma
     b <- mb
     return $ a `mappend` b
+    
+cStrokePath :: LineStyle -> Path -> CRender ()
+cStrokePath ls p = preserveCState $ do
+  cNewPath
+  foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
+  cSetSourceColor $ line_color_ ls
+  cStroke
 
-interpret :: ChartBackendEnv -> ChartBackend a -> CRender a
-interpret e m = eval e $ runChartBackend e m 
-  where
-    eval env m = case m of
-      Return x -> return x
-      (StrokePath ls p) :>>= k -> do
-        preserveCState $ do
-          cNewPath
-          foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
-          cSetSourceColor $ line_color_ ls
-          cStroke
-        eval env $ view $ k ()
-      (FillPath fs p) :>>= k -> do
-        preserveCState $ do
-          cNewPath
-          foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
-          case fs of
-            FillStyleSolid cl -> cSetSourceColor cl
-          cFill
-        eval env $ view $ k ()
-      (FillClip fs) :>>= k -> do
-        preserveCState $ do
-          case fs of
-            FillStyleSolid cl -> cSetSourceColor cl
-          cPaint
-        eval env $ view $ k ()
-      (GetTextSize _fs text) :>>= k -> do
-        te <- c $ C.textExtents text
-        fe <- c $ C.fontExtents
-        eval env $ view $ k $ TextSize 
-          { textSizeWidth    = C.textExtentsWidth te
-          , textSizeAscent   = C.fontExtentsAscent fe
-          , textSizeDescent  = C.fontExtentsDescent fe
-          , textSizeYBearing = C.textExtentsYbearing te
-          , textSizeHeight   = C.fontExtentsHeight fe
-          }
-      (DrawText fs p text) :>>= k -> do
-        preserveCState $ do
-          cSetSourceColor (font_color_ fs)
-          cTranslate p
-          cMoveTo $ Point 0 0
-          cShowText text
-        eval env $ view $ k ()
-      (WithTransform env' t m) :>>= k -> do
-        x <- preserveCState $ do
-          cSetTransform t
-          interpret env' m
-        eval env $ view $ k x
-      (WithLineStyle env' ls m) :>>= k -> do
-        x <- preserveCState $ do
-          setLineStyle ls
-          interpret env' m
-        eval env $ view $ k x
-      (WithFillStyle env' fs m) :>>= k -> do
-        x <- preserveCState $ do
-          setFillStyle fs
-          interpret env' m
-        eval env $ view $ k x
-      (WithFontStyle env' fs m) :>>= k -> do
-        x <- preserveCState $ do
-          setFontStyle fs
-          interpret env' m
-        eval env $ view $ k x
-      (WithClipRegion env' clip m) :>>= k -> do
-        x <- preserveCState $ do
-          case clip of
-            LMin -> setClipRegion (Rect (Point 0 0) (Point 0 0))
-            LValue c -> setClipRegion c
-            LMax -> c C.resetClip
-          interpret env' m
-        eval env $ view $ k x
+cFillPath :: FillStyle -> Path -> CRender ()
+cFillPath fs p = preserveCState $ do
+  cNewPath
+  foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
+  case fs of
+    FillStyleSolid cl -> cSetSourceColor cl
+  cFill
+  
+cFillClip :: FillStyle -> CRender ()
+cFillClip fs = preserveCState $ do
+  case fs of
+    FillStyleSolid cl -> cSetSourceColor cl
+  cPaint
+
+cTextSize :: FontStyle -> String -> CRender TextSize
+cTextSize fs text = do
+  te <- c $ C.textExtents text
+  fe <- c $ C.fontExtents
+  return $ TextSize 
+    { textSizeWidth    = C.textExtentsWidth te
+    , textSizeAscent   = C.fontExtentsAscent fe
+    , textSizeDescent  = C.fontExtentsDescent fe
+    , textSizeYBearing = C.textExtentsYbearing te
+    , textSizeHeight   = C.fontExtentsHeight fe
+    }
+
+cDrawText :: FontStyle -> Point -> String -> CRender ()
+cDrawText fs p text = preserveCState $ do
+  cSetSourceColor (font_color_ fs)
+  cTranslate p
+  cMoveTo $ Point 0 0
+  cShowText text
+
+cWithTransform :: Matrix -> CRender a -> CRender a
+cWithTransform t m = preserveCState $ cSetTransform t >> m
+
+cWithLineStyle :: LineStyle -> CRender a -> CRender a
+cWithLineStyle ls m = preserveCState $ setLineStyle ls >> m
+
+cWithFillStyle :: FillStyle -> CRender a -> CRender a
+cWithFillStyle fs m = preserveCState $ setFillStyle fs >> m
+
+cWithFontStyle :: FontStyle -> CRender a -> CRender a
+cWithFontStyle fs m = preserveCState $ setFontStyle fs >> m
+
+cWithClipRegion :: Limit Rect -> CRender a -> CRender a
+cWithClipRegion clip m = preserveCState $ do
+  case clip of
+    LMin -> setClipRegion (Rect (Point 0 0) (Point 0 0))
+    LValue c -> setClipRegion c
+    LMax -> c C.resetClip 
+  m
 
 -- -----------------------------------------------------------------------
 -- Output rendering functions
