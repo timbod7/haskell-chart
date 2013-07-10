@@ -12,20 +12,14 @@ Category: Graphics
 Cabal-Version: >= 1.6
 Build-Type: Simple
 
-flag splitbase
-  description: Choose the new smaller, split-up base package.
-
 library
-  if flag(splitbase)
-    Build-depends: base >= 3 && < 5, old-locale, time, mtl, array
-  else
-    Build-depends: base < 3
-  Build-depends: cairo >= 0.9.11, 
-                 operational >= 0.2.2,
-                 time, mtl, 
-                 colour >= 2.2.1,
-                 data-default >= 0.5,
-                 Chart >= 0.17
+  Build-depends: base >= 3 && < 5
+               , old-locale
+               , time, mtl, array
+               , cairo >= 0.9.11
+               , colour >= 2.2.1
+               , data-default >= 0.5
+               , Chart >= 0.17
 
   Exposed-modules:
         Graphics.Rendering.Chart.Backend.Cairo
