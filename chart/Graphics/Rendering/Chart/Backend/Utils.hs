@@ -30,18 +30,18 @@ runChartBackend env m = runReaderT (toProgram m) env
 --   Implement each effect in form of a function and this will wire everything 
 --   together in the right order.
 compileBackend :: forall m a. (Monoid m)
-  => (LineStyle -> Path -> m)            -- ^ 'strokePath' operation
-  -> (FillStyle -> Path -> m)            -- ^ 'fillPath' operation
-  -> (FillStyle -> m)                    -- ^ 'fillClip' operation
-  -> (FontStyle -> String -> (m, TextSize))    -- ^ 'textSize' operation
-  -> (FontStyle -> Point -> String -> m) -- ^ 'drawText' operation
-  -> (Matrix     -> m -> m) -- ^ 'withTransform' operation. The given 
+  => (ChartBackendEnv -> Path -> m)            -- ^ 'strokePath' operation
+  -> (ChartBackendEnv -> Path -> m)            -- ^ 'fillPath' operation
+  -> (ChartBackendEnv -> m)                    -- ^ 'fillClip' operation
+  -> (ChartBackendEnv -> String -> (m, TextSize))    -- ^ 'textSize' operation
+  -> (ChartBackendEnv -> Point -> String -> m) -- ^ 'drawText' operation
+  -> (ChartBackendEnv -> m -> m) -- ^ 'withTransform' operation. The given 
                                 --   transformation is the complete transformation, 
                                 --   not just the next one to apply.
-  -> (LineStyle  -> m -> m) -- ^ 'withLineStyle' operation
-  -> (FillStyle  -> m -> m) -- ^ 'withFillStyle' operation
-  -> (FontStyle  -> m -> m) -- ^ 'withFontStyle' operation
-  -> (Limit Rect -> m -> m) -- ^ 'withClipRegion' operation
+  -> (ChartBackendEnv -> m -> m) -- ^ 'withLineStyle' operation
+  -> (ChartBackendEnv -> m -> m) -- ^ 'withFillStyle' operation
+  -> (ChartBackendEnv -> m -> m) -- ^ 'withFontStyle' operation
+  -> (ChartBackendEnv -> m -> m) -- ^ 'withClipRegion' operation
   -> ChartBackendEnv -> ChartBackend a -> (m, a)
 compileBackend
       strokePath' fillPath' fillClip' textSize' drawText' 
@@ -54,45 +54,45 @@ compileBackend
                              withFontStyle' withClipRegion'
     eval env m = case view m of
       Return x -> (mempty, x)
-      (StrokePath ls p) :>>= k ->
+      (StrokePath env' p) :>>= k ->
         let (m, x) = eval env $ k ()
-        in (strokePath' ls p <> m, x)
-      (FillPath fs p) :>>= k ->
+        in (strokePath' env' p <> m, x)
+      (FillPath env' p) :>>= k ->
         let (m, x) = eval env $ k ()
-        in (fillPath' fs p <> m, x)
-      (FillClip fs) :>>= k ->
+        in (fillPath' env' p <> m, x)
+      (FillClip env') :>>= k ->
         let (m, x) = eval env $ k ()
-        in (fillClip' fs <> m, x)
+        in (fillClip' env' <> m, x)
       (GetTextSize fs text) :>>= k ->
         let (m1, ts) = textSize' fs text
             (m2, x) = eval env $ k ts
         in (m1 <> m2, x)
-      (DrawText fs p text) :>>= k ->
+      (DrawText env' p text) :>>= k ->
         let (m, x) = eval env $ k ()
-        in (drawText' fs p text <> m, x)
-      (WithTransform env' t m) :>>= k ->
+        in (drawText' env' p text <> m, x)
+      (WithTransform env' m) :>>= k ->
         let (ma, x) = compile env' m
-            m1 = withTransform' t ma
+            m1 = withTransform' env' ma
             (m2, x') = eval env $ k x
         in (m1 <> m2, x')
-      (WithLineStyle env' ls m) :>>= k ->
+      (WithLineStyle env' m) :>>= k ->
         let (ma, x) = compile env' m
-            m1 = withLineStyle' ls ma
+            m1 = withLineStyle' env' ma
             (m2, x') = eval env $ k x
         in (m1 <> m2, x')
-      (WithFillStyle env' fs m) :>>= k ->
+      (WithFillStyle env' m) :>>= k ->
         let (ma, x) = compile env' m
-            m1 = withFillStyle' fs ma
+            m1 = withFillStyle' env' ma
             (m2, x') = eval env $ k x
         in (m1 <> m2, x')
-      (WithFontStyle env' fs m) :>>= k ->
+      (WithFontStyle env' m) :>>= k ->
         let (ma, x) = compile env' m
-            m1 = withFontStyle' fs ma
+            m1 = withFontStyle' env' ma
             (m2, x') = eval env $ k x
         in (m1 <> m2, x')
-      (WithClipRegion env' clip m) :>>= k ->
+      (WithClipRegion env' m) :>>= k ->
         let (ma, x) = compile env' m
-            m1 = withClipRegion' clip ma
+            m1 = withClipRegion' env' ma
             (m2, x') = eval env $ k x
         in (m1 <> m2, x')
 
@@ -100,18 +100,18 @@ compileBackend
 --   Implement each effect in form of a function and this will wire everything 
 --   together.
 compileBackendM :: forall m a. (Monad m) 
-  => (LineStyle -> Path -> m ())            -- ^ 'strokePath' operation
-  -> (FillStyle -> Path -> m ())            -- ^ 'fillPath' operation
-  -> (FillStyle -> m ())                    -- ^ 'fillClip' operation
-  -> (FontStyle -> String -> m TextSize)    -- ^ 'textSize' operation
-  -> (FontStyle -> Point -> String -> m ()) -- ^ 'drawText' operation
-  -> (forall b. Matrix -> m b -> m b) -- ^ 'withTransform' operation. The given 
-                                      --   transformation is the complete transformation, 
-                                      --   not just the next one to apply.
-  -> (forall c. LineStyle  -> m c -> m c) -- ^ 'withLineStyle' operation
-  -> (forall d. FillStyle  -> m d -> m d) -- ^ 'withFillStyle' operation
-  -> (forall e. FontStyle  -> m e -> m e) -- ^ 'withFontStyle' operation
-  -> (forall f. Limit Rect -> m f -> m f) -- ^ 'withClipRegion' operation
+  => (ChartBackendEnv -> Path -> m ())            -- ^ 'strokePath' operation
+  -> (ChartBackendEnv -> Path -> m ())            -- ^ 'fillPath' operation
+  -> (ChartBackendEnv -> m ())                    -- ^ 'fillClip' operation
+  -> (ChartBackendEnv -> String -> m TextSize)    -- ^ 'textSize' operation
+  -> (ChartBackendEnv -> Point -> String -> m ()) -- ^ 'drawText' operation
+  -> (forall b. ChartBackendEnv -> m b -> m b) -- ^ 'withTransform' operation. The given 
+                                               --   transformation is the complete transformation, 
+                                               --   not just the next one to apply.
+  -> (forall c. ChartBackendEnv -> m c -> m c) -- ^ 'withLineStyle' operation
+  -> (forall d. ChartBackendEnv -> m d -> m d) -- ^ 'withFillStyle' operation
+  -> (forall e. ChartBackendEnv -> m e -> m e) -- ^ 'withFontStyle' operation
+  -> (forall f. ChartBackendEnv -> m f -> m f) -- ^ 'withClipRegion' operation
   -> ChartBackendEnv -> ChartBackend a -> m a
 compileBackendM 
       strokePath' fillPath' fillClip' textSize' drawText' 
@@ -124,34 +124,34 @@ compileBackendM
                               withFontStyle' withClipRegion'
     eval env m = case view m of
       Return x -> return x
-      (StrokePath ls p) :>>= k -> do
-        strokePath' ls p
+      (StrokePath env' p) :>>= k -> do
+        strokePath' env' p
         eval env $ k ()
-      (FillPath fs p) :>>= k -> do
-        fillPath' fs p
+      (FillPath env' p) :>>= k -> do
+        fillPath' env' p
         eval env $ k ()
-      (FillClip fs) :>>= k -> do
-        fillClip' fs
+      (FillClip env') :>>= k -> do
+        fillClip' env'
         eval env $ k ()
-      (GetTextSize fs text) :>>= k -> do
-        ts <- textSize' fs text
+      (GetTextSize env' text) :>>= k -> do
+        ts <- textSize' env' text
         eval env $ k ts
-      (DrawText fs p text) :>>= k -> do
-        drawText' fs p text
+      (DrawText env' p text) :>>= k -> do
+        drawText' env' p text
         eval env $ k ()
-      (WithTransform env' t m) :>>= k -> do
-        x <- withTransform' t $ compile env' m
+      (WithTransform env' m) :>>= k -> do
+        x <- withTransform' env' $ compile env' m
         eval env $ k x
 
-      (WithLineStyle env' ls m) :>>= k -> do
-        x <- withLineStyle' ls $ compile env' m
+      (WithLineStyle env' m) :>>= k -> do
+        x <- withLineStyle' env' $ compile env' m
         eval env $ k x
-      (WithFillStyle env' fs m) :>>= k -> do
-        x <- withFillStyle' fs $ compile env' m
+      (WithFillStyle env' m) :>>= k -> do
+        x <- withFillStyle' env' $ compile env' m
         eval env $ k x
-      (WithFontStyle env' fs m) :>>= k -> do
-        x <- withFontStyle' fs $ compile env' m
+      (WithFontStyle env' m) :>>= k -> do
+        x <- withFontStyle' env' $ compile env' m
         eval env $ k x
-      (WithClipRegion env' clip m) :>>= k -> do
-        x <- withClipRegion' clip $ compile env' m
+      (WithClipRegion env' m) :>>= k -> do
+        x <- withClipRegion' env' $ compile env' m
         eval env $ k x

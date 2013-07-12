@@ -39,6 +39,7 @@ library
                , data-accessor-template >= 0.2.1.1 && < 0.3
                , colour >= 2.2.1
                , data-default >= 0.5
+               , operational >= 0.2.2
 
   Exposed-modules:
         Graphics.Rendering.Chart,
