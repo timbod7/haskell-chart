@@ -53,7 +53,7 @@ initGuiOnce = do
 -- it's first call, but not subsequent calls. Hence it's 
 -- unlikely to be compatible with other code using gtk. In 
 -- that case use createRenderableWindow.
-renderableToWindow :: Renderable CRender a -> Int -> Int -> IO ()
+renderableToWindow :: Renderable a -> Int -> Int -> IO ()
 renderableToWindow chart windowWidth windowHeight = do
     initGuiOnce
     window <- createRenderableWindow chart windowWidth windowHeight
@@ -64,7 +64,7 @@ renderableToWindow chart windowWidth windowHeight = do
     G.mainGUI
 
 -- | Create a new GTK window displaying a renderable.
-createRenderableWindow :: Renderable CRender a -> Int -> Int -> IO G.Window
+createRenderableWindow :: Renderable a -> Int -> Int -> IO G.Window
 createRenderableWindow chart windowWidth windowHeight = do
     window <- G.windowNew
     canvas <- G.drawingAreaNew
@@ -74,10 +74,10 @@ createRenderableWindow chart windowWidth windowHeight = do
     return window
 
 
-updateCanvas :: Renderable CRender a -> G.DrawingArea  -> IO Bool
+updateCanvas :: Renderable a -> G.DrawingArea  -> IO Bool
 updateCanvas chart canvas = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
     let sz = (fromIntegral width,fromIntegral height)
-    G.renderWithDrawable win $ runBackend (render chart sz) bitmapEnv
+    G.renderWithDrawable win $ runBackend bitmapEnv (render chart sz) 
     return True
