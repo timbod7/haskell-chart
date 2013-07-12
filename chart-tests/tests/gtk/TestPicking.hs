@@ -18,9 +18,8 @@ import Prices(prices2)
 
 type PickType = Layout1Pick LocalTime Double
 
-chart :: (ChartBackend m) 
-      => [(LocalTime,Double,Double)] 
-      -> Bool -> Double -> Renderable m (Layout1Pick LocalTime Double)
+chart :: [(LocalTime,Double,Double)] 
+      -> Bool -> Double -> Renderable (Layout1Pick LocalTime Double)
 chart prices showMinMax lwidth = layout1ToRenderable layout
   where
 
@@ -66,16 +65,16 @@ chart prices showMinMax lwidth = layout1ToRenderable layout
            $ setLayout1Foreground fg
            $ def
 
-updateCanvas :: Renderable CRender a -> G.DrawingArea -> IORef (Maybe (PickFn a)) -> IO Bool
+updateCanvas :: Renderable a -> G.DrawingArea -> IORef (Maybe (PickFn a)) -> IO Bool
 updateCanvas chart canvas pickfv = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
     let sz = (fromIntegral width,fromIntegral height)
-    pickf <- G.renderWithDrawable win $ runBackend (render chart sz) bitmapEnv
+    pickf <- G.renderWithDrawable win $ runBackend bitmapEnv (render chart sz) 
     writeIORef pickfv (Just pickf)
     return True
 
-createRenderableWindow :: (Show a) => Renderable CRender a -> Int -> Int -> IO G.Window
+createRenderableWindow :: (Show a) => Renderable a -> Int -> Int -> IO G.Window
 createRenderableWindow chart windowWidth windowHeight = do
     pickfv <- newIORef Nothing
     window <- G.windowNew
@@ -102,7 +101,7 @@ gridWindow = do
     G.widgetShowAll window
     G.mainGUI
   where
-    testgrid :: Grid (Renderable CRender String)
+    testgrid :: Grid (Renderable String)
     testgrid = aboveN
         [ besideN [ f "AAAAA", e, f "BBBBB" ]
         , besideN [ f "CCCCC", e, f "DDDDD" ]
