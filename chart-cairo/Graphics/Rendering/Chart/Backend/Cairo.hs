@@ -27,7 +27,6 @@ import Data.List (unfoldr)
 import Data.Monoid
 
 import Control.Monad.Reader
-import Control.Monad.Operational
 
 import qualified Graphics.Rendering.Cairo as C
 import qualified Graphics.Rendering.Cairo.Matrix as CM
@@ -72,29 +71,29 @@ instance Monoid a => Monoid (CRender a) where
     b <- mb
     return $ a `mappend` b
     
-cStrokePath :: LineStyle -> Path -> CRender ()
-cStrokePath ls p = preserveCState $ do
+cStrokePath :: ChartBackendEnv -> Path -> CRender ()
+cStrokePath env p = preserveCState $ do
   cNewPath
   foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
-  cSetSourceColor $ line_color_ ls
+  cSetSourceColor $ line_color_ $ cbeLineStyle env
   cStroke
 
-cFillPath :: FillStyle -> Path -> CRender ()
-cFillPath fs p = preserveCState $ do
+cFillPath :: ChartBackendEnv -> Path -> CRender ()
+cFillPath env p = preserveCState $ do
   cNewPath
   foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
-  case fs of
+  case cbeFillStyle env of
     FillStyleSolid cl -> cSetSourceColor cl
   cFill
   
-cFillClip :: FillStyle -> CRender ()
-cFillClip fs = preserveCState $ do
-  case fs of
+cFillClip :: ChartBackendEnv -> CRender ()
+cFillClip env = preserveCState $ do
+  case cbeFillStyle env of
     FillStyleSolid cl -> cSetSourceColor cl
   cPaint
 
-cTextSize :: FontStyle -> String -> CRender TextSize
-cTextSize fs text = do
+cTextSize :: ChartBackendEnv -> String -> CRender TextSize
+cTextSize env text = do
   te <- c $ C.textExtents text
   fe <- c $ C.fontExtents
   return $ TextSize 
@@ -105,28 +104,28 @@ cTextSize fs text = do
     , textSizeHeight   = C.fontExtentsHeight fe
     }
 
-cDrawText :: FontStyle -> Point -> String -> CRender ()
-cDrawText fs p text = preserveCState $ do
-  cSetSourceColor (font_color_ fs)
+cDrawText :: ChartBackendEnv -> Point -> String -> CRender ()
+cDrawText env p text = preserveCState $ do
+  cSetSourceColor $ font_color_ $ cbeFontStyle env
   cTranslate p
   cMoveTo $ Point 0 0
   cShowText text
 
-cWithTransform :: Matrix -> CRender a -> CRender a
-cWithTransform t m = preserveCState $ cSetTransform t >> m
+cWithTransform :: ChartBackendEnv -> CRender a -> CRender a
+cWithTransform env m = preserveCState $ cSetTransform (cbeTransform env) >> m
 
-cWithLineStyle :: LineStyle -> CRender a -> CRender a
-cWithLineStyle ls m = preserveCState $ setLineStyle ls >> m
+cWithLineStyle :: ChartBackendEnv -> CRender a -> CRender a
+cWithLineStyle env m = preserveCState $ setLineStyle (cbeLineStyle env) >> m
 
-cWithFillStyle :: FillStyle -> CRender a -> CRender a
-cWithFillStyle fs m = preserveCState $ setFillStyle fs >> m
+cWithFillStyle :: ChartBackendEnv -> CRender a -> CRender a
+cWithFillStyle env m = preserveCState $ setFillStyle (cbeFillStyle env) >> m
 
-cWithFontStyle :: FontStyle -> CRender a -> CRender a
-cWithFontStyle fs m = preserveCState $ setFontStyle fs >> m
+cWithFontStyle :: ChartBackendEnv -> CRender a -> CRender a
+cWithFontStyle env m = preserveCState $ setFontStyle (cbeFontStyle env) >> m
 
-cWithClipRegion :: Limit Rect -> CRender a -> CRender a
-cWithClipRegion clip m = preserveCState $ do
-  case clip of
+cWithClipRegion :: ChartBackendEnv -> CRender a -> CRender a
+cWithClipRegion env m = preserveCState $ do
+  case cbeClipRegion env of
     LMin -> setClipRegion (Rect (Point 0 0) (Point 0 0))
     LValue c -> setClipRegion c
     LMax -> c C.resetClip 
