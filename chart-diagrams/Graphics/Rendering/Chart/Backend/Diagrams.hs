@@ -168,8 +168,3 @@ pathToTrail' Close = (D.close mempty, Nothing)
 
 
 
-
-
-
-
-
