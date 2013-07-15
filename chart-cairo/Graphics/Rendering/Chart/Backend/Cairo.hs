@@ -111,20 +111,20 @@ cDrawText env p text = preserveCState $ do
   cMoveTo $ Point 0 0
   cShowText text
 
-cWithTransform :: ChartBackendEnv -> CRender a -> CRender a
-cWithTransform env m = preserveCState $ cSetTransform (cbeTransform env) >> m
+cWithTransform :: ChartBackendEnv -> Change Matrix -> CRender a -> CRender a
+cWithTransform env _ m = preserveCState $ cSetTransform (cbeTransform env) >> m
 
-cWithLineStyle :: ChartBackendEnv -> CRender a -> CRender a
-cWithLineStyle env m = preserveCState $ setLineStyle (cbeLineStyle env) >> m
+cWithLineStyle :: ChartBackendEnv -> Change LineStyle -> CRender a -> CRender a
+cWithLineStyle env _ m = preserveCState $ setLineStyle (cbeLineStyle env) >> m
 
-cWithFillStyle :: ChartBackendEnv -> CRender a -> CRender a
-cWithFillStyle env m = preserveCState $ setFillStyle (cbeFillStyle env) >> m
+cWithFillStyle :: ChartBackendEnv -> Change FillStyle -> CRender a -> CRender a
+cWithFillStyle env _ m = preserveCState $ setFillStyle (cbeFillStyle env) >> m
 
-cWithFontStyle :: ChartBackendEnv -> CRender a -> CRender a
-cWithFontStyle env m = preserveCState $ setFontStyle (cbeFontStyle env) >> m
+cWithFontStyle :: ChartBackendEnv -> Change FontStyle -> CRender a -> CRender a
+cWithFontStyle env _ m = preserveCState $ setFontStyle (cbeFontStyle env) >> m
 
-cWithClipRegion :: ChartBackendEnv -> CRender a -> CRender a
-cWithClipRegion env m = preserveCState $ do
+cWithClipRegion :: ChartBackendEnv -> Change (Limit Rect) -> CRender a -> CRender a
+cWithClipRegion env _ m = preserveCState $ do
   case cbeClipRegion env of
     LMin -> setClipRegion (Rect (Point 0 0) (Point 0 0))
     LValue c -> setClipRegion c
