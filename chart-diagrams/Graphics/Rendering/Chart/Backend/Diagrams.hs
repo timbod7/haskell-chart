@@ -82,28 +82,39 @@ drawTextD :: (D.Renderable (D.Path R2) b)
 drawTextD = undefined
 
 withTransformD :: (D.Renderable (D.Path R2) b)
-               => ChartBackendEnv -> Diagram b R2 -> Diagram b R2
+               => ChartBackendEnv -> Change Matrix -> Diagram b R2 -> Diagram b R2
 withTransformD = undefined
 
 withLineStyleD :: (D.Renderable (D.Path R2) b)
-               => ChartBackendEnv -> Diagram b R2 -> Diagram b R2
-withLineStyleD env = applyLineStyle (cbeLineStyle env)
+               => ChartBackendEnv -> Change LineStyle -> Diagram b R2 -> Diagram b R2
+withLineStyleD env c = applyLineStyle (cbeLineStyle env)
 
 withFillStyleD :: (D.Renderable (D.Path R2) b)
-               => ChartBackendEnv -> Diagram b R2 -> Diagram b R2
-withFillStyleD env = applyFillStyle (cbeFillStyle env)
+               => ChartBackendEnv -> Change FillStyle -> Diagram b R2 -> Diagram b R2
+withFillStyleD env c = applyFillStyle (cbeFillStyle env)
 
 withFontStyleD :: (D.Renderable (D.Path R2) b)
-               => ChartBackendEnv -> Diagram b R2 -> Diagram b R2
+               => ChartBackendEnv -> Change FontStyle -> Diagram b R2 -> Diagram b R2
 withFontStyleD = undefined
 
 withClipRegionD :: (D.Renderable (D.Path R2) b)
-                => ChartBackendEnv -> Diagram b R2 -> Diagram b R2
+                => ChartBackendEnv -> Change (Limit Rect) -> Diagram b R2 -> Diagram b R2
 withClipRegionD = undefined
 
 -- -----------------------------------------------------------------------
 -- Converions Helpers
 -- -----------------------------------------------------------------------
+
+toTransformation :: Matrix -> T2
+toTransformation m = undefined
+
+-- | Apply a given affine transformation to a vector.
+applyTransformation :: Matrix -> R2 -> R2
+applyTransformation m v =
+  let (x,y) = unr2 v
+  in r2 ( xx m * x + xy m * y + x0 m
+        , yx m * x + yy m * y + y0 m
+        )
 
 -- | Apply the Chart line style to a diagram.
 applyLineStyle :: (D.HasStyle a) => LineStyle -> a -> a
