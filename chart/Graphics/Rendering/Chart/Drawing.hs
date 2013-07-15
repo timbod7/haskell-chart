@@ -96,28 +96,28 @@ import Graphics.Rendering.Chart.Geometry
 -- -----------------------------------------------------------------------
 
 -- | Apply a local rotation. The angle is given in radians.
-withRotation :: (ChartBackend m) => Double -> m a -> m a
+withRotation :: Double -> ChartBackend a -> ChartBackend a
 withRotation angle = withTransform (rotate angle 1)
 
 -- | Apply a local translation.
-withTranslation :: (ChartBackend m) => Point -> m a -> m a
+withTranslation :: Point -> ChartBackend a -> ChartBackend a
 withTranslation p = withTransform (translate (pointToVec p) 1)
 
 -- | Apply a local scale.
-withScale :: (ChartBackend m) => Vector -> m a -> m a
+withScale :: Vector -> ChartBackend a -> ChartBackend a
 withScale v = withTransform (scale v 1)
 
 -- | Apply a local scale on the x-axis.
-withScaleX :: (ChartBackend m) => Double -> m a -> m a
+withScaleX :: Double -> ChartBackend a -> ChartBackend a
 withScaleX x = withScale (Vector x 1)
 
 -- | Apply a local scale on the y-axis.
-withScaleY :: (ChartBackend m) => Double -> m a -> m a
+withScaleY :: Double -> ChartBackend a -> ChartBackend a
 withScaleY y = withScale (Vector 1 y)
 
 -- | Changes the 'LineStyle' and 'FillStyle' to comply with
 --   the given 'PointStyle'.
-withPointStyle :: (ChartBackend m) => PointStyle -> m a -> m a
+withPointStyle :: PointStyle -> ChartBackend a -> ChartBackend a
 withPointStyle (PointStyle cl bcl bw _ _) m = do
   ls <- getLineStyle
   withLineStyle (ls { line_color_ = bcl, line_width_ = bw }) $ do
@@ -139,7 +139,7 @@ alignPath f = foldPath (\p -> moveTo $ f p)
 -- | Align the path using the environments alignment function for points.
 --   This is generally useful when stroking. 
 --   See 'alignPath' and 'cbePointAlignFn'.
-alignStrokePath :: (ChartBackend m) => Path -> m Path
+alignStrokePath :: Path -> ChartBackend Path
 alignStrokePath p = do
   f <- liftM cbePointAlignFn ask
   return $ alignPath f p
@@ -147,21 +147,21 @@ alignStrokePath p = do
 -- | Align the path using the environments alignment function for coordinates.
 --   This is generally useful when filling. 
 --   See 'alignPath' and 'cbeCoordAlignFn'.
-alignFillPath :: (ChartBackend m) => Path -> m Path
+alignFillPath :: Path -> ChartBackend Path
 alignFillPath p = do
   f <- liftM cbeCoordAlignFn ask
   return $ alignPath f p
 
 -- | Align the point using the environments alignment function for points.
 --   See 'cbePointAlignFn'.
-alignp :: (ChartBackend m) => Point -> m Point
+alignp :: Point -> ChartBackend Point
 alignp p = do 
     alignfn <- liftM cbePointAlignFn ask
     return (alignfn p)
 
 -- | Align the point using the environments alignment function for coordinates.
 --   See 'cbeCoordAlignFn'.
-alignc :: (ChartBackend m) => Point -> m Point
+alignc :: Point -> ChartBackend Point
 alignc p = do 
     alignfn <- liftM cbeCoordAlignFn ask
     return (alignfn p)
@@ -178,7 +178,7 @@ stepPath [] = mempty
 --   The points will be aligned by the 'cbePointAlignFn', so that
 --   when drawing bitmaps, 1 pixel wide lines will be centred on the
 --   pixels.
-strokePointPath :: (ChartBackend m) => [Point] -> m ()
+strokePointPath :: [Point] -> ChartBackend ()
 strokePointPath pts = do
     path <- alignStrokePath $ stepPath pts
     strokePath path
@@ -188,7 +188,7 @@ strokePointPath pts = do
 --   The points will be aligned by the 'cbeCoordAlignFn', so that
 --   when drawing bitmaps, the edges of the region will fall between
 --   pixels.
-fillPointPath :: (ChartBackend m) => [Point] -> m ()
+fillPointPath :: [Point] -> ChartBackend ()
 fillPointPath pts = do
     path <- alignFillPath $ stepPath pts
     fillPath path
@@ -199,14 +199,14 @@ fillPointPath pts = do
 
 -- | Draw a line of text that is aligned at a different anchor point.
 --   See 'drawText'.
-drawTextA :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m ()
+drawTextA :: HTextAnchor -> VTextAnchor -> Point -> String -> ChartBackend ()
 drawTextA hta vta p s = drawTextR hta vta 0 p s
 
 -- | Draw a textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
 --   See 'drawText'.
-drawTextR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
+drawTextR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> ChartBackend ()
 drawTextR hta vta angle p s =
   withTranslation p $
     withRotation theta $ do
@@ -219,7 +219,7 @@ drawTextR hta vta angle p s =
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
 --   See 'drawText'.
-drawTextsR :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Double -> Point -> String -> m ()
+drawTextsR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> ChartBackend ()
 drawTextsR hta vta angle p s = case num of
       0 -> return ()
       1 -> drawTextR hta vta angle p s
@@ -270,7 +270,7 @@ adjustTextY VTA_Bottom   ts = -(textSizeDescent ts)
 -- | Return the bounding rectangle for a text string positioned
 --   where it would be drawn by 'drawText'.
 --   See 'textSize'.
-textDrawRect :: (ChartBackend m) => HTextAnchor -> VTextAnchor -> Point -> String -> m Rect
+textDrawRect :: HTextAnchor -> VTextAnchor -> Point -> String -> ChartBackend Rect
 textDrawRect hta vta (Point x y) s = do
   ts <- textSize s
   let (w,h) = (textSizeWidth ts, textSizeHeight ts)
@@ -283,7 +283,7 @@ textDrawRect hta vta (Point x y) s = do
 
 -- | Get the width and height of the string when rendered.
 --   See 'textSize'.
-textDimension :: (ChartBackend m) => String -> m RectSize
+textDimension :: String -> ChartBackend RectSize
 textDimension s = do
   ts <- textSize s
   return (textSizeWidth ts, textSizeHeight ts)
@@ -332,10 +332,9 @@ defaultPointStyle :: PointStyle
 defaultPointStyle = def
 
 -- | Draw a single point at the given location.
-drawPoint :: (ChartBackend m) 
-          => PointStyle  -- ^ Style to use when rendering the point.
+drawPoint :: PointStyle  -- ^ Style to use when rendering the point.
           -> Point       -- ^ Position of the point to render.
-          -> m ()
+          -> ChartBackend ()
 drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
   p'@(Point x y) <- alignp p
   case shape of

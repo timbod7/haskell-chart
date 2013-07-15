@@ -77,7 +77,7 @@ instance ToPlot PlotCandle where
       where
         pts = plot_candle_values_ p
 
-renderPlotCandle :: (ChartBackend m) => PlotCandle x y -> PointMapFn x y -> m ()
+renderPlotCandle :: PlotCandle x y -> PointMapFn x y -> ChartBackend ()
 renderPlotCandle p pmap = do
     mapM_ (drawCandle p . candlemap) (plot_candle_values_ p)
   where
@@ -125,7 +125,7 @@ drawCandle ps (Candle x lo open mid close hi) = do
           when (ct > 0) $ do strokePath $ moveTo' (x-ct) mid
                                        <> lineTo' (x+ct) mid
 
-renderPlotLegendCandle :: (ChartBackend m) => PlotCandle x y -> Rect -> m ()
+renderPlotLegendCandle :: PlotCandle x y -> Rect -> ChartBackend ()
 renderPlotLegendCandle p r@(Rect p1 p2) = do
     drawCandle p{ plot_candle_width_ = 2}
                       (Candle ((p_x p1 + p_x p2)*1/4) lo open mid close hi)

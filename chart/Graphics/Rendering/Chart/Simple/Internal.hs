@@ -24,8 +24,8 @@ styleSymbol ind = symbolSequence !! ind
 
 -- When defaultLayout1 has been generalized, change this signature to 
 -- [InternalPlot x y] -> Layout1 x y z
-iplot :: forall m. (ChartBackend m) => [InternalPlot Double Double] -> Layout1 m Double Double
-iplot foobar = (def :: Layout1 m Double Double) {
+iplot :: [InternalPlot Double Double] -> Layout1 Double Double
+iplot foobar = (def :: Layout1 Double Double) {
         layout1_plots_ = concat $ zipWith toplot (ip foobar) [0..]
     }
   where
@@ -141,12 +141,12 @@ data PlotKind = Name String | FilledCircle | HollowCircle
               deriving ( Eq, Show, Ord )
 data InternalPlot x y = IPY [y] [PlotKind] | IPX [x] [PlotKind]
 
-newtype Layout1DDD m = Layout1DDD { plotLayout :: Layout1 m Double Double }
+newtype Layout1DDD = Layout1DDD { plotLayout :: Layout1 Double Double }
 
-layout1DddToRenderable :: (ChartBackend m) => Layout1DDD m -> Renderable m (Layout1Pick Double Double)
+layout1DddToRenderable :: Layout1DDD -> Renderable (Layout1Pick Double Double)
 layout1DddToRenderable = layout1ToRenderable . plotLayout
 
-uplot :: (ChartBackend m) => [UPlot] -> Layout1DDD m
+uplot :: [UPlot] -> Layout1DDD
 uplot us = Layout1DDD $ iplot $ nameDoubles $ evalfuncs us
   where
     nameDoubles :: [UPlot] -> [InternalPlot Double Double]
@@ -189,7 +189,7 @@ class PlotType t where
     pl     :: [UPlot] -> t
 instance (PlotArg a, PlotType r) => PlotType (a -> r) where
     pl args = \ a -> pl (toUPlot a ++ args)
-instance (ChartBackend m) => PlotType (Layout1DDD m) where
+instance PlotType Layout1DDD where
     pl args = uplot (reverse args)
 
 -- | Save a plot as a PDF file.

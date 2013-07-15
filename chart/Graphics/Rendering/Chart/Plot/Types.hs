@@ -31,16 +31,16 @@ import Data.Colour
 import Data.Colour.Names
 
 -- | Interface to control plotting on a 2D area.
-data Plot m x y = Plot {
+data Plot x y = Plot {
 
     -- | Given the mapping between model space coordinates and device
     --   coordinates, render this plot into a chart.
-    plot_render_     :: PointMapFn x y -> m (),
+    plot_render_     :: PointMapFn x y -> ChartBackend (),
 
     -- | Details for how to show this plot in a legend. For each item
     --   the string is the text to show, and the function renders a
     --   graphical sample of the plot.
-    plot_legend_     :: [ (String, Rect -> m ()) ],
+    plot_legend_     :: [ (String, Rect -> ChartBackend ()) ],
 
     -- | All of the model space coordinates to be plotted. These are
     --   used to autoscale the axes where necessary.
@@ -49,10 +49,10 @@ data Plot m x y = Plot {
 
 -- | A type class abstracting the conversion of a value to a Plot.
 class ToPlot a where
-   toPlot :: (ChartBackend m) => a x y -> Plot m x y
+   toPlot :: a x y -> Plot x y
 
 -- | Join any two plots together (they will share a legend).
-joinPlot :: (ChartBackend m) => Plot m x y -> Plot m x y -> Plot m x y
+joinPlot :: Plot x y -> Plot x y -> Plot x y
 joinPlot Plot{ plot_render_     = renderP
              , plot_legend_     = legendP
              , plot_all_points_ = (xsP,ysP) }

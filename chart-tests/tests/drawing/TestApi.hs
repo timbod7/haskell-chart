@@ -16,7 +16,7 @@ main = (flip mapM_) tests $ \(name, w, h, draw) -> do
   render (name ++ ".png") w h draw
   
 
-render :: FilePath -> Int -> Int -> CRender a -> IO ()
+render :: FilePath -> Int -> Int -> ChartBackend a -> IO ()
 render f w h m = renderToFile m CairoPNG w h f
 
 supportLineStyle :: LineStyle
@@ -28,15 +28,15 @@ supportLineStyle = def
   , line_join_ = LineJoinBevel
   }
 
-withTestEnv :: (ChartBackend m) => m a -> m a
+withTestEnv :: ChartBackend a -> ChartBackend a
 withTestEnv m = withFillStyle (solidFillStyle $ opaque white) $ fillClip >> m
 
-withCenterRot :: (ChartBackend m) => Double -> Int -> Int -> m a -> m a
+withCenterRot :: Double -> Int -> Int -> ChartBackend a -> ChartBackend a
 withCenterRot a x y m = 
   withTranslation (Point (fromIntegral x) 
                          (fromIntegral y)) $ withRotation a $ m
 
-tests :: (ChartBackend m) => [(String, Int, Int, m ())]
+tests :: [(String, Int, Int, ChartBackend ())]
 tests = [ ("lines", 500, 500, testLines)
         , ("arcs" , 500, 500, testArcs)
         , ("text" , 500, 500, testText)
@@ -47,7 +47,7 @@ tests = [ ("lines", 500, 500, testLines)
                $ \(name, env) -> ("environment-" ++ name, 500, 500, env)
              )
 
-testTextMetrics :: (ChartBackend m) => m ()
+testTextMetrics :: ChartBackend ()
 testTextMetrics = withTestEnv $ do
   
   withFontStyle (def { font_size_ = 20 }) $ do
@@ -85,7 +85,7 @@ testTextMetrics = withTestEnv $ do
     strokePath $ moveTo' 375 250 <> lineTo' 375 500
 
 
-testClip :: (ChartBackend m) => m ()
+testClip :: ChartBackend ()
 testClip = withTestEnv $ do
   withFillStyle (solidFillStyle $ opaque blue) fillClip
   withClipRegion (Rect (Point 100 100) (Point 300 300)) $ do
@@ -95,7 +95,7 @@ testClip = withTestEnv $ do
   withClipRegion (Rect (Point 150 50) (Point 400 150)) $ do
     withFillStyle (solidFillStyle $ opaque red) fillClip
 
-testFill :: (ChartBackend m) => m ()
+testFill :: ChartBackend ()
 testFill = withTestEnv $ do
   withFillStyle (solidFillStyle $ opaque green) $ do
     fillPath $ arc' 100 100 75 0 (1.5 * pi)
@@ -112,7 +112,7 @@ testFill = withTestEnv $ do
     fillPath $ arcNeg' 125 400 75 0 (1.5 * pi)
             <> lineTo' 125 400
 
-testEnvironments :: (ChartBackend m) => [(String, m ())]
+testEnvironments :: [(String, ChartBackend ())]
 testEnvironments =
   let envs = [ ("fill", withFillStyle $ solidFillStyle $ opaque green)
              , ("font", withFontStyle $ def { font_color_ = opaque red })
@@ -130,7 +130,7 @@ testEnvironments =
        )
     
 
-testText :: (ChartBackend m) => m ()
+testText :: ChartBackend ()
 testText = withTestEnv $ do
   drawText (Point 10 50) "No Scale"
   withTranslation (Point 10 70) $ do
@@ -179,7 +179,7 @@ testText = withTestEnv $ do
     strokePath $ moveTo' 0 400 <> lineTo' 500 400
     strokePath $ moveTo' 250 300 <> lineTo' 250 500
 
-testArcs :: (ChartBackend m) => m ()
+testArcs :: ChartBackend ()
 testArcs = withTestEnv $ do
   (flip mapM_) ( [ def { line_cap_ = LineCapButt  , line_join_ = LineJoinMiter, line_width_ = 10 }
                  , def { line_cap_ = LineCapRound , line_join_ = LineJoinRound, line_width_ = 10 }
@@ -204,7 +204,7 @@ testArcs = withTestEnv $ do
     withCenterRot (1.0 * pi) 250 250 $ drawText (Point  75 0) $ "1 * pi"
     withCenterRot (1.5 * pi) 250 250 $ drawText (Point 100 0) $ "3/2 * pi"
 
-testLines :: (ChartBackend m) => m ()
+testLines :: ChartBackend ()
 testLines = withTestEnv $ do
   -- Test Line Caps
   (flip mapM_) [ (def { line_cap_ = LineCapButt  , line_width_ = 10 }, 0)

@@ -13,7 +13,7 @@ import Utils
 
 -- demonstrate Candles
 
-chart :: (ChartBackend m) => Double -> Renderable m (Layout1Pick LocalTime Double)
+chart :: Double -> Renderable (Layout1Pick LocalTime Double)
 chart lwidth = layout1ToRenderable layout
   where
     layout = layout1_title ^="Stock Prices"

@@ -121,12 +121,12 @@ instance Default PieLayout where
     , pie_margin_      = 10
     }
 
-pieChartToRenderable :: (ChartBackend m) => PieChart -> Renderable m (PickFn a)
+pieChartToRenderable :: PieChart -> Renderable (PickFn a)
 pieChartToRenderable p = Renderable { minsize = minsizePie p
                                     , render  = renderPie p
                                     }
 
-pieToRenderable :: (ChartBackend m) => PieLayout -> Renderable m (PickFn a)
+pieToRenderable :: PieLayout -> Renderable (PickFn a)
 pieToRenderable p = fillBackground (pie_background_ p) (
        gridToRenderable $ aboveN
          [ tval $ addMargins (lm/2,0,0,0) (setPickFn nullPickFn title)
@@ -137,7 +137,7 @@ pieToRenderable p = fillBackground (pie_background_ p) (
         title = label (pie_title_style_ p) HTA_Centre VTA_Top (pie_title_ p)
         lm    = pie_margin_ p
 
-extraSpace :: (ChartBackend m) => PieChart -> m (Double, Double)
+extraSpace :: PieChart -> ChartBackend (Double, Double)
 extraSpace p = do
     textSizes <- mapM textDimension (map pitem_label_ (pie_data_ p))
     let maxw  = foldr (max.fst) 0 textSizes
@@ -146,12 +146,12 @@ extraSpace p = do
     let extra = label_rgap + label_rlength + maxo
     return (extra + maxw, extra + maxh )
 
-minsizePie :: (ChartBackend m) => PieChart -> m (Double, Double)
+minsizePie :: PieChart -> ChartBackend (Double, Double)
 minsizePie p = do
     (extraw,extrah) <- extraSpace p
     return (extraw * 2, extrah * 2)
 
-renderPie :: (ChartBackend m) => PieChart -> (Double, Double) -> m (PickFn a)
+renderPie :: PieChart -> (Double, Double) -> ChartBackend (PickFn a)
 renderPie p (w,h) = do
     (extraw,extrah) <- extraSpace p
     let (w,h)  = (p_x p2 - p_x p1, p_y p2 - p_y p1)
@@ -169,9 +169,8 @@ renderPie p (w,h) = do
                   in [ pi{pitem_value_=pitem_value_ pi/total}
                      | pi <- pie_data_ p ]
 
-        paint :: (ChartBackend m) 
-              => Point -> Double -> Double -> (AlphaColour Double, PieItem)
-              -> m Double
+        paint :: Point -> Double -> Double -> (AlphaColour Double, PieItem)
+              -> ChartBackend Double
         paint center radius a1 (color,pitem) = do
             let ax     = 360.0 * (pitem_value_ pitem)
             let a2     = a1 + (ax / 2)
@@ -184,7 +183,7 @@ renderPie p (w,h) = do
             return a3
 
             where
-                pieLabel :: (ChartBackend m) => String -> Double -> Double -> m ()
+                pieLabel :: String -> Double -> Double -> ChartBackend ()
                 pieLabel name angle offset = do
                     withFontStyle (pie_label_style_ p) $ do
                       withLineStyle (pie_label_line_style_ p) $ do
@@ -202,8 +201,7 @@ renderPie p (w,h) = do
                         let p2 = p1 `pvadd` (Vector (offset' label_rgap) 0)
                         drawTextA anchor VTA_Bottom p2 name
 
-                pieSlice :: (ChartBackend m) => Point -> Double -> Double -> AlphaColour Double
-                            -> m ()
+                pieSlice :: Point -> Double -> Double -> AlphaColour Double -> ChartBackend ()
                 pieSlice (Point x y) a1 a2 color = do
                     let path = arc' x y radius (radian a1) (radian a2)
                             <> lineTo' x y

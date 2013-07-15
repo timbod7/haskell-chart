@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GADTs #-}
 
 -- | The backend to render charts with cairo.
 module Graphics.Rendering.Chart.Backend.Cairo
@@ -31,7 +32,7 @@ import qualified Graphics.Rendering.Cairo as C
 import qualified Graphics.Rendering.Cairo.Matrix as CM
 
 import Graphics.Rendering.Chart.Backend as G
-import Graphics.Rendering.Chart.Backend.Utils as G
+import Graphics.Rendering.Chart.Backend.Utils
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Renderable
@@ -44,17 +45,24 @@ import Graphics.Rendering.Chart.SparkLine
 
 -- | The reader monad containing context information to control
 --   the rendering process.
-newtype CRender a = DR (ReaderT ChartBackendEnv C.Render a)
-  deriving (Functor, Monad, MonadReader ChartBackendEnv)
+newtype CRender a = DR (C.Render a)
+  deriving (Functor, Monad)
 
 -- | Run this backends renderer.
-runBackend :: CRender a       -- ^ Chart render code.
-           -> ChartBackendEnv -- ^ Environment to start rendering with.
+runBackend :: ChartBackendEnv -- ^ Environment to start rendering with.
+           -> ChartBackend a       -- ^ Chart render code.
            -> C.Render a      -- ^ Cairo render code.
-runBackend (DR m) e = runReaderT m e
+runBackend env m = 
+  let (DR c) = compileBackendM cStrokePath cFillPath cFillClip 
+                               cTextSize cDrawText 
+                               cWithTransform 
+                               cWithLineStyle cWithFillStyle cWithFontStyle 
+                               cWithClipRegion
+                               env m
+  in c
 
 c :: C.Render a -> CRender a
-c = DR . lift
+c = DR
 
 instance Monoid a => Monoid (CRender a) where
   mempty = return mempty
@@ -62,72 +70,66 @@ instance Monoid a => Monoid (CRender a) where
     a <- ma
     b <- mb
     return $ a `mappend` b
+    
+cStrokePath :: ChartBackendEnv -> Path -> CRender ()
+cStrokePath env p = preserveCState $ do
+  cNewPath
+  foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
+  cSetSourceColor $ line_color_ $ cbeLineStyle env
+  cStroke
 
-instance ChartBackend CRender where
+cFillPath :: ChartBackendEnv -> Path -> CRender ()
+cFillPath env p = preserveCState $ do
+  cNewPath
+  foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
+  case cbeFillStyle env of
+    FillStyleSolid cl -> cSetSourceColor cl
+  cFill
   
-  strokePath p = preserveCState $ do
-    cNewPath
-    foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
-    cl <- line_color_ `fmap` getLineStyle
-    cSetSourceColor cl
-    cStroke
-  
-  fillPath p = preserveCState $ do
-    cNewPath
-    foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
-    fs <- getFillStyle
-    case fs of
-      FillStyleSolid cl -> cSetSourceColor cl
-    cFill
-  
-  fillClip = do
-    fs <- getFillStyle
-    case fs of
-      FillStyleSolid cl -> cSetSourceColor cl
-    cPaint
-  
-  textSize s = do
-    te <- c $ C.textExtents s
-    fe <- c $ C.fontExtents
-    return $ TextSize 
-      { textSizeWidth    = C.textExtentsWidth te
-      , textSizeAscent   = C.fontExtentsAscent fe
-      , textSizeDescent  = C.fontExtentsDescent fe
-      , textSizeYBearing = C.textExtentsYbearing te
-      , textSizeHeight   = C.fontExtentsHeight fe
-      }
-  
-  drawText p s = do
-    fs <- getFontStyle
-    preserveCState $ do
-    cSetSourceColor (font_color_ fs)
-    cTranslate p
-    cMoveTo $ Point 0 0
-    cShowText s
-  
-  withTransform t m = withTransform' t 
-                    $ preserveCState 
-                    $ cTransform t >> m
-  
-  withFontStyle fs m = withFontStyle' fs
-                     $ preserveCState 
-                     $ setFontStyle fs >> m
-  
-  withFillStyle fs m = withFillStyle' fs
-                     $ preserveCState 
-                     $ setFillStyle fs >> m
-  
-  withLineStyle ls m = withLineStyle' ls
-                     $ preserveCState 
-                     $ setLineStyle ls >> m
-  
-  withClipRegion clip m = 
-    withClipRegion' clip $ preserveCState $ do
-      clip' <- getClipRegion
-      case clip' of
-        LMin -> setClipRegion (Rect (Point 0 0) (Point 0 0)) >> m
-        LValue c -> setClipRegion c >> m
-        LMax -> c C.resetClip >> m
+cFillClip :: ChartBackendEnv -> CRender ()
+cFillClip env = preserveCState $ do
+  case cbeFillStyle env of
+    FillStyleSolid cl -> cSetSourceColor cl
+  cPaint
+
+cTextSize :: ChartBackendEnv -> String -> CRender TextSize
+cTextSize env text = do
+  te <- c $ C.textExtents text
+  fe <- c $ C.fontExtents
+  return $ TextSize 
+    { textSizeWidth    = C.textExtentsWidth te
+    , textSizeAscent   = C.fontExtentsAscent fe
+    , textSizeDescent  = C.fontExtentsDescent fe
+    , textSizeYBearing = C.textExtentsYbearing te
+    , textSizeHeight   = C.fontExtentsHeight fe
+    }
+
+cDrawText :: ChartBackendEnv -> Point -> String -> CRender ()
+cDrawText env p text = preserveCState $ do
+  cSetSourceColor $ font_color_ $ cbeFontStyle env
+  cTranslate p
+  cMoveTo $ Point 0 0
+  cShowText text
+
+cWithTransform :: ChartBackendEnv -> CRender a -> CRender a
+cWithTransform env m = preserveCState $ cSetTransform (cbeTransform env) >> m
+
+cWithLineStyle :: ChartBackendEnv -> CRender a -> CRender a
+cWithLineStyle env m = preserveCState $ setLineStyle (cbeLineStyle env) >> m
+
+cWithFillStyle :: ChartBackendEnv -> CRender a -> CRender a
+cWithFillStyle env m = preserveCState $ setFillStyle (cbeFillStyle env) >> m
+
+cWithFontStyle :: ChartBackendEnv -> CRender a -> CRender a
+cWithFontStyle env m = preserveCState $ setFontStyle (cbeFontStyle env) >> m
+
+cWithClipRegion :: ChartBackendEnv -> CRender a -> CRender a
+cWithClipRegion env m = preserveCState $ do
+  case cbeClipRegion env of
+    LMin -> setClipRegion (Rect (Point 0 0) (Point 0 0))
+    LValue c -> setClipRegion c
+    LMax -> c C.resetClip 
+  m
 
 -- -----------------------------------------------------------------------
 -- Output rendering functions
@@ -135,7 +137,7 @@ instance ChartBackend CRender where
 
 data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
 
-renderToFile :: CRender a -> CairoBackend -> Int -> Int -> FilePath -> IO ()
+renderToFile :: ChartBackend a -> CairoBackend -> Int -> Int -> FilePath -> IO ()
 renderToFile m b = case b of
   CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
   CairoSVG -> cRenderToSVGFile m
@@ -144,7 +146,7 @@ renderToFile m b = case b of
 
 -- | Output the given renderable to a PNG file of the specifed size
 --   (in pixels), to the specified file.
-renderableToPNGFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO (PickFn a)
+renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
 renderableToPNGFile r width height path =
     cRenderToPNGFile cr width height path
   where
@@ -152,7 +154,7 @@ renderableToPNGFile r width height path =
 
 -- | Output the given renderable to a PDF file of the specifed size
 --   (in points), to the specified file.
-renderableToPDFFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
+renderableToPDFFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToPDFFile r width height path =
     cRenderToPDFFile cr width height path
   where
@@ -160,7 +162,7 @@ renderableToPDFFile r width height path =
 
 -- | Output the given renderable to a postscript file of the specifed size
 --   (in points), to the specified file.
-renderableToPSFile  :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
+renderableToPSFile  :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToPSFile r width height path  = 
     cRenderToPSFile cr width height path
   where
@@ -168,7 +170,7 @@ renderableToPSFile r width height path  =
 
 -- | Output the given renderable to an SVG file of the specifed size
 --   (in points), to the specified file.
-renderableToSVGFile :: Renderable CRender a -> Int -> Int -> FilePath -> IO ()
+renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
 renderableToSVGFile r width height path =
     cRenderToSVGFile cr width height path
   where
@@ -209,11 +211,6 @@ convertMatrix (G.Matrix a1 a2 b1 b2 c1 c2) = CM.Matrix a1 a2 b1 b2 c1 c2
 -- -----------------------------------------------------------------------
 -- Assorted helper functions in Cairo Usage
 -- -----------------------------------------------------------------------
-
--- | Function to draw a textual label anchored by one of its corners
---   or edges.
-drawText :: HTextAnchor -> VTextAnchor -> Point -> String -> CRender ()
-drawText hta vta p s = drawTextR hta vta 0 p s
 
 setClipRegion :: Rect -> CRender ()
 setClipRegion (Rect p2 p3) = do    
@@ -302,30 +299,28 @@ cFontDescent = do
 --cFontExtentsDescent fe = C.fontExtentsDescent fe
 cShowText s = c $ C.showText s
 
-cRenderToPNGFile :: CRender a -> Int -> Int -> FilePath -> IO a
+cRenderToPNGFile :: ChartBackend a -> Int -> Int -> FilePath -> IO a
 cRenderToPNGFile cr width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
-    a <- C.renderWith result $ runBackend cr bitmapEnv
+    a <- C.renderWith result $ runBackend bitmapEnv cr 
     C.surfaceWriteToPNG result path
     return a
 
-cRenderToPDFFile :: CRender a -> Int -> Int -> FilePath -> IO ()
+cRenderToPDFFile :: ChartBackend a -> Int -> Int -> FilePath -> IO ()
 cRenderToPDFFile = cRenderToFile C.withPDFSurface
 
-cRenderToPSFile  ::  CRender a -> Int -> Int -> FilePath -> IO ()
+cRenderToPSFile  ::  ChartBackend a -> Int -> Int -> FilePath -> IO ()
 cRenderToPSFile  = cRenderToFile C.withPSSurface
 
-cRenderToSVGFile  ::  CRender a -> Int -> Int -> FilePath -> IO ()
+cRenderToSVGFile  ::  ChartBackend a -> Int -> Int -> FilePath -> IO ()
 cRenderToSVGFile  = cRenderToFile C.withSVGSurface
 
 cRenderToFile withSurface cr width height path = 
     withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
-    C.renderWith result $ runBackend rfn vectorEnv
+    C.renderWith result $ do
+      runBackend vectorEnv cr
+      C.showPage
     C.surfaceFinish result
-  where
-    rfn = do
-        cr
-        c $ C.showPage
 
 -- | Environment aligned to render good on bitmaps.
 bitmapEnv :: ChartBackendEnv

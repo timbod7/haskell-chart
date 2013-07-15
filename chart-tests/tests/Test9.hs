@@ -8,7 +8,7 @@ import Data.Default
 
 import Utils
 
-chart :: (ChartBackend m) => Bool -> Renderable m (Layout1Pick PlotIndex Double)
+chart :: Bool -> Renderable (Layout1Pick PlotIndex Double)
 chart borders = layout1ToRenderable layout
  where
   layout = 
@@ -17,7 +17,7 @@ chart borders = layout1ToRenderable layout
       $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
       $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
       $ layout1_plots ^= [ Left (plotBars bars2) ]
-      $ def :: (ChartBackend m) => Layout1 m PlotIndex Double
+      $ def :: Layout1 PlotIndex Double
 
   bars2 = plot_bars_titles ^= ["Cash","Equity"]
       $ plot_bars_values ^= addIndexes [[20,45],[45,30],[30,20],[70,25]]

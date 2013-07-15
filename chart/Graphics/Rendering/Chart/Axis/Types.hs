@@ -127,7 +127,7 @@ data AxisT x = AxisT RectEdge AxisStyle Bool (AxisData x)
 -- it can be composed with other renderables and drawn. This
 -- does not include the drawing of the grid, which must be done
 -- separately by the `renderAxisGrid` function.
-axisToRenderable :: (ChartBackend m) => AxisT x -> Renderable m x
+axisToRenderable :: AxisT x -> Renderable x
 axisToRenderable at = Renderable {
      minsize = minsizeAxis at,
      render  = renderAxis at
@@ -168,7 +168,7 @@ axisLabelsHide ad    = ad{ axis_labels_ = []}
 axisLabelsOverride  :: [(x,String)] -> AxisData x -> AxisData x
 axisLabelsOverride o ad = ad{ axis_labels_ = [o] }
 
-minsizeAxis :: (ChartBackend m) => AxisT x -> m RectSize
+minsizeAxis :: AxisT x -> ChartBackend RectSize
 minsizeAxis (AxisT at as rev ad) = do
     labelSizes <- withFontStyle (axis_label_style_ as) $ do
       mapM (mapM textDimension) (labelTexts ad)
@@ -197,7 +197,7 @@ maximum0 vs = maximum vs
 
 -- | Calculate the amount by which the labels extend beyond
 --   the ends of the axis.
-axisOverhang :: (Ord x, ChartBackend m) => AxisT x -> m (Double,Double)
+axisOverhang :: (Ord x) => AxisT x -> ChartBackend (Double,Double)
 axisOverhang (AxisT at as rev ad) = do
     let labels = map snd . sort . concat . axis_labels_ $ ad
     labelSizes <- withFontStyle (axis_label_style_ as) $ do
@@ -214,7 +214,7 @@ axisOverhang (AxisT at as rev ad) = do
                  E_Left   -> ohangv
                  E_Right  -> ohangh
 
-renderAxis :: (ChartBackend m) => AxisT x -> RectSize -> m (PickFn x)
+renderAxis :: AxisT x -> RectSize -> ChartBackend (PickFn x)
 renderAxis at@(AxisT et as rev ad) sz = do
   let ls = axis_line_style_ as
   withLineStyle (ls {line_cap_ = LineCapSquare}) $ do
@@ -313,7 +313,7 @@ axisMapping (AxisT et as rev ad) (x2,y2) = case et of
     reverse r@(r0,r1)  = if rev then (r1,r0) else r
 
 -- 
-renderAxisGrid :: (ChartBackend m) => RectSize -> AxisT z -> m ()
+renderAxisGrid :: RectSize -> AxisT z -> ChartBackend ()
 renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
     withLineStyle (axis_grid_style_ as) $ do
       mapM_ (drawGridLine re) (axis_grid_ ad)

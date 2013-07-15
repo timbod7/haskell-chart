@@ -56,7 +56,7 @@ instance ToPlot PlotLines where
         xs = [ x | (LValue x,_) <- concat (plot_lines_limit_values_ p)]
         ys = [ y | (_,LValue y) <- concat (plot_lines_limit_values_ p)]
 
-renderPlotLines :: (ChartBackend m) => PlotLines x y -> PointMapFn x y -> m ()
+renderPlotLines :: PlotLines x y -> PointMapFn x y -> ChartBackend ()
 renderPlotLines p pmap = 
   withLineStyle (plot_lines_style_ p) $ do
     mapM_ (drawLines (mapXY pmap)) (plot_lines_values_ p)
@@ -64,7 +64,7 @@ renderPlotLines p pmap =
   where
     drawLines mapfn pts = strokePointPath (map mapfn pts)
 
-renderPlotLegendLines :: (ChartBackend m) => PlotLines x y -> Rect -> m ()
+renderPlotLegendLines :: PlotLines x y -> Rect -> ChartBackend ()
 renderPlotLegendLines p r@(Rect p1 p2) = 
   withLineStyle (plot_lines_style_ p) $ do
     let y = (p_y p1 + p_y p2) / 2
@@ -89,7 +89,7 @@ instance Default (PlotLines x y) where
     }
 
 -- | Helper function to plot a single horizontal line.
-hlinePlot :: (ChartBackend m) => String -> LineStyle -> b -> Plot m a b
+hlinePlot :: String -> LineStyle -> b -> Plot a b
 hlinePlot t ls v = toPlot defaultPlotLines {
     plot_lines_title_        = t,
     plot_lines_style_        = ls,
@@ -97,7 +97,7 @@ hlinePlot t ls v = toPlot defaultPlotLines {
     }
 
 -- | Helper function to plot a single vertical line.
-vlinePlot :: (ChartBackend m) => String -> LineStyle -> a -> Plot m a b
+vlinePlot :: String -> LineStyle -> a -> Plot a b
 vlinePlot t ls v = toPlot defaultPlotLines {
     plot_lines_title_        = t,
     plot_lines_style_        = ls,

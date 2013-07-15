@@ -90,7 +90,7 @@ smoothSpark  = SparkOptions
 barSpark :: SparkOptions
 barSpark  = smoothSpark { so_smooth=False }
 
-sparkLineToRenderable :: (ChartBackend m) => SparkLine -> Renderable m ()
+sparkLineToRenderable :: SparkLine -> Renderable ()
 sparkLineToRenderable sp = Renderable
             { minsize = return (0, fromIntegral (so_height (sl_options sp)))
             , render  = \_rect-> renderSparkLine sp
@@ -110,7 +110,7 @@ sparkSize :: SparkLine -> (Int,Int)
 sparkSize s = (sparkWidth s, so_height (sl_options s))
 
 -- | Render a SparkLine to a drawing surface using cairo.
-renderSparkLine :: (ChartBackend m) => SparkLine -> m (PickFn ())
+renderSparkLine :: SparkLine -> ChartBackend (PickFn ())
 renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
   let w = 4 + (so_step opt) * (length ds - 1) + extrawidth
       extrawidth | so_smooth opt = 0
