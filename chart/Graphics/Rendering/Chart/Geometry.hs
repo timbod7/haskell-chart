@@ -23,7 +23,7 @@ module Graphics.Rendering.Chart.Geometry
   , PointMapFn
   
   -- * Paths
-  , Path
+  , Path(..)
   , lineTo, moveTo
   , lineTo', moveTo'
   , arc, arc'
