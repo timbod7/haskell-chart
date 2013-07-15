@@ -38,6 +38,9 @@ module Graphics.Rendering.Chart.Geometry
   , rotate
   , scale
   , translate
+  , scalarMultiply
+  , adjoint
+  , invert
   ) where
 
 import Data.Monoid
@@ -273,9 +276,19 @@ rotate r m = m * (Matrix c s (-s) c 0 0)
   where s = sin r
         c = cos r
 
+-- | Copied from Graphics.Rendering.Cairo.Matrix
+scalarMultiply :: Double -> Matrix -> Matrix
+scalarMultiply scalar = pointwise (* scalar)
 
+-- | Copied from Graphics.Rendering.Cairo.Matrix
+adjoint :: Matrix -> Matrix
+adjoint (Matrix a b c d tx ty) =
+  Matrix d (-b) (-c) a (c*ty - d*tx) (b*tx - a*ty)
 
-
+-- | Copied from Graphics.Rendering.Cairo.Matrix
+invert :: Matrix -> Matrix
+invert m@(Matrix xx yx xy yy _ _) = scalarMultiply (recip det) $ adjoint m
+  where det = xx*yy - yx*xy
 
 
 
