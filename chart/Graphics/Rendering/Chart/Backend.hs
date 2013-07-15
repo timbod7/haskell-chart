@@ -10,6 +10,7 @@ module Graphics.Rendering.Chart.Backend
     ChartBackendInstr(..)
   , ChartBackendEnv(..)
   , ChartBackend(..)
+  , Change(..)
   , TextSize(..)
   
   -- * Backend Operations
@@ -124,17 +125,19 @@ defaultEnv pointAlignFn coordAlignFn = ChartBackendEnv
 -- Rendering Backend Class
 -- -----------------------------------------------------------------------
 
+data Change a = Change { oldValue :: a, newValue :: a, diffValue :: a }
+
 data ChartBackendInstr m a where
   StrokePath :: ChartBackendEnv -> Path -> ChartBackendInstr m ()
   FillPath   :: ChartBackendEnv -> Path -> ChartBackendInstr m ()
   FillClip   :: ChartBackendEnv -> ChartBackendInstr m ()
   GetTextSize :: ChartBackendEnv -> String -> ChartBackendInstr m TextSize
   DrawText    :: ChartBackendEnv -> Point -> String -> ChartBackendInstr m ()
-  WithTransform  :: ChartBackendEnv -> m a -> ChartBackendInstr m a
-  WithFontStyle  :: ChartBackendEnv -> m a -> ChartBackendInstr m a
-  WithFillStyle  :: ChartBackendEnv -> m a -> ChartBackendInstr m a
-  WithLineStyle  :: ChartBackendEnv -> m a -> ChartBackendInstr m a
-  WithClipRegion :: ChartBackendEnv -> m a -> ChartBackendInstr m a
+  WithTransform  :: ChartBackendEnv -> Change Matrix       -> m a -> ChartBackendInstr m a
+  WithFontStyle  :: ChartBackendEnv -> Change FontStyle    -> m a -> ChartBackendInstr m a
+  WithFillStyle  :: ChartBackendEnv -> Change FillStyle    -> m a -> ChartBackendInstr m a
+  WithLineStyle  :: ChartBackendEnv -> Change LineStyle    -> m a -> ChartBackendInstr m a
+  WithClipRegion :: ChartBackendEnv -> Change (Limit Rect) -> m a -> ChartBackendInstr m a
 
 type ChartProgram a = ReaderT ChartBackendEnv
                               (Program (ChartBackendInstr ChartBackend)) a
@@ -220,7 +223,7 @@ withTransform t m = do
   oldTrans <- getTransform
   let newTrans = t * oldTrans
   env <- (\s -> s { cbeTransform = newTrans }) <$> ask
-  chartSingleton $ WithTransform env
+  chartSingleton $ WithTransform env (Change oldTrans newTrans t)
                  $ local (const env) m
 
 -- | Use the given font style in this local
@@ -234,25 +237,28 @@ withTransform t m = do
 --   and use it instead.
 withFontStyle :: FontStyle -> ChartBackend a -> ChartBackend a
 withFontStyle fs m = do
-  env <- (\s -> s { cbeFontStyle = fs }) <$> ask
-  chartSingleton $ WithFontStyle env 
-                 $ local (const env) m
+  oldEnv <- ask
+  let newEnv = oldEnv { cbeFontStyle = fs }
+  chartSingleton $ WithFontStyle newEnv (Change (cbeFontStyle oldEnv) fs fs)
+                 $ local (const newEnv) m
 
 -- | Use the given fill style in this local
 --   environment when filling paths.
 withFillStyle :: FillStyle -> ChartBackend a -> ChartBackend a
 withFillStyle fs m = do
-  env <- (\s -> s { cbeFillStyle = fs }) <$> ask
-  chartSingleton $ WithFillStyle env
-                 $ local (const env) m
+  oldEnv <- ask
+  let newEnv = oldEnv { cbeFillStyle = fs }
+  chartSingleton $ WithFillStyle newEnv (Change (cbeFillStyle oldEnv) fs fs)
+                 $ local (const newEnv) m
 
 -- | Use the given line style in this local
 --   environment when stroking paths.
 withLineStyle :: LineStyle -> ChartBackend a -> ChartBackend a
 withLineStyle ls m = do
-  env <- (\s -> s { cbeLineStyle = ls }) <$> ask
-  chartSingleton $ WithLineStyle env 
-                 $ local (const env) m
+  oldEnv <- ask
+  let newEnv = oldEnv { cbeLineStyle = ls }
+  chartSingleton $ WithLineStyle newEnv (Change (cbeLineStyle oldEnv) ls ls)
+                 $ local (const newEnv) m
 
 -- | Use the given clipping rectangle when drawing
 --   in this local environment. The new clipping region
@@ -263,7 +269,7 @@ withClipRegion c m = do
   oldClip <- getClipRegion
   let newClip = intersectRect oldClip (LValue c)
   env <- (\s -> s { cbeClipRegion = newClip }) <$> ask
-  chartSingleton $ WithClipRegion env 
+  chartSingleton $ WithClipRegion env (Change oldClip newClip (LValue c))
                  $ local (const env) m
 
 -- -----------------------------------------------------------------------
