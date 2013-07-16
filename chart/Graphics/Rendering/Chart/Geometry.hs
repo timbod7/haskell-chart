@@ -120,12 +120,21 @@ intersectRect (LValue (Rect (Point x11 y11) (Point x12 y12)))
 type Range    = (Double,Double)
 type RectSize = (Double,Double)
 
+{-
 -- | Make a path from a rectangle.
-rectPath :: Rect -> [Point]
-rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = [p1,p2,p3,p4,p1]
+rectPointPath :: Rect -> [Point]
+rectPointPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = [p1,p2,p3,p4,p1]
   where    
     p2 = (Point x1 y2)
     p4 = (Point x2 y1)
+-}
+
+-- | Make a path from a rectangle.
+rectPath :: Rect -> Path
+rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = 
+  let p2 = (Point x1 y2)
+      p4 = (Point x2 y1)
+  in moveTo p1 <> lineTo p2 <> lineTo p3 <> lineTo p4 <> close
 
 -- -----------------------------------------------------------------------
 -- Path Types

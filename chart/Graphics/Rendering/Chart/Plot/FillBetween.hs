@@ -62,7 +62,7 @@ renderPlotFillBetween' p vs pmap  =
 renderPlotLegendFill :: PlotFillBetween x y -> Rect -> ChartBackend ()
 renderPlotLegendFill p r = 
   withFillStyle (plot_fillbetween_style_ p) $ do
-    fillPointPath (rectPath r)
+    fillPath (rectPath r)
 
 plotAllPointsFillBetween :: PlotFillBetween x y -> ([x],[y])
 plotAllPointsFillBetween p = ( [ x | (x,(_,_)) <- pts ]

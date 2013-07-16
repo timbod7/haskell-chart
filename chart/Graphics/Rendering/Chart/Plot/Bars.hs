@@ -144,11 +144,11 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
     clusteredBars (x,ys) = do
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
            withFillStyle fstyle $ do
-             fillPointPath (barPath (offset i) x yref0 y)
+             fillPath (barPath (offset i) x yref0 y)
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
              withLineStyle lstyle $ do
-               strokePointPath (barPath (offset i) x yref0 y)
+               strokePath (barPath (offset i) x yref0 y)
 
     offset = case (plot_bars_alignment_ p) of
       BarsLeft     -> \i -> fromIntegral i * width
@@ -164,11 +164,11 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
          }
        forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
            withFillStyle fstyle $ do
-             fillPointPath (barPath ofs x y0 y1)
+             fillPath (barPath ofs x y0 y1)
        forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
               withLineStyle lstyle $ do
-                strokePointPath (barPath ofs x y0 y1)
+                strokePath (barPath ofs x y0 y1)
 
     barPath xos x y0 y1 = do
       let (Point x' y') = pmap' (x,y1)
@@ -217,7 +217,7 @@ stack ys = scanl1 barsAdd ys
 renderPlotLegendBars :: (FillStyle,Maybe LineStyle) -> Rect -> ChartBackend ()
 renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
   withFillStyle fstyle $ do
-    fillPointPath (rectPath r)
+    fillPath (rectPath r)
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
