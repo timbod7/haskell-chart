@@ -15,7 +15,13 @@ import Data.Monoid
 import Control.Monad.Reader
 
 import Diagrams.Core.Transform ( Transformation(..) )
-import Diagrams.Prelude (Diagram, R2, P2, T2, r2, p2, Trail, (.+^), (<->))
+import Diagrams.Prelude 
+  ( Diagram
+  , R2, P2, T2
+  , r2, p2, unr2, unp2
+  , Trail
+  , (.+^), (<->)
+  )
 import qualified Diagrams.Prelude as D
 import qualified Diagrams.TwoD as D2
 import qualified Diagrams.TwoD.Arc as D2
@@ -84,7 +90,7 @@ drawTextD env p text = mempty -- TODO
 
 withTransformD :: (D.Renderable (D.Path R2) b)
                => ChartBackendEnv -> Change Matrix -> Diagram b R2 -> Diagram b R2
-withTransformD env c = id -- TODO
+withTransformD env c = D.transform (toTransformation $ diffValue c)
 
 withLineStyleD :: (D.Renderable (D.Path R2) b)
                => ChartBackendEnv -> Change LineStyle -> Diagram b R2 -> Diagram b R2
@@ -100,7 +106,10 @@ withFontStyleD env c = id -- TODO
 
 withClipRegionD :: (D.Renderable (D.Path R2) b)
                 => ChartBackendEnv -> Change (Limit Rect) -> Diagram b R2 -> Diagram b R2
-withClipRegionD env c = id -- TODO
+withClipRegionD env c = case diffValue c of
+  LValue clip -> D2.clipBy (convertPath $ rectPath clip)
+  LMax -> error "Infinite plane clipping should never happen!"
+  LMin -> D2.clipBy mempty
 
 -- -----------------------------------------------------------------------
 -- Converions Helpers
@@ -172,25 +181,30 @@ convertPath p = convertPath' (p2 (0,0)) p
 pathToTrail :: D.Point R2 -> Path 
             -> (D.Point R2, Trail R2, Maybe Path)
 pathToTrail start (MoveTo (Point x y) p) = 
-  let (t, rest) = pathToTrail' p
+  let (t, rest) = pathToTrail' p (p2 (x,y))
   in (p2 (x,y), t, rest)
 pathToTrail start p = 
-  let (t, rest) = pathToTrail' p
+  let (t, rest) = pathToTrail' p start
   in (start, t, rest)
 
-pathToTrail' :: Path -> (Trail R2, Maybe Path)
-pathToTrail' p@(MoveTo _ _) = (mempty, Just p)
-pathToTrail' (LineTo (Point x y) p) = 
-  let (t, rest) = pathToTrail' p
-  in (D.fromSegments [D.straight $ r2 (x,y)] <> t, rest)
-pathToTrail' (Arc (Point x y) r as ae p) = 
-  let (t, rest) = pathToTrail' p
-  in ((D2.scale r $ D2.arc (D2.Rad as) (D2.Rad ae)) <> t, rest)
-pathToTrail' (ArcNeg (Point x y) r as ae p) = 
-  let (t, rest) = pathToTrail' p
-  in ((D2.scale r $ D2.arcCW (D2.Rad as) (D2.Rad ae)) <> t, rest)
-pathToTrail' End = (mempty, Nothing)
-pathToTrail' Close = (D.close mempty, Nothing)
+pathToTrail' :: Path -> P2 -> (Trail R2, Maybe Path)
+pathToTrail' p@(MoveTo _ _) _ = (mempty, Just p)
+pathToTrail' (LineTo (Point x y) p) offset = 
+  let (t, rest) = pathToTrail' p $ p2 (x,y)
+  in (D.fromSegments [D.straight $ (x,y) `adjustBy` offset] <> t, rest)
+pathToTrail' (Arc (Point x y) r as ae p) offset = 
+  let (t, rest) = pathToTrail' p $ p2 (x,y)
+  in ( ((D2.translate ((x,y) `adjustBy` offset)) $ D2.scale r $ D2.arc (D2.Rad as) (D2.Rad ae)) <> t
+     , rest )
+pathToTrail' (ArcNeg (Point x y) r as ae p) offset = 
+  let (t, rest) = pathToTrail' p $ p2 (x,y)
+  in ( ((D2.translate ((x,y) `adjustBy` offset)) $ D2.scale r $ D2.arcCW (D2.Rad as) (D2.Rad ae)) <> t
+     , rest )
+pathToTrail' End _ = (mempty, Nothing)
+pathToTrail' Close _ = (D.close mempty, Nothing)
 
-
+adjustBy :: (Double, Double) -> P2 -> R2
+adjustBy (x,y) p = 
+  let (x0, y0) = unp2 p
+  in r2 (x - x0, y - y0)
 
