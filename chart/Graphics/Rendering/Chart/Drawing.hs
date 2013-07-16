@@ -141,7 +141,7 @@ alignPath f = foldPath (\p -> moveTo $ f p)
 --   See 'alignPath' and 'cbePointAlignFn'.
 alignStrokePath :: Path -> ChartBackend Path
 alignStrokePath p = do
-  f <- liftM cbePointAlignFn ask
+  f <- getPointAlignFn
   return $ alignPath f p
 
 -- | Align the path using the environments alignment function for coordinates.
@@ -149,21 +149,21 @@ alignStrokePath p = do
 --   See 'alignPath' and 'cbeCoordAlignFn'.
 alignFillPath :: Path -> ChartBackend Path
 alignFillPath p = do
-  f <- liftM cbeCoordAlignFn ask
+  f <- getCoordAlignFn
   return $ alignPath f p
 
 -- | Align the point using the environments alignment function for points.
 --   See 'cbePointAlignFn'.
 alignp :: Point -> ChartBackend Point
 alignp p = do 
-    alignfn <- liftM cbePointAlignFn ask
+    alignfn <- getPointAlignFn
     return (alignfn p)
 
 -- | Align the point using the environments alignment function for coordinates.
 --   See 'cbeCoordAlignFn'.
 alignc :: Point -> ChartBackend Point
 alignc p = do 
-    alignfn <- liftM cbeCoordAlignFn ask
+    alignfn <- getCoordAlignFn
     return (alignfn p)
 
 -- | Create a path by connecting all points with a line.
