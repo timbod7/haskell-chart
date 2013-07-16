@@ -14,7 +14,8 @@ import Data.Monoid
 
 import Control.Monad.Reader
 
-import Diagrams.Prelude (Diagram, R2, T2, r2, p2, Trail, (.+^))
+import Diagrams.Core.Transform ( Transformation(..) )
+import Diagrams.Prelude (Diagram, R2, P2, T2, r2, p2, Trail, (.+^), (<->))
 import qualified Diagrams.Prelude as D
 import qualified Diagrams.TwoD as D2
 import qualified Diagrams.TwoD.Arc as D2
@@ -106,14 +107,28 @@ withClipRegionD env c = id -- TODO
 -- -----------------------------------------------------------------------
 
 toTransformation :: Matrix -> T2
-toTransformation m = undefined
+toTransformation m = Transformation 
+  (applyWithoutTrans m <-> applyWithoutTrans (invert m))
+  (applyWithoutTrans (transpose m) <-> applyWithoutTrans (transpose (invert m)))
+  (r2 (x0 m, y0 m))
+
+transpose :: Matrix -> Matrix
+transpose (Matrix xx yx xy yy _ _) = Matrix xx xy yx yy 0 0
 
 -- | Apply a given affine transformation to a vector.
-applyTransformation :: Matrix -> R2 -> R2
-applyTransformation m v =
-  let (x,y) = D2.unr2 v
-  in r2 ( xx m * x + xy m * y + x0 m
+applyTransformation :: Matrix -> P2 -> P2
+applyTransformation m p =
+  let (x,y) = D2.unp2 p
+  in p2 ( xx m * x + xy m * y + x0 m
         , yx m * x + yy m * y + y0 m
+        )
+
+-- | Apply a given affine transformation to a vector.
+applyWithoutTrans :: Matrix -> R2 -> R2
+applyWithoutTrans m v =
+  let (x,y) = D2.unr2 v
+  in r2 ( xx m * x + xy m * y
+        , yx m * x + yy m * y
         )
 
 -- | Apply the Chart line style to a diagram.
