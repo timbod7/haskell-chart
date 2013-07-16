@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module provides the utilities to implement 'ChartBackend's.
-module Graphics.Rendering.Chart.Backend.Utils
+module Graphics.Rendering.Chart.Backend.Impl
   ( runChartBackend
   , compileBackend
   , compileBackendM

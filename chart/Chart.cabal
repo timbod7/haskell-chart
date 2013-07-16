@@ -54,7 +54,7 @@ library
         Graphics.Rendering.Chart.Plot.Points
         Graphics.Rendering.Chart.SparkLine
         Graphics.Rendering.Chart.Backend
-        Graphics.Rendering.Chart.Backend.Utils
+        Graphics.Rendering.Chart.Backend.Impl
 
 source-repository head
   type:     git

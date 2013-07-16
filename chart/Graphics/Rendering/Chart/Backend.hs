@@ -151,9 +151,6 @@ type ChartProgram a = ReaderT ChartBackendEnv
 --   and lengths is the always the same, but depends on the backend.
 --   All angles are measured in radians.
 --   
---   There are some useful utility functions in the
---   "Graphics.Rendering.Chart.Backend.Utils" module to aid implementors 
---   of backends.
 newtype ChartBackend a = ChartBackend {
   toProgram :: ChartProgram a
 }

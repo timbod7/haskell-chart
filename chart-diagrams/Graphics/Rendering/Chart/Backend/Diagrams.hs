@@ -20,7 +20,7 @@ import qualified Diagrams.TwoD as D2
 import qualified Diagrams.TwoD.Arc as D2
 
 import Graphics.Rendering.Chart.Backend as G
-import Graphics.Rendering.Chart.Backend.Utils
+import Graphics.Rendering.Chart.Backend.Impl
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Renderable
 
