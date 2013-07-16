@@ -14,7 +14,7 @@ import Data.Monoid
 
 import Control.Monad.Reader
 
-import Diagrams.Prelude (Diagram, R2, r2, p2, Trail, (.+^))
+import Diagrams.Prelude (Diagram, R2, T2, r2, p2, Trail, (.+^))
 import qualified Diagrams.Prelude as D
 import qualified Diagrams.TwoD as D2
 import qualified Diagrams.TwoD.Arc as D2
@@ -71,19 +71,19 @@ fillPathD env p = applyFillStyle (cbeFillStyle env) $ D.stroke $ convertPath p
 
 fillClipD :: (D.Renderable (D.Path R2) b)
           => ChartBackendEnv -> Diagram b R2
-fillClipD = undefined
+fillClipD env = mempty -- TODO
 
 textSizeD :: (D.Renderable (D.Path R2) b)
           => ChartBackendEnv -> String -> (Diagram b R2, TextSize)
-textSizeD = undefined
+textSizeD env text = (mempty, TextSize 10 10 10 10 10) -- TODO
 
 drawTextD :: (D.Renderable (D.Path R2) b)
           => ChartBackendEnv -> Point -> String -> Diagram b R2
-drawTextD = undefined
+drawTextD env p text = mempty -- TODO
 
 withTransformD :: (D.Renderable (D.Path R2) b)
                => ChartBackendEnv -> Change Matrix -> Diagram b R2 -> Diagram b R2
-withTransformD = undefined
+withTransformD env c = id -- TODO
 
 withLineStyleD :: (D.Renderable (D.Path R2) b)
                => ChartBackendEnv -> Change LineStyle -> Diagram b R2 -> Diagram b R2
@@ -95,11 +95,11 @@ withFillStyleD env c = applyFillStyle (cbeFillStyle env)
 
 withFontStyleD :: (D.Renderable (D.Path R2) b)
                => ChartBackendEnv -> Change FontStyle -> Diagram b R2 -> Diagram b R2
-withFontStyleD = undefined
+withFontStyleD env c = id -- TODO
 
 withClipRegionD :: (D.Renderable (D.Path R2) b)
                 => ChartBackendEnv -> Change (Limit Rect) -> Diagram b R2 -> Diagram b R2
-withClipRegionD = undefined
+withClipRegionD env c = id -- TODO
 
 -- -----------------------------------------------------------------------
 -- Converions Helpers
@@ -111,7 +111,7 @@ toTransformation m = undefined
 -- | Apply a given affine transformation to a vector.
 applyTransformation :: Matrix -> R2 -> R2
 applyTransformation m v =
-  let (x,y) = unr2 v
+  let (x,y) = D2.unr2 v
   in r2 ( xx m * x + xy m * y + x0 m
         , yx m * x + yy m * y + y0 m
         )
