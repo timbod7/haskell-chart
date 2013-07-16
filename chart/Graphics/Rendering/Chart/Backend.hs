@@ -2,7 +2,7 @@
 -- to arbitrary 'ChartBackend's.
 module Graphics.Rendering.Chart.Backend
   (
-  -- * The backend Monad itself
+  -- * The backend Monad
     ChartBackend(..)
   
   -- * Backend Operations
@@ -54,4 +54,5 @@ module Graphics.Rendering.Chart.Backend
   , font_color
   ) where
 
+import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Backend.Impl
