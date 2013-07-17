@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+--{-# LANGUAGE Rank2Types #-}
+--{-# LANGUAGE ScopedTypeVariables #-}
+--{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | This module provides the implementation details common to all 'ChartBackend's.
 module Graphics.Rendering.Chart.Backend.Impl where
@@ -26,7 +26,6 @@ import Graphics.Rendering.Chart.Backend.Types
 data ChartBackendInstr a where
   StrokePath :: Path -> ChartBackendInstr ()
   FillPath   :: Path -> ChartBackendInstr ()
-  FillClip   :: ChartBackendInstr ()
   GetTextSize :: String -> ChartBackendInstr TextSize
   DrawText    :: Point -> String -> ChartBackendInstr ()
   GetAlignments :: ChartBackendInstr AlignmentFns
@@ -59,10 +58,6 @@ strokePath p = singleton (StrokePath p)
 --   alignment operations on the path.
 fillPath :: Path -> ChartBackend ()
 fillPath p = singleton (FillPath p)
-
--- | Fill the clip region using the current 'FillStyle'.
-fillClip :: ChartBackend ()
-fillClip = singleton FillClip
 
 -- | Calculate a 'TextSize' object with rendering information
 --   about the given string without actually rendering it.
@@ -137,7 +132,6 @@ getCoordAlignFn = liftM afCoordAlignFn (singleton GetAlignments)
 -- compileBackend :: forall m a. (Monoid m)
 --   => (ChartBackendEnv -> Path -> m)            -- ^ 'strokePath' operation
 --   -> (ChartBackendEnv -> Path -> m)            -- ^ 'fillPath' operation
---   -> (ChartBackendEnv -> m)                    -- ^ 'fillClip' operation
 --   -> (ChartBackendEnv -> String -> (m, TextSize))    -- ^ 'textSize' operation
 --   -> (ChartBackendEnv -> Point -> String -> m) -- ^ 'drawText' operation
 --   -> (ChartBackendEnv -> Change Matrix -> m -> m) 
@@ -150,12 +144,12 @@ getCoordAlignFn = liftM afCoordAlignFn (singleton GetAlignments)
 --   -> (ChartBackendEnv -> Change (Limit Rect) -> m -> m) -- ^ 'withClipRegion' operation
 --   -> ChartBackendEnv -> ChartBackend a -> (m, a)
 -- compileBackend
---       strokePath' fillPath' fillClip' textSize' drawText' 
+--       strokePath' fillPath' textSize' drawText' 
 --       withTransform' withLineStyle' withFillStyle' withFontStyle' withClipRegion'
 --       e m = eval e $ runChartBackend e m
 --   where
 --     compile :: forall x. ChartBackendEnv -> ChartBackend x -> (m, x)
---     compile = compileBackend strokePath' fillPath' fillClip' textSize' drawText' 
+--     compile = compileBackend strokePath' fillPath' textSize' drawText' 
 --                              withTransform'  withLineStyle' withFillStyle' 
 --                              withFontStyle' withClipRegion'
 --     eval env m = case view m of
@@ -166,9 +160,6 @@ getCoordAlignFn = liftM afCoordAlignFn (singleton GetAlignments)
 --       (FillPath env' p) :>>= k ->
 --         let (m, x) = eval env $ k ()
 --         in (fillPath' env' p <> m, x)
---       (FillClip env') :>>= k ->
---         let (m, x) = eval env $ k ()
---         in (fillClip' env' <> m, x)
 --       (GetTextSize fs text) :>>= k ->
 --         let (m1, ts) = textSize' fs text
 --             (m2, x) = eval env $ k ts
@@ -208,7 +199,6 @@ getCoordAlignFn = liftM afCoordAlignFn (singleton GetAlignments)
 -- compileBackendM :: forall m a. (Monad m) 
 --   => (Path -> m ())            ^ 'strokePath' operation
 --   -> (Path -> m ())            ^ 'fillPath' operation
---   -> (m ())                    ^ 'fillClip' operation
 --   -> (String -> m TextSize)    ^ 'textSize' operation
 --   -> (Point -> String -> m ()) ^ 'drawText' operation
 --   -> (forall b. ChartBackendEnv -> Change Matrix -> m b -> m b) 
@@ -221,12 +211,12 @@ getCoordAlignFn = liftM afCoordAlignFn (singleton GetAlignments)
 --   -> (forall f. ChartBackendEnv -> Change (Limit Rect) -> m f -> m f) ^ 'withClipRegion' operation
 --   -> ChartBackendEnv -> ChartBackend a -> m a
 -- compileBackendM 
---       strokePath' fillPath' fillClip' textSize' drawText' 
+--       strokePath' fillPath' textSize' drawText' 
 --       withTransform' withLineStyle' withFillStyle' withFontStyle' withClipRegion'
 --       e m = eval e $ runChartBackend e m
 --   where
 --     compile :: ChartBackendEnv -> ChartBackend x -> m x
---     compile = compileBackendM strokePath' fillPath' fillClip' textSize' drawText' 
+--     compile = compileBackendM strokePath' fillPath' textSize' drawText' 
 --                               withTransform'  withLineStyle' withFillStyle' 
 --                               withFontStyle' withClipRegion'
 --     eval env m = case view m of
@@ -236,9 +226,6 @@ getCoordAlignFn = liftM afCoordAlignFn (singleton GetAlignments)
 --         eval env $ k ()
 --       (FillPath env' p) :>>= k -> do
 --         fillPath' env' p
---         eval env $ k ()
---       (FillClip env') :>>= k -> do
---         fillClip' env'
 --         eval env $ k ()
 --       (GetTextSize env' text) :>>= k -> do
 --         ts <- textSize' env' text
