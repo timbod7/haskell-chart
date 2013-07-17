@@ -19,6 +19,7 @@ library
                , diagrams-core >= 0.6
                , diagrams-lib >= 0.6
                , colour >= 2.2.1
+               , operational >= 0.2.2
                , data-default >= 0.5
                , Chart >= 0.17
 

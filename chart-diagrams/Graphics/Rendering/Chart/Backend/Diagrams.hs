@@ -1,5 +1,6 @@
 
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 
 -- | The backend to render charts with the diagrams library.
 module Graphics.Rendering.Chart.Backend.Diagrams
@@ -12,7 +13,7 @@ import Data.Colour.SRGB
 import Data.List (unfoldr)
 import Data.Monoid
 
-import Control.Monad.Reader
+import Control.Monad.Operational
 
 import Diagrams.Core.Transform ( Transformation(..) )
 import Diagrams.Prelude 
@@ -28,6 +29,7 @@ import qualified Diagrams.TwoD.Arc as D2
 
 import Graphics.Rendering.Chart.Backend as G
 import Graphics.Rendering.Chart.Backend.Impl
+import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Renderable
 
@@ -35,81 +37,98 @@ import Graphics.Rendering.Chart.Renderable
 -- Backend
 -- -----------------------------------------------------------------------
 
+data DEnv = DEnv
+  { envAlignmentFns :: AlignmentFns
+  , envFontColor :: AlphaColour Double
+  }
+
+-- | Produce a environment with no transformation and clipping. 
+--   It will use the default styles.
+defaultEnv :: (Point -> Point) -- ^ The point alignment function ('cePointAlignFn')
+           -> (Point -> Point) -- ^ The coordinate alignment function ('ceCoordAlignFn')
+           -> DEnv
+defaultEnv pointAlignFn coordAlignFn = DEnv 
+  { envAlignmentFns = AlignmentFns pointAlignFn coordAlignFn
+  , envFontColor = font_color_ def
+  }
+
 -- | Run this backends renderer.
 runBackend :: (D.Renderable (D.Path R2) b)
-           => ChartBackendEnv   -- ^ Environment to start rendering with.
+           => DEnv   -- ^ Environment to start rendering with.
            -> ChartBackend a    -- ^ Chart render code.
            -> (Diagram b R2, a) -- ^ The diagram.
-runBackend env m = compileBackend
-      strokePathD fillPathD fillClipD textSizeD drawTextD 
-      withTransformD withLineStyleD withFillStyleD withFontStyleD withClipRegionD
-      env m
+runBackend env m =  eval env (view m)
+  where
+    eval :: (D.Renderable (D.Path R2) b)
+         => DEnv -> ProgramView ChartBackendInstr a -> (Diagram b R2, a)
+    eval env (Return v) = (mempty, v)
+    eval env (StrokePath p :>>= f) = dStrokePath env p   <># step env f
+    eval env (FillPath p   :>>= f) = dFillPath   env p   <># step env f
+    eval env (DrawText p s :>>= f) = dDrawText   env p s <># step env f
+    eval env (GetTextSize s :>>= f) = dTextSize env s   <>= step env f
+    eval env (GetAlignments :>>= f) = dAlignmentFns env <>= step env f
+    eval env (WithTransform m p :>>= f)  = dWithTransform env m  p <>= step env f
+    eval env (WithFontStyle fs p :>>= f) = dWithFontStyle env fs p <>= step env f
+    eval env (WithFillStyle fs p :>>= f) = dWithFillStyle env fs p <>= step env f
+    eval env (WithLineStyle ls p :>>= f) = dWithLineStyle env ls p <>= step env f
+    eval env (WithClipRegion r p :>>= f) = dWithClipRegion env r p <>= step env f
 
+    step :: (D.Renderable (D.Path R2) b)
+         => DEnv -> (v -> ChartBackend a) -> v -> (Diagram b R2, a)
+    step env f =  \v -> runBackend env (f v)
+    
+    (<>#) :: (Monoid m) => m -> (() -> (m, a)) -> (m, a)
+    (<>#) m f = (m, ()) <>= f
+    
+    (<>=) :: (Monoid m) => (m, a) -> (a -> (m, b)) -> (m, b)
+    (<>=) (ma, a) f = let (mb, b) = f a
+                      in (ma <> mb, b)
 
-{-
-data Path = MoveTo Point Path 
-          | LineTo Point Path
-          | Arc Point Double Double Double Path
-          | ArcNeg Point Double Double Double Path
-          | End 
-          | Close
- -}
+dStrokePath :: (D.Renderable (D.Path R2) b)
+            => DEnv -> Path -> Diagram b R2
+dStrokePath env p = D.stroke $ convertPath p
 
-{-
+dFillPath :: (D.Renderable (D.Path R2) b)
+          => DEnv -> Path -> Diagram b R2
+dFillPath env p = D.stroke $ convertPath p
 
- foldPath :: (Monoid m)
-         => (Point -> m) -- ^ MoveTo
-         -> (Point -> m) -- ^ LineTo
-         -> (Point -> Double -> Double -> Double -> m) -- ^ Arc
-         -> (Point -> Double -> Double -> Double -> m) -- ^ ArcNeg
-         -> m    -- ^ Close
-         -> Path -- ^ Path to fold
-         -> m
- 
- -}
+dTextSize :: (D.Renderable (D.Path R2) b)
+          => DEnv -> String -> (Diagram b R2, TextSize)
+dTextSize env text = (mempty, TextSize 10 10 10 10 10) -- TODO
 
-strokePathD :: (D.Renderable (D.Path R2) b)
-            => ChartBackendEnv -> Path -> Diagram b R2
-strokePathD env p = applyLineStyle (cbeLineStyle env) $ D.stroke $ convertPath p
+dAlignmentFns :: (D.Renderable (D.Path R2) b)
+              => DEnv -> (Diagram b R2, AlignmentFns)
+dAlignmentFns env = (mempty, undefined) -- TODO
 
-fillPathD :: (D.Renderable (D.Path R2) b)
-          => ChartBackendEnv -> Path -> Diagram b R2
-fillPathD env p = applyFillStyle (cbeFillStyle env) $ D.stroke $ convertPath p
+dDrawText :: (D.Renderable (D.Path R2) b)
+          => DEnv -> Point -> String -> Diagram b R2
+dDrawText env p text = mempty -- TODO
 
-fillClipD :: (D.Renderable (D.Path R2) b)
-          => ChartBackendEnv -> Diagram b R2
-fillClipD env = mempty -- TODO
+dWith :: (D.Renderable (D.Path R2) b)
+      => DEnv -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
+      -> ChartBackend a -> (Diagram b R2, a)
+dWith env envF dF m = let (ma, a) = runBackend (envF env) m
+                      in (dF ma, a)
 
-textSizeD :: (D.Renderable (D.Path R2) b)
-          => ChartBackendEnv -> String -> (Diagram b R2, TextSize)
-textSizeD env text = (mempty, TextSize 10 10 10 10 10) -- TODO
+dWithTransform :: (D.Renderable (D.Path R2) b)
+               => DEnv -> Matrix -> ChartBackend a -> (Diagram b R2, a)
+dWithTransform env t = dWith env id $ D.transform (toTransformation t)
 
-drawTextD :: (D.Renderable (D.Path R2) b)
-          => ChartBackendEnv -> Point -> String -> Diagram b R2
-drawTextD env p text = mempty -- TODO
+dWithLineStyle :: (D.Renderable (D.Path R2) b)
+               => DEnv -> LineStyle -> ChartBackend a -> (Diagram b R2, a)
+dWithLineStyle env ls = dWith env id $ applyLineStyle ls
 
-withTransformD :: (D.Renderable (D.Path R2) b)
-               => ChartBackendEnv -> Change Matrix -> Diagram b R2 -> Diagram b R2
-withTransformD env c = D.transform (toTransformation $ diffValue c)
+dWithFillStyle :: (D.Renderable (D.Path R2) b)
+               => DEnv -> FillStyle -> ChartBackend a -> (Diagram b R2, a)
+dWithFillStyle env fs = dWith env id $ applyFillStyle fs
 
-withLineStyleD :: (D.Renderable (D.Path R2) b)
-               => ChartBackendEnv -> Change LineStyle -> Diagram b R2 -> Diagram b R2
-withLineStyleD env c = applyLineStyle (cbeLineStyle env)
+dWithFontStyle :: (D.Renderable (D.Path R2) b)
+               => DEnv -> FontStyle -> ChartBackend a -> (Diagram b R2, a)
+dWithFontStyle env c = dWith env id $ id -- TODO
 
-withFillStyleD :: (D.Renderable (D.Path R2) b)
-               => ChartBackendEnv -> Change FillStyle -> Diagram b R2 -> Diagram b R2
-withFillStyleD env c = applyFillStyle (cbeFillStyle env)
-
-withFontStyleD :: (D.Renderable (D.Path R2) b)
-               => ChartBackendEnv -> Change FontStyle -> Diagram b R2 -> Diagram b R2
-withFontStyleD env c = id -- TODO
-
-withClipRegionD :: (D.Renderable (D.Path R2) b)
-                => ChartBackendEnv -> Change (Limit Rect) -> Diagram b R2 -> Diagram b R2
-withClipRegionD env c = case diffValue c of
-  LValue clip -> D2.clipBy (convertPath $ rectPath clip)
-  LMax -> error "Infinite plane clipping should never happen!"
-  LMin -> D2.clipBy mempty
+dWithClipRegion :: (D.Renderable (D.Path R2) b)
+                => DEnv -> Rect -> ChartBackend a -> (Diagram b R2, a)
+dWithClipRegion env clip = dWith env id $ D2.clipBy (convertPath $ rectPath clip)
 
 -- -----------------------------------------------------------------------
 -- Converions Helpers
