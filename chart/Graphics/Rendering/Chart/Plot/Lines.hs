@@ -62,13 +62,14 @@ renderPlotLines p pmap =
     mapM_ (drawLines (mapXY pmap)) (plot_lines_values_ p)
     mapM_ (drawLines pmap) (plot_lines_limit_values_ p)
   where
-    drawLines mapfn pts = strokePointPath (map mapfn pts)
+    drawLines mapfn pts = alignStrokePoints (map mapfn pts) >>= strokePointPath 
 
 renderPlotLegendLines :: PlotLines x y -> Rect -> ChartBackend ()
 renderPlotLegendLines p r@(Rect p1 p2) = 
   withLineStyle (plot_lines_style_ p) $ do
     let y = (p_y p1 + p_y p2) / 2
-    strokePointPath [Point (p_x p1) y, Point (p_x p2) y]
+    ps <- alignStrokePoints [Point (p_x p1) y, Point (p_x p2) y]
+    strokePointPath ps
 
 defaultPlotLineStyle :: LineStyle
 defaultPlotLineStyle = (solidLine 1 $ opaque blue){

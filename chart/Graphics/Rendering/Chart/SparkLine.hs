@@ -140,7 +140,8 @@ renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
   if so_smooth opt
     then do
       withLineStyle (solidLine 1 (opaque grey)) $ do
-        strokePointPath coords
+        p <- alignStrokePoints coords
+        strokePointPath p
     else do
       withFillStyle (solidFillStyle (opaque grey)) $ do
         forM_ coords $ \ (Point x y) ->

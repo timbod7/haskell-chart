@@ -53,7 +53,8 @@ renderPlotFillBetween p pmap =
 renderPlotFillBetween' p [] _     = return ()
 renderPlotFillBetween' p vs pmap  = 
   withFillStyle (plot_fillbetween_style_ p) $ do
-    fillPointPath ([p0] ++ p1s ++ reverse p2s ++ [p0])
+    ps <- alignFillPoints $ [p0] ++ p1s ++ reverse p2s ++ [p0]
+    fillPointPath ps
   where
     pmap'    = mapXY pmap
     (p0:p1s) = map pmap' [ (x,y1) | (x,(y1,y2)) <- vs ]
