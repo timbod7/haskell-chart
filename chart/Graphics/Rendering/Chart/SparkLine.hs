@@ -147,12 +147,15 @@ renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
           fillPath (rectPath (Rect (Point (x-1) y) (Point (x+1) (fi h))))
   when (so_minMarker opt) $ do
       withFillStyle (solidFillStyle (opaque (so_minColor opt))) $ do
-        fillPath (rectPath (boxpt minpt))
+        p <- alignFillPath (rectPath (boxpt minpt))
+        fillPath p
   when (so_maxMarker opt) $ do
       withFillStyle (solidFillStyle (opaque (so_maxColor opt))) $ do
-        fillPath (rectPath (boxpt maxpt))
+        p <- alignFillPath (rectPath (boxpt maxpt))
+        fillPath p
   when (so_lastMarker opt) $ do
       withFillStyle (solidFillStyle (opaque (so_lastColor opt))) $ do
-        fillPath (rectPath (boxpt endpt))
+        p <- alignFillPath (rectPath (boxpt endpt))
+        fillPath p
   return nullPickFn
 
