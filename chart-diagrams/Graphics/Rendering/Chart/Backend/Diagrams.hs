@@ -5,6 +5,8 @@
 -- | The backend to render charts with the diagrams library.
 module Graphics.Rendering.Chart.Backend.Diagrams
   ( runBackend
+  , defaultEnv
+  , DEnv(..)
   ) where
 
 import Data.Default
