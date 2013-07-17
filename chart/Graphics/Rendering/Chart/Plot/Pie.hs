@@ -188,12 +188,12 @@ renderPie p (w,h) = do
                     withFontStyle (pie_label_style_ p) $ do
                       withLineStyle (pie_label_line_style_ p) $ do
                         let p1 = ray angle (radius+label_rgap+label_rlength+offset)
-                        p1a <- alignp $ p1
+                        p1a <- alignStrokePoint $ p1
                         (tw,th) <- textDimension name
                         let (offset',anchor) = if angle < 90 || angle > 270 
                                               then ((0+),HTA_Left)
                                               else ((0-),HTA_Right)
-                        p0 <- alignp $ ray angle (radius + label_rgap+offset)
+                        p0 <- alignStrokePoint $ ray angle (radius + label_rgap+offset)
                         strokePath $ moveTo p0
                                   <> lineTo p1a
                                   <> lineTo' (p_x p1a + (offset' (tw + label_rgap))) (p_y p1a)

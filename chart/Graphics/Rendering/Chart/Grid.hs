@@ -267,8 +267,8 @@ gridToRenderable t = Renderable minsizef renderf
         Empty -> return nullPickFn
         (Value (r,span,_)) -> do
             let (Rect p0 p1) = mkRect borders loc span
-            p0'@(Point x0 y0) <- alignc p0
-            p1'@(Point x1 y1) <- alignc p1
+            p0'@(Point x0 y0) <- alignFillPoint p0
+            p1'@(Point x1 y1) <- alignFillPoint p1
             withTranslation (Point x0 y0) $ do
               pf <- render r (x1-x0,y1-y0)
               return (newpf pf x0 y0)

@@ -39,8 +39,8 @@ module Graphics.Rendering.Chart.Drawing
   , alignFillPoints
   , alignStrokePoints
   
-  , alignp
-  , alignc
+  , alignFillPoint
+  , alignStrokePoint
   
   , strokePointPath
   , fillPointPath
@@ -170,15 +170,15 @@ alignFillPoints p = do
 
 -- | Align the point using the environments alignment function for points.
 --   See 'getPointAlignFn'.
-alignp :: Point -> ChartBackend Point
-alignp p = do 
+alignStrokePoint :: Point -> ChartBackend Point
+alignStrokePoint p = do 
     alignfn <- getPointAlignFn
     return (alignfn p)
 
 -- | Align the point using the environments alignment function for coordinates.
 --   See 'getCoordAlignFn'.
-alignc :: Point -> ChartBackend Point
-alignc p = do 
+alignFillPoint :: Point -> ChartBackend Point
+alignFillPoint p = do 
     alignfn <- getCoordAlignFn
     return (alignfn p)
 
@@ -340,7 +340,7 @@ drawPoint :: PointStyle  -- ^ Style to use when rendering the point.
           -> Point       -- ^ Position of the point to render.
           -> ChartBackend ()
 drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
-  p'@(Point x y) <- alignp p
+  p'@(Point x y) <- alignStrokePoint p
   case shape of
     PointShapeCircle -> do
       let path = arc p' r 0 (2*pi)
