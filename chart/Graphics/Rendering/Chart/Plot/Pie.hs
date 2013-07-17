@@ -210,8 +210,7 @@ renderPie p (w,h) = do
 
                     withFillStyle (FillStyleSolid color) $ do
                       fillPath path
-                    ls <- getLineStyle
-                    withLineStyle (ls { line_color_ = withOpacity white 0.1 }) $ do
+                    withLineStyle (def { line_color_ = withOpacity white 0.1 }) $ do
                       strokePath path
 
                 ray :: Double -> Double -> Point
