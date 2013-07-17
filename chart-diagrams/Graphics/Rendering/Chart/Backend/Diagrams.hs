@@ -193,11 +193,11 @@ pathToTrail' (LineTo (Point x y) p) offset =
   let (t, rest) = pathToTrail' p $ p2 (x,y)
   in (D.fromSegments [D.straight $ (x,y) `adjustBy` offset] <> t, rest)
 pathToTrail' (Arc (Point x y) r as ae p) offset = 
-  let (t, rest) = pathToTrail' p $ p2 (x,y)
+  let (t, rest) = pathToTrail' p $ p2 (x,y) -- p2 $ unr2 $ r2 (x,y) + (D2.rotate (D2.Rad ae) $ r2 (0,r))
   in ( ((D2.translate ((x,y) `adjustBy` offset)) $ D2.scale r $ D2.arc (D2.Rad as) (D2.Rad ae)) <> t
      , rest )
 pathToTrail' (ArcNeg (Point x y) r as ae p) offset = 
-  let (t, rest) = pathToTrail' p $ p2 (x,y)
+  let (t, rest) = pathToTrail' p $ offset
   in ( ((D2.translate ((x,y) `adjustBy` offset)) $ D2.scale r $ D2.arcCW (D2.Rad as) (D2.Rad ae)) <> t
      , rest )
 pathToTrail' End _ = (mempty, Nothing)
