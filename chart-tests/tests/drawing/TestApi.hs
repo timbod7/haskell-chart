@@ -46,10 +46,36 @@ tests = [ ("lines", 500, 500, testLines)
         , ("text" , 500, 500, testText)
         , ("fill" , 500, 500, testFill)
         , ("clip" , 500, 500, testClip)
+        , ("paths" , 500, 500, testPaths)
         , ("text-metrics" , 500, 500, testTextMetrics)
         ] ++ ( (flip map) testEnvironments 
                $ \(name, env) -> ("environment-" ++ name, 500, 500, env)
              )
+
+testPaths :: ChartBackend ()
+testPaths = withTestEnv 
+          $ withLineStyle (def { line_width_ = 10, line_join_ = LineJoinMiter }) 
+          $ withFillStyle (solidFillStyle $ opaque red) 
+          $ do
+  let distantArc = moveTo' 10 10
+                <> lineTo' 10 50
+                <> arcNeg' 50 30 20 (pi / 2) (-(pi / 2)) 
+  strokePath $ distantArc
+  withTranslation (Point  90 0) $ strokePath $ distantArc <> close
+  withTranslation (Point 180 0) $ fillPath   $ distantArc
+  
+  let multiArc = arcNeg' 30 150 20 pi 0
+              <> arc' 90 150 40 pi (2*pi)
+              <> arcNeg' 190 150 60 pi (0)
+  strokePath $ multiArc
+  withTranslation (Point 0 100) $ strokePath $ multiArc <> close
+  withTranslation (Point 0 200) $ fillPath $ multiArc <> close
+  
+  let multiDistArc = arc' 380 150 60 pi (2*pi)
+                  <> arc' 350 130 60 0 pi
+  strokePath $ multiDistArc
+  withTranslation (Point 0 140) $ strokePath $ multiDistArc <> close
+  withTranslation (Point 0 280) $ fillPath $ multiDistArc <> close
 
 testTextMetrics :: ChartBackend ()
 testTextMetrics = withTestEnv $ do
