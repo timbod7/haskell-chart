@@ -31,7 +31,9 @@ supportLineStyle = def
   }
 
 withTestEnv :: ChartBackend a -> ChartBackend a
-withTestEnv m = withFillStyle (solidFillStyle $ opaque white) $ fillClip >> m
+withTestEnv m = do
+  let p = rectPath $ Rect (Point 0 0) (Point 500 500)
+  withFillStyle (solidFillStyle $ opaque white) $ fillPath p >> m
 
 withCenterRot :: Double -> Int -> Int -> ChartBackend a -> ChartBackend a
 withCenterRot a x y m = 
@@ -89,13 +91,14 @@ testTextMetrics = withTestEnv $ do
 
 testClip :: ChartBackend ()
 testClip = withTestEnv $ do
-  withFillStyle (solidFillStyle $ opaque blue) fillClip
+  let p = rectPath $ Rect (Point 0 0) (Point 500 500)
+  withFillStyle (solidFillStyle $ opaque blue) $ fillPath p
   withClipRegion (Rect (Point 100 100) (Point 300 300)) $ do
-    withFillStyle (solidFillStyle $ opaque green) fillClip
+    withFillStyle (solidFillStyle $ opaque green) $ fillPath p
     withClipRegion (Rect (Point 200 200) (Point 400 400)) $ do
-      withFillStyle (solidFillStyle $ withOpacity red 0.5) fillClip
+      withFillStyle (solidFillStyle $ withOpacity red 0.5) $ fillPath p
   withClipRegion (Rect (Point 150 50) (Point 400 150)) $ do
-    withFillStyle (solidFillStyle $ opaque red) fillClip
+    withFillStyle (solidFillStyle $ opaque red) $ fillPath p
 
 testFill :: ChartBackend ()
 testFill = withTestEnv $ do
