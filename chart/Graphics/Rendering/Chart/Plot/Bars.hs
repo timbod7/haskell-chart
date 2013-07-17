@@ -144,11 +144,13 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
     clusteredBars (x,ys) = do
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
            withFillStyle fstyle $ do
-             fillPath (barPath (offset i) x yref0 y)
+             p <- alignFillPath (barPath (offset i) x yref0 y)
+             fillPath p
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
              withLineStyle lstyle $ do
-               strokePath (barPath (offset i) x yref0 y)
+               p <- alignStrokePath (barPath (offset i) x yref0 y)
+               strokePath p
 
     offset = case (plot_bars_alignment_ p) of
       BarsLeft     -> \i -> fromIntegral i * width
@@ -164,11 +166,13 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
          }
        forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
            withFillStyle fstyle $ do
-             fillPath (barPath ofs x y0 y1)
+             p <- alignFillPath (barPath ofs x y0 y1)
+             fillPath p
        forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
               withLineStyle lstyle $ do
-                strokePath (barPath ofs x y0 y1)
+                p <- alignStrokePath (barPath ofs x y0 y1)
+                strokePath p
 
     barPath xos x y0 y1 = do
       let (Point x' y') = pmap' (x,y1)
