@@ -79,7 +79,6 @@ runBackend env m = eval env (view m)
     eval env (Return v)= return v
     eval env (StrokePath p :>>= f) = cStrokePath env p >>= step env f
     eval env (FillPath p :>>= f) = cFillPath env p >>= step env f
-    eval env (FillClip :>>= f) = cFillClip env >>= step env f
     eval env (GetTextSize s :>>= f) = cTextSize s >>= step env f
     eval env (DrawText p s :>>= f) = cDrawText env p s >>= step env f
     eval env (GetAlignments :>>= f) = return (ceAlignmentFns env) >>= step env f
@@ -109,11 +108,6 @@ cFillPath :: CEnv -> Path -> C.Render ()
 cFillPath env p = preserveCState0 $ do
     setSourceColor (ceFillColor env)
     C.newPath >> walkPath p >> C.fill
-
-cFillClip :: CEnv -> C.Render ()
-cFillClip env = preserveCState0 $ do
-  setSourceColor (ceFillColor env)
-  C.paint
 
 cTextSize :: String -> C.Render TextSize
 cTextSize text = do
