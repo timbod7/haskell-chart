@@ -8,7 +8,6 @@ module Graphics.Rendering.Chart.Backend
   -- * Backend Operations
   , fillPath
   , strokePath
-  , fillClip
   , drawText, textSize
   , withTransform
   , withClipRegion

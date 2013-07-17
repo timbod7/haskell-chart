@@ -120,8 +120,9 @@ fillBackground :: FillStyle -> Renderable a -> Renderable a
 fillBackground fs r = r{ render = rf }
   where
     rf rsize@(w,h) = do
-      withClipRegion (Rect (Point 0 0) (Point w h)) $ do
-        withFillStyle fs fillClip
+      withFillStyle fs $ do
+        p <- alignFillPath $ rectPath (Rect (Point 0 0) (Point w h))
+        fillPath p
       render r rsize
 
 -- | Helper function for using a renderable, when we generate it
