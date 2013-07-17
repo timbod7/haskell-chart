@@ -187,7 +187,7 @@ convertLineJoin join = case join of
   LineJoinMiter -> D.LineJoinMiter
   LineJoinRound -> D.LineJoinRound
   LineJoinBevel -> D.LineJoinBevel
-
+{-
 -- | Convert paths.
 convertPath :: Path -> D.Path R2
 convertPath p = convertPath' (p2 (0,0)) p
@@ -214,7 +214,7 @@ pathToTrail' (LineTo (Point x y) p) offset =
   let (t, rest) = pathToTrail' p $ p2 (x,y)
   in (D.fromSegments [D.straight $ (x,y) `adjustBy` offset] <> t, rest)
 pathToTrail' (Arc (Point x y) r as ae p) offset = 
-  let (t, rest) = pathToTrail' p $ p2 (x,y) -- p2 $ unr2 $ r2 (x,y) + (D2.rotate (D2.Rad ae) $ r2 (0,r))
+  let (t, rest) = pathToTrail' p $ offset -- p2 $ unr2 $ r2 (x,y) + (D2.rotate (D2.Rad ae) $ r2 (0,r))
   in ( ((D2.translate ((x,y) `adjustBy` offset)) $ D2.scale r $ D2.arc (D2.Rad as) (D2.Rad ae)) <> t
      , rest )
 pathToTrail' (ArcNeg (Point x y) r as ae p) offset = 
@@ -223,9 +223,51 @@ pathToTrail' (ArcNeg (Point x y) r as ae p) offset =
      , rest )
 pathToTrail' End _ = (mempty, Nothing)
 pathToTrail' Close _ = (D.close mempty, Nothing)
+  -}
+
+-- | Convert paths.
+convertPath :: Path -> D.Path R2
+convertPath p = convertPath' (p2 (0,0)) p
+  where
+    convertPath' :: D.Point R2 -> Path -> D.Path R2
+    convertPath' offset p = 
+      let (start, t, restP) = pathToTrail offset p
+      in D.pathFromTrailAt t start <> case restP of
+        Nothing -> mempty
+        Just rest -> convertPath' (start .+^ D.trailOffset t) rest
+
+pathToTrail :: D.Point R2 -> Path 
+            -> (D.Point R2, Trail R2, Maybe Path)
+pathToTrail start (MoveTo (Point x y) p) = 
+  let (t, rest) = pathToTrail' p (p2 (x,y))
+  in (p2 (x,y), t, rest)
+pathToTrail start (Arc (Point x y) r as ae p) = 
+  let t = D2.scale r $ D2.arc (D2.Rad as) (D2.Rad ae)
+  in case p of
+    End -> (p2 (x,y), t, Nothing)
+    Close -> (p2 (x,y), D.close t, Nothing)
+    _ -> (p2 (x,y), t, Just p)
+pathToTrail start (ArcNeg (Point x y) r as ae p) = 
+  let t = D2.scale r $ D2.arcCW (D2.Rad as) (D2.Rad ae)
+  in case p of
+    End -> (p2 (x,y), t, Nothing)
+    Close -> (p2 (x,y), D.close t, Nothing)
+    _ -> (p2 (x,y), t, Just p)
+pathToTrail start p = 
+  let (t, rest) = pathToTrail' p start
+  in (start, t, rest)
+
+pathToTrail' :: Path -> P2 -> (Trail R2, Maybe Path)
+pathToTrail' p@(MoveTo _ _) _ = (mempty, Just p)
+pathToTrail' p@(Arc _ _ _ _ _) _ = (mempty, Just p)
+pathToTrail' p@(ArcNeg _ _ _ _ _) _ = (mempty, Just p)
+pathToTrail' (LineTo (Point x y) p) offset = 
+  let (t, rest) = pathToTrail' p $ p2 (x,y)
+  in (D.fromSegments [D.straight $ (x,y) `adjustBy` offset] <> t, rest)
+pathToTrail' End _ = (mempty, Nothing)
+pathToTrail' Close _ = (D.close mempty, Nothing)
 
 adjustBy :: (Double, Double) -> P2 -> R2
 adjustBy (x,y) p = 
   let (x0, y0) = unp2 p
   in r2 (x - x0, y - y0)
-
