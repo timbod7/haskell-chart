@@ -341,8 +341,8 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
       render = \sz@(w,h) -> do
           let xa = w / 2
           let ya = h / 2
-          strokePointPath [Point 0 ya,Point w ya]
-          strokePointPath [Point xa 0,Point xa h]
+          alignStrokePoints [Point 0 ya,Point w ya] >>= strokePointPath 
+          alignStrokePoints [Point xa 0,Point xa h] >>= strokePointPath 
           render r sz
     }
 
