@@ -19,6 +19,7 @@ library
                , cairo >= 0.9.11
                , colour >= 2.2.1
                , data-default >= 0.5
+               , operational >= 0.2.2
                , Chart >= 0.17
 
   Exposed-modules:
