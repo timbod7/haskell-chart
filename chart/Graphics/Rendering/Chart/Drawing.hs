@@ -36,6 +36,8 @@ module Graphics.Rendering.Chart.Drawing
   , alignPath
   , alignFillPath
   , alignStrokePath
+  , alignFillPoints
+  , alignStrokePoints
   
   , alignp
   , alignc
@@ -136,7 +138,7 @@ alignPath f = foldPath (\p -> moveTo $ f p)
 
 -- | Align the path using the environments alignment function for points.
 --   This is generally useful when stroking. 
---   See 'alignPath' and 'cbePointAlignFn'.
+--   See 'alignPath' and 'getPointAlignFn'.
 alignStrokePath :: Path -> ChartBackend Path
 alignStrokePath p = do
   f <- getPointAlignFn
@@ -144,21 +146,37 @@ alignStrokePath p = do
 
 -- | Align the path using the environments alignment function for coordinates.
 --   This is generally useful when filling. 
---   See 'alignPath' and 'cbeCoordAlignFn'.
+--   See 'alignPath' and 'getCoordAlignFn'.
 alignFillPath :: Path -> ChartBackend Path
 alignFillPath p = do
   f <- getCoordAlignFn
   return $ alignPath f p
 
+-- | The points will be aligned by the 'getPointAlignFn', so that
+--   when drawing bitmaps, 1 pixel wide lines will be centred on the
+--   pixels.
+alignStrokePoints :: [Point] -> ChartBackend [Point]
+alignStrokePoints p = do
+  f <- getPointAlignFn
+  return $ fmap f p
+
+-- | The points will be aligned by the 'getCoordAlignFn', so that
+--   when drawing bitmaps, the edges of the region will fall between
+--   pixels.
+alignFillPoints :: [Point] -> ChartBackend [Point]
+alignFillPoints p = do
+  f <- getCoordAlignFn
+  return $ fmap f p
+
 -- | Align the point using the environments alignment function for points.
---   See 'cbePointAlignFn'.
+--   See 'getPointAlignFn'.
 alignp :: Point -> ChartBackend Point
 alignp p = do 
     alignfn <- getPointAlignFn
     return (alignfn p)
 
 -- | Align the point using the environments alignment function for coordinates.
---   See 'cbeCoordAlignFn'.
+--   See 'getCoordAlignFn'.
 alignc :: Point -> ChartBackend Point
 alignc p = do 
     alignfn <- getCoordAlignFn
@@ -172,24 +190,12 @@ stepPath (p:ps) = moveTo p
 stepPath [] = mempty
 
 -- | Draw lines between the specified points.
---
---   The points will be aligned by the 'cbePointAlignFn', so that
---   when drawing bitmaps, 1 pixel wide lines will be centred on the
---   pixels.
 strokePointPath :: [Point] -> ChartBackend ()
-strokePointPath pts = do
-    path <- alignStrokePath $ stepPath pts
-    strokePath path
+strokePointPath pts = strokePath $ stepPath pts
 
 -- | Fill the region with the given corners.
---
---   The points will be aligned by the 'cbeCoordAlignFn', so that
---   when drawing bitmaps, the edges of the region will fall between
---   pixels.
 fillPointPath :: [Point] -> ChartBackend ()
-fillPointPath pts = do
-    path <- alignFillPath $ stepPath pts
-    fillPath path
+fillPointPath pts = fillPath $ stepPath pts
 
 -- -----------------------------------------------------------------------
 -- Text Drawing
