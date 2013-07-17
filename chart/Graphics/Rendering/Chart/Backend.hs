@@ -15,9 +15,9 @@ module Graphics.Rendering.Chart.Backend
   , withFontStyle, withFillStyle, withLineStyle
   
   -- * Backend Helpers
-  , getTransform
-  , getFillStyle, getFontStyle
-  , getLineStyle, getClipRegion
+--  , getTransform
+--  , getFillStyle, getFontStyle
+--  , getLineStyle, getClipRegion
   , getPointAlignFn, getCoordAlignFn
 
   -- * Text Metrics

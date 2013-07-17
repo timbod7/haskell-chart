@@ -119,9 +119,7 @@ withScaleY y = withScale (Vector 1 y)
 --   the given 'PointStyle'.
 withPointStyle :: PointStyle -> ChartBackend a -> ChartBackend a
 withPointStyle (PointStyle cl bcl bw _ _) m = do
-  ls <- getLineStyle
-  withLineStyle (ls { line_color_ = bcl, line_width_ = bw }) $ do
-    fs <- getFillStyle
+  withLineStyle (def { line_color_ = bcl, line_width_ = bw }) $ do
     withFillStyle (solidFillStyle cl) m
 
 -- -----------------------------------------------------------------------

@@ -3,8 +3,7 @@
 
 -- | The backend to render charts with cairo.
 module Graphics.Rendering.Chart.Backend.Cairo
-  ( CRender
-  , CairoBackend(..)
+  ( CairoBackend(..)
   , runBackend
   , renderToFile
   
@@ -22,80 +21,104 @@ module Graphics.Rendering.Chart.Backend.Cairo
 
 import Data.Default
 import Data.Colour
+import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.List (unfoldr)
 import Data.Monoid
 
 import Control.Monad.Reader
+import Control.Monad.Operational
 
 import qualified Graphics.Rendering.Cairo as C
 import qualified Graphics.Rendering.Cairo.Matrix as CM
 
 import Graphics.Rendering.Chart.Backend as G
 import Graphics.Rendering.Chart.Backend.Impl
+import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Simple
 import Graphics.Rendering.Chart.SparkLine
 
+-----------------------------------------------------------------------
+-- Rendering Backend Environment
+-----------------------------------------------------------------------
+
+-- | The environment we need to track when rendering to cairo
+data CEnv = CEnv
+  { ceAlignmentFns :: AlignmentFns
+  , ceFontColor :: AlphaColour Double
+  , cePathColor :: AlphaColour Double
+  , ceFillColor :: AlphaColour Double
+}
+
+-- | Produce a environment with no transformation and clipping. 
+--   It will use the default styles.
+defaultEnv :: (Point -> Point) -- ^ The point alignment function ('cePointAlignFn')
+           -> (Point -> Point) -- ^ The coordinate alignment function ('ceCoordAlignFn')
+           -> CEnv
+defaultEnv pointAlignFn coordAlignFn = CEnv 
+  { ceAlignmentFns = AlignmentFns pointAlignFn coordAlignFn
+  , ceFontColor = opaque black
+  , cePathColor = opaque black
+  , ceFillColor = opaque white
+  }
+
 -- -----------------------------------------------------------------------
 -- Backend and Monad
 -- -----------------------------------------------------------------------
 
--- | The reader monad containing context information to control
---   the rendering process.
-newtype CRender a = DR (C.Render a)
-  deriving (Functor, Monad)
-
 -- | Run this backends renderer.
-runBackend :: ChartBackendEnv -- ^ Environment to start rendering with.
-           -> ChartBackend a       -- ^ Chart render code.
+runBackend :: CEnv -- ^ Environment to start rendering with.
+           -> ChartBackend a  -- ^ Chart render code.
            -> C.Render a      -- ^ Cairo render code.
-runBackend env m = 
-  let (DR c) = compileBackendM cStrokePath cFillPath cFillClip 
-                               cTextSize cDrawText 
-                               cWithTransform 
-                               cWithLineStyle cWithFillStyle cWithFontStyle 
-                               cWithClipRegion
-                               env m
-  in c
+runBackend env m = eval env (view m)
+  where
+    eval :: CEnv -> ProgramView ChartBackendInstr a -> C.Render a
+    eval env (Return v)= return v
+    eval env (StrokePath p :>>= f) = cStrokePath env p >>= step env f
+    eval env (FillPath p :>>= f) = cFillPath env p >>= step env f
+    eval env (FillClip :>>= f) = cFillClip env >>= step env f
+    eval env (GetTextSize s :>>= f) = cTextSize s >>= step env f
+    eval env (DrawText p s :>>= f) = cDrawText env p s >>= step env f
+    eval env (GetAlignments :>>= f) = return (ceAlignmentFns env) >>= step env f
+    eval env (WithTransform m p :>>= f) = cWithTransform env m p >>= step env f
+    eval env (WithFontStyle font p :>>= f) = cWithFontStyle env font p >>= step env f
+    eval env (WithFillStyle fs p :>>= f) = cWithFillStyle env fs p >>= step env f
+    eval env (WithLineStyle ls p :>>= f) = cWithLineStyle env ls p >>= step env f
+    eval env (WithClipRegion r p :>>= f) = cWithClipRegion env r p >>= step env f
 
-c :: C.Render a -> CRender a
-c = DR
-
-instance Monoid a => Monoid (CRender a) where
-  mempty = return mempty
-  mappend ma mb = do
-    a <- ma
-    b <- mb
-    return $ a `mappend` b
+    step :: CEnv -> (v -> ChartBackend a) -> v -> C.Render a
+    step env f =  \v -> runBackend env (f v)
     
-cStrokePath :: ChartBackendEnv -> Path -> CRender ()
-cStrokePath env p = preserveCState $ do
-  cNewPath
-  foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
-  cSetSourceColor $ line_color_ $ cbeLineStyle env
-  cStroke
+walkPath :: Path -> C.Render ()
+walkPath (MoveTo p path) = C.moveTo (p_x p) (p_y p) >> walkPath path
+walkPath (LineTo p path) = C.lineTo (p_x p) (p_y p) >> walkPath path
+walkPath (Arc p r a1 a2 path) = C.arc (p_x p) (p_y p) r a1 a2 >> walkPath path
+walkPath (ArcNeg p r a1 a2 path) = C.arcNegative (p_x p) (p_y p) r a1 a2 >> walkPath path
+walkPath End = return ()
+walkPath Close = C.closePath
 
-cFillPath :: ChartBackendEnv -> Path -> CRender ()
-cFillPath env p = preserveCState $ do
-  cNewPath
-  foldPath cMoveTo cLineTo cArc cArcNegative cClosePath p
-  case cbeFillStyle env of
-    FillStyleSolid cl -> cSetSourceColor cl
-  cFill
-  
-cFillClip :: ChartBackendEnv -> CRender ()
-cFillClip env = preserveCState $ do
-  case cbeFillStyle env of
-    FillStyleSolid cl -> cSetSourceColor cl
-  cPaint
+cStrokePath :: CEnv -> Path -> C.Render ()
+cStrokePath env p = preserveCState0 $ do
+    setSourceColor (cePathColor env)
+    C.newPath >> walkPath p >> C.stroke
 
-cTextSize :: ChartBackendEnv -> String -> CRender TextSize
-cTextSize env text = do
-  te <- c $ C.textExtents text
-  fe <- c $ C.fontExtents
+cFillPath :: CEnv -> Path -> C.Render ()
+cFillPath env p = preserveCState0 $ do
+    setSourceColor (ceFillColor env)
+    C.newPath >> walkPath p >> C.fill
+
+cFillClip :: CEnv -> C.Render ()
+cFillClip env = preserveCState0 $ do
+  setSourceColor (ceFillColor env)
+  C.paint
+
+cTextSize :: String -> C.Render TextSize
+cTextSize text = do
+  te <- C.textExtents text
+  fe <- C.fontExtents
   return $ TextSize 
     { textSizeWidth    = C.textExtentsWidth te
     , textSizeAscent   = C.fontExtentsAscent fe
@@ -104,32 +127,42 @@ cTextSize env text = do
     , textSizeHeight   = C.fontExtentsHeight fe
     }
 
-cDrawText :: ChartBackendEnv -> Point -> String -> CRender ()
-cDrawText env p text = preserveCState $ do
-  cSetSourceColor $ font_color_ $ cbeFontStyle env
+cDrawText :: CEnv -> Point -> String -> C.Render ()
+cDrawText env p text = preserveCState0 $ do
+  setSourceColor $ (ceFontColor env)
   cTranslate p
-  cMoveTo $ Point 0 0
-  cShowText text
+  C.moveTo 0 0
+  C.showText text
 
-cWithTransform :: ChartBackendEnv -> Change Matrix -> CRender a -> CRender a
-cWithTransform env _ m = preserveCState $ cSetTransform (cbeTransform env) >> m
+cWithTransform :: CEnv -> Matrix -> ChartBackend a -> C.Render a
+cWithTransform env m p = preserveCState0 $ do
+  C.transform (convertMatrix m)
+  runBackend env p
 
-cWithLineStyle :: ChartBackendEnv -> Change LineStyle -> CRender a -> CRender a
-cWithLineStyle env _ m = preserveCState $ setLineStyle (cbeLineStyle env) >> m
+cWithFontStyle :: CEnv -> FontStyle -> ChartBackend a -> C.Render a
+cWithFontStyle env font p = preserveCState0 $ do
+  C.selectFontFace (G.font_name_ font) 
+                   (convertFontSlant $ G.font_slant_ font) 
+                   (convertFontWeight $ G.font_weight_ font)
+  C.setFontSize (G.font_size_ font)
+  runBackend env{ceFontColor=G.font_color_ font} p
 
-cWithFillStyle :: ChartBackendEnv -> Change FillStyle -> CRender a -> CRender a
-cWithFillStyle env _ m = preserveCState $ setFillStyle (cbeFillStyle env) >> m
+cWithFillStyle :: CEnv -> FillStyle -> ChartBackend a -> C.Render a
+cWithFillStyle env fs p = do
+  runBackend env{ceFillColor=G.fill_colour_ fs} p
 
-cWithFontStyle :: ChartBackendEnv -> Change FontStyle -> CRender a -> CRender a
-cWithFontStyle env _ m = preserveCState $ setFontStyle (cbeFontStyle env) >> m
+cWithLineStyle :: CEnv -> LineStyle -> ChartBackend a -> C.Render a
+cWithLineStyle env ls p = preserveCState0 $ do
+  C.setLineWidth (G.line_width_ ls)
+  C.setLineCap (convertLineCap $ G.line_cap_ ls)
+  C.setLineJoin (convertLineJoin $ G.line_join_ ls)
+  C.setDash (G.line_dashes_ ls) 0
+  runBackend env{cePathColor=G.line_color_ ls} p
 
-cWithClipRegion :: ChartBackendEnv -> Change (Limit Rect) -> CRender a -> CRender a
-cWithClipRegion env _ m = preserveCState $ do
-  case cbeClipRegion env of
-    LMin -> setClipRegion (Rect (Point 0 0) (Point 0 0))
-    LValue c -> setClipRegion c
-    LMax -> c C.resetClip 
-  m
+cWithClipRegion :: CEnv -> Rect -> ChartBackend a -> C.Render a
+cWithClipRegion env r p = preserveCState0 $ do
+  setClipRegion r
+  runBackend env p
 
 -- -----------------------------------------------------------------------
 -- Output rendering functions
@@ -212,34 +245,14 @@ convertMatrix (G.Matrix a1 a2 b1 b2 c1 c2) = CM.Matrix a1 a2 b1 b2 c1 c2
 -- Assorted helper functions in Cairo Usage
 -- -----------------------------------------------------------------------
 
-setClipRegion :: Rect -> CRender ()
+setClipRegion :: Rect -> C.Render ()
 setClipRegion (Rect p2 p3) = do    
-    c $ C.moveTo (p_x p2) (p_y p2)
-    c $ C.lineTo (p_x p2) (p_y p3)
-    c $ C.lineTo (p_x p3) (p_y p3)
-    c $ C.lineTo (p_x p3) (p_y p2)
-    c $ C.lineTo (p_x p2) (p_y p2)
-    c $ C.clip
-
-setFontStyle :: FontStyle -> CRender ()
-setFontStyle f = do
-    c $ C.selectFontFace (G.font_name_ f) 
-                         (convertFontSlant $ G.font_slant_ f) 
-                         (convertFontWeight $ G.font_weight_ f)
-    c $ C.setFontSize (G.font_size_ f)
-    c $ setSourceColor (G.font_color_ f)
-
-setLineStyle :: LineStyle -> CRender ()
-setLineStyle ls = do
-    c $ C.setLineWidth (G.line_width_ ls)
-    c $ setSourceColor (G.line_color_ ls)
-    c $ C.setLineCap (convertLineCap $ G.line_cap_ ls)
-    c $ C.setLineJoin (convertLineJoin $ G.line_join_ ls)
-    c $ C.setDash (G.line_dashes_ ls) 0
-
-setFillStyle :: FillStyle -> CRender ()
-setFillStyle (FillStyleSolid cl) = do
-  c $ setSourceColor cl
+    C.moveTo (p_x p2) (p_y p2)
+    C.lineTo (p_x p2) (p_y p3)
+    C.lineTo (p_x p3) (p_y p3)
+    C.lineTo (p_x p3) (p_y p2)
+    C.lineTo (p_x p2) (p_y p2)
+    C.clip
 
 colourChannel :: (Floating a, Ord a) => AlphaColour a -> Colour a
 colourChannel c = darken (recip (alphaChannel c)) (c `over` black)
@@ -250,54 +263,31 @@ setSourceColor c = let (RGB r g b) = toSRGB $ colourChannel c
 
 -- | Execute a rendering action in a saved context (ie bracketed
 --   between C.save and C.restore).
-preserveCState :: CRender a -> CRender a
-preserveCState a = do 
-  c $ C.save
+preserveCState0 :: C.Render a -> C.Render a
+preserveCState0 a = do 
+  C.save
   v <- a
-  c $ C.restore
+  C.restore
   return v
 
--- -----------------------------------------------------------------------
--- Cairo Operation Wrappers
--- -----------------------------------------------------------------------
+-- -- -----------------------------------------------------------------------
+-- -- Cairo Operation Wrappers
+-- -- -----------------------------------------------------------------------
   
-cSetTransform t = c $ C.setMatrix $ convertMatrix t
+cTranslate :: Point -> C.Render ()
+cTranslate p = C.translate (p_x p) (p_y p)
 
-cTranslate :: Point -> CRender ()
-cTranslate p = c $ C.translate (p_x p) (p_y p)
+cLineTo :: Point -> C.Render ()
+cLineTo p = C.lineTo (p_x p) (p_y p)
 
-cRotate a = c $ C.rotate a
-cNewPath = c $ C.newPath
+cMoveTo :: Point -> C.Render ()
+cMoveTo p = C.moveTo (p_x p) (p_y p)
 
-cTransform :: Matrix -> CRender ()
-cTransform t = c $ C.transform $ convertMatrix t
+cArc :: Point -> Double -> Double -> Double -> C.Render ()
+cArc p r a1 a2 = C.arc (p_x p) (p_y p) r a1 a2
 
-cLineTo :: Point -> CRender ()
-cLineTo p = c $ C.lineTo (p_x p) (p_y p)
-
-cMoveTo :: Point -> CRender ()
-cMoveTo p = c $ C.moveTo (p_x p) (p_y p)
-
-cRelLineTo x y = c $ C.relLineTo x y
-
-cArc :: Point -> Double -> Double -> Double -> CRender ()
-cArc p r a1 a2 = c $ C.arc (p_x p) (p_y p) r a1 a2
-
-cArcNegative :: Point -> Double -> Double -> Double -> CRender ()
-cArcNegative p r a1 a2 = c $ C.arcNegative (p_x p) (p_y p) r a1 a2
-
-cClosePath = c $ C.closePath
-cStroke = c $ C.stroke
-cFill = c $ C.fill
-cFillPreserve = c $ C.fillPreserve
-cSetSourceColor color = c $ setSourceColor color
-cPaint = c $ C.paint
-cFontDescent = do
-  fe <- c $ C.fontExtents
-  return $ C.fontExtentsDescent fe
---cFontExtents = c $ C.fontExtents
---cFontExtentsDescent fe = C.fontExtentsDescent fe
-cShowText s = c $ C.showText s
+cArcNegative :: Point -> Double -> Double -> Double -> C.Render ()
+cArcNegative p r a1 a2 = C.arcNegative (p_x p) (p_y p) r a1 a2
 
 cRenderToPNGFile :: ChartBackend a -> Int -> Int -> FilePath -> IO a
 cRenderToPNGFile cr width height path = 
@@ -323,7 +313,7 @@ cRenderToFile withSurface cr width height path =
     C.surfaceFinish result
 
 -- | Environment aligned to render good on bitmaps.
-bitmapEnv :: ChartBackendEnv
+bitmapEnv :: CEnv
 bitmapEnv = defaultEnv (adjfn 0.5) (adjfn 0.0) 
   where
     adjfn offset (Point x y) = Point (adj x) (adj y)
@@ -331,7 +321,7 @@ bitmapEnv = defaultEnv (adjfn 0.5) (adjfn 0.0)
         adj v = (fromIntegral.round) v +offset
 
 -- | Environment aligned to render good on vector based graphics.
-vectorEnv :: ChartBackendEnv
+vectorEnv :: CEnv
 vectorEnv = defaultEnv id id
 
 -- -----------------------------------------------------------------------

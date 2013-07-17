@@ -7,6 +7,8 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Accessor.Template
 
+import Graphics.Rendering.Chart.Geometry
+
 -- -----------------------------------------------------------------------
 -- Line Types
 -- -----------------------------------------------------------------------
@@ -120,6 +122,24 @@ instance Default FillStyle where
   def = FillStyleSolid
     { fill_colour_ = opaque white
     }
+
+-------------------------------------------------------------------------
+type AlignmentFn = Point -> Point
+
+data AlignmentFns = AlignmentFns {
+  afPointAlignFn :: AlignmentFn,
+  -- ^ An adjustment applied immediately prior to points
+  --   being displayed in device coordinates.
+  --
+  --   When device coordinates correspond to pixels, a cleaner
+  --   image is created if this transform rounds to the nearest
+  --   pixel. With higher-resolution output, this transform can
+  --   just be the identity function.
+
+  -- | A adjustment applied immediately prior to coordinates
+  --   being transformed.
+  afCoordAlignFn :: AlignmentFn
+  }
 
 -- -----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
