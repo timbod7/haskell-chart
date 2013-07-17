@@ -84,7 +84,7 @@ runBackend env m =  eval env (view m)
     
     (<>=) :: (Monoid m) => (m, a) -> (a -> (m, b)) -> (m, b)
     (<>=) (ma, a) f = let (mb, b) = f a
-                      in (ma <> mb, b)
+                      in (mb <> ma, b)
 
 dStrokePath :: (D.Renderable (D.Path R2) b)
             => DEnv -> Path -> Diagram b R2
