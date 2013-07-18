@@ -22,7 +22,8 @@ import Diagrams.Prelude
   ( Diagram
   , R2, P2, T2
   , r2, p2, unr2, unp2
-  , Trail
+  , Trail(..), Segment
+  , Rad(..)
   , (.+^), (<->)
   )
 import qualified Diagrams.Prelude as D
@@ -187,7 +188,7 @@ convertLineJoin join = case join of
   LineJoinMiter -> D.LineJoinMiter
   LineJoinRound -> D.LineJoinRound
   LineJoinBevel -> D.LineJoinBevel
-{-
+
 -- | Convert paths.
 convertPath :: Path -> D.Path R2
 convertPath p = convertPath' (p2 (0,0)) p
@@ -202,29 +203,39 @@ convertPath p = convertPath' (p2 (0,0)) p
 pathToTrail :: D.Point R2 -> Path 
             -> (D.Point R2, Trail R2, Maybe Path)
 pathToTrail start (MoveTo (Point x y) p) = 
-  let (t, rest) = pathToTrail' p (p2 (x,y))
-  in (p2 (x,y), t, rest)
+  let (t, c, rest) = pathToTrail' p (p2 (x,y))
+  in (p2 (x,y), Trail t c, rest)
 pathToTrail start p = 
-  let (t, rest) = pathToTrail' p start
-  in (start, t, rest)
+  let (t, c, rest) = pathToTrail' p start
+  in (start, Trail t c, rest)
 
-pathToTrail' :: Path -> P2 -> (Trail R2, Maybe Path)
-pathToTrail' p@(MoveTo _ _) _ = (mempty, Just p)
+pathToTrail' :: Path -> P2 -> ([Segment R2], Bool, Maybe Path)
+pathToTrail' p@(MoveTo _ _) _ = ([], False, Just p)
 pathToTrail' (LineTo (Point x y) p) offset = 
-  let (t, rest) = pathToTrail' p $ p2 (x,y)
-  in (D.fromSegments [D.straight $ (x,y) `adjustBy` offset] <> t, rest)
+  let (t, c, rest) = pathToTrail' p $ p2 (x,y)
+  in ((D.straight $ (x,y) `adjustBy` offset) : t, c, rest)
 pathToTrail' (Arc (Point x y) r as ae p) offset = 
-  let (t, rest) = pathToTrail' p $ offset -- p2 $ unr2 $ r2 (x,y) + (D2.rotate (D2.Rad ae) $ r2 (0,r))
-  in ( ((D2.translate ((x,y) `adjustBy` offset)) $ D2.scale r $ D2.arc (D2.Rad as) (D2.Rad ae)) <> t
-     , rest )
+  let initP = p2 $ unr2 $ ((x,y) `adjustBy` offset) + r2 (r,0)
+      startV = r2 $ unp2 $ D.rotate (Rad as) $ initP
+      endP = D.rotate (Rad ae) $ initP
+      sweep = Rad ae - Rad as
+      (t, c, rest) = pathToTrail' p $ endP
+  in ( (D2.scale r $ map (D.rotate $ Rad as) $ D2.bezierFromSweep sweep)
+       ++ (D.straight startV) : t
+     , c, rest )
 pathToTrail' (ArcNeg (Point x y) r as ae p) offset = 
-  let (t, rest) = pathToTrail' p $ offset
-  in ( ((D2.translate ((x,y) `adjustBy` offset)) $ D2.scale r $ D2.arcCW (D2.Rad as) (D2.Rad ae)) <> t
-     , rest )
-pathToTrail' End _ = (mempty, Nothing)
-pathToTrail' Close _ = (D.close mempty, Nothing)
-  -}
+  let initP = p2 $ unr2 $ ((x,y) `adjustBy` offset) + r2 (r,0)
+      startV = r2 $ unp2 $ D.rotate (Rad as) $ initP
+      endP = D.rotate (D2.Rad ae) $ initP
+      sweep = Rad as - Rad ae
+      (t, c, rest) = pathToTrail' p $ endP
+  in ( (D2.scale r $ map (D.rotate $ Rad as) $ fmap D.reverseSegment $ reverse $ D2.bezierFromSweep sweep)
+       ++ (D.straight startV) : t
+     , c, rest )
+pathToTrail' End _ = ([], False, Nothing)
+pathToTrail' Close _ = ([], True, Nothing)
 
+{-
 -- | Convert paths.
 convertPath :: Path -> D.Path R2
 convertPath p = convertPath' (p2 (0,0)) p
@@ -266,7 +277,7 @@ pathToTrail' (LineTo (Point x y) p) offset =
   in (D.fromSegments [D.straight $ (x,y) `adjustBy` offset] <> t, rest)
 pathToTrail' End _ = (mempty, Nothing)
 pathToTrail' Close _ = (D.close mempty, Nothing)
-
+-}
 adjustBy :: (Double, Double) -> P2 -> R2
 adjustBy (x,y) p = 
   let (x0, y0) = unp2 p
