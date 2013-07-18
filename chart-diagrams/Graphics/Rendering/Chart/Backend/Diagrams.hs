@@ -23,7 +23,7 @@ import Diagrams.Prelude
   , R2, P2, T2
   , r2, p2, unr2, unp2
   , Trail(..), Segment
-  , Rad(..)
+  , Rad(..), CircleFrac(..)
   , (.+^), (<->)
   )
 import qualified Diagrams.Prelude as D
@@ -34,7 +34,10 @@ import Graphics.Rendering.Chart.Backend as G
 import Graphics.Rendering.Chart.Backend.Impl
 import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Geometry as G
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
+
+import Debug.Trace
 
 -- -----------------------------------------------------------------------
 -- Backend
@@ -89,11 +92,11 @@ runBackend env m =  eval env (view m)
 
 dStrokePath :: (D.Renderable (D.Path R2) b)
             => DEnv -> Path -> Diagram b R2
-dStrokePath env p = D.stroke $ convertPath p
+dStrokePath env p = applyFillStyle noFillStyle $ D.stroke $ convertPath p
 
 dFillPath :: (D.Renderable (D.Path R2) b)
           => DEnv -> Path -> Diagram b R2
-dFillPath env p = D.stroke $ convertPath p
+dFillPath env p = applyLineStyle noLineStyle $ D.stroke $ convertPath p
 
 dTextSize :: (D.Renderable (D.Path R2) b)
           => DEnv -> String -> (Diagram b R2, TextSize)
@@ -136,6 +139,15 @@ dWithClipRegion env clip = dWith env id $ D2.clipBy (convertPath $ rectPath clip
 -- -----------------------------------------------------------------------
 -- Converions Helpers
 -- -----------------------------------------------------------------------
+
+noLineStyle :: LineStyle
+noLineStyle = def 
+  { line_width_ = 0
+  , line_color_ = transparent
+  }
+
+noFillStyle :: FillStyle
+noFillStyle = solidFillStyle transparent
 
 toTransformation :: Matrix -> T2
 toTransformation m = Transformation 
@@ -205,6 +217,14 @@ pathToTrail :: D.Point R2 -> Path
 pathToTrail start (MoveTo (Point x y) p) = 
   let (t, c, rest) = pathToTrail' p (p2 (x,y))
   in (p2 (x,y), Trail t c, rest)
+pathToTrail start (Arc (Point x y) r s e p) = 
+  let startP = D.rotate (Rad s) $ p2 $ (x,y) + (r,0)
+      (t, c, rest) = pathToTrail' (Arc (Point x y) r s e p) startP
+  in (startP, Trail t c, rest)
+pathToTrail start (ArcNeg (Point x y) r s e p) = 
+  let startP = D.rotate (Rad s) $ p2 $ (x,y) + (r,0)
+      (t, c, rest) = pathToTrail' (ArcNeg (Point x y) r s e p) startP
+  in (startP, Trail t c, rest)
 pathToTrail start p = 
   let (t, c, rest) = pathToTrail' p start
   in (start, Trail t c, rest)
@@ -214,23 +234,35 @@ pathToTrail' p@(MoveTo _ _) _ = ([], False, Just p)
 pathToTrail' (LineTo (Point x y) p) offset = 
   let (t, c, rest) = pathToTrail' p $ p2 (x,y)
   in ((D.straight $ (x,y) `adjustBy` offset) : t, c, rest)
+pathToTrail' (Arc (Point x y) r as ae p) offset | as > ae =
+  let s = D2.convertAngle $ Rad as :: CircleFrac
+      e = D2.convertAngle $ Rad ae :: CircleFrac
+      Rad d = D2.convertAngle $ CircleFrac $ fromInteger (ceiling (s - e) :: Integer)
+  in pathToTrail' (Arc (Point x y) r as (ae + d) p) offset
 pathToTrail' (Arc (Point x y) r as ae p) offset = 
   let initP = p2 $ unr2 $ ((x,y) `adjustBy` offset) + r2 (r,0)
-      startV = r2 $ unp2 $ D.rotate (Rad as) $ initP
-      endP = D.rotate (Rad ae) $ initP
+      startP = D.rotate (Rad as) $ initP
+      endP = D.rotate (Rad ae) $ p2 (x,y)
       sweep = Rad ae - Rad as
-      (t, c, rest) = pathToTrail' p $ endP
-  in ( (D2.scale r $ map (D.rotate $ Rad as) $ D2.bezierFromSweep sweep)
-       ++ (D.straight startV) : t
+      (t, c, rest) = pathToTrail' p $ p2 (unp2 endP + (x,y))
+  in ( (D.straight $ r2 $ unp2 startP) :
+       (D2.scale r $ map (D.rotate $ Rad as) $ D2.bezierFromSweep sweep)
+       ++ t
      , c, rest )
+pathToTrail' (ArcNeg (Point x y) r as ae p) offset | as < ae =
+  let s = D2.convertAngle $ Rad as :: CircleFrac
+      e = D2.convertAngle $ Rad ae :: CircleFrac
+      Rad d = D2.convertAngle $ CircleFrac $ fromInteger (ceiling (e - s) :: Integer)
+  in pathToTrail' (ArcNeg (Point x y) r (as + d) ae p) offset
 pathToTrail' (ArcNeg (Point x y) r as ae p) offset = 
   let initP = p2 $ unr2 $ ((x,y) `adjustBy` offset) + r2 (r,0)
-      startV = r2 $ unp2 $ D.rotate (Rad as) $ initP
-      endP = D.rotate (D2.Rad ae) $ initP
-      sweep = Rad as - Rad ae
-      (t, c, rest) = pathToTrail' p $ endP
-  in ( (D2.scale r $ map (D.rotate $ Rad as) $ fmap D.reverseSegment $ reverse $ D2.bezierFromSweep sweep)
-       ++ (D.straight startV) : t
+      startP = D.rotate (Rad as) $ initP
+      endP = D.rotate (Rad ae) $ initP
+      sweep = (Rad ae - Rad as)
+      (t, c, rest) = pathToTrail' p $ p2 (unp2 endP + (x,y))
+  in ( (D.straight $ r2 $ unp2 startP) : 
+       (D2.scale r $ map (D.rotate $ Rad $ as) $ D2.bezierFromSweep sweep)
+       ++ t
      , c, rest )
 pathToTrail' End _ = ([], False, Nothing)
 pathToTrail' Close _ = ([], True, Nothing)
