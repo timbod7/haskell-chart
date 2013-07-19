@@ -33,11 +33,10 @@ module Graphics.Rendering.Chart.Geometry
   , foldPath
   
   -- * Matrices
+  , transformP, scaleP, rotateP, translateP
   , Matrix(..)
   , identity
-  , rotate
-  , scale
-  , translate
+  , rotate, scale, translate
   , scalarMultiply
   , adjoint
   , invert
@@ -230,6 +229,25 @@ foldPath moveTo lineTo arc arcNeg close path =
 -- -----------------------------------------------------------------------
 -- Matrix Type
 -- -----------------------------------------------------------------------
+
+-- | Transform a point using the given matrix.
+transformP :: Matrix -> Point -> Point
+transformP t (Point x y) = Point
+  (xx t * x + xy t * y + x0 t)
+  (yx t * x + yy t * y + y0 t)
+
+-- | Rotate a point around the origin.
+--   The angle is given in radians.
+rotateP :: Double -> Point -> Point
+rotateP a = transformP (rotate a 1)
+
+-- | Scale a point.
+scaleP :: Vector -> Point -> Point
+scaleP s = transformP (scale s 1)
+
+-- | Translate a point.
+translateP :: Vector -> Point -> Point
+translateP t = transformP (translate t 1)
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
 data Matrix = Matrix { xx :: !Double, yx :: !Double,
