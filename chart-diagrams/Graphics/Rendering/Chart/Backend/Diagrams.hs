@@ -24,7 +24,7 @@ import Diagrams.Prelude
   , r2, p2, unr2, unp2
   , Trail(..), Segment
   , Rad(..), CircleFrac(..)
-  , (.+^), (<->)
+  , (.+^), (<->), (~~)
   )
 import qualified Diagrams.Prelude as D
 import qualified Diagrams.TwoD as D2
@@ -203,69 +203,70 @@ convertLineJoin join = case join of
 
 -- | Convert paths.
 convertPath :: Path -> D.Path R2
-convertPath p = convertPath' (p2 (0,0)) p
-  where
-    convertPath' :: D.Point R2 -> Path -> D.Path R2
-    convertPath' offset p = 
-      let (start, t, restP) = pathToTrail offset p
-      in D.pathFromTrailAt t start <> case restP of
-        Nothing -> mempty
-        Just rest -> convertPath' (start .+^ D.trailOffset t) rest
+convertPath path = 
+  let (start, t, restM) = pathToTrail (Point 0 0) $ makeLinesExplicit path
+  in D.pathFromTrailAt t start <> case restM of
+    Nothing -> mempty
+    Just rest -> convertPath rest
 
-pathToTrail :: D.Point R2 -> Path 
+makeLinesExplicit :: Path -> Path
+makeLinesExplicit (Arc c r s e rest) = 
+  Arc c r s e $ makeLinesExplicit' rest
+makeLinesExplicit (ArcNeg c r s e rest) = 
+  ArcNeg c r s e $ makeLinesExplicit' rest
+makeLinesExplicit path = makeLinesExplicit' path
+
+makeLinesExplicit' :: Path -> Path
+makeLinesExplicit' End   = End
+makeLinesExplicit' Close = Close
+makeLinesExplicit' (Arc c r s e rest) = 
+  let p = translateP (pointToVec c) $ rotateP s $ Point r 0
+  in lineTo p <> arc c r s e <> makeLinesExplicit' rest
+makeLinesExplicit' (ArcNeg c r s e rest) = 
+  let p = translateP (pointToVec c) $ rotateP s $ Point r 0
+  in lineTo p <> arcNeg c r s e <> makeLinesExplicit' rest
+makeLinesExplicit' (MoveTo p0 rest) = 
+  MoveTo p0 $ makeLinesExplicit' rest
+makeLinesExplicit' (LineTo p0 rest) = 
+  LineTo p0 $ makeLinesExplicit' rest
+
+pathToTrail :: Point -> Path 
             -> (D.Point R2, Trail R2, Maybe Path)
-pathToTrail start (MoveTo (Point x y) p) = 
-  let (t, c, rest) = pathToTrail' p (p2 (x,y))
-  in (p2 (x,y), Trail t c, rest)
-pathToTrail start (Arc (Point x y) r s e p) = 
-  let startP = D.rotate (Rad s) $ p2 $ (x,y) + (r,0)
-      (t, c, rest) = pathToTrail' (Arc (Point x y) r s e p) startP
-  in (startP, Trail t c, rest)
-pathToTrail start (ArcNeg (Point x y) r s e p) = 
-  let startP = D.rotate (Rad s) $ p2 $ (x,y) + (r,0)
-      (t, c, rest) = pathToTrail' (ArcNeg (Point x y) r s e p) startP
-  in (startP, Trail t c, rest)
-pathToTrail start p = 
-  let (t, c, rest) = pathToTrail' p start
-  in (start, Trail t c, rest)
+pathToTrail _ (MoveTo p0 path) = 
+  let (t, rest) = pathToTrail' path p0
+  in (pointToP2 p0, t, rest)
+pathToTrail _ path@(Arc c r s _ _) = 
+  let p0 = translateP (pointToVec c) $ rotateP s $ Point r 0
+      (t, rest) = pathToTrail' path p0
+  in (pointToP2 p0, t, rest)
+pathToTrail _ path@(ArcNeg c r s _ _) = 
+  let p0 = translateP (pointToVec c) $ rotateP s $ Point r 0
+      (t, rest) = pathToTrail' path p0
+  in (pointToP2 p0, t, rest)
+pathToTrail start path = 
+  let (t, rest) = pathToTrail' path start
+  in (pointToP2 start, t, rest)
 
-pathToTrail' :: Path -> P2 -> ([Segment R2], Bool, Maybe Path)
-pathToTrail' p@(MoveTo _ _) _ = ([], False, Just p)
-pathToTrail' (LineTo (Point x y) p) offset = 
-  let (t, c, rest) = pathToTrail' p $ p2 (x,y)
-  in ((D.straight $ (x,y) `adjustBy` offset) : t, c, rest)
-pathToTrail' (Arc (Point x y) r as ae p) offset | as > ae =
-  let s = D2.convertAngle $ Rad as :: CircleFrac
-      e = D2.convertAngle $ Rad ae :: CircleFrac
-      Rad d = D2.convertAngle $ CircleFrac $ fromInteger (ceiling (s - e) :: Integer)
-  in pathToTrail' (Arc (Point x y) r as (ae + d) p) offset
-pathToTrail' (Arc (Point x y) r as ae p) offset = 
-  let initP = p2 $ unr2 $ ((x,y) `adjustBy` offset) + r2 (r,0)
-      startP = D.rotate (Rad as) $ initP
-      endP = D.rotate (Rad ae) $ p2 (x,y)
-      sweep = Rad ae - Rad as
-      (t, c, rest) = pathToTrail' p $ p2 (unp2 endP + (x,y))
-  in ( (D.straight $ r2 $ unp2 startP) :
-       (D2.scale r $ map (D.rotate $ Rad as) $ D2.bezierFromSweep sweep)
-       ++ t
-     , c, rest )
-pathToTrail' (ArcNeg (Point x y) r as ae p) offset | as < ae =
-  let s = D2.convertAngle $ Rad as :: CircleFrac
-      e = D2.convertAngle $ Rad ae :: CircleFrac
-      Rad d = D2.convertAngle $ CircleFrac $ fromInteger (ceiling (e - s) :: Integer)
-  in pathToTrail' (ArcNeg (Point x y) r (as + d) ae p) offset
-pathToTrail' (ArcNeg (Point x y) r as ae p) offset = 
-  let initP = p2 $ unr2 $ ((x,y) `adjustBy` offset) + r2 (r,0)
-      startP = D.rotate (Rad as) $ initP
-      endP = D.rotate (Rad ae) $ initP
-      sweep = (Rad ae - Rad as)
-      (t, c, rest) = pathToTrail' p $ p2 (unp2 endP + (x,y))
-  in ( (D.straight $ r2 $ unp2 startP) : 
-       (D2.scale r $ map (D.rotate $ Rad $ as) $ D2.bezierFromSweep sweep)
-       ++ t
-     , c, rest )
-pathToTrail' End _ = ([], False, Nothing)
-pathToTrail' Close _ = ([], True, Nothing)
+pointToP2 :: Point -> P2
+pointToP2 (Point x y) = p2 (x,y)
+
+pathToTrail' :: Path -> Point -> (Trail R2, Maybe Path)
+pathToTrail' p@(MoveTo _ _) _ = (mempty, Just p)
+pathToTrail' (LineTo p1 path) p0 = 
+  let (t, rest) = pathToTrail' path p1
+  in ( (pointToP2 p0 ~~ pointToP2 p1) <> t, rest )
+pathToTrail' (Arc p0 r s e path) _ = 
+  let endP = translateP (pointToVec p0) $ rotateP e $ Point r 0
+      (t, rest) = pathToTrail' path endP
+      arcTrail = D2.scale r $ D2.arc (Rad s) (Rad e)
+  in ( arcTrail <> t, rest )
+pathToTrail' (ArcNeg p0 r s e path) _ = 
+  let endP = translateP (pointToVec p0) $ rotateP e $ Point r 0
+      (t, rest) = pathToTrail' path endP
+      arcTrail = D2.scale r $ D2.arcCW (Rad s) (Rad e)
+  in ( arcTrail <> t, rest )
+pathToTrail' End _ = (mempty, Nothing)
+pathToTrail' Close _ = (D.close mempty, Nothing)
 
 {-
 -- | Convert paths.
