@@ -31,6 +31,7 @@ module Graphics.Rendering.Chart.Geometry
   , close
   
   , foldPath
+  , makeLinesExplicit
   
   -- * Matrices
   , transformP, scaleP, rotateP, translateP
@@ -225,6 +226,30 @@ foldPath moveTo lineTo arc arcNeg close path =
     ArcNeg p r a1 a2 rest -> arcNeg p r a1 a2 <> restF rest
     End   -> mempty
     Close -> close
+
+-- | Enriches the path with explicit instructions to draw lines,
+--   that otherwise would be implicit.
+makeLinesExplicit :: Path -> Path
+makeLinesExplicit (Arc c r s e rest) = 
+  Arc c r s e $ makeLinesExplicit' rest
+makeLinesExplicit (ArcNeg c r s e rest) = 
+  ArcNeg c r s e $ makeLinesExplicit' rest
+makeLinesExplicit path = makeLinesExplicit' path
+
+-- | Utility for 'makeLinesExplicit'.
+makeLinesExplicit' :: Path -> Path
+makeLinesExplicit' End   = End
+makeLinesExplicit' Close = Close
+makeLinesExplicit' (Arc c r s e rest) = 
+  let p = translateP (pointToVec c) $ rotateP s $ Point r 0
+  in lineTo p <> arc c r s e <> makeLinesExplicit' rest
+makeLinesExplicit' (ArcNeg c r s e rest) = 
+  let p = translateP (pointToVec c) $ rotateP s $ Point r 0
+  in lineTo p <> arcNeg c r s e <> makeLinesExplicit' rest
+makeLinesExplicit' (MoveTo p0 rest) = 
+  MoveTo p0 $ makeLinesExplicit' rest
+makeLinesExplicit' (LineTo p0 rest) = 
+  LineTo p0 $ makeLinesExplicit' rest
 
 -- -----------------------------------------------------------------------
 -- Matrix Type

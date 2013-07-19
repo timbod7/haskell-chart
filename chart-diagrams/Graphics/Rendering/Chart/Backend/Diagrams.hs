@@ -140,6 +140,9 @@ dWithClipRegion env clip = dWith env id $ D2.clipBy (convertPath $ rectPath clip
 -- Converions Helpers
 -- -----------------------------------------------------------------------
 
+pointToP2 :: Point -> P2
+pointToP2 (Point x y) = p2 (x,y)
+
 noLineStyle :: LineStyle
 noLineStyle = def 
   { line_width_ = 0
@@ -209,27 +212,6 @@ convertPath path =
     Nothing -> mempty
     Just rest -> convertPath rest
 
-makeLinesExplicit :: Path -> Path
-makeLinesExplicit (Arc c r s e rest) = 
-  Arc c r s e $ makeLinesExplicit' rest
-makeLinesExplicit (ArcNeg c r s e rest) = 
-  ArcNeg c r s e $ makeLinesExplicit' rest
-makeLinesExplicit path = makeLinesExplicit' path
-
-makeLinesExplicit' :: Path -> Path
-makeLinesExplicit' End   = End
-makeLinesExplicit' Close = Close
-makeLinesExplicit' (Arc c r s e rest) = 
-  let p = translateP (pointToVec c) $ rotateP s $ Point r 0
-  in lineTo p <> arc c r s e <> makeLinesExplicit' rest
-makeLinesExplicit' (ArcNeg c r s e rest) = 
-  let p = translateP (pointToVec c) $ rotateP s $ Point r 0
-  in lineTo p <> arcNeg c r s e <> makeLinesExplicit' rest
-makeLinesExplicit' (MoveTo p0 rest) = 
-  MoveTo p0 $ makeLinesExplicit' rest
-makeLinesExplicit' (LineTo p0 rest) = 
-  LineTo p0 $ makeLinesExplicit' rest
-
 pathToTrail :: Point -> Path 
             -> (D.Point R2, Trail R2, Maybe Path)
 pathToTrail _ (MoveTo p0 path) = 
@@ -246,9 +228,6 @@ pathToTrail _ path@(ArcNeg c r s _ _) =
 pathToTrail start path = 
   let (t, rest) = pathToTrail' path start
   in (pointToP2 start, t, rest)
-
-pointToP2 :: Point -> P2
-pointToP2 (Point x y) = p2 (x,y)
 
 pathToTrail' :: Path -> Point -> (Trail R2, Maybe Path)
 pathToTrail' p@(MoveTo _ _) _ = (mempty, Just p)
