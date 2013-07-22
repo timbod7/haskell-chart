@@ -18,6 +18,7 @@ library
                , time, mtl
                , diagrams-core >= 0.6
                , diagrams-lib >= 0.6
+               , SVGFonts >= 1.2.1
                , colour >= 2.2.1
                , operational >= 0.2.2
                , data-default >= 0.5

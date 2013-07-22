@@ -30,6 +30,8 @@ import qualified Diagrams.Prelude as D
 import qualified Diagrams.TwoD as D2
 import qualified Diagrams.TwoD.Arc as D2
 
+import qualified Graphics.SVGFonts.ReadFont as F
+
 import Graphics.Rendering.Chart.Backend as G
 import Graphics.Rendering.Chart.Backend.Impl
 import Graphics.Rendering.Chart.Backend.Types
@@ -45,7 +47,7 @@ import Debug.Trace
 
 data DEnv = DEnv
   { envAlignmentFns :: AlignmentFns
-  , envFontColor :: AlphaColour Double
+  , envFontStyle :: FontStyle
   }
 
 -- | Produce a environment with no transformation and clipping. 
@@ -55,7 +57,7 @@ defaultEnv :: (Point -> Point) -- ^ The point alignment function ('cePointAlignF
            -> DEnv
 defaultEnv pointAlignFn coordAlignFn = DEnv 
   { envAlignmentFns = AlignmentFns pointAlignFn coordAlignFn
-  , envFontColor = font_color_ def
+  , envFontStyle = def
   }
 
 -- | Run this backends renderer.
@@ -100,15 +102,28 @@ dFillPath env p = applyLineStyle noLineStyle $ D.stroke $ convertPath p
 
 dTextSize :: (D.Renderable (D.Path R2) b)
           => DEnv -> String -> (Diagram b R2, TextSize)
-dTextSize env text = (mempty, TextSize 10 10 10 10 10) -- TODO
+dTextSize env text = 
+  let fs = envFontStyle env
+      font@(fontData,_) = fontFromName $ font_name_ $ fs
+      (_,_,_,_,_,(_,_,weight,_,_,panose,ascent,descent,xHeight,capHeight,stemh,stemv,_)) = fontData
+  in (mempty, TextSize { textSizeWidth = D2.width $ F.textSVG' (fontStyleToTextOpts fs text)
+                       , textSizeAscent = 10 -- ascent
+                       , textSizeDescent = 10 -- descent
+                       , textSizeYBearing = F.bbox_dy fontData / 2 -- TODO: Is this really what we want?
+                       , textSizeHeight = font_size_ $ fs -- TODO: Should we get this from the font itself?
+                       })
 
 dAlignmentFns :: (D.Renderable (D.Path R2) b)
               => DEnv -> (Diagram b R2, AlignmentFns)
-dAlignmentFns env = (mempty, undefined) -- TODO
+dAlignmentFns env = (mempty, envAlignmentFns env) -- TODO
 
 dDrawText :: (D.Renderable (D.Path R2) b)
           => DEnv -> Point -> String -> Diagram b R2
-dDrawText env p text = mempty -- TODO
+dDrawText env (Point x y) text 
+  = D.transform (toTransformation $ translate (Vector x y) 1)
+  $ applyFontStyle (envFontStyle env)
+  $ D2.scaleY (-1)
+  $ F.textSVG_ (fontStyleToTextOpts (envFontStyle env) text)
 
 dWith :: (D.Renderable (D.Path R2) b)
       => DEnv -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
@@ -130,7 +145,7 @@ dWithFillStyle env fs = dWith env id $ applyFillStyle fs
 
 dWithFontStyle :: (D.Renderable (D.Path R2) b)
                => DEnv -> FontStyle -> ChartBackend a -> (Diagram b R2, a)
-dWithFontStyle env c = dWith env id $ id -- TODO
+dWithFontStyle env fs = dWith env (\e -> e { envFontStyle = fs }) $ id -- TODO
 
 dWithClipRegion :: (D.Renderable (D.Path R2) b)
                 => DEnv -> Rect -> ChartBackend a -> (Diagram b R2, a)
@@ -189,6 +204,29 @@ applyLineStyle ls = D.lineWidth (line_width_ ls)
 applyFillStyle :: (D.HasStyle a) => FillStyle -> a -> a
 applyFillStyle fs = case fs of
   FillStyleSolid cl -> D.fillColor cl
+
+-- | Apply all pure diagrams properties from the font style.
+applyFontStyle :: (D.HasStyle a) => FontStyle -> a -> a
+applyFontStyle fs = applyLineStyle noLineStyle 
+                  . applyFillStyle (solidFillStyle $ font_color_ fs)
+
+-- TODO: FontSlant and FontWeight can not be expressed properly.
+fontStyleToTextOpts :: FontStyle -> String -> F.TextOpts
+fontStyleToTextOpts fs text = F.TextOpts
+  { F.txt = text
+  , F.fdo = fontFromName $ font_name_ fs
+  , F.mode = F.INSIDE_H
+  , F.spacing = F.KERN
+  , F.underline = False
+  , F.textWidth = 1
+  , F.textHeight = font_size_ fs
+  }
+
+fontFromName :: String -> (F.FontData, F.OutlineMap)
+fontFromName name = case name of
+  "serif" -> F.lin
+  "monospace" -> F.bit
+  _ -> F.lin
 
 -- | Convert line caps.
 convertLineCap :: LineCap -> D.LineCap
