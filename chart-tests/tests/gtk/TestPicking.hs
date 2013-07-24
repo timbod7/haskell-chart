@@ -10,7 +10,7 @@ import Data.Time.LocalTime
 import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
-import Data.Default
+import Data.Default.Class
 import Data.Accessor
 import Data.IORef
 import System.Environment(getArgs)

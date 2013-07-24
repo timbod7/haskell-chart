@@ -21,7 +21,7 @@ library
                , SVGFonts >= 1.2.1
                , colour >= 2.2.1
                , operational >= 0.2.2
-               , data-default >= 0.5
+               , data-default-class < 0.1
                , Chart >= 0.17
 
   Exposed-modules:

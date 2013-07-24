@@ -14,7 +14,7 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.List(sort,nub,scanl1)
-import Data.Default
+import Data.Default.Class
 import qualified Data.Map as Map
 import Control.Monad
 import Prices

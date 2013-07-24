@@ -2,7 +2,7 @@ module Test8 where
 
 import Graphics.Rendering.Chart
 import Data.Accessor
-import Data.Default
+import Data.Default.Class
 
 import Utils
 

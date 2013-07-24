@@ -19,7 +19,7 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , sparkLineToPNG
   ) where
 
-import Data.Default
+import Data.Default.Class
 import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB

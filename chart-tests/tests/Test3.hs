@@ -6,7 +6,7 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.Accessor
-import Data.Default
+import Data.Default.Class
 import Prices(prices1)
 
 import Utils

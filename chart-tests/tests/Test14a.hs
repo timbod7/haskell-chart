@@ -5,7 +5,7 @@ import Graphics.Rendering.Chart.Plot
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
-import Data.Default
+import Data.Default.Class
 import Data.Time.LocalTime
 import System.Random
 import Prices(prices1)
