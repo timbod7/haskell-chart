@@ -1,6 +1,5 @@
 
-
-module TestApi where
+module Tests where
 
 import Data.Monoid
 import Data.Default
@@ -11,15 +10,6 @@ import Data.List
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Backend
-import Graphics.Rendering.Chart.Backend.Cairo
-
-main :: IO ()
-main = (flip mapM_) tests $ \(name, w, h, draw) -> do
-  render (name ++ ".png") w h draw
-  
-
-render :: FilePath -> Int -> Int -> ChartBackend a -> IO ()
-render f w h m = renderToFile m CairoPNG w h f
 
 supportLineStyle :: LineStyle
 supportLineStyle = def 

@@ -1,5 +1,4 @@
 
-
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
 
@@ -8,7 +7,7 @@ import Diagrams.TwoD ( SizeSpec2D(..) )
 import Diagrams.Backend.Cairo
 import Diagrams.Backend.Cairo.Internal
 
-import TestApi (tests)
+import Tests (tests)
 
 main :: IO ()
 main = (flip mapM_) tests $ \(name, w, h, draw) -> do
