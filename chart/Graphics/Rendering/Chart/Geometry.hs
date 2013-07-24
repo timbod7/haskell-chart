@@ -272,7 +272,7 @@ scaleP s = transformP (scale s 1)
 
 -- | Translate a point.
 translateP :: Vector -> Point -> Point
-translateP t = transformP (translate t 1)
+translateP = flip pvadd
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
 data Matrix = Matrix { xx :: !Double, yx :: !Double,
