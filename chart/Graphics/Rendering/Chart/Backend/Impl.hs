@@ -1,7 +1,4 @@
 {-# LANGUAGE GADTs #-}
---{-# LANGUAGE Rank2Types #-}
---{-# LANGUAGE ScopedTypeVariables #-}
---{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | This module provides the implementation details common to all 'ChartBackend's.
 module Graphics.Rendering.Chart.Backend.Impl where

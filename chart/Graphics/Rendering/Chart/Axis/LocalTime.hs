@@ -6,9 +6,6 @@
 --
 -- Calculate and render time axes
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module Graphics.Rendering.Chart.Axis.LocalTime(
     timeAxis,
     autoTimeAxis,

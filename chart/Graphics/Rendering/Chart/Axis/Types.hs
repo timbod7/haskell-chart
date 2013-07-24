@@ -7,7 +7,6 @@
 -- Type definitions for Axes
 --
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Axis.Types(

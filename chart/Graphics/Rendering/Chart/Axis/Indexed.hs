@@ -7,7 +7,6 @@
 -- Calculate and render indexed axes
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Axis.Indexed(
     PlotIndex(..),

@@ -6,9 +6,6 @@
 --
 -- Calculate and render integer indexed axes
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module Graphics.Rendering.Chart.Axis.Int(
     defaultIntAxis,
     scaledIntAxis,

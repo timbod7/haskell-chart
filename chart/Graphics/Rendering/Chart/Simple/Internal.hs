@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Graphics.Rendering.Chart.Simple.Internal where
 

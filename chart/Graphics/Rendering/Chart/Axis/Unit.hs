@@ -6,9 +6,6 @@
 --
 -- Calculate and render unit indexed axes
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module Graphics.Rendering.Chart.Axis.Unit(
     unitAxis,
 ) where
