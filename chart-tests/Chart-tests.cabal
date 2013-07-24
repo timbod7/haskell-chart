@@ -145,7 +145,7 @@ Executable charts-test-drawing-diagrams-cairo
       old-time        >= 1.0,
       Chart           >= 0.17,
       Chart-diagrams  >= 0.1,
-      diagrams-cairo  >= 0.6
+      diagrams-cairo  >= 0.6.1
   if !(flag(cairo) && flag(diagrams)
     Buildable: False
   Main-is: DiagramsCairo.hs

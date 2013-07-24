@@ -9,7 +9,7 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , DEnv(..)
   ) where
 
-import Data.Default
+import Data.Default.Class
 import Data.Colour
 import Data.Colour.SRGB
 import Data.List (unfoldr)
@@ -38,8 +38,6 @@ import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
-
-import Debug.Trace
 
 -- -----------------------------------------------------------------------
 -- Backend
@@ -253,37 +251,41 @@ convertPath path =
 pathToTrail :: Point -> Path 
             -> (D.Point R2, Trail R2, Maybe Path)
 pathToTrail _ (MoveTo p0 path) = 
-  let (t, rest) = pathToTrail' path p0
-  in (pointToP2 p0, t, rest)
+  let (t, close, rest) = pathToTrail' path p0
+  in (pointToP2 p0, makeTrail close t, rest)
 pathToTrail _ path@(Arc c r s _ _) = 
   let p0 = translateP (pointToVec c) $ rotateP s $ Point r 0
-      (t, rest) = pathToTrail' path p0
-  in (pointToP2 p0, t, rest)
+      (t, close, rest) = pathToTrail' path p0
+  in (pointToP2 p0, makeTrail close t, rest)
 pathToTrail _ path@(ArcNeg c r s _ _) = 
   let p0 = translateP (pointToVec c) $ rotateP s $ Point r 0
-      (t, rest) = pathToTrail' path p0
-  in (pointToP2 p0, t, rest)
+      (t, close, rest) = pathToTrail' path p0
+  in (pointToP2 p0, makeTrail close t, rest)
 pathToTrail start path = 
-  let (t, rest) = pathToTrail' path start
-  in (pointToP2 start, t, rest)
+  let (t, close, rest) = pathToTrail' path start
+  in (pointToP2 start, makeTrail close t, rest)
 
-pathToTrail' :: Path -> Point -> (Trail R2, Maybe Path)
-pathToTrail' p@(MoveTo _ _) _ = (mempty, Just p)
+makeTrail :: Bool -> D.Trail' D.Line R2 -> Trail R2
+makeTrail True  t = D.wrapTrail $ D.closeLine t
+makeTrail False t = D.wrapTrail $ t
+
+pathToTrail' :: Path -> Point -> (D.Trail' D.Line R2, Bool, Maybe Path)
+pathToTrail' p@(MoveTo _ _) _ = (mempty, False, Just p)
 pathToTrail' (LineTo p1 path) p0 = 
-  let (t, rest) = pathToTrail' path p1
-  in ( (pointToP2 p0 ~~ pointToP2 p1) <> t, rest )
+  let (t, c, rest) = pathToTrail' path p1
+  in ( (pointToP2 p0 ~~ pointToP2 p1) <> t, c, rest )
 pathToTrail' (Arc p0 r s e path) _ = 
   let endP = translateP (pointToVec p0) $ rotateP e $ Point r 0
-      (t, rest) = pathToTrail' path endP
+      (t, c, rest) = pathToTrail' path endP
       arcTrail = D2.scale r $ D2.arc (Rad s) (Rad e)
-  in ( arcTrail <> t, rest )
+  in ( arcTrail <> t, c, rest )
 pathToTrail' (ArcNeg p0 r s e path) _ = 
   let endP = translateP (pointToVec p0) $ rotateP e $ Point r 0
-      (t, rest) = pathToTrail' path endP
+      (t, c, rest) = pathToTrail' path endP
       arcTrail = D2.scale r $ D2.arcCW (Rad s) (Rad e)
-  in ( arcTrail <> t, rest )
-pathToTrail' End _ = (mempty, Nothing)
-pathToTrail' Close _ = (D.close mempty, Nothing)
+  in ( arcTrail <> t, c, rest )
+pathToTrail' End _ = (mempty, False, Nothing)
+pathToTrail' Close _ = (mempty, True, Nothing)
 
 
 
