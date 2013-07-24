@@ -141,6 +141,18 @@ data AlignmentFns = AlignmentFns {
   afCoordAlignFn :: AlignmentFn
   }
 
+-- | Alignment to render good on raster based graphics.
+bitmapAlignmentFns :: AlignmentFns
+bitmapAlignmentFns = AlignmentFns (adjfn 0.5) (adjfn 0.0) 
+  where
+    adjfn offset (Point x y) = Point (adj x) (adj y)
+      where
+        adj v = (fromIntegral.round) v +offset
+
+-- | Alignment to render good on vector based graphics.
+vectorAlignmentFns :: AlignmentFns
+vectorAlignmentFns = AlignmentFns id id
+
 -- -----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.

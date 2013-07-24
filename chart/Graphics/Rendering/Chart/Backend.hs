@@ -52,6 +52,11 @@ module Graphics.Rendering.Chart.Backend
   , font_slant
   , font_weight
   , font_color
+  
+  , AlignmentFn
+  , AlignmentFns
+  , vectorAlignmentFns
+  , bitmapAlignmentFns
   ) where
 
 import Graphics.Rendering.Chart.Backend.Types
