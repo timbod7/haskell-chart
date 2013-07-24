@@ -33,7 +33,9 @@ Extra-Source-Files:
      tests/gtk/Prices.hs,
      tests/gtk/TestPicking.hs,
      tests/gtk/darcs_usage.hs,
-     tests/drawing/TestApi.hs
+     tests/drawing/Tests.hs,
+     tests/drawing/Cairo.hs,
+     tests/drawing/DiagramsCairo.hs
 
 source-repository head
   type:     git
@@ -46,6 +48,11 @@ flag cairo
 
 flag gtk
   description: Install GTK backend tests. This also requires the cairo backend.
+  default:     False
+  manual:      True
+
+flag diagrams
+  description: Install Diagrams backend tests. This also requires the cairo backend.
   default:     False
   manual:      True
 
@@ -95,5 +102,53 @@ Executable charts-test-gtk
     Buildable: False
   Main-is: TestPicking.hs
   Hs-Source-Dirs: tests/gtk
+  Ghc-Options: -threaded
+  default-language:    Haskell2010
+
+Executable charts-test-drawing-cairo
+  if flag(cairo)
+    Build-Depends: 
+      base >= 3 && < 5, 
+      old-locale, 
+      array,
+      time, 
+      mtl, 
+      colour          >= 2.2.1,
+      data-accessor   == 0.2.*,
+      data-default-class < 0.1,
+      random          >= 1.0,
+      containers      >= 0.5,
+      old-time        >= 1.0,
+      cairo           >= 0.9.11,
+      Chart           >= 0.17,
+      Chart-cairo     >= 0.1
+  if !flag(cairo)
+    Buildable: False
+  Main-is: Cairo.hs
+  Hs-Source-Dirs: tests/drawing
+  Ghc-Options: -threaded
+  default-language:    Haskell2010
+
+Executable charts-test-drawing-diagrams-cairo
+  if flag(cairo) && flag(diagrams)
+    Build-Depends: 
+      base >= 3 && < 5, 
+      old-locale, 
+      array,
+      time, 
+      mtl, 
+      colour          >= 2.2.1,
+      data-accessor   == 0.2.*,
+      data-default-class < 0.1,
+      random          >= 1.0,
+      containers      >= 0.5,
+      old-time        >= 1.0,
+      Chart           >= 0.17,
+      Chart-diagrams  >= 0.1,
+      diagrams-cairo  >= 0.6
+  if !(flag(cairo) && flag(diagrams)
+    Buildable: False
+  Main-is: DiagramsCairo.hs
+  Hs-Source-Dirs: tests/drawing
   Ghc-Options: -threaded
   default-language:    Haskell2010
