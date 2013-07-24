@@ -37,6 +37,10 @@ data ChartBackendInstr a where
 
 type ChartBackend a = Program ChartBackendInstr a
 
+{-# DEPRECATED CRender  "Use the new name ChartBackend!" #-}
+-- | Alias so the old name for rendering code still works.
+type CRender a = ChartBackend a
+
 -- | A 'ChartBackend' provides the capability to render a chart somewhere.
 --   
 --   The coordinate system of the backend has its initial origin (0,0)
