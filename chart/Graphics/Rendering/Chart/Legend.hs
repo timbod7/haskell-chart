@@ -50,6 +50,9 @@ data LegendOrientation = LORows Int
 
 data Legend x y = Legend LegendStyle [(String, Rect -> ChartBackend ())]
 
+instance ToRenderable (Legend x y) where
+  toRenderable = setPickFn nullPickFn . legendToRenderable
+
 legendToRenderable :: Legend x y -> Renderable String
 legendToRenderable (Legend ls lvs) = gridToRenderable grid
   where

@@ -121,10 +121,16 @@ instance Default PieLayout where
     , pie_margin_      = 10
     }
 
+instance ToRenderable PieLayout where
+  toRenderable = setPickFn nullPickFn . pieToRenderable
+
 pieChartToRenderable :: PieChart -> Renderable (PickFn a)
 pieChartToRenderable p = Renderable { minsize = minsizePie p
                                     , render  = renderPie p
                                     }
+
+instance ToRenderable PieChart where
+  toRenderable = setPickFn nullPickFn . pieChartToRenderable
 
 pieToRenderable :: PieLayout -> Renderable (PickFn a)
 pieToRenderable p = fillBackground (pie_background_ p) (

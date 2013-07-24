@@ -11,6 +11,7 @@
 
 module Graphics.Rendering.Chart.Renderable(
     Renderable(..),
+    ToRenderable(..),
     PickFn,
     
     rectangleToRenderable,
@@ -66,6 +67,10 @@ data Renderable a = Renderable {
    --   The resulting "pick" function  maps a point in the image to a value.
    render  :: RectSize -> ChartBackend (PickFn a)
 }
+
+-- | A type class abtracting the conversion of a value to a Renderable.
+class ToRenderable a where
+  toRenderable :: a -> Renderable ()
 
 emptyRenderable :: Renderable a
 emptyRenderable = spacer (0,0)
@@ -215,6 +220,9 @@ instance Default Rectangle where
     , rect_lineStyle_   = Nothing
     , rect_cornerStyle_ = RCornerSquare
     }
+
+instance ToRenderable Rectangle where
+  toRenderable = rectangleToRenderable
 
 rectangleToRenderable :: Rectangle -> Renderable a
 rectangleToRenderable rectangle = Renderable mf rf

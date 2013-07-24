@@ -246,6 +246,9 @@ getSizes t = do
       ef f ds loc (size,span,ew) r | ds span == 1 = (f loc size ew:r)
                                    | otherwise    = r
 
+instance (ToRenderable a) => ToRenderable (Grid a) where
+  toRenderable = gridToRenderable . fmap toRenderable
+
 gridToRenderable :: Grid (Renderable a) -> Renderable a
 gridToRenderable t = Renderable minsizef renderf
   where

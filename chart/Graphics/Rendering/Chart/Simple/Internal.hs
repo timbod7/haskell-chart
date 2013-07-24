@@ -146,6 +146,9 @@ newtype Layout1DDD = Layout1DDD { plotLayout :: Layout1 Double Double }
 layout1DddToRenderable :: Layout1DDD -> Renderable (Layout1Pick Double Double)
 layout1DddToRenderable = layout1ToRenderable . plotLayout
 
+instance ToRenderable Layout1DDD where
+  toRenderable = setPickFn nullPickFn . toRenderable
+
 uplot :: [UPlot] -> Layout1DDD
 uplot us = Layout1DDD $ iplot $ nameDoubles $ evalfuncs us
   where

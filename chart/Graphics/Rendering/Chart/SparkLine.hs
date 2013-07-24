@@ -96,6 +96,9 @@ sparkLineToRenderable sp = Renderable
             , render  = \_rect-> renderSparkLine sp
             }
 
+instance ToRenderable SparkLine where
+  toRenderable = sparkLineToRenderable
+
 -- | Compute the width of a SparkLine, for rendering purposes.
 sparkWidth :: SparkLine -> Int
 sparkWidth SparkLine{sl_options=opt, sl_data=ds} =
