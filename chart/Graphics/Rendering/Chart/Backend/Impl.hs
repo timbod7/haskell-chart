@@ -11,7 +11,7 @@ import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.Operational
 
-import Data.Default
+import Data.Default.Class
 
 import Data.Colour
 import Data.Colour.Names

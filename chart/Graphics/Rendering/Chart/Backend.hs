@@ -4,7 +4,7 @@ module Graphics.Rendering.Chart.Backend
   (
   -- * The backend Monad
     ChartBackend(..)
-    CRender
+  , CRender
   
   -- * Backend Operations
   , fillPath

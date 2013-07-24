@@ -23,7 +23,7 @@ module Graphics.Rendering.Chart.Legend(
 import Control.Monad
 import Data.List (nub, partition,intersperse)
 import Data.Accessor.Template
-import Data.Default
+import Data.Default.Class
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing

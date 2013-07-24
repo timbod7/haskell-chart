@@ -28,7 +28,7 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
-import Data.Default
+import Data.Default.Class
 
 -- | Value defining a series of (possibly disjointed) lines,
 --   and a style in which to render them.

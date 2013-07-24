@@ -5,7 +5,7 @@ module Graphics.Rendering.Chart.Simple.Internal where
 import Data.Maybe ( catMaybes )
 import Data.Colour
 import Data.Colour.Names
-import Data.Default
+import Data.Default.Class
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Utils

@@ -32,7 +32,7 @@ module Graphics.Rendering.Chart.Axis.Floating(
 
 import Data.List(minimumBy)
 import Data.Ord (comparing)
-import Data.Default
+import Data.Default.Class
 import Numeric (showFFloat)
 
 import Data.Accessor.Template

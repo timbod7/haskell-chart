@@ -35,7 +35,7 @@ import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
-import Data.Default
+import Data.Default.Class
 
 -- | Value for holding a point with associated error bounds for each axis.
 

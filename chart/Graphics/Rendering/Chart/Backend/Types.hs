@@ -2,7 +2,7 @@
 
 module Graphics.Rendering.Chart.Backend.Types where
 
-import Data.Default
+import Data.Default.Class
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor.Template

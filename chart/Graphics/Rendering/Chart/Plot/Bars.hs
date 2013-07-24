@@ -39,7 +39,7 @@ import Graphics.Rendering.Chart.Axis
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
-import Data.Default
+import Data.Default.Class
 
 class PlotValue a => BarsPlotValue a where
     barsReference :: a

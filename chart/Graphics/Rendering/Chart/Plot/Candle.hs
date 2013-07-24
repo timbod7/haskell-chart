@@ -35,7 +35,7 @@ import Control.Monad
 import Data.Colour (opaque)
 import Data.Colour.Names (black, white, blue)
 import Data.Colour.SRGB (sRGB)
-import Data.Default
+import Data.Default.Class
 
 -- | Value defining a financial interval: opening and closing prices, with
 --   maxima and minima; and a style in which to render them.

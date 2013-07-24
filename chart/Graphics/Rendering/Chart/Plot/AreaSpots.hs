@@ -37,7 +37,7 @@ import Graphics.Rendering.Chart.Axis
 import Data.Accessor.Template
 import Data.Colour
 import Data.Colour.Names
-import Data.Default
+import Data.Default.Class
 
 import Control.Monad
 

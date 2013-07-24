@@ -27,7 +27,7 @@ import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
-import Data.Default
+import Data.Default.Class
 
 -- | Value specifying a plot filling the area between two sets of Y
 --   coordinates, given common X coordinates.

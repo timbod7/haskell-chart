@@ -63,7 +63,7 @@ import Data.List(sort,intersperse)
 import Data.Accessor.Template
 import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
-import Data.Default
+import Data.Default.Class
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing

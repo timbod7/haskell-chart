@@ -79,7 +79,7 @@ module Graphics.Rendering.Chart.Drawing
   , module Graphics.Rendering.Chart.Backend
 ) where
 
-import Data.Default
+import Data.Default.Class
 import Data.Accessor
 import Data.Accessor.Template
 import Data.Colour

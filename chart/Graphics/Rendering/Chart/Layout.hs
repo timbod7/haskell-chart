@@ -89,7 +89,7 @@ import Data.Accessor.Template
 import Data.Accessor
 import Data.Colour
 import Data.Colour.Names (white)
-import Data.Default
+import Data.Default.Class
 
 -- | A @MAxisFn@ is a function that generates an (optional) axis
 --   given the points plotted against that axis.

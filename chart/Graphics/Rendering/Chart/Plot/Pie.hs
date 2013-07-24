@@ -54,7 +54,7 @@ import Data.Accessor.Template
 import Data.Colour
 import Data.Colour.Names (black, white)
 import Data.Monoid
-import Data.Default
+import Data.Default.Class
 import Control.Monad
 
 import Graphics.Rendering.Chart.Geometry

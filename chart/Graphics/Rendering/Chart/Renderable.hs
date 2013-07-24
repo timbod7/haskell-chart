@@ -38,7 +38,7 @@ import Control.Monad
 import Data.Accessor
 import Data.List ( nub, transpose, sort )
 import Data.Monoid
-import Data.Default
+import Data.Default.Class
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
