@@ -32,12 +32,6 @@ data ChartBackendInstr a where
   WithLineStyle  :: LineStyle -> Program ChartBackendInstr a -> ChartBackendInstr a
   WithClipRegion :: Rect -> Program ChartBackendInstr a -> ChartBackendInstr a
 
-type ChartBackend a = Program ChartBackendInstr a
-
-{-# DEPRECATED CRender  "Use the new name ChartBackend!" #-}
--- | Alias so the old name for rendering code still works.
-type CRender a = ChartBackend a
-
 -- | A 'ChartBackend' provides the capability to render a chart somewhere.
 --   
 --   The coordinate system of the backend has its initial origin (0,0)
@@ -46,10 +40,16 @@ type CRender a = ChartBackend a
 --   the bottom left corner. The unit used by coordinates, the font size,
 --   and lengths is the always the same, but depends on the backend.
 --   All angles are measured in radians.
---   
+type ChartBackend a = Program ChartBackendInstr a
+
+{-# DEPRECATED CRender  "Use the new name ChartBackend!" #-}
+-- | Alias so the old name for rendering code still works.
+type CRender a = ChartBackend a
+
 -- | Stroke the outline of the given path using the 
 --   current 'LineStyle'. This function does /not/ perform
---   alignment operations on the path.
+--   alignment operations on the path. See 'Path' for the exact semantic
+--   of paths.
 strokePath :: Path -> ChartBackend ()
 strokePath p = singleton (StrokePath p)
 
@@ -57,6 +57,7 @@ strokePath p = singleton (StrokePath p)
 --   The given path will be closed prior to filling.
 --   This function does /not/ perform
 --   alignment operations on the path.
+--   See 'Path' for the exact semantic of paths.
 fillPath :: Path -> ChartBackend ()
 fillPath p = singleton (FillPath p)
 

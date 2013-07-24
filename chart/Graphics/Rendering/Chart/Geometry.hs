@@ -141,6 +141,26 @@ rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) =
 -- -----------------------------------------------------------------------
 
 -- | The path type used by Charts.
+--   
+--   A path can consist of several subpaths. Each
+--   is started by a 'MoveTo' operation. All subpaths
+--   are open, except the last one, which be closed
+--   using the 'Close' operation. When filling a path
+--   all subpaths are closed implicitly.
+--   
+--   Closing a subpath means that a line is drawn from
+--   the end point to the start point of the subpath.
+--   
+--   If a 'Arc' (or 'ArcNeg') is drawn a implicit line
+--   from the last end point of the subpath is drawn
+--   to the beginning of the arc. Another implicit line
+--   is drawn from the end of an arc to the beginning of
+--   the next path segment.
+--   
+--   The beginning of a subpath is either (0,0) or set
+--   by a 'MoveTo' instruction. If the first subpath is started
+--   with an arc the beginning of that subpath is the beginning
+--   of the arc.
 data Path = MoveTo Point Path 
           | LineTo Point Path
           | Arc Point Double Double Double Path
@@ -228,7 +248,8 @@ foldPath moveTo lineTo arc arcNeg close path =
     Close -> close
 
 -- | Enriches the path with explicit instructions to draw lines,
---   that otherwise would be implicit.
+--   that otherwise would be implicit. See 'Path' for details
+--   about what lines in paths are implicit.
 makeLinesExplicit :: Path -> Path
 makeLinesExplicit (Arc c r s e rest) = 
   Arc c r s e $ makeLinesExplicit' rest
