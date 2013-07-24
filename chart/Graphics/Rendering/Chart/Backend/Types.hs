@@ -27,13 +27,19 @@ data LineJoin = LineJoinMiter -- ^ Extends the outline until they meet each othe
               deriving Show
 
 -- | Data type for the style of a line.
-data LineStyle = LineStyle {
-   line_width_  :: Double,
-   line_color_  :: AlphaColour Double,
-   line_dashes_ :: [Double],
-   line_cap_    :: LineCap,
-   line_join_   :: LineJoin
-} deriving Show
+data LineStyle = LineStyle 
+  { line_width_  :: Double
+  -- ^ The thickness of a line in device units.
+  , line_color_  :: AlphaColour Double
+  -- ^ The color of a line.
+  , line_dashes_ :: [Double]
+  -- ^ The dash pattern. Every value at a even index gives a dash width and 
+  --   every value at a odd index gives a gap width in device units.
+  , line_cap_    :: LineCap
+  -- ^ How to end a line.
+  , line_join_   :: LineJoin
+  -- ^ How to connect two lines.
+  } deriving Show
 
 -- | The default line style.
 instance Default LineStyle where
@@ -71,10 +77,15 @@ instance Default FontWeight where
 -- | Data type for a font.
 data FontStyle = FontStyle {
       font_name_   :: String,
+      -- ^ The font family or font face to use.
       font_size_   :: Double,
+      -- ^ The height of the rendered font in device coordinates.
       font_slant_  :: FontSlant,
+      -- ^ The slant to render with.
       font_weight_ :: FontWeight,
+      -- ^ The weight to render with.
       font_color_  :: AlphaColour Double
+      -- ^ The color to render text with.
 } deriving Show
 
 -- | The default font style.
@@ -124,8 +135,11 @@ instance Default FillStyle where
     }
 
 -------------------------------------------------------------------------
+
+-- | A function to align points for a certain rendering device.
 type AlignmentFn = Point -> Point
 
+-- | Holds the point and coordinate alignment function.
 data AlignmentFns = AlignmentFns {
   afPointAlignFn :: AlignmentFn,
   -- ^ An adjustment applied immediately prior to points
@@ -135,9 +149,13 @@ data AlignmentFns = AlignmentFns {
   --   image is created if this transform rounds to the nearest
   --   pixel. With higher-resolution output, this transform can
   --   just be the identity function.
+  --   
+  --   This is usually used to align prior to stroking.
 
   -- | A adjustment applied immediately prior to coordinates
   --   being transformed.
+  --   
+  --   This is usually used to align prior to filling.
   afCoordAlignFn :: AlignmentFn
   }
 
