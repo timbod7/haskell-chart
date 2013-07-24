@@ -2,7 +2,7 @@
 module Tests where
 
 import Data.Monoid
-import Data.Default
+import Data.Default.Class
 import Data.Colour
 import Data.Colour.Names
 import Data.List
