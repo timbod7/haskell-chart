@@ -50,11 +50,10 @@ data DEnv = DEnv
 
 -- | Produce a environment with no transformation and clipping. 
 --   It will use the default styles.
-defaultEnv :: (Point -> Point) -- ^ The point alignment function ('cePointAlignFn')
-           -> (Point -> Point) -- ^ The coordinate alignment function ('ceCoordAlignFn')
+defaultEnv :: AlignmentFns
            -> DEnv
-defaultEnv pointAlignFn coordAlignFn = DEnv 
-  { envAlignmentFns = AlignmentFns pointAlignFn coordAlignFn
+defaultEnv alignFns = DEnv 
+  { envAlignmentFns = alignFns
   , envFontStyle = def
   }
 

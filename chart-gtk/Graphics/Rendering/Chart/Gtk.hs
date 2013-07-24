@@ -79,5 +79,5 @@ updateCanvas chart canvas = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
     let sz = (fromIntegral width,fromIntegral height)
-    G.renderWithDrawable win $ runBackend bitmapEnv (render chart sz) 
+    G.renderWithDrawable win $ runBackend (defaultEnv bitmapAlignmentFns) (render chart sz) 
     return True

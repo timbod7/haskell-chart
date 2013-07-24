@@ -70,7 +70,7 @@ updateCanvas chart canvas pickfv = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
     let sz = (fromIntegral width,fromIntegral height)
-    pickf <- G.renderWithDrawable win $ runBackend bitmapEnv (render chart sz) 
+    pickf <- G.renderWithDrawable win $ runBackend (defaultEnv bitmapAlignmentFns) (render chart sz) 
     writeIORef pickfv (Just pickf)
     return True
 

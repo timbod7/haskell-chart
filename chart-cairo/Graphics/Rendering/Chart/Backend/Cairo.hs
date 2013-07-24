@@ -6,9 +6,7 @@ module Graphics.Rendering.Chart.Backend.Cairo
   ( CairoBackend(..)
   , runBackend
   , renderToFile
-  
-  , bitmapEnv
-  , vectorEnv
+  , defaultEnv
 
   , renderableToPNGFile
   , renderableToPDFFile
@@ -55,11 +53,10 @@ data CEnv = CEnv
 
 -- | Produce a environment with no transformation and clipping. 
 --   It will use the default styles.
-defaultEnv :: (Point -> Point) -- ^ The point alignment function ('cePointAlignFn')
-           -> (Point -> Point) -- ^ The coordinate alignment function ('ceCoordAlignFn')
+defaultEnv :: AlignmentFns
            -> CEnv
-defaultEnv pointAlignFn coordAlignFn = CEnv 
-  { ceAlignmentFns = AlignmentFns pointAlignFn coordAlignFn
+defaultEnv alignFns = CEnv 
+  { ceAlignmentFns = alignFns
   , ceFontColor = opaque black
   , cePathColor = opaque black
   , ceFillColor = opaque white
@@ -286,7 +283,7 @@ cArcNegative p r a1 a2 = C.arcNegative (p_x p) (p_y p) r a1 a2
 cRenderToPNGFile :: ChartBackend a -> Int -> Int -> FilePath -> IO a
 cRenderToPNGFile cr width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
-    a <- C.renderWith result $ runBackend bitmapEnv cr 
+    a <- C.renderWith result $ runBackend (defaultEnv bitmapAlignmentFns) cr 
     C.surfaceWriteToPNG result path
     return a
 
@@ -302,21 +299,9 @@ cRenderToSVGFile  = cRenderToFile C.withSVGSurface
 cRenderToFile withSurface cr width height path = 
     withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
     C.renderWith result $ do
-      runBackend vectorEnv cr
+      runBackend (defaultEnv vectorAlignmentFns) cr
       C.showPage
     C.surfaceFinish result
-
--- | Environment aligned to render good on bitmaps.
-bitmapEnv :: CEnv
-bitmapEnv = defaultEnv (adjfn 0.5) (adjfn 0.0) 
-  where
-    adjfn offset (Point x y) = Point (adj x) (adj y)
-      where
-        adj v = (fromIntegral.round) v +offset
-
--- | Environment aligned to render good on vector based graphics.
-vectorEnv :: CEnv
-vectorEnv = defaultEnv id id
 
 -- -----------------------------------------------------------------------
 -- Simple Instances
