@@ -144,7 +144,7 @@ rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) =
 --   
 --   A path can consist of several subpaths. Each
 --   is started by a 'MoveTo' operation. All subpaths
---   are open, except the last one, which be closed
+--   are open, except the last one, which may be closed
 --   using the 'Close' operation. When filling a path
 --   all subpaths are closed implicitly.
 --   
