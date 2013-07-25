@@ -32,8 +32,8 @@ import Control.Monad
 import Control.Monad.Trans
 import Numeric
 import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.Types
-import qualified Graphics.Rendering.Cairo as C
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 
 import Data.Colour
 import Data.Colour.Names
@@ -224,9 +224,9 @@ foldT f iv ft = foldr f' iv (assocs ft)
 ----------------------------------------------------------------------
 type DArray = Array Int Double
 
-getSizes :: Grid (Renderable a) -> CRender (DArray, DArray, DArray, DArray)
+getSizes :: Grid (Renderable a) -> ChartBackend (DArray, DArray, DArray, DArray)
 getSizes t = do
-    szs <- mapGridM minsize t :: CRender (Grid RectSize)
+    szs <- mapGridM minsize t :: ChartBackend (Grid RectSize)
     let szs'     = flatten szs
     let widths   = accumArray max 0 (0, width  t - 1)
                                                    (foldT (ef wf  fst) [] szs')
@@ -247,12 +247,12 @@ getSizes t = do
                                    | otherwise    = r
 
 instance (ToRenderable a) => ToRenderable (Grid a) where
-    toRenderable = gridToRenderable . fmap toRenderable
+  toRenderable = gridToRenderable . fmap toRenderable
 
 gridToRenderable :: Grid (Renderable a) -> Renderable a
 gridToRenderable t = Renderable minsizef renderf
   where
-    minsizef :: CRender RectSize
+    minsizef :: ChartBackend RectSize
     minsizef = do
         (widths, heights, xweights, yweights) <- getSizes t
         return (sum (elems widths), sum (elems heights))
@@ -270,12 +270,11 @@ gridToRenderable t = Renderable minsizef renderf
         Empty -> return nullPickFn
         (Value (r,span,_)) -> do
             let (Rect p0 p1) = mkRect borders loc span
-            p0'@(Point x0 y0) <- alignc p0
-            p1'@(Point x1 y1) <- alignc p1
-            preserveCState $ do
-                c $ C.translate x0 y0
-                pf <- render r (x1-x0,y1-y0)
-                return (newpf pf x0 y0)
+            p0'@(Point x0 y0) <- alignFillPoint p0
+            p1'@(Point x1 y1) <- alignFillPoint p1
+            withTranslation (Point x0 y0) $ do
+              pf <- render r (x1-x0,y1-y0)
+              return (newpf pf x0 y0)
         (Above t1 t2 _) -> do
              pf1 <- rf1 borders (i,j) t1
              pf2 <- rf1 borders (i,j+height t1) t2

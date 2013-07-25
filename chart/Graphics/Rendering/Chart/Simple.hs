@@ -27,7 +27,12 @@
 -----------------------------------------------------------------------------
 module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                         plotPDF, plotPS,
-                                        plotLayout, plotPNG, Layout1DDD
+                                        plotLayout, plotPNG, Layout1DDD,
+                                        layout1DddToRenderable
+                                      , PlotPDFType(..)
+                                      , PlotPSType(..)
+                                      , PlotPNGType(..)
+                                      , uplot
                                       ) where
 
 import Graphics.Rendering.Chart.Simple.Internal

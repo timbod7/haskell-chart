@@ -6,7 +6,7 @@
 --
 -- Bar Charts
 --
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Bars(
     PlotBars(..),
@@ -31,14 +31,15 @@ module Graphics.Rendering.Chart.Plot.Bars(
 import Data.Accessor.Template
 import Control.Monad
 import Data.List(nub,sort)
-import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Axis
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
+import Data.Default.Class
 
 class PlotValue a => BarsPlotValue a where
     barsReference :: a
@@ -84,7 +85,7 @@ data PlotBars x y = PlotBars {
    -- | The style in which to draw each element of [y]. A fill style
    --   is required, and if a linestyle is given, each bar will be
    --   outlined.
-   plot_bars_item_styles_     :: [ (CairoFillStyle,Maybe CairoLineStyle) ],
+   plot_bars_item_styles_     :: [ (FillStyle,Maybe LineStyle) ],
 
    -- | The title of each element of [y]. These will be shown in the legend.
    plot_bars_titles_          :: [String],
@@ -107,20 +108,24 @@ data PlotBars x y = PlotBars {
    plot_bars_values_          :: [ (x,[y]) ]
 }
 
+{-# DEPRECATED defaultPlotBars "Use the according Data.Default instance!" #-}
 defaultPlotBars :: BarsPlotValue y => PlotBars x y
-defaultPlotBars = PlotBars {
-   plot_bars_style_           = BarsClustered,
-   plot_bars_item_styles_     = cycle istyles,
-   plot_bars_titles_          = [],
-   plot_bars_spacing_         = BarsFixGap 10 2,
-   plot_bars_alignment_       = BarsCentered,
-   plot_bars_values_          = [],
-   plot_bars_singleton_width_ = 20,
-   plot_bars_reference_       = barsReference
-   }
-  where
-    istyles   = map mkstyle defaultColorSeq
-    mkstyle c = (solidFillStyle c, Just (solidLine 1.0 $ opaque black))
+defaultPlotBars = def
+
+instance BarsPlotValue y => Default (PlotBars x y) where
+  def = PlotBars
+    { plot_bars_style_           = BarsClustered
+    , plot_bars_item_styles_     = cycle istyles
+    , plot_bars_titles_          = []
+    , plot_bars_spacing_         = BarsFixGap 10 2
+    , plot_bars_alignment_       = BarsCentered
+    , plot_bars_values_          = []
+    , plot_bars_singleton_width_ = 20
+    , plot_bars_reference_       = barsReference
+    }
+    where
+      istyles   = map mkstyle defaultColorSeq
+      mkstyle c = (solidFillStyle c, Just (solidLine 1.0 $ opaque black))
 
 plotBars :: (BarsPlotValue y) => PlotBars x y -> Plot x y
 plotBars p = Plot {
@@ -131,28 +136,28 @@ plotBars p = Plot {
         plot_all_points_ = allBarPoints p
     }
 
-renderPlotBars :: (BarsPlotValue y) =>
-                  PlotBars x y -> PointMapFn x y -> CRender ()
+renderPlotBars :: (BarsPlotValue y) => PlotBars x y -> PointMapFn x y -> ChartBackend ()
 renderPlotBars p pmap = case (plot_bars_style_ p) of
       BarsClustered -> forM_ vals clusteredBars
       BarsStacked   -> forM_ vals stackedBars
   where
-    clusteredBars (x,ys) = preserveCState $ do
+    clusteredBars (x,ys) = do
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
-           setFillStyle fstyle
-           fillPath (barPath (offset i) x yref0 y)
-           c $ C.fill
+           withFillStyle fstyle $ do
+             p <- alignFillPath (barPath (offset i) x yref0 y)
+             fillPath p
        forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
-             setLineStyle lstyle
-             strokePath (barPath (offset i) x yref0 y)
+             withLineStyle lstyle $ do
+               p <- alignStrokePath (barPath (offset i) x yref0 y)
+               strokePath p
 
     offset = case (plot_bars_alignment_ p) of
       BarsLeft     -> \i -> fromIntegral i * width
       BarsRight    -> \i -> fromIntegral (i-nys) * width
       BarsCentered -> \i -> fromIntegral (2*i-nys) * width/2
 
-    stackedBars (x,ys) =  preserveCState $ do
+    stackedBars (x,ys) = do
        let y2s = zip (yref0:stack ys) (stack ys)
        let ofs = case (plot_bars_alignment_ p) of {
          BarsLeft     -> 0          ;
@@ -160,12 +165,14 @@ renderPlotBars p pmap = case (plot_bars_style_ p) of
          BarsCentered -> (-width/2)
          }
        forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
-           setFillStyle fstyle
-           fillPath (barPath ofs x y0 y1)
+           withFillStyle fstyle $ do
+             p <- alignFillPath (barPath ofs x y0 y1)
+             fillPath p
        forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
            whenJust mlstyle $ \lstyle -> do
-               setLineStyle lstyle
-               strokePath (barPath ofs x y0 y1)
+              withLineStyle lstyle $ do
+                p <- alignStrokePath (barPath ofs x y0 y1)
+                strokePath p
 
     barPath xos x y0 y1 = do
       let (Point x' y') = pmap' (x,y1)
@@ -211,10 +218,9 @@ stack :: (BarsPlotValue y) => [y] -> [y]
 stack ys = scanl1 barsAdd ys
 
 
-renderPlotLegendBars :: (CairoFillStyle,Maybe CairoLineStyle) -> Rect
-                        -> CRender ()
+renderPlotLegendBars :: (FillStyle,Maybe LineStyle) -> Rect -> ChartBackend ()
 renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
-    setFillStyle fstyle
+  withFillStyle fstyle $ do
     fillPath (rectPath r)
 
 ----------------------------------------------------------------------

@@ -6,7 +6,7 @@
 --
 -- Plot series of points with associated error bars.
 --
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.ErrBars(
     PlotErrBars(..),
@@ -26,13 +26,16 @@ module Graphics.Rendering.Chart.Plot.ErrBars(
 ) where
 
 import Data.Accessor.Template
-import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Chart.Types
+import Data.Monoid
+
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
+import Data.Default.Class
 
 -- | Value for holding a point with associated error bounds for each axis.
 
@@ -56,7 +59,7 @@ symErrPoint x y dx dy = ErrPoint (ErrValue (x-dx) x (x+dx))
 --   which to render them.
 data PlotErrBars x y = PlotErrBars {
     plot_errbars_title_       :: String,
-    plot_errbars_line_style_  :: CairoLineStyle,
+    plot_errbars_line_style_  :: LineStyle,
     plot_errbars_tick_length_ :: Double,
     plot_errbars_overhang_    :: Double,
     plot_errbars_values_      :: [ErrPoint x y]
@@ -75,8 +78,8 @@ instance ToPlot PlotErrBars where
       where
         pts = plot_errbars_values_ p
 
-renderPlotErrBars :: PlotErrBars x y -> PointMapFn x y -> CRender ()
-renderPlotErrBars p pmap = preserveCState $ do
+renderPlotErrBars :: PlotErrBars x y -> PointMapFn x y -> ChartBackend ()
+renderPlotErrBars p pmap = do
     mapM_ (drawErrBar.epmap) (plot_errbars_values_ p)
   where
     epmap (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) =
@@ -90,24 +93,22 @@ renderPlotErrBars p pmap = preserveCState $ do
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = plot_errbars_tick_length_ ps
         let oh = plot_errbars_overhang_ ps
-        setLineStyle (plot_errbars_line_style_ ps)
-        c $ C.newPath
-        c $ C.moveTo (xl-oh) y
-        c $ C.lineTo (xh+oh) y
-        c $ C.moveTo x (yl-oh)
-        c $ C.lineTo x (yh+oh)
-        c $ C.moveTo xl (y-tl)
-        c $ C.lineTo xl (y+tl)
-        c $ C.moveTo (x-tl) yl
-        c $ C.lineTo (x+tl) yl
-        c $ C.moveTo xh (y-tl)
-        c $ C.lineTo xh (y+tl)
-        c $ C.moveTo (x-tl) yh
-        c $ C.lineTo (x+tl) yh
-	c $ C.stroke
+        withLineStyle (plot_errbars_line_style_ ps) $ do
+          strokePath $ moveTo' (xl-oh) y
+                    <> lineTo' (xh+oh) y
+                    <> moveTo' x (yl-oh)
+                    <> lineTo' x (yh+oh)
+                    <> moveTo' xl (y-tl)
+                    <> lineTo' xl (y+tl)
+                    <> moveTo' (x-tl) yl
+                    <> lineTo' (x+tl) yl
+                    <> moveTo' xh (y-tl)
+                    <> lineTo' xh (y+tl)
+                    <> moveTo' (x-tl) yh
+                    <> lineTo' (x+tl) yh
 
-renderPlotLegendErrBars :: PlotErrBars x y -> Rect -> CRender ()
-renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
+renderPlotLegendErrBars :: PlotErrBars x y -> Rect -> ChartBackend ()
+renderPlotLegendErrBars p r@(Rect p1 p2) = do
     drawErrBar (symErrPoint (p_x p1)              ((p_y p1 + p_y p2)/2) dx dx)
     drawErrBar (symErrPoint ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2) dx dx)
     drawErrBar (symErrPoint (p_x p2)              ((p_y p1 + p_y p2)/2) dx dx)
@@ -116,14 +117,18 @@ renderPlotLegendErrBars p r@(Rect p1 p2) = preserveCState $ do
     drawErrBar = drawErrBar0 p
     dx         = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
 
+{-# DEPRECATED defaultPlotErrBars "Use the according Data.Default instance!" #-}
 defaultPlotErrBars :: PlotErrBars x y
-defaultPlotErrBars = PlotErrBars {
-    plot_errbars_title_       = "",
-    plot_errbars_line_style_  = solidLine 1 $ opaque blue,
-    plot_errbars_tick_length_ = 3,
-    plot_errbars_overhang_    = 0,
-    plot_errbars_values_      = []
-}
+defaultPlotErrBars = def
+
+instance Default (PlotErrBars x y) where
+  def = PlotErrBars 
+    { plot_errbars_title_       = ""
+    , plot_errbars_line_style_  = solidLine 1 $ opaque blue
+    , plot_errbars_tick_length_ = 3
+    , plot_errbars_overhang_    = 0
+    , plot_errbars_values_      = []
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

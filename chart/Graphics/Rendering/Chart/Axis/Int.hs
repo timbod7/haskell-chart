@@ -6,9 +6,6 @@
 --
 -- Calculate and render integer indexed axes
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# OPTIONS_GHC -XTemplateHaskell #-}
-
 module Graphics.Rendering.Chart.Axis.Int(
     defaultIntAxis,
     scaledIntAxis,
@@ -16,7 +13,8 @@ module Graphics.Rendering.Chart.Axis.Int(
 ) where
 
 import Data.List(genericLength)
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Axis.Types
 import Graphics.Rendering.Chart.Axis.Floating
 

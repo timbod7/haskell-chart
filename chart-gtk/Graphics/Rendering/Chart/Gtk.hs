@@ -15,7 +15,9 @@ import qualified Graphics.UI.Gtk.Gdk.Events as GE
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Backend.Cairo
 import Data.List (isPrefixOf)
 import Data.IORef
 import Control.Monad(when)
@@ -77,5 +79,5 @@ updateCanvas chart canvas = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
     let sz = (fromIntegral width,fromIntegral height)
-    G.renderWithDrawable win $ runCRender (render chart sz) bitmapEnv
+    G.renderWithDrawable win $ runBackend (defaultEnv bitmapAlignmentFns) (render chart sz) 
     return True

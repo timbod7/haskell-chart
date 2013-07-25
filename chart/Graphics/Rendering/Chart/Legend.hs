@@ -6,8 +6,7 @@
 -- 
 -- Types and functions for handling the legend(s) on a chart. A legend
 -- is an area on the chart used to label the plotted values.
-
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Legend(
     Legend(..),
@@ -21,12 +20,13 @@ module Graphics.Rendering.Chart.Legend(
     legend_orientation
 ) where
 
-import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
 import Data.List (nub, partition,intersperse)
 import Data.Accessor.Template
+import Data.Default.Class
 
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
@@ -35,7 +35,7 @@ import Graphics.Rendering.Chart.Grid
 -- Legend
 
 data LegendStyle = LegendStyle {
-   legend_label_style_ :: CairoFontStyle,
+   legend_label_style_ :: FontStyle,
    legend_margin_      :: Double,
    legend_plot_size_   :: Double,
    legend_orientation_ :: LegendOrientation
@@ -48,10 +48,10 @@ data LegendOrientation = LORows Int
                        | LOCols Int
                        
 
-data Legend x y = Legend LegendStyle [(String, Rect -> CRender ())]
+data Legend x y = Legend LegendStyle [(String, Rect -> ChartBackend ())]
 
 instance ToRenderable (Legend x y) where
-  toRenderable = setPickFn nullPickFn.legendToRenderable
+  toRenderable = setPickFn nullPickFn . legendToRenderable
 
 legendToRenderable :: Legend x y -> Renderable String
 legendToRenderable (Legend ls lvs) = gridToRenderable grid
@@ -65,7 +65,7 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
 
     mkGrid n join1 join2 = join1 [ join2 (map rf ps1) | ps1 <- groups n ps ]
 
-    ps  :: [(String, [Rect -> CRender ()])]
+    ps  :: [(String, [Rect -> ChartBackend ()])]
     ps   = join_nub lvs
 
     rf (title,rfs) = besideN [gpic,ggap2,gtitle]
@@ -92,13 +92,17 @@ join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
                          (xs, rest) -> (x, a1:map snd xs) : join_nub rest
 join_nub []          = []
 
+{-# DEPRECATED defaultLegendStyle  "Use the according Data.Default instance!" #-}
 defaultLegendStyle :: LegendStyle
-defaultLegendStyle = LegendStyle {
-    legend_label_style_ = defaultFontStyle,
-    legend_margin_      = 20,
-    legend_plot_size_   = 20,
-    legend_orientation_ = LORows 4
-}
+defaultLegendStyle = def
+
+instance Default LegendStyle where
+  def = LegendStyle 
+    { legend_label_style_ = def
+    , legend_margin_      = 20
+    , legend_plot_size_   = 20
+    , legend_orientation_ = LORows 4
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

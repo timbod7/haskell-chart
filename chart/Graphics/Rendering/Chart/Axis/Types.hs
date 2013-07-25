@@ -7,8 +7,7 @@
 -- Type definitions for Axes
 --
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Axis.Types(
     AxisData(..),
@@ -54,7 +53,6 @@ module Graphics.Rendering.Chart.Axis.Types(
 
 ) where
 
-import qualified Graphics.Rendering.Cairo as C
 import Data.Time
 import Data.Fixed
 import Data.Maybe
@@ -64,8 +62,10 @@ import Data.List(sort,intersperse)
 import Data.Accessor.Template
 import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
+import Data.Default.Class
 
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 
 -- | A typeclass abstracting the functions we need
@@ -106,9 +106,9 @@ data AxisData x = AxisData {
 
 -- | Control values for how an axis gets displayed.
 data AxisStyle = AxisStyle {
-    axis_line_style_  :: CairoLineStyle,
-    axis_label_style_ :: CairoFontStyle,
-    axis_grid_style_  :: CairoLineStyle,
+    axis_line_style_  :: LineStyle,
+    axis_label_style_ :: FontStyle,
+    axis_grid_style_  :: LineStyle,
 
     -- | How far the labels are to be drawn from the axis.
     axis_label_gap_   :: Double
@@ -167,11 +167,10 @@ axisLabelsHide ad    = ad{ axis_labels_ = []}
 axisLabelsOverride  :: [(x,String)] -> AxisData x -> AxisData x
 axisLabelsOverride o ad = ad{ axis_labels_ = [o] }
 
-minsizeAxis :: AxisT x -> CRender RectSize
+minsizeAxis :: AxisT x -> ChartBackend RectSize
 minsizeAxis (AxisT at as rev ad) = do
-    labelSizes <- preserveCState $ do
-        setFontStyle (axis_label_style_ as)
-        mapM (mapM textSize) (labelTexts ad)
+    labelSizes <- withFontStyle (axis_label_style_ as) $ do
+      mapM (mapM textDimension) (labelTexts ad)
 
     let ag      = axis_label_gap_ as
     let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- axis_ticks_ ad ])
@@ -197,49 +196,44 @@ maximum0 vs = maximum vs
 
 -- | Calculate the amount by which the labels extend beyond
 --   the ends of the axis.
-axisOverhang :: Ord x => AxisT x -> CRender (Double,Double)
+axisOverhang :: (Ord x) => AxisT x -> ChartBackend (Double,Double)
 axisOverhang (AxisT at as rev ad) = do
     let labels = map snd . sort . concat . axis_labels_ $ ad
-    labelSizes <- preserveCState $ do
-        setFontStyle (axis_label_style_ as)
-        mapM textSize labels
+    labelSizes <- withFontStyle (axis_label_style_ as) $ do
+      mapM textDimension labels
     case labelSizes of
-        []  -> return (0,0)
-	ls  -> let l1     = head ls
-		   l2     = last ls
-		   ohangv = return (snd l1 / 2, snd l2 / 2)
-		   ohangh = return (fst l1 / 2, fst l2 / 2)
-		   in
-		   case at of
-		       E_Top    -> ohangh
-		       E_Bottom -> ohangh
-		       E_Left   -> ohangv
-		       E_Right  -> ohangh
+      []  -> return (0,0)
+      ls  -> let l1     = head ls
+                 l2     = last ls
+                 ohangv = return (snd l1 / 2, snd l2 / 2)
+                 ohangh = return (fst l1 / 2, fst l2 / 2)
+             in case at of
+                 E_Top    -> ohangh
+                 E_Bottom -> ohangh
+                 E_Left   -> ohangv
+                 E_Right  -> ohangh
 
-renderAxis :: AxisT x -> RectSize -> CRender (PickFn x)
+renderAxis :: AxisT x -> RectSize -> ChartBackend (PickFn x)
 renderAxis at@(AxisT et as rev ad) sz = do
-   let ls = axis_line_style_ as
-   preserveCState $ do
-       setLineStyle ls{line_cap_=C.LineCapSquare}
-       strokePath [Point sx sy,Point ex ey]
-   preserveCState $ do
-       setLineStyle ls{line_cap_=C.LineCapButt}
-       mapM_ drawTick (axis_ticks_ ad)
-   preserveCState $ do
-       setFontStyle (axis_label_style_ as)
-       labelSizes <- mapM (mapM textSize) (labelTexts ad)
-       let sizes = map ((+ag).maximum0.map coord) labelSizes
-       let offsets = scanl (+) ag sizes
-       mapM_ drawLabels (zip offsets  (axis_labels_ ad))
-
-   return pickfn
+  let ls = axis_line_style_ as
+  withLineStyle (ls {line_cap_ = LineCapSquare}) $ do
+    p <- alignStrokePoints [Point sx sy,Point ex ey]
+    strokePointPath p
+  withLineStyle (ls {line_cap_ = LineCapButt}) $ do
+    mapM_ drawTick (axis_ticks_ ad)
+  withFontStyle (axis_label_style_ as) $ do
+    labelSizes <- mapM (mapM textDimension) (labelTexts ad)
+    let sizes = map ((+ag).maximum0.map coord) labelSizes
+    let offsets = scanl (+) ag sizes
+    mapM_ drawLabels (zip offsets  (axis_labels_ ad))
+  return pickfn
  where
    (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
 
    drawTick (value,length) =
        let t1 = axisPoint value
-	   t2 = t1 `pvadd` (vscale length tp)
-       in strokePath [t1,t2]
+           t2 = t1 `pvadd` (vscale length tp)
+       in alignStrokePoints [t1,t2] >>= strokePointPath
 
    (hta,vta,coord,awayFromAxis) = case et of
        E_Top    -> (HTA_Centre, VTA_Bottom, snd, \v -> (Vector 0 (-v)))
@@ -262,8 +256,8 @@ renderAxis at@(AxisT et as rev ad) sz = do
         mapM_ drawLabel labels'
      where
        drawLabel (value,s) = do
-           drawText hta vta (axisPoint value `pvadd` (awayFromAxis offset)) s
-           textSize s
+           drawTextA hta vta (axisPoint value `pvadd` (awayFromAxis offset)) s
+           textDimension s
 
    ag = axis_label_gap_ as
    pickfn = Just . invAxisPoint
@@ -319,11 +313,10 @@ axisMapping (AxisT et as rev ad) (x2,y2) = case et of
     reverse r@(r0,r1)  = if rev then (r1,r0) else r
 
 -- 
-renderAxisGrid :: RectSize -> AxisT z -> CRender ()
+renderAxisGrid :: RectSize -> AxisT z -> ChartBackend ()
 renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
-    preserveCState $ do
-        setLineStyle (axis_grid_style_ as)
-        mapM_ (drawGridLine re) (axis_grid_ ad)
+    withLineStyle (axis_grid_style_ as) $ do
+      mapM_ (drawGridLine re) (axis_grid_ ad)
   where
     (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
 
@@ -333,10 +326,10 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
     drawGridLine E_Right  = hline
 
     vline v = let v' = p_x (axisPoint v)
-	      in strokePath [Point v' 0,Point v' h]
+              in alignStrokePoints [Point v' 0,Point v' h] >>= strokePointPath
 
     hline v = let v' = p_y (axisPoint v)
-	      in strokePath [Point 0 v',Point w v']
+              in alignStrokePoints [Point 0 v',Point w v'] >>= strokePointPath
 
 
 -- | Construct an axis given the positions for ticks, grid lines, and 
@@ -372,19 +365,23 @@ makeAxis' t f labelf (labelvs, tickvs, gridvs) = AxisData {
 
 ----------------------------------------------------------------------
 
-defaultAxisLineStyle :: CairoLineStyle
+defaultAxisLineStyle :: LineStyle
 defaultAxisLineStyle = solidLine 1 $ opaque black
 
-defaultGridLineStyle :: CairoLineStyle
+defaultGridLineStyle :: LineStyle
 defaultGridLineStyle = dashedLine 1 [5,5] $ opaque lightgrey
 
+{-# DEPRECATED defaultAxisStyle "Use the according Data.Default instance!" #-}
 defaultAxisStyle :: AxisStyle
-defaultAxisStyle = AxisStyle {
-    axis_line_style_  = defaultAxisLineStyle,
-    axis_label_style_ = defaultFontStyle,
-    axis_grid_style_  = defaultGridLineStyle,
-    axis_label_gap_   = 10
-}
+defaultAxisStyle = def
+
+instance Default AxisStyle where
+  def = AxisStyle 
+    { axis_line_style_  = defaultAxisLineStyle
+    , axis_label_style_ = def
+    , axis_grid_style_  = defaultGridLineStyle
+    , axis_label_gap_   = 10
+    }
 
 ----------------------------------------------------------------------
 

@@ -6,7 +6,7 @@
 --
 -- Candlestick charts for financial plotting
 --
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Candle(
     PlotCandle(..),
@@ -25,14 +25,17 @@ module Graphics.Rendering.Chart.Plot.Candle(
 ) where
 
 import Data.Accessor.Template
-import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Chart.Types
+import Data.Monoid
+
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Control.Monad
 import Data.Colour (opaque)
 import Data.Colour.Names (black, white, blue)
 import Data.Colour.SRGB (sRGB)
+import Data.Default.Class
 
 -- | Value defining a financial interval: opening and closing prices, with
 --   maxima and minima; and a style in which to render them.
@@ -42,10 +45,10 @@ import Data.Colour.SRGB (sRGB)
 --    minimum, first quartile, median, third quartile, maximum.)
 data PlotCandle x y = PlotCandle {
     plot_candle_title_           :: String,
-    plot_candle_line_style_      :: CairoLineStyle,
+    plot_candle_line_style_      :: LineStyle,
     plot_candle_fill_            :: Bool,
-    plot_candle_rise_fill_style_ :: CairoFillStyle,
-    plot_candle_fall_fill_style_ :: CairoFillStyle,
+    plot_candle_rise_fill_style_ :: FillStyle,
+    plot_candle_fall_fill_style_ :: FillStyle,
     plot_candle_tick_length_     :: Double,
     plot_candle_width_           :: Double,
     plot_candle_centre_          :: Double,
@@ -74,8 +77,8 @@ instance ToPlot PlotCandle where
       where
         pts = plot_candle_values_ p
 
-renderPlotCandle :: PlotCandle x y -> PointMapFn x y -> CRender ()
-renderPlotCandle p pmap = preserveCState $ do
+renderPlotCandle :: PlotCandle x y -> PointMapFn x y -> ChartBackend ()
+renderPlotCandle p pmap = do
     mapM_ (drawCandle p . candlemap) (plot_candle_values_ p)
   where
     candlemap (Candle x lo op mid cl hi) =
@@ -93,47 +96,37 @@ drawCandle ps (Candle x lo open mid close hi) = do
         let ct = plot_candle_centre_ ps
         let f  = plot_candle_fill_ ps
         -- the pixel coordinate system is inverted wrt the value coords.
-        when f $ do setFillStyle (if open >= close
-                                  then plot_candle_rise_fill_style_ ps
-                                  else plot_candle_fall_fill_style_ ps)
+        when f $ withFillStyle (if open >= close
+                                   then plot_candle_rise_fill_style_ ps
+                                   else plot_candle_fall_fill_style_ ps) $ do
+                    fillPath $ moveTo' (x-wd) open
+                            <> lineTo' (x-wd) close
+                            <> lineTo' (x+wd) close
+                            <> lineTo' (x+wd) open
+                            <> lineTo' (x-wd) open
 
-                    c $ C.newPath
-                    c $ C.moveTo (x-wd) open
-                    c $ C.lineTo (x-wd) close
-                    c $ C.lineTo (x+wd) close
-                    c $ C.lineTo (x+wd) open
-                    c $ C.lineTo (x-wd) open
-                    c $ C.fill
+        withLineStyle (plot_candle_line_style_ ps) $ do
+          strokePath $ moveTo' (x-wd) open
+                    <> lineTo' (x-wd) close
+                    <> lineTo' (x+wd) close
+                    <> lineTo' (x+wd) open
+                    <> lineTo' (x-wd) open
 
-        setLineStyle (plot_candle_line_style_ ps)
-        c $ C.newPath
-        c $ C.moveTo (x-wd) open
-        c $ C.lineTo (x-wd) close
-        c $ C.lineTo (x+wd) close
-        c $ C.lineTo (x+wd) open
-        c $ C.lineTo (x-wd) open
-        c $ C.stroke
+          strokePath $ moveTo' x (min lo hi)
+                    <> lineTo' x (min open close)
+                    <> moveTo' x (max open close)
+                    <> lineTo' x (max hi lo)
 
-        c $ C.newPath
-        c $ C.moveTo x (min lo hi)
-        c $ C.lineTo x (min open close)
-        c $ C.moveTo x (max open close)
-        c $ C.lineTo x (max hi lo)
-        c $ C.stroke
+          when (tl > 0) $ strokePath $ moveTo' (x-tl) lo
+                                    <> lineTo' (x+tl) lo
+                                    <> moveTo' (x-tl) hi
+                                    <> lineTo' (x+tl) hi
+          
+          when (ct > 0) $ do strokePath $ moveTo' (x-ct) mid
+                                       <> lineTo' (x+ct) mid
 
-        when (tl > 0) $ do c $ C.newPath
-                           c $ C.moveTo (x-tl) lo
-                           c $ C.lineTo (x+tl) lo
-                           c $ C.moveTo (x-tl) hi
-                           c $ C.lineTo (x+tl) hi
-                           c $ C.stroke
-
-        when (ct > 0) $ do c $ C.moveTo (x-ct) mid
-                           c $ C.lineTo (x+ct) mid
-                           c $ C.stroke
-
-renderPlotLegendCandle :: PlotCandle x y -> Rect -> CRender ()
-renderPlotLegendCandle p r@(Rect p1 p2) = preserveCState $ do
+renderPlotLegendCandle :: PlotCandle x y -> Rect -> ChartBackend ()
+renderPlotLegendCandle p r@(Rect p1 p2) = do
     drawCandle p{ plot_candle_width_ = 2}
                       (Candle ((p_x p1 + p_x p2)*1/4) lo open mid close hi)
     drawCandle p{ plot_candle_width_ = 2}
@@ -145,18 +138,22 @@ renderPlotLegendCandle p r@(Rect p1 p2) = preserveCState $ do
     open  = (lo + mid) / 2
     close = (mid + hi) / 2
 
+{-# DEPRECATED defaultPlotCandle "Use the according Data.Default instance!" #-}
 defaultPlotCandle :: PlotCandle x y
-defaultPlotCandle = PlotCandle {
-    plot_candle_title_       = "",
-    plot_candle_line_style_  = solidLine 1 $ opaque blue,
-    plot_candle_fill_        = False,
-    plot_candle_rise_fill_style_  = solidFillStyle $ opaque white,
-    plot_candle_fall_fill_style_  = solidFillStyle $ opaque blue,
-    plot_candle_tick_length_ = 2,
-    plot_candle_width_       = 5,
-    plot_candle_centre_      = 0,
-    plot_candle_values_      = []
-}
+defaultPlotCandle = def
+
+instance Default (PlotCandle x y) where
+  def = PlotCandle 
+    { plot_candle_title_       = ""
+    , plot_candle_line_style_  = solidLine 1 $ opaque blue
+    , plot_candle_fill_        = False
+    , plot_candle_rise_fill_style_  = solidFillStyle $ opaque white
+    , plot_candle_fall_fill_style_  = solidFillStyle $ opaque blue
+    , plot_candle_tick_length_ = 2
+    , plot_candle_width_       = 5
+    , plot_candle_centre_      = 0
+    , plot_candle_values_      = []
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

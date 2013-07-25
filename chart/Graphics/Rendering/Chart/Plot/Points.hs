@@ -6,7 +6,7 @@
 --
 -- Functions to plot sets of points, marked in various styles.
 
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Points(
     PlotPoints(..),
@@ -21,18 +21,19 @@ module Graphics.Rendering.Chart.Plot.Points(
 ) where
     
 import Data.Accessor.Template
-import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
+import Data.Default.Class
 
 -- | Value defining a series of datapoints, and a style in
 --   which to render them.
 data PlotPoints x y = PlotPoints {
     plot_points_title_  :: String,
-    plot_points_style_  :: CairoPointStyle,
+    plot_points_style_  :: PointStyle,
     plot_points_values_ :: [(x,y)]
 }
 
@@ -45,28 +46,32 @@ instance ToPlot PlotPoints where
       where
         pts = plot_points_values_ p
 
-renderPlotPoints :: PlotPoints x y -> PointMapFn x y -> CRender ()
-renderPlotPoints p pmap = preserveCState $ do
-    mapM_ (drawPoint.pmap') (plot_points_values_ p)
+renderPlotPoints :: PlotPoints x y -> PointMapFn x y -> ChartBackend ()
+renderPlotPoints p pmap = do
+    mapM_ (drawPoint ps . pmap') (plot_points_values_ p)
   where
     pmap' = mapXY pmap
-    (CairoPointStyle drawPoint) = (plot_points_style_ p)
+    ps = (plot_points_style_ p)
 
-renderPlotLegendPoints :: PlotPoints x y -> Rect -> CRender ()
-renderPlotLegendPoints p r@(Rect p1 p2) = preserveCState $ do
-    drawPoint (Point (p_x p1)              ((p_y p1 + p_y p2)/2))
-    drawPoint (Point ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2))
-    drawPoint (Point (p_x p2)              ((p_y p1 + p_y p2)/2))
+renderPlotLegendPoints :: PlotPoints x y -> Rect -> ChartBackend ()
+renderPlotLegendPoints p r@(Rect p1 p2) = do
+    drawPoint ps (Point (p_x p1)              ((p_y p1 + p_y p2)/2))
+    drawPoint ps (Point ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2))
+    drawPoint ps (Point (p_x p2)              ((p_y p1 + p_y p2)/2))
 
   where
-    (CairoPointStyle drawPoint) = (plot_points_style_ p)
+    ps = (plot_points_style_ p)
 
+{-# DEPRECATED defaultPlotPoints  "Use the according Data.Default instance!" #-}
 defaultPlotPoints :: PlotPoints x y
-defaultPlotPoints = PlotPoints {
-    plot_points_title_  = "",
-    plot_points_style_  = defaultPointStyle,
-    plot_points_values_ = []
-}
+defaultPlotPoints = def
+
+instance Default (PlotPoints x y) where
+  def = PlotPoints 
+    { plot_points_title_  = ""
+    , plot_points_style_  = def
+    , plot_points_values_ = []
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

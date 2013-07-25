@@ -1,0 +1,32 @@
+Name: Chart-diagrams
+Version: 0.1
+License: BSD3
+License-file: LICENSE
+Copyright: Jan Bracker, 2006-2010
+Author: Jan Bracker <jan.bracker@googlemail.com>
+Maintainer: Jan Bracker <jan.bracker@googlemail.com>
+Homepage: https://github.com/timbod7/haskell-chart/wiki
+Synopsis: Diagrams backend for Charts.
+Description: Diagrams backend for Charts.
+Category: Graphics
+Cabal-Version: >= 1.6
+Build-Type: Simple
+
+library
+  Build-depends: base >= 3 && < 5
+               , old-locale
+               , time, mtl
+               , diagrams-core >= 0.6.1
+               , diagrams-lib >= 0.6.1
+               , SVGFonts >= 1.2.1
+               , colour >= 2.2.1
+               , operational >= 0.2.2
+               , data-default-class < 0.1
+               , Chart >= 0.17
+
+  Exposed-modules:
+        Graphics.Rendering.Chart.Backend.Diagrams
+
+source-repository head
+  type:     git
+  location: https://github.com/timbod7/haskell-chart
