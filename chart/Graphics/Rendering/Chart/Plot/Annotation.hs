@@ -6,7 +6,7 @@
 --
 -- Show textual annotations on a chart.
 
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Annotation(
     PlotAnnotation(..),
@@ -20,13 +20,15 @@ module Graphics.Rendering.Chart.Plot.Annotation(
 ) where
 
 import Data.Accessor.Template
-import qualified Graphics.Rendering.Cairo as C
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
 import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
+import Data.Default.Class
+
 -- | Value for describing a series of text annotations
 --   to be placed at arbitrary points on the graph. Annotations
 --   can be rotated and styled. Rotation angle is given in degrees,
@@ -36,7 +38,7 @@ data PlotAnnotation  x y = PlotAnnotation {
       plot_annotation_hanchor_ :: HTextAnchor,
       plot_annotation_vanchor_ :: VTextAnchor,
       plot_annotation_angle_   :: Double,
-      plot_annotation_style_   :: CairoFontStyle,
+      plot_annotation_style_   :: FontStyle,
       plot_annotation_values_  :: [(x,y,String)]
 }
 
@@ -51,10 +53,8 @@ instance ToPlot PlotAnnotation where
         vs = plot_annotation_values_ p
 
 
-renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> CRender ()
-
-renderAnnotation p pMap = preserveCState $ do
-                            setFontStyle style                            
+renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> ChartBackend ()
+renderAnnotation p pMap = withFontStyle style $ do                           
                             mapM_ drawOne values
     where hta = plot_annotation_hanchor_ p
           vta = plot_annotation_vanchor_ p
@@ -64,13 +64,18 @@ renderAnnotation p pMap = preserveCState $ do
           drawOne (x,y,s) = drawTextsR hta vta angle point s
               where point = pMap (LValue x, LValue y)
 
-defaultPlotAnnotation = PlotAnnotation {
-                          plot_annotation_hanchor_ = HTA_Centre,
-                          plot_annotation_vanchor_ = VTA_Centre,
-                          plot_annotation_angle_   = 0,
-                          plot_annotation_style_   = defaultFontStyle,
-                          plot_annotation_values_  = []
-}
+{-# DEPRECATED defaultPlotAnnotation  "Use the according Data.Default instance!" #-}
+defaultPlotAnnotation :: PlotAnnotation x y
+defaultPlotAnnotation = def
+
+instance Default (PlotAnnotation x y) where
+  def = PlotAnnotation 
+    { plot_annotation_hanchor_ = HTA_Centre
+    , plot_annotation_vanchor_ = VTA_Centre
+    , plot_annotation_angle_   = 0
+    , plot_annotation_style_   = def
+    , plot_annotation_values_  = []
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

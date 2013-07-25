@@ -24,8 +24,9 @@
 --   f :: Data.Accessor.Accessor D F
 -- @
 --
-
-{-# OPTIONS_GHC -XTemplateHaskell -XExistentialQuantification #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ExistentialQuantification #-}
 
 module Graphics.Rendering.Chart.Layout(
     Layout1(..),
@@ -74,10 +75,10 @@ module Graphics.Rendering.Chart.Layout(
     renderStackedLayouts,
   ) where
 
-import qualified Graphics.Rendering.Cairo as C
-
 import Graphics.Rendering.Chart.Axis
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Utils
 import Graphics.Rendering.Chart.Plot
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
@@ -88,13 +89,14 @@ import Data.Accessor.Template
 import Data.Accessor
 import Data.Colour
 import Data.Colour.Names (white)
+import Data.Default.Class
 
 -- | A @MAxisFn@ is a function that generates an (optional) axis
 --   given the points plotted against that axis.
 type MAxisFn t = [t] -> Maybe (AxisData t)
 
 data LayoutAxis x = LayoutAxis {
-   laxis_title_style_ :: CairoFontStyle,
+   laxis_title_style_ :: FontStyle,
    laxis_title_       :: String,
    laxis_style_       :: AxisStyle,
 
@@ -122,11 +124,11 @@ data LayoutAxis x = LayoutAxis {
 --   and vertical axes.
 data Layout1 x y = Layout1 {
 
-    layout1_background_      :: CairoFillStyle,
-    layout1_plot_background_ :: Maybe CairoFillStyle,
+    layout1_background_      :: FillStyle,
+    layout1_plot_background_ :: Maybe FillStyle,
 
     layout1_title_           :: String,
-    layout1_title_style_     :: CairoFontStyle,
+    layout1_title_style_     :: FontStyle,
 
     layout1_bottom_axis_     :: LayoutAxis x,
     layout1_top_axis_        :: LayoutAxis x,
@@ -145,6 +147,9 @@ data Layout1 x y = Layout1 {
     layout1_grid_last_       :: Bool
 }
 
+instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
+  toRenderable = setPickFn nullPickFn . layout1ToRenderable
+
 data Layout1Pick x y = L1P_Legend String
                      | L1P_Title String
                      | L1P_BottomAxisTitle String
@@ -158,10 +163,7 @@ data Layout1Pick x y = L1P_Legend String
                      | L1P_RightAxis y
     deriving (Show)
 
-instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
-    toRenderable = setPickFn nullPickFn.layout1ToRenderable
-
-type LegendItem = (String,Rect -> CRender ())
+type LegendItem = (String,Rect -> ChartBackend ())
 
 -- | A layout with it's y type hidded, so that it can be stacked
 -- with other layouts (with differing y types)
@@ -174,8 +176,12 @@ data StackedLayouts x = StackedLayouts {
       slayouts_compress_legend_ :: Bool
 }
 
+{-# DEPRECATED defaultStackedLayouts  "Use the according Data.Default instance!" #-}
 defaultStackedLayouts :: StackedLayouts x
-defaultStackedLayouts = StackedLayouts [] True True
+defaultStackedLayouts = def
+
+instance Default (StackedLayouts x) where
+  def = StackedLayouts [] True True
 
 -- | Render several layouts with the same x-axis type and range,
 --   vertically stacked so that their origins and x-values are aligned.
@@ -232,7 +238,7 @@ renderStackedLayouts slp@(StackedLayouts{slayouts_layouts_=sls@(sl1:_)}) = gridT
     noPickFn = mapPickFn (const ())
 
 addMarginsToGrid :: (Double,Double,Double,Double) -> Grid (Renderable a)
-                    -> Grid (Renderable a)
+                 -> Grid (Renderable a)
 addMarginsToGrid (t,b,l,r) g = aboveN [
      besideN [er, ts, er],
      besideN [ls, g,  rs],
@@ -247,8 +253,8 @@ addMarginsToGrid (t,b,l,r) g = aboveN [
 
 layout1ToRenderable :: (Ord x, Ord y) =>
                        Layout1 x y -> Renderable (Layout1Pick x y)
-layout1ToRenderable l =
-   fillBackground (layout1_background_ l) $ gridToRenderable (layout1ToGrid l)
+layout1ToRenderable l = 
+  fillBackground (layout1_background_ l) $ gridToRenderable (layout1ToGrid l)
 
 layout1ToGrid :: (Ord x, Ord y) =>
                  Layout1 x y -> Grid (Renderable (Layout1Pick x y))
@@ -304,7 +310,7 @@ layout1LegendsToRenderable :: (Ord x, Ord y) =>
                               Layout1 x y -> Renderable (Layout1Pick x y)
 layout1LegendsToRenderable l = renderLegend l (getLegendItems l)
 
-layout1PlotAreaToGrid :: (Ord x, Ord y) =>
+layout1PlotAreaToGrid :: forall x y. (Ord x, Ord y) =>
                           Layout1 x y -> Grid (Renderable (Layout1Pick x y))
 layout1PlotAreaToGrid l = layer2 `overlay` layer1
   where
@@ -321,14 +327,19 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
          , besideN [er,     er,  bl,    baxis,  br,    er,  er       ]
          , besideN [er,     er,  er,    btitle, er,    er,  er       ]
          ]
-
-    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_    L1P_TopAxisTitle
+    
+    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_    L1P_TopAxisTitle   
     (btitle,_) = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_ L1P_BottomAxisTitle
     (ltitle,lam) = atitle HTA_Right  VTA_Centre 270 layout1_left_axis_   L1P_LeftAxisTitle
     (rtitle,ram) = atitle HTA_Left   VTA_Centre 270 layout1_right_axis_  L1P_RightAxisTitle
 
     er = tval $ emptyRenderable
-
+    
+    atitle :: HTextAnchor -> VTextAnchor 
+            -> Double 
+            -> (Layout1 x y -> LayoutAxis z) 
+            -> (String -> Layout1Pick x y) 
+            -> (Grid (Renderable (Layout1Pick x y)), Grid (Renderable (Layout1Pick x y)))
     atitle ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
       where
         label = tval $ mapPickFn pf $ rlabel tstyle ha va rot ttext
@@ -362,13 +373,11 @@ plotsToRenderable l = Renderable {
         render  = renderPlots l
     }
 
-renderPlots :: Layout1 x y -> RectSize -> CRender (PickFn (Layout1Pick x y))
+renderPlots :: Layout1 x y -> RectSize -> ChartBackend (PickFn (Layout1Pick x y))
 renderPlots l sz@(w,h) = do
     when (not (layout1_grid_last_ l)) renderGrids
-    preserveCState $ do
-        -- render the plots
-        setClipRegion (Point 0 0) (Point w h)
-        mapM_ rPlot (layout1_plots_ l)
+    withClipRegion (Rect (Point 0 0) (Point w h)) $ do
+      mapM_ rPlot (layout1_plots_ l)
     when (layout1_grid_last_ l) renderGrids
     return pickfn
 
@@ -453,38 +462,46 @@ allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
     xvals1 = [ x | (Right p) <- plots, x <- fst $ plot_all_points_ p]
     yvals1 = [ y | (Right p) <- plots, y <- snd $ plot_all_points_ p]
 
+{-# DEPRECATED defaultLayout1  "Use the according Data.Default instance!" #-}
 defaultLayout1 :: (PlotValue x,PlotValue y) => Layout1 x y
-defaultLayout1 = Layout1 {
-    layout1_background_      = solidFillStyle $ opaque white,
-    layout1_plot_background_ = Nothing,
+defaultLayout1 = def
 
-    layout1_title_           = "",
-    layout1_title_style_     = defaultFontStyle{font_size_   =15
-                                               ,font_weight_ =C.FontWeightBold},
+instance (PlotValue x, PlotValue y) => Default (Layout1 x y) where
+  def = Layout1 
+    { layout1_background_      = solidFillStyle $ opaque white
+    , layout1_plot_background_ = Nothing
 
-    layout1_top_axis_        = defaultLayoutAxis {laxis_visible_ = const False},
-    layout1_bottom_axis_     = defaultLayoutAxis,
-    layout1_left_axis_       = defaultLayoutAxis,
-    layout1_right_axis_      = defaultLayoutAxis,
+    , layout1_title_           = ""
+    , layout1_title_style_     = def { font_size_   = 15
+                                     , font_weight_ = FontWeightBold }
 
-    layout1_yaxes_control_   = id,
+    , layout1_top_axis_        = def {laxis_visible_ = const False}
+    , layout1_bottom_axis_     = def
+    , layout1_left_axis_       = def
+    , layout1_right_axis_      = def
 
-    layout1_margin_          = 10,
-    layout1_plots_           = [],
-    layout1_legend_          = Just defaultLegendStyle,
-    layout1_grid_last_       = False
-}
+    , layout1_yaxes_control_   = id
 
+    , layout1_margin_          = 10
+    , layout1_plots_           = []
+    , layout1_legend_          = Just def
+    , layout1_grid_last_       = False
+    }
+
+{-# DEPRECATED defaultLayoutAxis "Use the according Data.Default instance!" #-}
 defaultLayoutAxis :: PlotValue t => LayoutAxis t
-defaultLayoutAxis = LayoutAxis {
-   laxis_title_style_ = defaultFontStyle{font_size_=10},
-   laxis_title_       = "",
-   laxis_style_       = defaultAxisStyle,
-   laxis_visible_     = not.null,
-   laxis_generate_    = autoAxis,
-   laxis_override_    = id,
-   laxis_reverse_     = False
-}
+defaultLayoutAxis = def
+
+instance PlotValue t => Default (LayoutAxis t) where
+  def = LayoutAxis
+    { laxis_title_style_ = def { font_size_=10 }
+    , laxis_title_       = ""
+    , laxis_style_       = def
+    , laxis_visible_     = not.null
+    , laxis_generate_    = autoAxis
+    , laxis_override_    = id
+    , laxis_reverse_     = False
+    }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor

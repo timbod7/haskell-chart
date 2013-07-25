@@ -7,9 +7,6 @@
 -- Code to calculate and render various types of plots.
 --
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# OPTIONS_GHC -XTemplateHaskell #-}
-
 module Graphics.Rendering.Chart.Plot(
     module Graphics.Rendering.Chart.Plot.Types,
     module Graphics.Rendering.Chart.Plot.Lines,

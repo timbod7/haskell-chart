@@ -1,10 +1,14 @@
+
 module Graphics.Rendering.Chart.Simple.Internal where
 
 import Data.Maybe ( catMaybes )
 import Data.Colour
 import Data.Colour.Names
+import Data.Default.Class
 
 import Graphics.Rendering.Chart
+import Graphics.Rendering.Chart.Utils
+
 
 styleColor :: Int -> AlphaColour Double
 styleColor ind = colorSequence !! ind
@@ -20,7 +24,7 @@ styleSymbol ind = symbolSequence !! ind
 -- When defaultLayout1 has been generalized, change this signature to 
 -- [InternalPlot x y] -> Layout1 x y z
 iplot :: [InternalPlot Double Double] -> Layout1 Double Double
-iplot foobar = defaultLayout1 {
+iplot foobar = (def :: Layout1 Double Double) {
         layout1_plots_ = concat $ zipWith toplot (ip foobar) [0..]
     }
   where
@@ -35,65 +39,65 @@ iplot foobar = defaultLayout1 {
       where
         vs = zip xs ys
         plots = case catMaybes $ map plotas yks of
-                    [] -> [ toPlot $ defaultPlotLines
+                    [] -> [ toPlot $ def
                            { plot_lines_title_  = name yks,
                              plot_lines_values_ = [vs],
                              plot_lines_style_  = solidLine 1 (styleColor ind)
                            } ]
                     xs -> xs
-        plotas Solid = Just $ toPlot $ defaultPlotLines
+        plotas Solid = Just $ toPlot $ def
                          { plot_lines_title_  = name yks,
                            plot_lines_values_ = [vs],
                            plot_lines_style_  = solidLine 1 (styleColor ind) }
-        plotas Dashed = Just $ toPlot $ defaultPlotLines
+        plotas Dashed = Just $ toPlot $ def
                          { plot_lines_title_  = name yks,
                            plot_lines_values_ = [vs],
                            plot_lines_style_  = dashedLine 1 [10,10]
                                                            (styleColor ind) }
-        plotas Dotted = Just $ toPlot $ defaultPlotLines
+        plotas Dotted = Just $ toPlot $ def
                          { plot_lines_title_  = name yks,
                            plot_lines_values_ = [vs],
                            plot_lines_style_  = dashedLine 1 [1,11]
                                                            (styleColor ind) }
-        plotas FilledCircle = Just $ toPlot $ defaultPlotPoints
+        plotas FilledCircle = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = filledCircles 4
                                                            (styleColor ind) }
-        plotas HollowCircle = Just $ toPlot $ defaultPlotPoints
+        plotas HollowCircle = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = hollowCircles 5 1
                                                            (styleColor ind) }
-        plotas Triangle = Just $ toPlot $ defaultPlotPoints
+        plotas Triangle = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = hollowPolygon 7 1 3 False
                                                            (styleColor ind) }
-        plotas DownTriangle = Just $ toPlot $ defaultPlotPoints
+        plotas DownTriangle = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = hollowPolygon 7 1 3 True
                                                            (styleColor ind) }
-        plotas Square = Just $ toPlot $ defaultPlotPoints
+        plotas Square = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = hollowPolygon 7 1 4 False
                                                            (styleColor ind) }
-        plotas Diamond = Just $ toPlot $ defaultPlotPoints
+        plotas Diamond = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = hollowPolygon 7 1 4 True
                                                            (styleColor ind) }
-        plotas Plus = Just $ toPlot $ defaultPlotPoints
+        plotas Plus = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = plusses 7 1 (styleColor ind) }
-        plotas Ex = Just $ toPlot $ defaultPlotPoints
+        plotas Ex = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = exes 7 1 (styleColor ind) }
-        plotas Star = Just $ toPlot $ defaultPlotPoints
+        plotas Star = Just $ toPlot $ def
                          { plot_points_title_  = name yks,
                            plot_points_values_ = vs,
                            plot_points_style_  = stars 7 1 (styleColor ind) }
@@ -137,8 +141,12 @@ data PlotKind = Name String | FilledCircle | HollowCircle
 data InternalPlot x y = IPY [y] [PlotKind] | IPX [x] [PlotKind]
 
 newtype Layout1DDD = Layout1DDD { plotLayout :: Layout1 Double Double }
+
+layout1DddToRenderable :: Layout1DDD -> Renderable (Layout1Pick Double Double)
+layout1DddToRenderable = layout1ToRenderable . plotLayout
+
 instance ToRenderable Layout1DDD where
- toRenderable = toRenderable . plotLayout
+  toRenderable = setPickFn nullPickFn . toRenderable
 
 uplot :: [UPlot] -> Layout1DDD
 uplot us = Layout1DDD $ iplot $ nameDoubles $ evalfuncs us
@@ -194,10 +202,6 @@ class PlotPDFType t where
     pld        :: FilePath -> [UPlot] -> t
 instance (PlotArg a, PlotPDFType r) => PlotPDFType (a -> r) where
     pld fn args = \ a -> pld fn (toUPlot a ++ args)
-instance PlotPDFType (IO a) where
-    pld fn args = do
-        renderableToPDFFile (toRenderable $ uplot (reverse args)) 640 480 fn
-        return undefined
 
 -- | Save a plot as a postscript file.
 
@@ -207,10 +211,6 @@ class PlotPSType t where
     pls        :: FilePath -> [UPlot] -> t
 instance (PlotArg a, PlotPSType r) => PlotPSType (a -> r) where
     pls fn args = \ a -> pls fn (toUPlot a ++ args)
-instance PlotPSType (IO a) where
-    pls fn args = do
-        renderableToPSFile (toRenderable $ uplot (reverse args)) 640 480 fn
-        return undefined
 
 -- | Save a plot as a png file.
 plotPNG :: PlotPNGType a => String -> a
@@ -220,12 +220,6 @@ class PlotPNGType t where
     plp        :: FilePath -> [UPlot] -> t
 instance (PlotArg a, PlotPNGType r) => PlotPNGType (a -> r) where
     plp fn args = \ a -> plp fn (toUPlot a ++ args)
-instance PlotPNGType (IO a) where
-    plp fn args = do
-        renderableToPNGFile (toRenderable $ uplot (reverse args)) 640 480 fn
-        return undefined
-
-
 
 data UPlot = UString String | UDoubles [Double] | UFunction (Double -> Double)
            | UKind [PlotKind] | X [Double]

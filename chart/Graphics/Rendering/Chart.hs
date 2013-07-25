@@ -32,7 +32,8 @@
 
 module Graphics.Rendering.Chart(
 
-    module Graphics.Rendering.Chart.Types,
+    module Graphics.Rendering.Chart.Geometry,
+    module Graphics.Rendering.Chart.Drawing,
     module Graphics.Rendering.Chart.Renderable,
     module Graphics.Rendering.Chart.Layout,
     module Graphics.Rendering.Chart.Axis,
@@ -41,7 +42,8 @@ module Graphics.Rendering.Chart(
 
 ) where
 
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Layout
 import Graphics.Rendering.Chart.Axis

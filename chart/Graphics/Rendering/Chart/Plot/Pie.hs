@@ -18,8 +18,7 @@
 --        $ defaultPieLayout
 -- renderable = toRenderable layout
 -- @
-
-{-# OPTIONS_GHC -XTemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Pie(
     PieLayout(..),
@@ -28,6 +27,9 @@ module Graphics.Rendering.Chart.Plot.Pie(
     defaultPieLayout,
     defaultPieChart,
     defaultPieItem,
+    
+    pieToRenderable,
+    pieChartToRenderable,
 
     pie_title,
     pie_title_style,
@@ -46,16 +48,17 @@ module Graphics.Rendering.Chart.Plot.Pie(
 ) where
 -- original code thanks to Neal Alexander
 
-import qualified Graphics.Rendering.Cairo as C
-
 import Data.List
 import Data.Bits
 import Data.Accessor.Template
 import Data.Colour
 import Data.Colour.Names (black, white)
+import Data.Monoid
+import Data.Default.Class
 import Control.Monad
 
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
@@ -63,17 +66,17 @@ import Graphics.Rendering.Chart.Plot.Types
 
 data PieLayout = PieLayout {
    pie_title_       :: String,
-   pie_title_style_ :: CairoFontStyle,
+   pie_title_style_ :: FontStyle,
    pie_plot_        :: PieChart,
-   pie_background_  :: CairoFillStyle,
+   pie_background_  :: FillStyle,
    pie_margin_      :: Double
 }
 
 data PieChart = PieChart {
    pie_data_             :: [PieItem],
    pie_colors_           :: [AlphaColour Double],
-   pie_label_style_      :: CairoFontStyle,
-   pie_label_line_style_ :: CairoLineStyle, 
+   pie_label_style_      :: FontStyle,
+   pie_label_line_style_ :: LineStyle, 
    pie_start_angle_      :: Double
 
 }
@@ -84,57 +87,77 @@ data PieItem = PieItem {
    pitem_value_  :: Double
 }
 
+{-# DEPRECATED defaultPieChart  "Use the according Data.Default instance!" #-}
 defaultPieChart :: PieChart
-defaultPieChart = PieChart {
-    pie_data_             = [], 
-    pie_colors_           = defaultColorSeq,
-    pie_label_style_      = defaultFontStyle,
-    pie_label_line_style_ = solidLine 1 $ opaque black,
-    pie_start_angle_      = 0
-}
+defaultPieChart = def
 
+instance Default PieChart where
+  def = PieChart 
+    { pie_data_             = []
+    , pie_colors_           = defaultColorSeq
+    , pie_label_style_      = def
+    , pie_label_line_style_ = solidLine 1 $ opaque black
+    , pie_start_angle_      = 0
+    }
+
+{-# DEPRECATED defaultPieItem  "Use the according Data.Default instance!" #-}
 defaultPieItem :: PieItem
-defaultPieItem = PieItem "" 0 0
+defaultPieItem = def
 
+instance Default PieItem where
+  def = PieItem "" 0 0
+
+{-# DEPRECATED defaultPieLayout  "Use the according Data.Default instance!" #-}
 defaultPieLayout :: PieLayout
-defaultPieLayout = PieLayout {
-    pie_background_  = solidFillStyle $ opaque white,
-    pie_title_       = "",
-    pie_title_style_ = defaultFontStyle{ font_size_   = 15
-                                       , font_weight_ = C.FontWeightBold },
-    pie_plot_        = defaultPieChart,
-    pie_margin_      = 10
-}
+defaultPieLayout = def
+
+instance Default PieLayout where
+  def = PieLayout 
+    { pie_background_  = solidFillStyle $ opaque white
+    , pie_title_       = ""
+    , pie_title_style_ = def { font_size_   = 15
+                             , font_weight_ = FontWeightBold }
+    , pie_plot_        = defaultPieChart
+    , pie_margin_      = 10
+    }
 
 instance ToRenderable PieLayout where
-    toRenderable p = fillBackground (pie_background_ p) (
+  toRenderable = setPickFn nullPickFn . pieToRenderable
+
+pieChartToRenderable :: PieChart -> Renderable (PickFn a)
+pieChartToRenderable p = Renderable { minsize = minsizePie p
+                                    , render  = renderPie p
+                                    }
+
+instance ToRenderable PieChart where
+  toRenderable = setPickFn nullPickFn . pieChartToRenderable
+
+pieToRenderable :: PieLayout -> Renderable (PickFn a)
+pieToRenderable p = fillBackground (pie_background_ p) (
        gridToRenderable $ aboveN
          [ tval $ addMargins (lm/2,0,0,0) (setPickFn nullPickFn title)
          , weights (1,1) $ tval $ addMargins (lm,lm,lm,lm)
-                                             (toRenderable $ pie_plot_ p)
+                                             (pieChartToRenderable $ pie_plot_ p)
          ] )
       where
         title = label (pie_title_style_ p) HTA_Centre VTA_Top (pie_title_ p)
         lm    = pie_margin_ p
 
-instance ToRenderable PieChart where
-    toRenderable p = Renderable {
-      minsize = minsizePie p,
-      render  = renderPie p
-    }
-
+extraSpace :: PieChart -> ChartBackend (Double, Double)
 extraSpace p = do
-    textSizes <- mapM textSize (map pitem_label_ (pie_data_ p))
+    textSizes <- mapM textDimension (map pitem_label_ (pie_data_ p))
     let maxw  = foldr (max.fst) 0 textSizes
     let maxh  = foldr (max.snd) 0 textSizes
     let maxo  = foldr (max.pitem_offset_) 0 (pie_data_ p)
     let extra = label_rgap + label_rlength + maxo
     return (extra + maxw, extra + maxh )
 
+minsizePie :: PieChart -> ChartBackend (Double, Double)
 minsizePie p = do
     (extraw,extrah) <- extraSpace p
     return (extraw * 2, extrah * 2)
 
+renderPie :: PieChart -> (Double, Double) -> ChartBackend (PickFn a)
 renderPie p (w,h) = do
     (extraw,extrah) <- extraSpace p
     let (w,h)  = (p_x p2 - p_x p1, p_y p2 - p_y p1)
@@ -153,7 +176,7 @@ renderPie p (w,h) = do
                      | pi <- pie_data_ p ]
 
         paint :: Point -> Double -> Double -> (AlphaColour Double, PieItem)
-                 -> CRender Double
+              -> ChartBackend Double
         paint center radius a1 (color,pitem) = do
             let ax     = 360.0 * (pitem_value_ pitem)
             let a2     = a1 + (ax / 2)
@@ -166,38 +189,35 @@ renderPie p (w,h) = do
             return a3
 
             where
-                pieLabel :: String -> Double -> Double -> CRender ()
+                pieLabel :: String -> Double -> Double -> ChartBackend ()
                 pieLabel name angle offset = do
-                    setFontStyle (pie_label_style_ p)
-                    setLineStyle (pie_label_line_style_ p)
+                    withFontStyle (pie_label_style_ p) $ do
+                      withLineStyle (pie_label_line_style_ p) $ do
+                        let p1 = ray angle (radius+label_rgap+label_rlength+offset)
+                        p1a <- alignStrokePoint $ p1
+                        (tw,th) <- textDimension name
+                        let (offset',anchor) = if angle < 90 || angle > 270 
+                                              then ((0+),HTA_Left)
+                                              else ((0-),HTA_Right)
+                        p0 <- alignStrokePoint $ ray angle (radius + label_rgap+offset)
+                        strokePath $ moveTo p0
+                                  <> lineTo p1a
+                                  <> lineTo' (p_x p1a + (offset' (tw + label_rgap))) (p_y p1a)
 
-                    moveTo (ray angle (radius + label_rgap+offset))
-                    let p1 = ray angle (radius+label_rgap+label_rlength+offset)
-                    lineTo p1
-                    (tw,th) <- textSize name
-                    let (offset,anchor) = if angle < 90 || angle > 270 
-                                          then ((0+),HTA_Left)
-                                          else ((0-),HTA_Right)
-                    c $ C.relLineTo (offset (tw + label_rgap)) 0
-                    c $ C.stroke
+                        let p2 = p1 `pvadd` (Vector (offset' label_rgap) 0)
+                        drawTextA anchor VTA_Bottom p2 name
 
-                    let p2 = p1 `pvadd` (Vector (offset label_rgap) 0)
-                    drawText anchor VTA_Bottom p2 name
+                pieSlice :: Point -> Double -> Double -> AlphaColour Double -> ChartBackend ()
+                pieSlice (Point x y) a1 a2 color = do
+                    let path = arc' x y radius (radian a1) (radian a2)
+                            <> lineTo' x y
+                            <> lineTo' x y
+                            <> close
 
-                pieSlice :: Point -> Double -> Double -> AlphaColour Double
-                            -> CRender ()
-                pieSlice (Point x y) a1 a2 color = c $ do
-                    C.newPath
-                    C.arc x y radius (radian a1) (radian a2)
-                    C.lineTo x y
-                    C.lineTo x y
-                    C.closePath
-
-                    setSourceColor color
-                    C.fillPreserve
-                    C.setSourceRGBA 1 1 1 0.1
-
-                    C.stroke
+                    withFillStyle (FillStyleSolid color) $ do
+                      fillPath path
+                    withLineStyle (def { line_color_ = withOpacity white 0.1 }) $ do
+                      strokePath path
 
                 ray :: Double -> Double -> Point
                 ray angle r = Point x' y'

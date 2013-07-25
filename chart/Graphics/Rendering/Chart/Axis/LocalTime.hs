@@ -6,16 +6,12 @@
 --
 -- Calculate and render time axes
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# OPTIONS_GHC -XTemplateHaskell #-}
-
 module Graphics.Rendering.Chart.Axis.LocalTime(
     timeAxis,
     autoTimeAxis,
     days, months, years
 ) where
 
-import qualified Graphics.Rendering.Cairo as C
 import Data.Time
 import Data.Fixed
 import System.Locale (defaultTimeLocale)
@@ -26,7 +22,8 @@ import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
 import Data.Ord (comparing)
 
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Axis.Types
 

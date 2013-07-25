@@ -1,28 +1,42 @@
 # Use cabal
-#CABAL=cabal
-#RUNGHC=runghc
+CABAL=cabal
+RUNGHC=runghc
+GHCPKG=ghc-pkg
 
 # or use cabal-dev
-CABAL=cabal-dev -s$(CURDIR)/cabal-dev
-RUNGHC=GHC_PACKAGE_PATH=$(CURDIR)/cabal-dev/packages-7.4.2.conf: runghc
+#CABAL=cabal-dev -s$(CURDIR)/cabal-dev
+#RUNGHC=GHC_PACKAGE_PATH=$(CURDIR)/cabal-dev/packages-7.4.2.conf: runghc
+#GHCPKG=ghc-pkg
 
-install:
+install: unregister
 	cd chart && $(CABAL) install --force-reinstalls
+	cd chart-cairo && $(CABAL) install
 	cd chart-gtk && $(CABAL) install
+
+unregister:
+	-$(GHCPKG) unregister Chart-gtk
+	-$(GHCPKG) unregister Chart-cairo
+	-$(GHCPKG) unregister Chart
 
 clean:
 	cd chart && $(CABAL) clean
+	cd chart-cairo && $(CABAL) clean
 	cd chart-gtk && $(CABAL) clean
+	cd chart-tests && $(CABAL) clean
 
 sdist:
 	cd chart && $(CABAL) sdist
+	cd chart-cairo && $(CABAL) sdist
 	cd chart-gtk && $(CABAL) sdist
 
 tests-basic:
-	cd chart/tests && $(RUNGHC) all_tests.hs
+	cd chart-tests/tests && $(RUNGHC) all_tests.hs
 
 test-picking:
-	cd chart-gtk/tests && $(RUNGHC) TestPicking.hs
+	cd chart-tests/tests/gtk && $(RUNGHC) TestPicking.hs
+
+test-cairo-rendering:
+	cd chart-tests/tests/drawing && $(RUNGHC) TestApi.hs
 
 test-darcs-usage:
 	$(CABAL) install xml

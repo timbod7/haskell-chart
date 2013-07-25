@@ -36,14 +36,15 @@ module Graphics.Rendering.Chart.SparkLine
   , sparkSize
     -- * Rendering function
   , renderSparkLine
-  , sparkLineToPNG
-  , sparkLineToPDF
+  , sparkLineToRenderable
+  , sparkWidth
   ) where
 
 import Control.Monad
 import Data.List
 import Data.Ord
-import Graphics.Rendering.Chart.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Data.Colour
 import Data.Colour.Names
@@ -89,11 +90,14 @@ smoothSpark  = SparkOptions
 barSpark :: SparkOptions
 barSpark  = smoothSpark { so_smooth=False }
 
-instance ToRenderable SparkLine where
-    toRenderable sp = Renderable
+sparkLineToRenderable :: SparkLine -> Renderable ()
+sparkLineToRenderable sp = Renderable
             { minsize = return (0, fromIntegral (so_height (sl_options sp)))
             , render  = \_rect-> renderSparkLine sp
             }
+
+instance ToRenderable SparkLine where
+  toRenderable = sparkLineToRenderable
 
 -- | Compute the width of a SparkLine, for rendering purposes.
 sparkWidth :: SparkLine -> Int
@@ -109,7 +113,7 @@ sparkSize :: SparkLine -> (Int,Int)
 sparkSize s = (sparkWidth s, so_height (sl_options s))
 
 -- | Render a SparkLine to a drawing surface using cairo.
-renderSparkLine :: SparkLine -> CRender (PickFn ())
+renderSparkLine :: SparkLine -> ChartBackend (PickFn ())
 renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
   let w = 4 + (so_step opt) * (length ds - 1) + extrawidth
       extrawidth | so_smooth opt = 0
@@ -132,38 +136,30 @@ renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
       boxpt (Point x y) = Rect (Point (x-1)(y-1)) (Point (x+1)(y+1))
       fi    :: (Num b, Integral a) => a -> b
       fi    = fromIntegral
-  in preserveCState $ do
+  in do
 
-  setFillStyle (solidFillStyle (opaque (so_bgColor opt)))
-  fillPath (rectPath (Rect (Point 0 0) (Point (fi w) (fi h))))
+  withFillStyle (solidFillStyle (opaque (so_bgColor opt))) $ do
+    fillPath (rectPath (Rect (Point 0 0) (Point (fi w) (fi h))))
   if so_smooth opt
     then do
-      setLineStyle (solidLine 1 (opaque grey))
-      strokePath coords
+      withLineStyle (solidLine 1 (opaque grey)) $ do
+        p <- alignStrokePoints coords
+        strokePointPath p
     else do
-      setFillStyle (solidFillStyle (opaque grey))
-      forM_ coords $ \ (Point x y) ->
+      withFillStyle (solidFillStyle (opaque grey)) $ do
+        forM_ coords $ \ (Point x y) ->
           fillPath (rectPath (Rect (Point (x-1) y) (Point (x+1) (fi h))))
   when (so_minMarker opt) $ do
-      setFillStyle (solidFillStyle (opaque (so_minColor opt)))
-      fillPath (rectPath (boxpt minpt))
+      withFillStyle (solidFillStyle (opaque (so_minColor opt))) $ do
+        p <- alignFillPath (rectPath (boxpt minpt))
+        fillPath p
   when (so_maxMarker opt) $ do
-      setFillStyle (solidFillStyle (opaque (so_maxColor opt)))
-      fillPath (rectPath (boxpt maxpt))
+      withFillStyle (solidFillStyle (opaque (so_maxColor opt))) $ do
+        p <- alignFillPath (rectPath (boxpt maxpt))
+        fillPath p
   when (so_lastMarker opt) $ do
-      setFillStyle (solidFillStyle (opaque (so_lastColor opt)))
-      fillPath (rectPath (boxpt endpt))
+      withFillStyle (solidFillStyle (opaque (so_lastColor opt))) $ do
+        p <- alignFillPath (rectPath (boxpt endpt))
+        fillPath p
   return nullPickFn
 
--- | Generate a PNG for the sparkline, using its natural size.
-sparkLineToPNG :: FilePath -> SparkLine -> IO (PickFn ())
-sparkLineToPNG fp sp = renderableToPNGFile (toRenderable sp)
-                                           (sparkWidth sp)
-                                           (so_height (sl_options sp))
-                                           fp
--- | Generate a PDF for the sparkline, using its natural size.
-sparkLineToPDF :: FilePath -> SparkLine -> IO ()
-sparkLineToPDF fp sp = renderableToPDFFile (toRenderable sp)
-                                           (sparkWidth sp)
-                                           (so_height (sl_options sp))
-                                           fp

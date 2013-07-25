@@ -12,39 +12,21 @@ Category: Graphics
 Cabal-Version: >= 1.6
 Build-Type: Simple
 
-Extra-Source-Files:
-     tests/all_tests.hs,
-     tests/Test1.hs,
-     tests/Test2.hs,
-     tests/Test3.hs,
-     tests/Test4.hs,
-     tests/Test5.hs,
-     tests/Test6.hs,
-     tests/Test7.hs,
-     tests/Test8.hs,
-     tests/Test9.hs,
-     tests/Test14.hs,
-     tests/Test14a.hs,
-     tests/Test15.hs,
-     tests/Test17.hs,
-     tests/TestParametric.hs,     
-     tests/Prices.hs
-     tests/ExampleStocks.hs
-
-flag splitbase
-  description: Choose the new smaller, split-up base package.
-
 library
-  if flag(splitbase)
-    Build-depends: base >= 3 && < 5, old-locale, time, mtl, array
-  else
-    Build-depends: base < 3
-  Build-depends: cairo >= 0.9.11, time, mtl, array, data-accessor == 0.2.*, 
-                 data-accessor-template >= 0.2.1.1 && < 0.3, colour >= 2.2.1
+  Build-depends: base >= 3 && < 5
+               , old-locale
+               , time, mtl, array
+               , data-accessor == 0.2.*
+               , data-accessor-template >= 0.2.1.1 && < 0.3
+               , colour >= 2.2.1
+               , data-default-class < 0.1
+               , operational >= 0.2.2
 
   Exposed-modules:
         Graphics.Rendering.Chart,
-        Graphics.Rendering.Chart.Types,
+        Graphics.Rendering.Chart.Drawing,
+        Graphics.Rendering.Chart.Geometry,
+        Graphics.Rendering.Chart.Utils,
         Graphics.Rendering.Chart.Renderable,
         Graphics.Rendering.Chart.Axis,
         Graphics.Rendering.Chart.Axis.Floating,
@@ -71,6 +53,9 @@ library
         Graphics.Rendering.Chart.Plot.Pie,
         Graphics.Rendering.Chart.Plot.Points
         Graphics.Rendering.Chart.SparkLine
+        Graphics.Rendering.Chart.Backend
+        Graphics.Rendering.Chart.Backend.Impl
+        Graphics.Rendering.Chart.Backend.Types
 
 source-repository head
   type:     git
