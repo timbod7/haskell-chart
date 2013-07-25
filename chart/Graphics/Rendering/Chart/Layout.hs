@@ -147,6 +147,9 @@ data Layout1 x y = Layout1 {
     layout1_grid_last_       :: Bool
 }
 
+instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
+  toRenderable = setPickFn nullPickFn . layout1ToRenderable
+
 data Layout1Pick x y = L1P_Legend String
                      | L1P_Title String
                      | L1P_BottomAxisTitle String
