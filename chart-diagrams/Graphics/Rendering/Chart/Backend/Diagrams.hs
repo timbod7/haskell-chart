@@ -102,12 +102,17 @@ dTextSize :: (D.Renderable (D.Path R2) b)
 dTextSize env text = 
   let fs = envFontStyle env
       font@(fontData,_) = fontFromName $ font_name_ $ fs
-      (_,_,_,_,_,(_,_,weight,_,_,panose,ascent,descent,xHeight,capHeight,stemh,stemv,_)) = fontData
+      (_,_,bbox,_,_,(_,_,weight,_,_,panose,ascent,descent,xHeight,capHeight,stemh,stemv,_)) = fontData
+      a = h * (ascent / unscaledH)
+      d = -h * (descent / unscaledH)
+      h = font_size_ fs
+      maxYAdv = h * (capHeight / unscaledH)
+      unscaledH = F.bbox_dy $ fontData
   in (mempty, TextSize { textSizeWidth = D2.width $ F.textSVG' (fontStyleToTextOpts fs text)
-                       , textSizeAscent = 10 -- ascent
-                       , textSizeDescent = 10 -- descent
-                       , textSizeYBearing = F.bbox_dy fontData / 2 -- TODO: Is this really what we want?
-                       , textSizeHeight = font_size_ $ fs -- TODO: Should we get this from the font itself?
+                       , textSizeAscent = a -- ascent
+                       , textSizeDescent = d -- descent
+                       , textSizeYBearing = -maxYAdv
+                       , textSizeHeight = font_size_ $ fs
                        })
 
 dAlignmentFns :: (D.Renderable (D.Path R2) b)
