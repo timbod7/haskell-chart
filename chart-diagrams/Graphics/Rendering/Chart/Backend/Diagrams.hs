@@ -150,7 +150,7 @@ dTextSize env text =
       h = font_size_ fs
       maxYAdv = h * (capHeight / unscaledH)
       unscaledH = F.bbox_dy $ fontData
-  in (mempty, TextSize { textSizeWidth = D2.width $ F.textSVG' (fontStyleToTextOpts fs text)
+  in (mempty, TextSize { textSizeWidth = D2.width $ F.textSVG' (fontStyleToTextOpts env text)
                        , textSizeAscent = a -- ascent
                        , textSizeDescent = d -- descent
                        , textSizeYBearing = -maxYAdv
@@ -167,7 +167,7 @@ dDrawText env (Point x y) text
   = D.transform (toTransformation $ translate (Vector x y) 1)
   $ applyFontStyle (envFontStyle env)
   $ D2.scaleY (-1)
-  $ F.textSVG_ (fontStyleToTextOpts (envFontStyle env) text)
+  $ F.textSVG_ (fontStyleToTextOpts env text)
 
 dWith :: (D.Renderable (D.Path R2) b)
       => DEnv -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
@@ -255,10 +255,10 @@ applyFontStyle fs = applyLineStyle noLineStyle
                   . applyFillStyle (solidFillStyle $ font_color_ fs)
 
 -- TODO: FontSlant and FontWeight can not be expressed properly.
-fontStyleToTextOpts :: FontStyle -> String -> F.TextOpts
-fontStyleToTextOpts fs text = F.TextOpts
+fontStyleToTextOpts :: DEnv -> String -> F.TextOpts
+fontStyleToTextOpts env text = let fs = envFontStyle env in F.TextOpts
   { F.txt = text
-  , F.fdo = fontFromName $ font_name_ fs
+  , F.fdo = envSelectFont env fs
   , F.mode = F.INSIDE_H
   , F.spacing = F.KERN
   , F.underline = False
