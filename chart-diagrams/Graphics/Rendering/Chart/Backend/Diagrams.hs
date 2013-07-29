@@ -6,7 +6,7 @@
 module Graphics.Rendering.Chart.Backend.Diagrams
   ( runBackend
   , defaultEnv
-  , DEnv(..)
+  , DEnv(..), DFont
   ) where
 
 import Data.Default.Class
@@ -39,6 +39,8 @@ import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 
+import Paths_Chart_diagrams ( getDataFileName )
+
 -- -----------------------------------------------------------------------
 -- Backend
 -- -----------------------------------------------------------------------
@@ -46,16 +48,56 @@ import Graphics.Rendering.Chart.Renderable
 data DEnv = DEnv
   { envAlignmentFns :: AlignmentFns
   , envFontStyle :: FontStyle
+  , envSelectFont :: FontStyle -> DFont
   }
+
+type DFont = (F.FontData, F.OutlineMap)
 
 -- | Produce a environment with no transformation and clipping. 
 --   It will use the default styles.
 defaultEnv :: AlignmentFns
-           -> DEnv
-defaultEnv alignFns = DEnv 
-  { envAlignmentFns = alignFns
-  , envFontStyle = def
-  }
+           -> IO DEnv
+defaultEnv alignFns = do
+  serifR   <- loadFont "fonts/LinLibertine_R.svg"
+  serifRB  <- loadFont "fonts/LinLibertine_RB.svg"
+  serifRBI <- loadFont "fonts/LinLibertine_RBI.svg"
+  serifRI  <- loadFont "fonts/LinLibertine_RI.svg"
+  sansR   <- loadFont "fonts/SourceSansPro_R.svg"
+  sansRB  <- loadFont "fonts/SourceSansPro_RB.svg"
+  sansRBI <- loadFont "fonts/SourceSansPro_RBI.svg"
+  sansRI  <- loadFont "fonts/SourceSansPro_RI.svg"
+  monoR  <- loadFont "fonts/SourceCodePro_R.svg"
+  monoRB <- loadFont "fonts/SourceCodePro_RB.svg"
+  
+  let selectFont :: FontStyle -> DFont
+      selectFont fs = case (font_name_ fs, font_slant_ fs, font_weight_ fs) of
+        ("serif", FontSlantNormal , FontWeightNormal) -> serifR
+        ("serif", FontSlantNormal , FontWeightBold  ) -> serifRB
+        ("serif", FontSlantItalic , FontWeightNormal) -> serifRI
+        ("serif", FontSlantOblique, FontWeightNormal) -> serifRI
+        ("serif", FontSlantItalic , FontWeightBold  ) -> serifRBI
+        ("serif", FontSlantOblique, FontWeightBold  ) -> serifRBI
+        
+        ("sans-serif", FontSlantNormal , FontWeightNormal) -> sansR
+        ("sans-serif", FontSlantNormal , FontWeightBold  ) -> sansRB
+        ("sans-serif", FontSlantItalic , FontWeightNormal) -> sansRI
+        ("sans-serif", FontSlantOblique, FontWeightNormal) -> sansRI
+        ("sans-serif", FontSlantItalic , FontWeightBold  ) -> sansRBI
+        ("sans-serif", FontSlantOblique, FontWeightBold  ) -> sansRBI
+        
+        ("monospace", _, FontWeightNormal) -> monoR
+        ("monospace", _, FontWeightBold  ) -> monoRB
+        
+        (_, slant, weight) -> selectFont (fs { font_name_ = "sans-serif" })
+  
+  return $ DEnv 
+    { envAlignmentFns = alignFns
+    , envFontStyle = def
+    , envSelectFont = selectFont
+    }
+  where
+    loadFont :: String -> IO DFont
+    loadFont file = getDataFileName file >>= return . F.outlMap
 
 -- | Run this backends renderer.
 runBackend :: (D.Renderable (D.Path R2) b)
