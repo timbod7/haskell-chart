@@ -13,7 +13,7 @@ Cabal-Version: >= 1.10
 Build-Type: Simple
 
 Extra-Source-Files:
-     tests/all_tests.hs,
+     tests/Cairo.hs,
      tests/Test1.hs,
      tests/Test2.hs,
      tests/Test3.hs,
@@ -74,7 +74,7 @@ Executable ChartsTestCairo
       Chart-cairo     >= 0.1
   if !flag(cairo)
     Buildable: False
-  Main-is: all_tests.hs
+  Main-is: Cairo.hs
   Hs-Source-Dirs: tests
   Ghc-Options: -threaded
   default-language:    Haskell2010
