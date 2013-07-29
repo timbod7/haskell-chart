@@ -33,6 +33,6 @@ layout lwidth = layout1
               $ plot_points_title ^="am points"
               $ def
 
-main = main' "test1" (chart 0.25)
+-- main = main' "test1" (chart 0.25)
 
 

@@ -27,6 +27,6 @@ chart = layout1ToRenderable layout
                                Left (toPlot points)]
            $ def
 
-main = main' "test7" chart
+-- main = main' "test7" chart
 
 

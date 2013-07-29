@@ -57,4 +57,4 @@ chart prices showMinMax lwidth = layout1ToRenderable layout
            $ setLayout1Foreground fg
            $ def
 
-main = main' "test2" (chart prices2 True 0.25)
+-- main = main' "test2" (chart prices2 True 0.25)

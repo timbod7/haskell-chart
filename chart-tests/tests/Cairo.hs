@@ -23,3 +23,4 @@ renderToPNG (n,(w,h),ir) = renderableToPNGFile (ir PNG) w h (n ++ ".png")
 renderToPS  (n,(w,h),ir) = renderableToPSFile (ir PS) w h (n ++ ".ps")
 renderToPDF (n,(w,h),ir) = renderableToPDFFile (ir PDF) w h (n ++ ".pdf")
 renderToSVG (n,(w,h),ir) = renderableToSVGFile (ir SVG) w h (n ++ ".svg")
+

@@ -2,7 +2,6 @@ module TestSparkLines where
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.SparkLine
-import Graphics.Rendering.Chart.Backend.Cairo
 import Data.Colour
 import Data.Colour.Names
 import Data.Accessor
@@ -23,8 +22,9 @@ msft = SparkLine { sl_options = smoothSpark { so_limits=(bot,top), so_height=40 
 chart :: Renderable ()
 chart = sparkLineToRenderable msft
 chartSize = sparkSize msft
-
+{- Cairo dependent
 main1 :: [String] -> IO (PickFn ())
 main1 _  = sparkLineToPNG "test_sparkline.png" msft
 
 main = getArgs >>= main1
+-}

@@ -35,6 +35,6 @@ chart lo = layout1ToRenderable layout
   btitle = ""
   mkstyle c = (solidFillStyle c, Nothing)
 
-main = main' "test15" (chart (LORows 3))
+-- main = main' "test15" (chart (LORows 3))
 
 
