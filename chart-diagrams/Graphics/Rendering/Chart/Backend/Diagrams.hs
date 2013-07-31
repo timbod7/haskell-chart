@@ -39,6 +39,8 @@ import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 
+import Debug.Trace
+
 import Paths_Chart_diagrams ( getDataFileName )
 
 -- -----------------------------------------------------------------------
@@ -143,17 +145,11 @@ dTextSize :: (D.Renderable (D.Path R2) b)
           => DEnv -> String -> (Diagram b R2, TextSize)
 dTextSize env text = 
   let fs = envFontStyle env
-      font@(fontData,_) = fontFromName $ font_name_ $ fs
-      (_,_,bbox,_,_,(_,_,weight,_,_,panose,ascent,descent,xHeight,capHeight,stemh,stemv,_)) = fontData
-      a = h * (ascent / unscaledH)
-      d = -h * (descent / unscaledH)
-      h = font_size_ fs
-      maxYAdv = h * (capHeight / unscaledH)
-      unscaledH = F.bbox_dy $ fontData
+      (scaledH, scaledA, scaledD, scaledYB) = calcFontMetrics env
   in (mempty, TextSize { textSizeWidth = D2.width $ F.textSVG' (fontStyleToTextOpts env text)
-                       , textSizeAscent = a -- ascent
-                       , textSizeDescent = d -- descent
-                       , textSizeYBearing = -maxYAdv
+                       , textSizeAscent = scaledA -- scaledH * (a' / h') -- ascent
+                       , textSizeDescent = scaledD -- scaledH * (d' / h') -- descent
+                       , textSizeYBearing = scaledYB -- -scaledH * (capHeight / h)
                        , textSizeHeight = font_size_ $ fs
                        })
 
@@ -254,17 +250,41 @@ applyFontStyle :: (D.HasStyle a) => FontStyle -> a -> a
 applyFontStyle fs = applyLineStyle noLineStyle 
                   . applyFillStyle (solidFillStyle $ font_color_ fs)
 
+-- | Calculate the font metrics for the currently set font style.
+--   The returned value will be @(height, ascent, descent, ybearing)@.
+calcFontMetrics :: DEnv -> (Double, Double, Double, Double)
+calcFontMetrics env = 
+  let fs = envFontStyle env
+      font@(fontData,_) = envSelectFont env fs
+      (_,_,bbox,_,_,(fontHadv,_,weight,_,unitsPerEm,panose,ascent,descent,xHeight,capHeight,stemh,stemv,_)) = fontData
+      a = bbox !! 3
+      d = -bbox !! 1
+      h = unscaledH
+      a' = unscaledH
+      d' = (d / h) * h'
+      h' = (a + d) / (1 - d / h)
+      unscaledH = F.bbox_dy $ fontData
+      scaledHeight  = font_size_ fs * (h' / h)
+      scaledAscent  = scaledHeight * (a' / h')
+      scaledDescent = scaledHeight * (d' / h')
+      scaledMaxHAdv = -scaledHeight * (capHeight / h)
+  in (scaledHeight, scaledAscent, scaledDescent, scaledMaxHAdv)
+
 -- TODO: FontSlant and FontWeight can not be expressed properly.
 fontStyleToTextOpts :: DEnv -> String -> F.TextOpts
-fontStyleToTextOpts env text = let fs = envFontStyle env in F.TextOpts
-  { F.txt = text
-  , F.fdo = envSelectFont env fs
-  , F.mode = F.INSIDE_H
-  , F.spacing = F.KERN
-  , F.underline = False
-  , F.textWidth = 1
-  , F.textHeight = font_size_ fs
-  }
+fontStyleToTextOpts env text = 
+  let fs = envFontStyle env
+      font = envSelectFont env fs
+      (scaledH, _, _, _) = calcFontMetrics env
+  in F.TextOpts
+      { F.txt = text
+      , F.fdo = font
+      , F.mode = F.INSIDE_H
+      , F.spacing = F.KERN
+      , F.underline = False
+      , F.textWidth = 1
+      , F.textHeight = scaledH -- font_size_ fs
+      }
 
 fontFromName :: String -> (F.FontData, F.OutlineMap)
 fontFromName name = case name of
