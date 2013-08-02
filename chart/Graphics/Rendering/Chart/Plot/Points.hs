@@ -73,8 +73,4 @@ instance Default (PlotPoints x y) where
     , _plot_points_values = []
     }
 
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
-
 $( makeLenses ''PlotPoints )

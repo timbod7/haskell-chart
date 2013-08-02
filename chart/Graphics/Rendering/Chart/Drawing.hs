@@ -6,8 +6,8 @@
 --
 -- This module contains basic types and functions used for drawing.
 --
--- Note that template haskell is used to derive accessor functions
--- (see 'Data.Accessor') for each field of the following data types:
+-- Note that Template Haskell is used to derive accessor functions
+-- (see 'Control.Lens') for each field of the following data types:
 --
 --    * 'LineStyle'
 --
@@ -18,7 +18,7 @@
 -- dropped. Hence for data field f_::F in type D, they have type
 --
 -- @
---   f :: Data.Accessor.Accessor D F
+--   f :: Control.Lens.Lens' D F
 -- @
 --
 

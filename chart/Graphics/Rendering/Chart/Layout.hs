@@ -7,8 +7,8 @@
 -- This module glues together axes and plots to actually create a renderable
 -- for a chart.
 --
--- Note that template haskell is used to derive accessor functions
--- (see 'Data.Accessor') for each field of the following data types:
+-- Note that Template haskell is used to derive accessor functions
+-- (see 'Control.Lens') for each field of the following data types:
 --
 --     * 'Layout1'
 -- 
@@ -21,7 +21,7 @@
 -- dropped. Hence for data field f_::F in type D, they have type
 --
 -- @
---   f :: Data.Accessor.Accessor D F
+--   f :: Control.Lens.Lens' D F
 -- @
 --
 {-# LANGUAGE ScopedTypeVariables #-}

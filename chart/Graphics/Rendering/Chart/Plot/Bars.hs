@@ -223,9 +223,4 @@ renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
   withFillStyle fstyle $ do
     fillPath (rectPath r)
 
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
-
 $( makeLenses ''PlotBars )
-

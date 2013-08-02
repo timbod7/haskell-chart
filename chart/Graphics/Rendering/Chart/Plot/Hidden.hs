@@ -33,9 +33,4 @@ instance ToPlot PlotHidden where
         _plot_all_points = (_plot_hidden_x_values ph, _plot_hidden_y_values ph)
     }
 
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
-
 $( makeLenses ''PlotHidden )
-

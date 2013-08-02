@@ -105,11 +105,4 @@ vlinePlot t ls v = toPlot defaultPlotLines {
     _plot_lines_limit_values = [[(LValue v,LMin),(LValue v,LMax)]]
     }
 
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
 $( makeLenses ''PlotLines )
-
-
-
-

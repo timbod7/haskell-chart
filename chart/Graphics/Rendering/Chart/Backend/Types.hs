@@ -171,9 +171,6 @@ bitmapAlignmentFns = AlignmentFns (adjfn 0.5) (adjfn 0.0)
 vectorAlignmentFns :: AlignmentFns
 vectorAlignmentFns = AlignmentFns id id
 
--- -----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
 $( makeLenses ''LineStyle )
 $( makeLenses ''FontStyle )
 

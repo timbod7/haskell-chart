@@ -155,8 +155,4 @@ instance Default (PlotCandle x y) where
     , _plot_candle_values      = []
     }
 
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
-
 $( makeLenses ''PlotCandle )

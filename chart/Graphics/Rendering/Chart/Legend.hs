@@ -104,8 +104,5 @@ instance Default LegendStyle where
     , _legend_orientation = LORows 4
     }
 
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
 $( makeLenses ''LegendStyle )
 

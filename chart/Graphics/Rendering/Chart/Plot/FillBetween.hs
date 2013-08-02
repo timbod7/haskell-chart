@@ -82,8 +82,4 @@ instance Default (PlotFillBetween x y) where
     , _plot_fillbetween_values = []
     }
 
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
-
 $( makeLenses ''PlotFillBetween )

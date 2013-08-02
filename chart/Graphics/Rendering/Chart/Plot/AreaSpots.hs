@@ -213,7 +213,5 @@ renderSpotLegend4D p r@(Rect p1 p2) = do
     linearInterpolate (Point x0 y0) (Point x1 y1) =
         Point (x0 + abs(x1-x0)/2) (y0 + abs(y1-y0)/2)
 
--------------------------------------------------------------------------
--- Template haskell to derive Data.Accessor.Accessor
 $( makeLenses ''AreaSpots )
 $( makeLenses ''AreaSpots4D )

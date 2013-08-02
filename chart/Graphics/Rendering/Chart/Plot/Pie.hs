@@ -236,9 +236,6 @@ renderPie p (w,h) = do
 label_rgap = 5
 label_rlength = 15
 
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
 $( makeLenses ''PieLayout )
 $( makeLenses ''PieChart )
 $( makeLenses ''PieItem )

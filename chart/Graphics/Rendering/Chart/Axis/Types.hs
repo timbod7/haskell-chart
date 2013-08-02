@@ -409,9 +409,6 @@ invLinMap f t (v3,v4) (d1,d2) d =
   where
     doubleRange = t v4 - t v3
 
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor for
--- each field.
 $( makeLenses ''AxisData )
 $( makeLenses ''AxisStyle )
 
