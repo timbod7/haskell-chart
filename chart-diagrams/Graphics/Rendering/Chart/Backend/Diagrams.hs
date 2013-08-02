@@ -101,13 +101,13 @@ dTextSize :: (D.Renderable (D.Path R2) b)
           => DEnv -> String -> (Diagram b R2, TextSize)
 dTextSize env text = 
   let fs = envFontStyle env
-      font@(fontData,_) = fontFromName $ font_name_ $ fs
+      font@(fontData,_) = fontFromName $ _font_name $ fs
       (_,_,_,_,_,(_,_,weight,_,_,panose,ascent,descent,xHeight,capHeight,stemh,stemv,_)) = fontData
   in (mempty, TextSize { textSizeWidth = D2.width $ F.textSVG' (fontStyleToTextOpts fs text)
                        , textSizeAscent = 10 -- ascent
                        , textSizeDescent = 10 -- descent
                        , textSizeYBearing = F.bbox_dy fontData / 2 -- TODO: Is this really what we want?
-                       , textSizeHeight = font_size_ $ fs -- TODO: Should we get this from the font itself?
+                       , textSizeHeight = _font_size $ fs -- TODO: Should we get this from the font itself?
                        })
 
 dAlignmentFns :: (D.Renderable (D.Path R2) b)
@@ -157,8 +157,8 @@ pointToP2 (Point x y) = p2 (x,y)
 
 noLineStyle :: LineStyle
 noLineStyle = def 
-  { line_width_ = 0
-  , line_color_ = transparent
+  { _line_width = 0
+  , _line_color = transparent
   }
 
 noFillStyle :: FillStyle
@@ -191,11 +191,11 @@ applyWithoutTrans m v =
 
 -- | Apply the Chart line style to a diagram.
 applyLineStyle :: (D.HasStyle a) => LineStyle -> a -> a
-applyLineStyle ls = D.lineWidth (line_width_ ls) 
-                  . D.lineColor (line_color_ ls) 
-                  . D.lineCap (convertLineCap $ line_cap_ ls) 
-                  . D.lineJoin (convertLineJoin $ line_join_ ls) 
-                  . D.dashing (line_dashes_ ls) 0
+applyLineStyle ls = D.lineWidth (_line_width ls) 
+                  . D.lineColor (_line_color ls) 
+                  . D.lineCap (convertLineCap $ _line_cap ls) 
+                  . D.lineJoin (convertLineJoin $ _line_join ls) 
+                  . D.dashing (_line_dashes ls) 0
 
 -- | Apply the Chart fill style to a diagram.
 applyFillStyle :: (D.HasStyle a) => FillStyle -> a -> a
@@ -205,18 +205,18 @@ applyFillStyle fs = case fs of
 -- | Apply all pure diagrams properties from the font style.
 applyFontStyle :: (D.HasStyle a) => FontStyle -> a -> a
 applyFontStyle fs = applyLineStyle noLineStyle 
-                  . applyFillStyle (solidFillStyle $ font_color_ fs)
+                  . applyFillStyle (solidFillStyle $ _font_color fs)
 
 -- TODO: FontSlant and FontWeight can not be expressed properly.
 fontStyleToTextOpts :: FontStyle -> String -> F.TextOpts
 fontStyleToTextOpts fs text = F.TextOpts
   { F.txt = text
-  , F.fdo = fontFromName $ font_name_ fs
+  , F.fdo = fontFromName $ _font_name fs
   , F.mode = F.INSIDE_H
   , F.spacing = F.KERN
   , F.underline = False
   , F.textWidth = 1
-  , F.textHeight = font_size_ fs
+  , F.textHeight = _font_size fs
   }
 
 fontFromName :: String -> (F.FontData, F.OutlineMap)
