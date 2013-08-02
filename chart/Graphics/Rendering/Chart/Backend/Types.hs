@@ -5,7 +5,7 @@ module Graphics.Rendering.Chart.Backend.Types where
 import Data.Default.Class
 import Data.Colour
 import Data.Colour.Names
-import Data.Accessor.Template
+import Control.Lens
 
 import Graphics.Rendering.Chart.Geometry
 
@@ -28,27 +28,27 @@ data LineJoin = LineJoinMiter -- ^ Extends the outline until they meet each othe
 
 -- | Data type for the style of a line.
 data LineStyle = LineStyle 
-  { line_width_  :: Double
+  { _line_width  :: Double
   -- ^ The thickness of a line in device units.
-  , line_color_  :: AlphaColour Double
+  , _line_color  :: AlphaColour Double
   -- ^ The color of a line.
-  , line_dashes_ :: [Double]
+  , _line_dashes :: [Double]
   -- ^ The dash pattern. Every value at a even index gives a dash width and 
   --   every value at a odd index gives a gap width in device units.
-  , line_cap_    :: LineCap
+  , _line_cap    :: LineCap
   -- ^ How to end a line.
-  , line_join_   :: LineJoin
+  , _line_join   :: LineJoin
   -- ^ How to connect two lines.
   } deriving Show
 
 -- | The default line style.
 instance Default LineStyle where
   def = LineStyle 
-    { line_width_  = 1
-    , line_color_  = opaque black
-    , line_dashes_ = []
-    , line_cap_    = LineCapButt
-    , line_join_   = LineJoinBevel
+    { _line_width  = 1
+    , _line_color  = opaque black
+    , _line_dashes = []
+    , _line_cap    = LineCapButt
+    , _line_join   = LineJoinBevel
     }
 
 -- -----------------------------------------------------------------------
@@ -76,26 +76,26 @@ instance Default FontWeight where
 
 -- | Data type for a font.
 data FontStyle = FontStyle {
-      font_name_   :: String,
+      _font_name   :: String,
       -- ^ The font family or font face to use.
-      font_size_   :: Double,
+      _font_size   :: Double,
       -- ^ The height of the rendered font in device coordinates.
-      font_slant_  :: FontSlant,
+      _font_slant  :: FontSlant,
       -- ^ The slant to render with.
-      font_weight_ :: FontWeight,
+      _font_weight :: FontWeight,
       -- ^ The weight to render with.
-      font_color_  :: AlphaColour Double
+      _font_color  :: AlphaColour Double
       -- ^ The color to render text with.
 } deriving Show
 
 -- | The default font style.
 instance Default FontStyle where
   def = FontStyle 
-    { font_name_   = "sans-serif"
-    , font_size_   = 10
-    , font_slant_  = def
-    , font_weight_ = def
-    , font_color_  = opaque black
+    { _font_name   = "sans-serif"
+    , _font_size   = 10
+    , _font_slant  = def
+    , _font_weight = def
+    , _font_color  = opaque black
     }
 
 {-# DEPRECATED defaultFontStyle  "Use the according Data.Default instance!" #-}
@@ -126,12 +126,12 @@ data TextSize = TextSize
 --
 --   The contained Cairo action sets the required fill
 --   style in the Cairo rendering state.
-newtype FillStyle = FillStyleSolid { fill_colour_ :: AlphaColour Double } deriving Show
+newtype FillStyle = FillStyleSolid { _fill_colour :: AlphaColour Double } deriving Show
 
 -- | The default fill style.
 instance Default FillStyle where
   def = FillStyleSolid
-    { fill_colour_ = opaque white
+    { _fill_colour = opaque white
     }
 
 -------------------------------------------------------------------------
@@ -174,6 +174,6 @@ vectorAlignmentFns = AlignmentFns id id
 -- -----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
-$( deriveAccessors '' LineStyle )
-$( deriveAccessors '' FontStyle )
+$( makeLenses ''LineStyle )
+$( makeLenses ''FontStyle )
 

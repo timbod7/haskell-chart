@@ -19,7 +19,7 @@ module Graphics.Rendering.Chart.Plot.FillBetween(
     plot_fillbetween_values,
 ) where
 
-import Data.Accessor.Template
+import Control.Lens
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
@@ -33,26 +33,26 @@ import Data.Default.Class
 --   coordinates, given common X coordinates.
 
 data PlotFillBetween x y = PlotFillBetween {
-    plot_fillbetween_title_  :: String,
-    plot_fillbetween_style_  :: FillStyle,
-    plot_fillbetween_values_ :: [ (x, (y,y))]
+    _plot_fillbetween_title  :: String,
+    _plot_fillbetween_style  :: FillStyle,
+    _plot_fillbetween_values :: [ (x, (y,y))]
 }
 
 
 instance ToPlot PlotFillBetween where
     toPlot p = Plot {
-        plot_render_     = renderPlotFillBetween p,
-        plot_legend_     = [(plot_fillbetween_title_ p,renderPlotLegendFill p)],
-        plot_all_points_ = plotAllPointsFillBetween p
+        _plot_render     = renderPlotFillBetween p,
+        _plot_legend     = [(_plot_fillbetween_title p,renderPlotLegendFill p)],
+        _plot_all_points = plotAllPointsFillBetween p
     }
 
 renderPlotFillBetween :: PlotFillBetween x y -> PointMapFn x y -> ChartBackend ()
 renderPlotFillBetween p pmap =
-    renderPlotFillBetween' p (plot_fillbetween_values_ p) pmap
+    renderPlotFillBetween' p (_plot_fillbetween_values p) pmap
 
 renderPlotFillBetween' p [] _     = return ()
 renderPlotFillBetween' p vs pmap  = 
-  withFillStyle (plot_fillbetween_style_ p) $ do
+  withFillStyle (_plot_fillbetween_style p) $ do
     ps <- alignFillPoints $ [p0] ++ p1s ++ reverse p2s ++ [p0]
     fillPointPath ps
   where
@@ -62,14 +62,14 @@ renderPlotFillBetween' p vs pmap  =
 
 renderPlotLegendFill :: PlotFillBetween x y -> Rect -> ChartBackend ()
 renderPlotLegendFill p r = 
-  withFillStyle (plot_fillbetween_style_ p) $ do
+  withFillStyle (_plot_fillbetween_style p) $ do
     fillPath (rectPath r)
 
 plotAllPointsFillBetween :: PlotFillBetween x y -> ([x],[y])
 plotAllPointsFillBetween p = ( [ x | (x,(_,_)) <- pts ]
                              , concat [ [y1,y2] | (_,(y1,y2)) <- pts ] )
   where
-    pts = plot_fillbetween_values_ p
+    pts = _plot_fillbetween_values p
 
 {-# DEPRECATED defaultPlotFillBetween "Use the according Data.Default instance!" #-}
 defaultPlotFillBetween :: PlotFillBetween x y
@@ -77,13 +77,13 @@ defaultPlotFillBetween = def
 
 instance Default (PlotFillBetween x y) where
   def = PlotFillBetween 
-    { plot_fillbetween_title_  = ""
-    , plot_fillbetween_style_  = solidFillStyle (opaque $ sRGB 0.5 0.5 1.0)
-    , plot_fillbetween_values_ = []
+    { _plot_fillbetween_title  = ""
+    , _plot_fillbetween_style  = solidFillStyle (opaque $ sRGB 0.5 0.5 1.0)
+    , _plot_fillbetween_values = []
     }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
 
-$( deriveAccessors ''PlotFillBetween )
+$( makeLenses ''PlotFillBetween )

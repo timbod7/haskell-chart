@@ -16,8 +16,7 @@ library
   Build-depends: base >= 3 && < 5
                , old-locale
                , time, mtl, array
-               , data-accessor == 0.2.*
-               , data-accessor-template >= 0.2.1.1 && < 0.3
+               , lens
                , colour >= 2.2.1
                , data-default-class < 0.1
                , operational >= 0.2.2
