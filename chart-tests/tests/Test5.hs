@@ -3,7 +3,7 @@ module Test5 where
 import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
-import Data.Accessor
+import Control.Lens
 import Data.Default.Class
 import System.Random
 
@@ -17,18 +17,18 @@ chart lwidth = layout1ToRenderable (layout 1001 (trial bits) :: Layout1 Double L
   where
     bits = randoms $ mkStdGen 0
 
-    layout n t = layout1_title ^= "Simulation of betting on a biased coin"
-               $ layout1_plots ^= [
+    layout n t = layout1_title .~ "Simulation of betting on a biased coin"
+               $ layout1_plots .~ [
                       Left (toPlot (plot "f=0.05" s1 n 0 (t 0.05))),
                       Left (toPlot (plot "f=0.1" s2 n 0 (t 0.1)))
                      ]
                $ def
 
-    plot tt s n m t = plot_lines_style ^= s
-                 $ plot_lines_values ^=
+    plot tt s n m t = plot_lines_style .~ s
+                 $ plot_lines_values .~
                        [[(fromIntegral x, LogValue y) | (x,y) <-
                          filter (\(x,_)-> x `mod` (m+1)==0) $ take n $ zip [0..] t]]
-                 $ plot_lines_title ^= tt
+                 $ plot_lines_title .~ tt
                  $ def
 
     b = 0.1

@@ -30,9 +30,9 @@ instance PlotValue Integer where
 
 defaultIntAxis :: (Show a) => LinearAxisParams a
 defaultIntAxis  = LinearAxisParams {
-    la_labelf_  = show,
-    la_nLabels_ = 5,
-    la_nTicks_  = 10
+    _la_labelf  = show,
+    _la_nLabels = 5,
+    _la_nTicks  = 10
 }
 
 autoScaledIntAxis :: (Integral i, PlotValue i) =>
@@ -44,14 +44,14 @@ autoScaledIntAxis lap ps = scaledIntAxis lap (min,max) ps
 scaledIntAxis :: (Integral i, PlotValue i) =>
                  LinearAxisParams i -> (i,i) -> AxisFn i
 scaledIntAxis lap (min,max) ps =
-    makeAxis (la_labelf_ lap) (labelvs,tickvs,gridvs)
+    makeAxis (_la_labelf lap) (labelvs,tickvs,gridvs)
   where
     range []  = (0,1)
     range _   | min == max = (fromIntegral $ min-1, fromIntegral $ min+1)
               | otherwise  = (fromIntegral $ min,   fromIntegral $ max)
 --  labelvs  :: [i]
-    labelvs   = stepsInt (fromIntegral $ la_nLabels_ lap) r
-    tickvs    = stepsInt (fromIntegral $ la_nTicks_ lap)
+    labelvs   = stepsInt (fromIntegral $ _la_nLabels lap) r
+    tickvs    = stepsInt (fromIntegral $ _la_nTicks lap)
                                   ( fromIntegral $ minimum labelvs
                                   , fromIntegral $ maximum labelvs )
     gridvs    = labelvs

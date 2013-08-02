@@ -13,11 +13,11 @@ import Graphics.Rendering.Chart.Backend
 
 supportLineStyle :: LineStyle
 supportLineStyle = def 
-  { line_color_ = withOpacity red 0.15
-  , line_width_ = 2
-  , line_dashes_ = []
-  , line_cap_ = LineCapButt
-  , line_join_ = LineJoinBevel
+  { _line_color = withOpacity red 0.15
+  , _line_width = 2
+  , _line_dashes = []
+  , _line_cap = LineCapButt
+  , _line_join = LineJoinBevel
   }
 
 withTestEnv :: ChartBackend a -> ChartBackend a
@@ -44,7 +44,7 @@ tests = [ ("lines", 500, 500, testLines)
 
 testPaths :: ChartBackend ()
 testPaths = withTestEnv 
-          $ withLineStyle (def { line_width_ = 10, line_join_ = LineJoinMiter }) 
+          $ withLineStyle (def { _line_width = 10, _line_join = LineJoinMiter }) 
           $ withFillStyle (solidFillStyle $ opaque red) 
           $ do
   let distantArc = moveTo' 10 10
@@ -70,7 +70,7 @@ testPaths = withTestEnv
 testTextMetrics :: ChartBackend ()
 testTextMetrics = withTestEnv $ do
   
-  withFontStyle (def { font_size_ = 20 }) $ do
+  withFontStyle (def { _font_size = 20 }) $ do
     let text = "Text Example"
     tm <- textSize text
     drawText (Point 100 125) text
@@ -87,14 +87,14 @@ testTextMetrics = withTestEnv $ do
       -- Left side of text
       strokePath $ moveTo' 100 0 <> lineTo' 100 250
   
-  withFontStyle (def { font_size_ = 15 }) $ do
+  withFontStyle (def { _font_size = 15 }) $ do
     (flip mapM_) [ (VTA_Top, "Top", 10)
                  , (VTA_Centre, "Centre", 50)
                  , (VTA_BaseLine, "BaseLine", 110)
                  , (VTA_Bottom, "Bottom", 190) ] $ \(vta, name, offset) -> do
       drawTextA HTA_Left vta (Point offset 375) name
   
-  withFontStyle (def { font_size_ = 15 }) $ do
+  withFontStyle (def { _font_size = 15 }) $ do
     (flip mapM_) [ (HTA_Left, "Left", 10)
                  , (HTA_Centre, "Centre", 40)
                  , (HTA_Right, "Right", 70) ] $ \(hta, name, offset) -> do
@@ -136,8 +136,8 @@ testFill = withTestEnv $ do
 testEnvironments :: [(String, ChartBackend ())]
 testEnvironments =
   let envs = [ ("fill", withFillStyle $ solidFillStyle $ opaque green)
-             , ("font", withFontStyle $ def { font_color_ = opaque red })
-             , ("line", withLineStyle $ def { line_color_ = opaque blue, line_width_ = 10 })
+             , ("font", withFontStyle $ def { _font_color = opaque red })
+             , ("line", withLineStyle $ def { _line_color = opaque blue, _line_width = 10 })
              ]
   in (flip map) (permutations envs) $ \envPerm -> 
     let name = concatMap fst envPerm 
@@ -160,35 +160,35 @@ testText = withTestEnv $ do
     withScale (Vector 1 3) $ drawText (Point 0 0) "Vert. Scale"
   
   drawText (Point 150 50) "Size * 1"
-  withFontStyle (def { font_size_ = font_size_ def * 2 }) $ drawText (Point 150 70) "Size * 2"
-  withFontStyle (def { font_size_ = font_size_ def * 3 }) $ drawText (Point 150 100) "Size * 3"
+  withFontStyle (def { _font_size = _font_size def * 2 }) $ drawText (Point 150 70) "Size * 2"
+  withFontStyle (def { _font_size = _font_size def * 3 }) $ drawText (Point 150 100) "Size * 3"
   
   (flip mapM_) ([ 10, 12, 14 ] `zip` [0..]) $ \(size, n) -> do
-    withFontStyle (def { font_weight_ = FontWeightNormal, font_size_ = size }) $ 
+    withFontStyle (def { _font_weight = FontWeightNormal, _font_size = size }) $ 
       drawText (Point 10 $ 120 + n * 20) "Normal Weight"
-    withFontStyle (def { font_weight_ = FontWeightBold, font_size_ = size   }) $ 
+    withFontStyle (def { _font_weight = FontWeightBold, _font_size = size   }) $ 
       drawText (Point 150 $ 120 + n * 20) "Bold Weight"
     
-    withFontStyle (def { font_slant_ = FontSlantNormal, font_size_ = size }) $ 
+    withFontStyle (def { _font_slant = FontSlantNormal, _font_size = size }) $ 
       drawText (Point 10 $ 180 + n * 20) "Normal Slant"
-    withFontStyle (def { font_slant_ = FontSlantItalic, font_size_ = size }) $ 
+    withFontStyle (def { _font_slant = FontSlantItalic, _font_size = size }) $ 
       drawText (Point 150 $ 180 + n * 20) "Italic Slant"
-    withFontStyle (def { font_slant_ = FontSlantOblique, font_size_ = size }) $ 
+    withFontStyle (def { _font_slant = FontSlantOblique, _font_size = size }) $ 
       drawText (Point 290 $ 180 + n * 20) "Oblique Slant"
   
   
   (flip mapM_) ([ 10, 12, 14 ] `zip` [0..]) $ \(size, n) -> do
-    withFontStyle (def { font_name_ = "sans-serif", font_size_ = size }) $ 
+    withFontStyle (def { _font_name = "sans-serif", _font_size = size }) $ 
       drawText (Point 10 $ 240 + n * 20) "Sans-Serif"
-    withFontStyle (def { font_name_ = "serif", font_size_ = size }) $ 
+    withFontStyle (def { _font_name = "serif", _font_size = size }) $ 
       drawText (Point 150 $ 240 + n * 20) "Serif"
-    withFontStyle (def { font_name_ = "monospace", font_size_ = size }) $ 
+    withFontStyle (def { _font_name = "monospace", _font_size = size }) $ 
       drawText (Point 290 $ 240 + n * 20) "Monospace"
   
   (flip mapM_) ([ (opaque red, 12)
                 , (withOpacity blue 0.3, 14)
                 , (opaque green, 17) ] `zip` [0..] ) $ \((cl, size), n) -> do
-    withFontStyle (def { font_color_ = cl, font_size_ = size }) $
+    withFontStyle (def { _font_color = cl, _font_size = size }) $
       drawText (Point (10 + (n * 140)) 300) "Colored"
   
   (flip mapM_) [0..7] $ \n -> do
@@ -202,10 +202,10 @@ testText = withTestEnv $ do
 
 testArcs :: ChartBackend ()
 testArcs = withTestEnv $ do
-  (flip mapM_) ( [ def { line_cap_ = LineCapButt  , line_join_ = LineJoinMiter, line_width_ = 10 }
-                 , def { line_cap_ = LineCapRound , line_join_ = LineJoinRound, line_width_ = 10 }
-                 , def { line_cap_ = LineCapSquare, line_join_ = LineJoinBevel, line_width_ = 10 }
-                 , def { line_width_ = 10 }
+  (flip mapM_) ( [ def { _line_cap = LineCapButt  , _line_join = LineJoinMiter, _line_width = 10 }
+                 , def { _line_cap = LineCapRound , _line_join = LineJoinRound, _line_width = 10 }
+                 , def { _line_cap = LineCapSquare, _line_join = LineJoinBevel, _line_width = 10 }
+                 , def { _line_width = 10 }
                  ] `zip` [0..] )
                  $ \(ls, n) -> do
     withLineStyle ls $ do
@@ -228,17 +228,17 @@ testArcs = withTestEnv $ do
 testLines :: ChartBackend ()
 testLines = withTestEnv $ do
   -- Test Line Caps
-  (flip mapM_) [ (def { line_cap_ = LineCapButt  , line_width_ = 10 }, 0)
-               , (def { line_cap_ = LineCapRound , line_width_ = 10 }, 20)
-               , (def { line_cap_ = LineCapSquare, line_width_ = 10 }, 40)
+  (flip mapM_) [ (def { _line_cap = LineCapButt  , _line_width = 10 }, 0)
+               , (def { _line_cap = LineCapRound , _line_width = 10 }, 20)
+               , (def { _line_cap = LineCapSquare, _line_width = 10 }, 40)
                ] $ \(ls, offset) -> do
     withLineStyle ls $ do
       strokePath $ moveTo' 125 (10 + offset)
                 <> lineTo' 375 (10 + offset)
   -- Test Line Joins
-  (flip mapM_) [ (def { line_join_ = LineJoinMiter, line_width_ = 10 }, 0)
-               , (def { line_join_ = LineJoinRound, line_width_ = 10 }, 60)
-               , (def { line_join_ = LineJoinBevel, line_width_ = 10 }, 120)
+  (flip mapM_) [ (def { _line_join = LineJoinMiter, _line_width = 10 }, 0)
+               , (def { _line_join = LineJoinRound, _line_width = 10 }, 60)
+               , (def { _line_join = LineJoinBevel, _line_width = 10 }, 120)
                ] $ \(ls, offset) -> do
     withLineStyle ls $ do
       strokePath $ moveTo' 125 (70  + offset)
@@ -246,23 +246,23 @@ testLines = withTestEnv $ do
                 <> lineTo' 250 (110 + offset)
                 <> close
   -- Test Line Color & Width
-  (flip mapM_) [ (def { line_color_ = opaque blue, line_width_ = 1 }, 0)
-               , (def { line_color_ = opaque green, line_width_ = 5 }, 10)
-               , (def { line_color_ = opaque magenta, line_width_ = 20 }, 35)
-               , (def { line_color_ = withOpacity cyan 0.2, line_width_ = 10 }, 60)
-               , (def { line_color_ = withOpacity cyan 0.4, line_width_ = 10 }, 80)
-               , (def { line_color_ = withOpacity cyan 0.6, line_width_ = 10 }, 100)
-               , (def { line_color_ = withOpacity cyan 0.8, line_width_ = 10 }, 120)
-               , (def { line_color_ = withOpacity cyan 1.0, line_width_ = 10 }, 140)
+  (flip mapM_) [ (def { _line_color = opaque blue, _line_width = 1 }, 0)
+               , (def { _line_color = opaque green, _line_width = 5 }, 10)
+               , (def { _line_color = opaque magenta, _line_width = 20 }, 35)
+               , (def { _line_color = withOpacity cyan 0.2, _line_width = 10 }, 60)
+               , (def { _line_color = withOpacity cyan 0.4, _line_width = 10 }, 80)
+               , (def { _line_color = withOpacity cyan 0.6, _line_width = 10 }, 100)
+               , (def { _line_color = withOpacity cyan 0.8, _line_width = 10 }, 120)
+               , (def { _line_color = withOpacity cyan 1.0, _line_width = 10 }, 140)
                ] $ \(ls, offset) -> do
     withLineStyle ls $ do
       strokePath $ moveTo' 10  (250 + offset)
                 <> lineTo' 490 (250 + offset)
   -- Test Line Dashes
-  (flip mapM_) [ (def { line_dashes_ = []  , line_width_ = 10 }, 0)
-               , (def { line_dashes_ = [10] , line_width_ = 10 }, 20)
-               , (def { line_dashes_ = [1,5,2], line_width_ = 10 }, 40)
-               , (def { line_dashes_ = [1,5,2,3,4,6,7], line_width_ = 10 }, 60)
+  (flip mapM_) [ (def { _line_dashes = []  , _line_width = 10 }, 0)
+               , (def { _line_dashes = [10] , _line_width = 10 }, 20)
+               , (def { _line_dashes = [1,5,2], _line_width = 10 }, 40)
+               , (def { _line_dashes = [1,5,2,3,4,6,7], _line_width = 10 }, 60)
                ] $ \(ls, offset) -> do
     withLineStyle ls $ do
       strokePath $ moveTo' 10  (410 + offset)
