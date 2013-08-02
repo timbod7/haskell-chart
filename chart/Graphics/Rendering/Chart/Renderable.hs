@@ -8,6 +8,7 @@
 -- is a composable drawing element, along with assorted functions to
 -- them.
 --
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Renderable(
     Renderable(..),
@@ -189,26 +190,6 @@ data Rectangle = Rectangle {
   _rect_cornerStyle :: RectCornerStyle
 }
 
--- | Lens for field _rect_minsize.
-rect_minsize :: Lens' Rectangle RectSize
-rect_minsize     = lens (\v->_rect_minsize v)
-                        (\v a -> v{_rect_minsize=a})
-
--- | Lens for field _rect_fillStyle.
-rect_fillStyle :: Lens' Rectangle (Maybe FillStyle)
-rect_fillStyle   = lens (\v->_rect_fillStyle v)
-                        (\v a -> v{_rect_fillStyle=a})
-
--- | Lens for field _rect_lineStyle.
-rect_lineStyle :: Lens' Rectangle (Maybe LineStyle)
-rect_lineStyle   = lens (\v->_rect_lineStyle v)
-                        (\v a -> v{_rect_lineStyle=a})
-
--- | Lens for field _rect_cornerStyle.
-rect_cornerStyle :: Lens' Rectangle RectCornerStyle
-rect_cornerStyle = lens (\v->_rect_cornerStyle v)
-                        (\v a -> v{_rect_cornerStyle=a})
-
 {-# DEPRECATED defaultRectangle "Use the according Data.Default instance!" #-}
 defaultRectangle :: Rectangle
 defaultRectangle = def
@@ -269,3 +250,5 @@ rectangleToRenderable rectangle = Renderable mf rf
                           <> lineTo' x1 (y2-s)
     
     pi2 = pi / 2
+
+$( makeLenses ''Rectangle )
