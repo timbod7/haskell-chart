@@ -1,17 +1,17 @@
 # Use cabal
-CABAL=cabal
-RUNGHC=runghc
-GHCPKG=ghc-pkg
+#CABAL=cabal
+#RUNGHC=runghc
+#GHCPKG=ghc-pkg
 
 # or use cabal-dev
-#CABAL=cabal-dev -s$(CURDIR)/cabal-dev
-#RUNGHC=GHC_PACKAGE_PATH=$(CURDIR)/cabal-dev/packages-7.4.2.conf: runghc
-#GHCPKG=ghc-pkg
+CABAL=cabal-dev -s$(CURDIR)/cabal-dev
+RUNGHC=GHC_PACKAGE_PATH=$(CURDIR)/cabal-dev/packages-7.6.3.conf: runghc
+GHCPKG=ghc-pkg
 
 install: unregister
 	cd chart && $(CABAL) install --force-reinstalls
-	cd chart-cairo && $(CABAL) install
-	cd chart-gtk && $(CABAL) install
+	cd chart-cairo && $(CABAL) install --force-reinstalls 
+	cd chart-gtk && $(CABAL) install --force-reinstalls 
 
 unregister:
 	-$(GHCPKG) unregister Chart-gtk
