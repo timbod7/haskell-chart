@@ -1,5 +1,5 @@
 Name: Chart-tests
-Version: 0.17
+Version: 1.0
 License: BSD3
 License-file: LICENSE
 Copyright: Tim Docker, 2006-2010
@@ -70,8 +70,8 @@ Executable ChartsTestCairo
       random          >= 1.0,
       containers      >= 0.5,
       old-time        >= 1.0,
-      Chart           >= 0.17,
-      Chart-cairo     >= 0.1
+      Chart           >= 1.0,
+      Chart-cairo     >= 1.0
   if !flag(cairo)
     Buildable: False
   Main-is: all_tests.hs
@@ -95,9 +95,9 @@ Executable ChartsTestGtk
       old-time        >= 1.0,
       gtk             >= 0.9.11,
       cairo           >= 0.9.11,
-      Chart           >= 0.17,
-      Chart-gtk       >= 0.17,
-      Chart-cairo      >= 0.1
+      Chart           >= 1.0,
+      Chart-gtk       >= 1.0,
+      Chart-cairo      >= 1.0
   if !flag(gtk)
     Buildable: False
   Main-is: TestPicking.hs
@@ -120,8 +120,8 @@ Executable ChartsTestDrawingCairo
       containers      >= 0.5,
       old-time        >= 1.0,
       cairo           >= 0.9.11,
-      Chart           >= 0.17,
-      Chart-cairo     >= 0.1
+      Chart           >= 1.0,
+      Chart-cairo     >= 1.0
   if !flag(cairo)
     Buildable: False
   Main-is: Cairo.hs
@@ -143,8 +143,8 @@ Executable ChartsTestDrawingDiagramsCairo
       random          >= 1.0,
       containers      >= 0.5,
       old-time        >= 1.0,
-      Chart           >= 0.17,
-      Chart-diagrams  >= 0.1,
+      Chart           >= 1.0,
+      Chart-diagrams  >= 1.0,
       diagrams-cairo  >= 0.6.1,
       diagrams-lib    >= 0.6.1,
       diagrams-core   >= 0.6.1
