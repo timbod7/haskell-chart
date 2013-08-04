@@ -34,12 +34,12 @@ addIndexes as = map (\(i,a) -> (PlotIndex i,a))  (zip [0..] as)
 --   list of strings are the labels to be used.
 autoIndexAxis :: Integral i => [String] -> [i] -> AxisData i
 autoIndexAxis labels vs = AxisData {
-    axis_viewport_ = vport,
-    axis_tropweiv_ = invport,
-    axis_ticks_    = [],
-    axis_labels_   = [filter (\(i,l) -> i >= imin && i <= imax)
+    _axis_viewport = vport,
+    _axis_tropweiv = invport,
+    _axis_ticks    = [],
+    _axis_labels   = [filter (\(i,l) -> i >= imin && i <= imax)
                             (zip [0..] labels)],
-    axis_grid_     = []
+    _axis_grid     = []
     }
   where
     vport r i = linMap id ( fromIntegral imin - 0.5

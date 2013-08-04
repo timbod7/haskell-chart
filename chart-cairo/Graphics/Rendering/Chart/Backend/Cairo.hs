@@ -132,23 +132,23 @@ cWithTransform env m p = preserveCState0 $ do
 
 cWithFontStyle :: CEnv -> FontStyle -> ChartBackend a -> C.Render a
 cWithFontStyle env font p = preserveCState0 $ do
-  C.selectFontFace (G.font_name_ font) 
-                   (convertFontSlant $ G.font_slant_ font) 
-                   (convertFontWeight $ G.font_weight_ font)
-  C.setFontSize (G.font_size_ font)
-  runBackend env{ceFontColor=G.font_color_ font} p
+  C.selectFontFace (G._font_name font) 
+                   (convertFontSlant $ G._font_slant font) 
+                   (convertFontWeight $ G._font_weight font)
+  C.setFontSize (G._font_size font)
+  runBackend env{ceFontColor=G._font_color font} p
 
 cWithFillStyle :: CEnv -> FillStyle -> ChartBackend a -> C.Render a
 cWithFillStyle env fs p = do
-  runBackend env{ceFillColor=G.fill_colour_ fs} p
+  runBackend env{ceFillColor=G._fill_colour fs} p
 
 cWithLineStyle :: CEnv -> LineStyle -> ChartBackend a -> C.Render a
 cWithLineStyle env ls p = preserveCState0 $ do
-  C.setLineWidth (G.line_width_ ls)
-  C.setLineCap (convertLineCap $ G.line_cap_ ls)
-  C.setLineJoin (convertLineJoin $ G.line_join_ ls)
-  C.setDash (G.line_dashes_ ls) 0
-  runBackend env{cePathColor=G.line_color_ ls} p
+  C.setLineWidth (G._line_width ls)
+  C.setLineCap (convertLineCap $ G._line_cap ls)
+  C.setLineJoin (convertLineJoin $ G._line_join ls)
+  C.setDash (G._line_dashes ls) 0
+  runBackend env{cePathColor=G._line_color ls} p
 
 cWithClipRegion :: CEnv -> Rect -> ChartBackend a -> C.Render a
 cWithClipRegion env r p = preserveCState0 $ do

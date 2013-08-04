@@ -8,6 +8,7 @@
 -- is a composable drawing element, along with assorted functions to
 -- them.
 --
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Renderable(
     Renderable(..),
@@ -36,7 +37,7 @@ module Graphics.Rendering.Chart.Renderable(
 ) where
 
 import Control.Monad
-import Data.Accessor
+import Control.Lens
 import Data.List ( nub, transpose, sort )
 import Data.Monoid
 import Data.Default.Class
@@ -183,31 +184,11 @@ data RectCornerStyle = RCornerSquare
                      | RCornerRounded Double
 
 data Rectangle = Rectangle {
-  rect_minsize_     :: RectSize,
-  rect_fillStyle_   :: Maybe FillStyle,
-  rect_lineStyle_   :: Maybe LineStyle,
-  rect_cornerStyle_ :: RectCornerStyle
+  _rect_minsize     :: RectSize,
+  _rect_fillStyle   :: Maybe FillStyle,
+  _rect_lineStyle   :: Maybe LineStyle,
+  _rect_cornerStyle :: RectCornerStyle
 }
-
--- | Accessor for field rect_minsize_.
-rect_minsize :: Accessor Rectangle RectSize
-rect_minsize     = accessor (\v->rect_minsize_ v)
-                            (\a v -> v{rect_minsize_=a})
-
--- | Accessor for field rect_fillStyle_.
-rect_fillStyle :: Accessor Rectangle (Maybe FillStyle)
-rect_fillStyle   = accessor (\v->rect_fillStyle_ v)
-                            (\a v -> v{rect_fillStyle_=a})
-
--- | Accessor for field rect_lineStyle_.
-rect_lineStyle :: Accessor Rectangle (Maybe LineStyle)
-rect_lineStyle   = accessor (\v->rect_lineStyle_ v)
-                            (\a v -> v{rect_lineStyle_=a})
-
--- | Accessor for field rect_cornerStyle_.
-rect_cornerStyle :: Accessor Rectangle RectCornerStyle
-rect_cornerStyle = accessor (\v->rect_cornerStyle_ v)
-                            (\a v -> v{rect_cornerStyle_=a})
 
 {-# DEPRECATED defaultRectangle "Use the according Data.Default instance!" #-}
 defaultRectangle :: Rectangle
@@ -215,10 +196,10 @@ defaultRectangle = def
 
 instance Default Rectangle where
   def = Rectangle
-    { rect_minsize_     = (0,0)
-    , rect_fillStyle_   = Nothing
-    , rect_lineStyle_   = Nothing
-    , rect_cornerStyle_ = RCornerSquare
+    { _rect_minsize     = (0,0)
+    , _rect_fillStyle   = Nothing
+    , _rect_lineStyle   = Nothing
+    , _rect_cornerStyle = RCornerSquare
     }
 
 instance ToRenderable Rectangle where
@@ -227,19 +208,19 @@ instance ToRenderable Rectangle where
 rectangleToRenderable :: Rectangle -> Renderable a
 rectangleToRenderable rectangle = Renderable mf rf
   where
-    mf    = return (rect_minsize_ rectangle)
+    mf    = return (_rect_minsize rectangle)
     rf sz = do
-      maybeM () (fill sz) (rect_fillStyle_ rectangle)
-      maybeM () (stroke sz) (rect_lineStyle_ rectangle)
+      maybeM () (fill sz) (_rect_fillStyle rectangle)
+      maybeM () (stroke sz) (_rect_lineStyle rectangle)
       return nullPickFn
 
     fill sz fs = do
         withFillStyle fs $ do
-          fillPath $ strokeRectangleP sz (rect_cornerStyle_ rectangle)
+          fillPath $ strokeRectangleP sz (_rect_cornerStyle rectangle)
 
     stroke sz ls = do
         withLineStyle ls $ do
-          strokePath $ strokeRectangleP sz (rect_cornerStyle_ rectangle)
+          strokePath $ strokeRectangleP sz (_rect_cornerStyle rectangle)
 
     strokeRectangleP (x2,y2) RCornerSquare =
       let (x1,y1) = (0,0) in moveTo' x1 y1
@@ -270,13 +251,4 @@ rectangleToRenderable rectangle = Renderable mf rf
     
     pi2 = pi / 2
 
-
-
-
-
-
-
-
-
-
-
+$( makeLenses ''Rectangle )
