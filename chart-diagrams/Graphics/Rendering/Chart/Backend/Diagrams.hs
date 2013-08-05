@@ -106,7 +106,11 @@ runBackend :: (D.Renderable (D.Path R2) b)
            => DEnv   -- ^ Environment to start rendering with.
            -> ChartBackend a    -- ^ Chart render code.
            -> (Diagram b R2, a) -- ^ The diagram.
-runBackend env m =  eval env (view m)
+runBackend env m = runBackend' env $ withDefaultStyle m
+
+runBackend' :: (D.Renderable (D.Path R2) b) => DEnv
+            -> ChartBackend a -> (Diagram b R2, a)
+runBackend' env m = eval env (view m)
   where
     eval :: (D.Renderable (D.Path R2) b)
          => DEnv -> ProgramView ChartBackendInstr a -> (Diagram b R2, a)
@@ -124,7 +128,7 @@ runBackend env m =  eval env (view m)
 
     step :: (D.Renderable (D.Path R2) b)
          => DEnv -> (v -> ChartBackend a) -> v -> (Diagram b R2, a)
-    step env f =  \v -> runBackend env (f v)
+    step env f =  \v -> runBackend' env (f v)
     
     (<>#) :: (Monoid m) => m -> (() -> (m, a)) -> (m, a)
     (<>#) m f = (m, ()) <>= f
@@ -168,7 +172,7 @@ dDrawText env (Point x y) text
 dWith :: (D.Renderable (D.Path R2) b)
       => DEnv -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
       -> ChartBackend a -> (Diagram b R2, a)
-dWith env envF dF m = let (ma, a) = runBackend (envF env) m
+dWith env envF dF m = let (ma, a) = runBackend' (envF env) m
                       in (dF ma, a)
 
 dWithTransform :: (D.Renderable (D.Path R2) b)
