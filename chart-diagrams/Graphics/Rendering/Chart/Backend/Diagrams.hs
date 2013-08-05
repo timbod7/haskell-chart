@@ -72,7 +72,7 @@ defaultEnv alignFns = do
   monoRB <- loadFont "fonts/SourceCodePro_RB.svg"
   
   let selectFont :: FontStyle -> DFont
-      selectFont fs = case (font_name_ fs, font_slant_ fs, font_weight_ fs) of
+      selectFont fs = case (_font_name fs, _font_slant fs, _font_weight fs) of
         ("serif", FontSlantNormal , FontWeightNormal) -> serifR
         ("serif", FontSlantNormal , FontWeightBold  ) -> serifRB
         ("serif", FontSlantItalic , FontWeightNormal) -> serifRI
@@ -90,7 +90,7 @@ defaultEnv alignFns = do
         ("monospace", _, FontWeightNormal) -> monoR
         ("monospace", _, FontWeightBold  ) -> monoRB
         
-        (_, slant, weight) -> selectFont (fs { font_name_ = "sans-serif" })
+        (_, slant, weight) -> selectFont (fs { _font_name = "sans-serif" })
   
   return $ DEnv 
     { envAlignmentFns = alignFns
@@ -264,7 +264,7 @@ calcFontMetrics env =
       d' = (d / h) * h'
       h' = (a + d) / (1 - d / h)
       unscaledH = F.bbox_dy $ fontData
-      scaledHeight  = font_size_ fs * (h' / h)
+      scaledHeight  = _font_size fs * (h' / h)
       scaledAscent  = scaledHeight * (a' / h')
       scaledDescent = scaledHeight * (d' / h')
       scaledMaxHAdv = -scaledHeight * (capHeight / h)
