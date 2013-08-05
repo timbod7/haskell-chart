@@ -4,7 +4,7 @@ import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.SparkLine
 import Data.Colour
 import Data.Colour.Names
-import Data.Accessor
+import Control.Lens
 import System.Random
 import System.Environment(getArgs)
 import ExampleStocks

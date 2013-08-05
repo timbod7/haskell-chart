@@ -5,7 +5,7 @@ import Data.Time.LocalTime
 import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
-import Data.Accessor
+import Control.Lens
 import Data.Default.Class
 import Prices(prices2)
 
@@ -15,23 +15,23 @@ chart :: [(LocalTime,Double,Double)] -> Bool -> Double -> Renderable (Layout1Pic
 chart prices showMinMax lwidth = layout1ToRenderable layout
   where
 
-    lineStyle c = line_width ^= 3 * lwidth
-                $ line_color ^= c
+    lineStyle c = line_width .~ 3 * lwidth
+                $ line_color .~ c
                 $ def ^. plot_lines_style
 
-    limitLineStyle c = line_width ^= lwidth
-                $ line_color ^= opaque c
-                $ line_dashes ^= [5,10]
+    limitLineStyle c = line_width .~ lwidth
+                $ line_color .~ opaque c
+                $ line_dashes .~ [5,10]
                 $ def ^. plot_lines_style
 
-    price1 = plot_lines_style ^= lineStyle (opaque blue)
-           $ plot_lines_values ^= [[ (d, v) | (d,v,_) <- prices]]
-           $ plot_lines_title ^= "price 1"
+    price1 = plot_lines_style .~ lineStyle (opaque blue)
+           $ plot_lines_values .~ [[ (d, v) | (d,v,_) <- prices]]
+           $ plot_lines_title .~ "price 1"
            $ def
 
-    price2 = plot_lines_style ^= lineStyle (opaque green)
-	   $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
-           $ plot_lines_title ^= "price 2"
+    price2 = plot_lines_style .~ lineStyle (opaque green)
+	   $ plot_lines_values .~ [[ (d, v) | (d,_,v) <- prices]]
+           $ plot_lines_title .~ "price 2"
            $ def
 
     (min1,max1) = (minimum [v | (_,v,_) <- prices],maximum [v | (_,v,_) <- prices])
@@ -46,14 +46,14 @@ chart prices showMinMax lwidth = layout1ToRenderable layout
     fg = opaque white
     fg1 = opaque $ sRGB 0.0 0.0 0.15
 
-    layout = layout1_title ^="Price History"
-           $ layout1_background ^= solidFillStyle bg
-           $ updateAllAxesStyles (axis_grid_style ^= solidLine 1 fg1)
-           $ layout1_left_axis ^: laxis_override ^= axisGridHide
-           $ layout1_right_axis ^: laxis_override ^= axisGridHide
-           $ layout1_bottom_axis ^: laxis_override ^= axisGridHide
- 	   $ layout1_plots ^= ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
-           $ layout1_grid_last ^= False
+    layout = layout1_title .~"Price History"
+           $ layout1_background .~ solidFillStyle bg
+           $ updateAllAxesStyles (axis_grid_style .~ solidLine 1 fg1)
+           $ layout1_left_axis . laxis_override .~ axisGridHide
+           $ layout1_right_axis . laxis_override .~ axisGridHide
+           $ layout1_bottom_axis . laxis_override .~ axisGridHide
+ 	   $ layout1_plots .~ ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
+           $ layout1_grid_last .~ False
            $ setLayout1Foreground fg
            $ def
 

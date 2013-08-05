@@ -6,8 +6,8 @@
 --
 -- This module contains basic types and functions used for drawing.
 --
--- Note that template haskell is used to derive accessor functions
--- (see 'Data.Accessor') for each field of the following data types:
+-- Note that Template Haskell is used to derive accessor functions
+-- (see 'Control.Lens') for each field of the following data types:
 --
 --    * 'LineStyle'
 --
@@ -18,7 +18,7 @@
 -- dropped. Hence for data field f_::F in type D, they have type
 --
 -- @
---   f :: Data.Accessor.Accessor D F
+--   f :: Control.Lens.Lens' D F
 -- @
 --
 
@@ -77,8 +77,7 @@ module Graphics.Rendering.Chart.Drawing
 ) where
 
 import Data.Default.Class
-import Data.Accessor
-import Data.Accessor.Template
+import Control.Lens hiding (moveTo)
 import Data.Colour
 import Data.Colour.SRGB
 import Data.Colour.Names
@@ -118,7 +117,7 @@ withScaleY y = withScale (Vector 1 y)
 --   the given 'PointStyle'.
 withPointStyle :: PointStyle -> ChartBackend a -> ChartBackend a
 withPointStyle (PointStyle cl bcl bw _ _) m = do
-  withLineStyle (def { line_color_ = bcl, line_width_ = bw }) $ do
+  withLineStyle (def { _line_color = bcl, _line_width = bw }) $ do
     withFillStyle (solidFillStyle cl) m
 
 -- -----------------------------------------------------------------------
@@ -305,26 +304,26 @@ data PointShape = PointShapeCircle           -- ^ A circle.
 --   The contained Cairo action draws a point in the desired
 --   style, at the supplied device coordinates.
 data PointStyle = PointStyle 
-  { point_color_ :: AlphaColour Double
+  { _point_color :: AlphaColour Double
   -- ^ The color to fill the point with.
-  , point_border_color_ :: AlphaColour Double
+  , _point_border_color :: AlphaColour Double
   -- ^ The color to stroke the outline with.
-  , point_border_width_ :: Double
+  , _point_border_width :: Double
   -- ^ The width of the outline.
-  , point_radius_ :: Double
+  , _point_radius :: Double
   -- ^ The radius of the tightest surrounding circle of the point.
-  , point_shape_ :: PointShape
+  , _point_shape :: PointShape
   -- ^ The shape.
   }
 
 -- | Default style to use for points.
 instance Default PointStyle where
   def = PointStyle 
-    { point_color_        = opaque black
-    , point_border_color_ = transparent
-    , point_border_width_ = 0
-    , point_radius_       = 1
-    , point_shape_        = PointShapeCircle
+    { _point_color        = opaque black
+    , _point_border_color = transparent
+    , _point_border_width = 0
+    , _point_radius       = 1
+    , _point_shape        = PointShapeCircle
     }
 
 {-# DEPRECATED defaultPointStyle "Use the according Data.Default instance!" #-}

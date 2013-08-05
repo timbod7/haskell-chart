@@ -26,7 +26,7 @@ import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Control.Monad
-import Data.Accessor.Template
+import Control.Lens
 import Data.Colour
 import Data.Colour.Names
 
@@ -35,16 +35,16 @@ data Plot x y = Plot {
 
     -- | Given the mapping between model space coordinates and device
     --   coordinates, render this plot into a chart.
-    plot_render_     :: PointMapFn x y -> ChartBackend (),
+    _plot_render     :: PointMapFn x y -> ChartBackend (),
 
     -- | Details for how to show this plot in a legend. For each item
     --   the string is the text to show, and the function renders a
     --   graphical sample of the plot.
-    plot_legend_     :: [ (String, Rect -> ChartBackend ()) ],
+    _plot_legend     :: [ (String, Rect -> ChartBackend ()) ],
 
     -- | All of the model space coordinates to be plotted. These are
     --   used to autoscale the axes where necessary.
-    plot_all_points_ :: ([x],[y])
+    _plot_all_points :: ([x],[y])
 }
 
 -- | A type class abstracting the conversion of a value to a Plot.
@@ -53,16 +53,16 @@ class ToPlot a where
 
 -- | Join any two plots together (they will share a legend).
 joinPlot :: Plot x y -> Plot x y -> Plot x y
-joinPlot Plot{ plot_render_     = renderP
-             , plot_legend_     = legendP
-             , plot_all_points_ = (xsP,ysP) }
-         Plot{ plot_render_     = renderQ
-             , plot_legend_     = legendQ
-             , plot_all_points_ = (xsQ,ysQ) }
+joinPlot Plot{ _plot_render     = renderP
+             , _plot_legend     = legendP
+             , _plot_all_points = (xsP,ysP) }
+         Plot{ _plot_render     = renderQ
+             , _plot_legend     = legendQ
+             , _plot_all_points = (xsQ,ysQ) }
 
-       = Plot{ plot_render_     = \a-> renderP a >> renderQ a
-             , plot_legend_     = legendP ++ legendQ
-             , plot_all_points_ = ( xsP++xsQ, ysP++ysQ )
+       = Plot{ _plot_render     = \a-> renderP a >> renderQ a
+             , _plot_legend     = legendP ++ legendQ
+             , _plot_all_points = ( xsP++xsQ, ysP++ysQ )
              }
 
 
@@ -77,7 +77,4 @@ mapXY f (x,y) = f (LValue x, LValue y)
 
 ----------------------------------------------------------------------
 
-----------------------------------------------------------------------
--- Template haskell to derive an instance of Data.Accessor.Accessor
--- for each field.
-$( deriveAccessors ''Plot )
+$( makeLenses ''Plot )

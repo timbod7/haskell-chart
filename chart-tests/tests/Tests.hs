@@ -9,8 +9,7 @@ import Graphics.Rendering.Chart.Grid
 import System.Time
 import System.Random
 import Data.Time.LocalTime
-import Data.Accessor
-import Data.Accessor.Tuple
+import Control.Lens
 import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
@@ -50,69 +49,70 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
     t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3],
                                  besideN [rf g4, rf g5, rf g6] ]
 
-    g1 = layout1_title ^= "minimal"
-       $ layout1_bottom_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
-       $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
+    g1 = layout1_title .~ "minimal"
+       $ layout1_bottom_axis . laxis_override .~ (axisGridHide.axisTicksHide)
+       $ layout1_left_axis . laxis_override .~ (axisGridHide.axisTicksHide)
        $ Test1.layout lwidth
 
-    g2 = layout1_title ^= "with borders"
-       $ layout1_bottom_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
-       $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
-       $ layout1_top_axis ^: axisBorderOnly
-       $ layout1_right_axis ^: axisBorderOnly
+    g2 = layout1_title .~ "with borders"
+       $ layout1_bottom_axis . laxis_override .~ (axisGridHide.axisTicksHide)
+       $ layout1_left_axis . laxis_override .~ (axisGridHide.axisTicksHide)
+       $ layout1_top_axis %~ axisBorderOnly
+       $ layout1_right_axis %~ axisBorderOnly
        $ Test1.layout lwidth
 
-    g3 = layout1_title ^= "default"
+    g3 = layout1_title .~ "default"
        $ Test1.layout lwidth
 
-    g4 = layout1_title ^= "tight grid"
-       $ layout1_left_axis ^: laxis_generate ^= axis
-       $ layout1_left_axis ^: laxis_override ^= axisGridAtTicks
-       $ layout1_bottom_axis ^: laxis_generate ^= axis
-       $ layout1_bottom_axis ^: laxis_override ^= axisGridAtTicks
+    g4 = layout1_title .~ "tight grid"
+       $ layout1_left_axis . laxis_generate .~ axis
+       $ layout1_left_axis . laxis_override .~ axisGridAtTicks
+       $ layout1_bottom_axis . laxis_generate .~ axis
+       $ layout1_bottom_axis . laxis_override .~ axisGridAtTicks
        $ Test1.layout lwidth
       where
         axis = autoScaledAxis (
-            la_nLabels ^= 5
-          $ la_nTicks ^= 20
+            la_nLabels .~ 5
+          $ la_nTicks .~ 20
           $ def
           )
 
-    g5 = layout1_title ^= "y linked"
-       $ layout1_yaxes_control ^= linkAxes
+    g5 = layout1_title .~ "y linked"
+       $ layout1_yaxes_control .~ linkAxes
        $ Test1.layout lwidth
 
-    g6 = layout1_title ^= "everything"
-       $ layout1_yaxes_control ^= linkAxes
-       $ layout1_top_axis ^: laxis_visible ^= const True
+    g6 = layout1_title .~ "everything"
+       $ layout1_yaxes_control .~ linkAxes
+       $ layout1_top_axis . laxis_visible .~ const True
        $ Test1.layout lwidth
 
     rf = tval . layout1ToRenderable
 
-    axisBorderOnly = (laxis_visible ^= const True)
-                   . (laxis_override ^=  (axisGridHide.axisTicksHide.axisLabelsHide))
+    axisBorderOnly :: LayoutAxis x -> LayoutAxis x
+    axisBorderOnly = (laxis_visible .~ const True)
+                   . (laxis_override .~ (axisGridHide.axisTicksHide.axisLabelsHide))
 
 ----------------------------------------------------------------------
 test4d :: OutputType -> Renderable (Layout1Pick Double Double)
 test4d otype = layout1ToRenderable layout
   where
 
-    points = plot_points_style ^= filledCircles 3 (opaque red)
-           $ plot_points_values ^= [ (x, 10**x) | x <- [0.5,1,1.5,2,2.5::Double] ]
-           $ plot_points_title ^= "values"
+    points = plot_points_style .~ filledCircles 3 (opaque red)
+           $ plot_points_values .~ [ (x, 10**x) | x <- [0.5,1,1.5,2,2.5::Double] ]
+           $ plot_points_title .~ "values"
            $ def
 
-    lines = plot_lines_values ^= [ [(x, 10**x) | x <- [0,3]] ]
-          $ plot_lines_title ^= "values"
+    lines = plot_lines_values .~ [ [(x, 10**x) | x <- [0,3]] ]
+          $ plot_lines_title .~ "values"
           $ def
 
-    layout = layout1_title ^= "Log/Linear Example"
-           $ layout1_bottom_axis ^: laxis_title ^= "horizontal"
-           $ layout1_bottom_axis ^: laxis_reverse ^= False
-           $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis def
-           $ layout1_left_axis ^: laxis_title ^= "vertical"
-           $ layout1_left_axis ^: laxis_reverse ^= False
-	   $ layout1_plots ^= [Left (toPlot points `joinPlot` toPlot lines) ]
+    layout = layout1_title .~ "Log/Linear Example"
+           $ layout1_bottom_axis . laxis_title .~ "horizontal"
+           $ layout1_bottom_axis . laxis_reverse .~ False
+           $ layout1_left_axis . laxis_generate .~ autoScaledLogAxis def
+           $ layout1_left_axis . laxis_title .~ "vertical"
+           $ layout1_left_axis . laxis_reverse .~ False
+	   $ layout1_plots .~ [Left (toPlot points `joinPlot` toPlot lines) ]
            $ def
 
 ----------------------------------------------------------------------
@@ -124,33 +124,33 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
                                  besideN [rf g3, rf g4, rf g5] ]
 
     g0 = layout "clustered 1"
-       $ plot_bars_style ^= BarsClustered
-       $ plot_bars_spacing ^= BarsFixWidth 25
+       $ plot_bars_style .~ BarsClustered
+       $ plot_bars_spacing .~ BarsFixWidth 25
        $ bars1
 
     g1 = layout "clustered/fix width "
-       $ plot_bars_style ^= BarsClustered
-       $ plot_bars_spacing ^= BarsFixWidth 25
+       $ plot_bars_style .~ BarsClustered
+       $ plot_bars_spacing .~ BarsFixWidth 25
        $ bars2
 
     g2 = layout "clustered/fix gap "
-       $ plot_bars_style ^= BarsClustered
-       $ plot_bars_spacing ^= BarsFixGap 10 5
+       $ plot_bars_style .~ BarsClustered
+       $ plot_bars_spacing .~ BarsFixGap 10 5
        $ bars2
 
     g3 = layout "stacked 1"
-       $ plot_bars_style ^= BarsStacked
-       $ plot_bars_spacing ^= BarsFixWidth 25
+       $ plot_bars_style .~ BarsStacked
+       $ plot_bars_spacing .~ BarsFixWidth 25
        $ bars1
 
     g4 = layout "stacked/fix width"
-       $ plot_bars_style ^= BarsStacked
-       $ plot_bars_spacing ^= BarsFixWidth 25
+       $ plot_bars_style .~ BarsStacked
+       $ plot_bars_spacing .~ BarsFixWidth 25
        $ bars2
 
     g5 = layout "stacked/fix gap"
-       $ plot_bars_style ^= BarsStacked
-       $ plot_bars_spacing ^= BarsFixGap 10 5
+       $ plot_bars_style .~ BarsStacked
+       $ plot_bars_spacing .~ BarsFixGap 10 5
        $ bars2
 
     rf = tval . layout1ToRenderable
@@ -159,21 +159,21 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
 
 
     layout title bars =
-             layout1_title ^= (show alignment ++ "/" ++ title)
-           $ layout1_title_style ^: font_size ^= 10
-           $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
-           $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
-           $ layout1_plots ^= [ Left (plotBars bars) ]
+             layout1_title .~ (show alignment ++ "/" ++ title)
+           $ layout1_title_style . font_size .~ 10
+           $ layout1_bottom_axis . laxis_generate .~ autoIndexAxis alabels
+           $ layout1_left_axis . laxis_override .~ (axisGridHide.axisTicksHide)
+           $ layout1_plots .~ [ Left (plotBars bars) ]
            $ def :: Layout1 PlotIndex Double
 
-    bars1 = plot_bars_titles ^= ["Cash"]
-          $ plot_bars_values ^= addIndexes [[20],[45],[30],[70]]
-          $ plot_bars_alignment ^= alignment
+    bars1 = plot_bars_titles .~ ["Cash"]
+          $ plot_bars_values .~ addIndexes [[20],[45],[30],[70]]
+          $ plot_bars_alignment .~ alignment
           $ def
 
-    bars2 = plot_bars_titles ^= ["Cash","Equity"]
-          $ plot_bars_values ^= addIndexes [[20,45],[45,30],[30,20],[70,25]]
-          $ plot_bars_alignment ^= alignment
+    bars2 = plot_bars_titles .~ ["Cash","Equity"]
+          $ plot_bars_values .~ addIndexes [[20,45],[45,30],[30,20],[70,25]]
+          $ plot_bars_alignment .~ alignment
           $ def
 
 -------------------------------------------------------------------------------
@@ -182,35 +182,35 @@ test10 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable (Layout1Pick L
 test10 prices otype = layout1ToRenderable layout
   where
 
-    lineStyle c = line_width ^= 3 * chooseLineWidth otype
-                $ line_color ^= c
+    lineStyle c = line_width .~ 3 * chooseLineWidth otype
+                $ line_color .~ c
                 $ def ^. plot_lines_style
 
-    price1 = plot_lines_style ^= lineStyle (opaque blue)
-           $ plot_lines_values ^= [[ (d,v) | (d,v,_) <- prices]]
-           $ plot_lines_title ^= "price 1"
+    price1 = plot_lines_style .~ lineStyle (opaque blue)
+           $ plot_lines_values .~ [[ (d,v) | (d,v,_) <- prices]]
+           $ plot_lines_title .~ "price 1"
            $ def
 
-    price1_area = plot_fillbetween_values ^= [(d, (v * 0.95, v * 1.05)) | (d,v,_) <- prices]
-                $ plot_fillbetween_style  ^= solidFillStyle (withOpacity blue 0.2)
+    price1_area = plot_fillbetween_values .~ [(d, (v * 0.95, v * 1.05)) | (d,v,_) <- prices]
+                $ plot_fillbetween_style  .~ solidFillStyle (withOpacity blue 0.2)
                 $ def
 
-    price2 = plot_lines_style ^= lineStyle (opaque red)
-	   $ plot_lines_values ^= [[ (d, v) | (d,_,v) <- prices]]
-           $ plot_lines_title ^= "price 2"
+    price2 = plot_lines_style .~ lineStyle (opaque red)
+	   $ plot_lines_values .~ [[ (d, v) | (d,_,v) <- prices]]
+           $ plot_lines_title .~ "price 2"
            $ def
 
-    price2_area = plot_fillbetween_values ^= [(d, (v * 0.95, v * 1.05)) | (d,_,v) <- prices]
-                $ plot_fillbetween_style  ^= solidFillStyle (withOpacity red 0.2)
+    price2_area = plot_fillbetween_values .~ [(d, (v * 0.95, v * 1.05)) | (d,_,v) <- prices]
+                $ plot_fillbetween_style  .~ solidFillStyle (withOpacity red 0.2)
                 $ def
 
     fg = opaque black
     fg1 = opaque $ sRGB 0.0 0.0 0.15
 
-    layout = layout1_title ^="Price History"
-           $ layout1_background ^= solidFillStyle (opaque white)
-           $ layout1_right_axis ^: laxis_override ^= axisGridHide
- 	   $ layout1_plots ^= [ Left (toPlot price1_area), Right (toPlot price2_area)
+    layout = layout1_title .~"Price History"
+           $ layout1_background .~ solidFillStyle (opaque white)
+           $ layout1_right_axis . laxis_override .~ axisGridHide
+ 	   $ layout1_plots .~ [ Left (toPlot price1_area), Right (toPlot price2_area)
                               , Left (toPlot price1),      Right (toPlot price2)
                               ]
            $ setLayout1Foreground fg
@@ -227,40 +227,40 @@ test11_ f = f layout1 layout2
     vs2 :: [(Int,Double)]
     vs2 = [ (0,0.7), (3,0.35), (4,0.25), (7, 0.6), (10,0.4) ]
 
-    plot1 = plot_points_style ^= filledCircles 5 (opaque red)
-          $ plot_points_values ^= vs1
-          $ plot_points_title ^= "spots"
+    plot1 = plot_points_style .~ filledCircles 5 (opaque red)
+          $ plot_points_values .~ vs1
+          $ plot_points_title .~ "spots"
           $ def
 
-    layout1 = layout1_title ^= "Multi typed stack"
- 	   $ layout1_plots ^= [Left (toPlot plot1)]
-           $ layout1_left_axis ^: laxis_title ^= "integer values"
+    layout1 = layout1_title .~ "Multi typed stack"
+ 	   $ layout1_plots .~ [Left (toPlot plot1)]
+           $ layout1_left_axis . laxis_title .~ "integer values"
            $ def
 
-    plot2 = plot_lines_values ^= [vs2]
-          $ plot_lines_title ^= "lines"
+    plot2 = plot_lines_values .~ [vs2]
+          $ plot_lines_title .~ "lines"
           $ def
 
-    layout2 = layout1_plots ^= [Left (toPlot plot2)]
-           $ layout1_left_axis ^: laxis_title ^= "double values"
+    layout2 = layout1_plots .~ [Left (toPlot plot2)]
+           $ layout1_left_axis . laxis_title .~ "double values"
            $ def
 
 test11a :: OutputType -> Renderable ()
 test11a otype = test11_ f
    where
      f l1 l2 = renderStackedLayouts 
-             $ slayouts_layouts ^= [StackedLayout l1, StackedLayout l2]
-             $ slayouts_compress_xlabels ^= False
-             $ slayouts_compress_legend ^= False
+             $ slayouts_layouts .~ [StackedLayout l1, StackedLayout l2]
+             $ slayouts_compress_xlabels .~ False
+             $ slayouts_compress_legend .~ False
              $ def
  
 test11b :: OutputType -> Renderable ()
 test11b otype = test11_ f
    where
      f l1 l2 = renderStackedLayouts 
-             $ slayouts_layouts ^= [StackedLayout l1, StackedLayout l2]
-             $ slayouts_compress_xlabels ^= True
-             $ slayouts_compress_legend ^= True
+             $ slayouts_layouts .~ [StackedLayout l1, StackedLayout l2]
+             $ slayouts_compress_xlabels .~ True
+             $ slayouts_compress_legend .~ True
              $ def
 
 -------------------------------------------------------------------------------
@@ -274,28 +274,28 @@ test12 otype = layout1ToRenderable layout
     vs1 = [ (2,10), (3,40), (8,400), (12,60) ]
 
     baxis = AxisData {
-        axis_viewport_ = vmap (0,15),
-        axis_tropweiv_ = invmap (0,15),
-        axis_ticks_    = [(v,3) | v <- [0,1..15]],
-        axis_grid_     = [0,5..15],
-        axis_labels_   = [[(v,show v) | v <- [0,5..15]]]
+        _axis_viewport = vmap (0,15),
+        _axis_tropweiv = invmap (0,15),
+        _axis_ticks    = [(v,3) | v <- [0,1..15]],
+        _axis_grid     = [0,5..15],
+        _axis_labels   = [[(v,show v) | v <- [0,5..15]]]
     }    
 
     laxis = AxisData {
-        axis_viewport_ = vmap (0,500),
-        axis_tropweiv_ = invmap (0,500),
-        axis_ticks_    = [(v,3) | v <- [0,25..500]],
-        axis_grid_     = [0,100..500],
-        axis_labels_   = [[(v,show v) | v <- [0,100..500]]]
+        _axis_viewport = vmap (0,500),
+        _axis_tropweiv = invmap (0,500),
+        _axis_ticks    = [(v,3) | v <- [0,25..500]],
+        _axis_grid     = [0,100..500],
+        _axis_labels   = [[(v,show v) | v <- [0,100..500]]]
     }    
 
-    plot = plot_lines_values ^= [vs1]
+    plot = plot_lines_values .~ [vs1]
          $ def
 
-    layout = layout1_plots ^= [Left (toPlot plot)]
-           $ layout1_bottom_axis ^: laxis_generate ^= const baxis
-           $ layout1_left_axis   ^: laxis_generate ^= const laxis
-           $ layout1_title ^= "Explicit Axes"
+    layout = layout1_plots .~ [Left (toPlot plot)]
+           $ layout1_bottom_axis . laxis_generate .~ const baxis
+           $ layout1_left_axis   . laxis_generate .~ const laxis
+           $ layout1_title .~ "Explicit Axes"
            $ def
 
 
@@ -309,18 +309,18 @@ test13 otype = fillBackground fwhite $ (gridToRenderable t)
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]
     points=[-2..2]
     pointPlot :: PlotPoints Int Int
-    pointPlot = plot_points_style^= filledCircles 2 (opaque red)
-                $  plot_points_values ^= [(x,x)|x<-points]
+    pointPlot = plot_points_style.~ filledCircles 2 (opaque red)
+                $  plot_points_values .~ [(x,x)|x<-points]
                 $  def
     p = Left (toPlot pointPlot)
-    annotated h v = layout1ToRenderable ( layout1_plots ^= [Left (toPlot labelPlot), Left (toPlot rotPlot), p] $ def )
-      where labelPlot = plot_annotation_hanchor ^= h
-                      $ plot_annotation_vanchor ^= v
-                      $ plot_annotation_values  ^= [(x,x,"Hello World\n(plain)")|x<-points]
+    annotated h v = layout1ToRenderable ( layout1_plots .~ [Left (toPlot labelPlot), Left (toPlot rotPlot), p] $ def )
+      where labelPlot = plot_annotation_hanchor .~ h
+                      $ plot_annotation_vanchor .~ v
+                      $ plot_annotation_values  .~ [(x,x,"Hello World\n(plain)")|x<-points]
                       $ def
-            rotPlot =   plot_annotation_angle ^= -45.0
-                      $ plot_annotation_style ^= def {font_size_=10,font_weight_=FontWeightBold, font_color_ =(opaque blue) }
-                      $ plot_annotation_values  ^= [(x,x,"Hello World\n(fancy)")|x<-points]
+            rotPlot =   plot_annotation_angle .~ -45.0
+                      $ plot_annotation_style .~ def {_font_size=10, _font_weight=FontWeightBold, _font_color=(opaque blue) }
+                      $ plot_annotation_values  .~ [(x,x,"Hello World\n(fancy)")|x<-points]
                       $ labelPlot
 
 
@@ -336,7 +336,7 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
     vs = [VTA_Top, VTA_Centre, VTA_Bottom]
     fwhite = solidFillStyle $ opaque white
     fblue = solidFillStyle $ opaque $ sRGB 0.8 0.8 1
-    fs = def {font_size_=20,font_weight_=FontWeightBold}
+    fs = def {_font_size=20,_font_weight=FontWeightBold}
     crossHairs r =Renderable {
       minsize = minsize r,
       render = \sz@(w,h) -> do

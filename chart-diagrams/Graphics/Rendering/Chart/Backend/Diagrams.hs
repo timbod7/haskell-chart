@@ -150,7 +150,7 @@ dTextSize env text =
                        , textSizeAscent = scaledA -- scaledH * (a' / h') -- ascent
                        , textSizeDescent = scaledD -- scaledH * (d' / h') -- descent
                        , textSizeYBearing = scaledYB -- -scaledH * (capHeight / h)
-                       , textSizeHeight = font_size_ $ fs
+                       , textSizeHeight = _font_size $ fs
                        })
 
 dAlignmentFns :: (D.Renderable (D.Path R2) b)
@@ -200,8 +200,8 @@ pointToP2 (Point x y) = p2 (x,y)
 
 noLineStyle :: LineStyle
 noLineStyle = def 
-  { line_width_ = 0
-  , line_color_ = transparent
+  { _line_width = 0
+  , _line_color = transparent
   }
 
 noFillStyle :: FillStyle
@@ -234,11 +234,11 @@ applyWithoutTrans m v =
 
 -- | Apply the Chart line style to a diagram.
 applyLineStyle :: (D.HasStyle a) => LineStyle -> a -> a
-applyLineStyle ls = D.lineWidth (line_width_ ls) 
-                  . D.lineColor (line_color_ ls) 
-                  . D.lineCap (convertLineCap $ line_cap_ ls) 
-                  . D.lineJoin (convertLineJoin $ line_join_ ls) 
-                  . D.dashing (line_dashes_ ls) 0
+applyLineStyle ls = D.lineWidth (_line_width ls) 
+                  . D.lineColor (_line_color ls) 
+                  . D.lineCap (convertLineCap $ _line_cap ls) 
+                  . D.lineJoin (convertLineJoin $ _line_join ls) 
+                  . D.dashing (_line_dashes ls) 0
 
 -- | Apply the Chart fill style to a diagram.
 applyFillStyle :: (D.HasStyle a) => FillStyle -> a -> a
@@ -248,7 +248,7 @@ applyFillStyle fs = case fs of
 -- | Apply all pure diagrams properties from the font style.
 applyFontStyle :: (D.HasStyle a) => FontStyle -> a -> a
 applyFontStyle fs = applyLineStyle noLineStyle 
-                  . applyFillStyle (solidFillStyle $ font_color_ fs)
+                  . applyFillStyle (solidFillStyle $ _font_color fs)
 
 -- | Calculate the font metrics for the currently set font style.
 --   The returned value will be @(height, ascent, descent, ybearing)@.
@@ -270,7 +270,6 @@ calcFontMetrics env =
       scaledMaxHAdv = -scaledHeight * (capHeight / h)
   in (scaledHeight, scaledAscent, scaledDescent, scaledMaxHAdv)
 
--- TODO: FontSlant and FontWeight can not be expressed properly.
 fontStyleToTextOpts :: DEnv -> String -> F.TextOpts
 fontStyleToTextOpts env text = 
   let fs = envFontStyle env
@@ -283,7 +282,7 @@ fontStyleToTextOpts env text =
       , F.spacing = F.KERN
       , F.underline = False
       , F.textWidth = 1
-      , F.textHeight = scaledH -- font_size_ fs
+      , F.textHeight = scaledH -- _font_size fs
       }
 
 fontFromName :: String -> (F.FontData, F.OutlineMap)

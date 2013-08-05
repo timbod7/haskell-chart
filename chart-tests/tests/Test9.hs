@@ -3,7 +3,7 @@ module Test9 where
 import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
-import Data.Accessor
+import Control.Lens
 import Data.Default.Class
 
 import Utils
@@ -12,18 +12,18 @@ chart :: Bool -> Renderable (Layout1Pick PlotIndex Double)
 chart borders = layout1ToRenderable layout
  where
   layout = 
-        layout1_title ^= "Sample Bars" ++ btitle
-      $ layout1_title_style ^: font_size ^= 10
-      $ layout1_bottom_axis ^: laxis_generate ^= autoIndexAxis alabels
-      $ layout1_left_axis ^: laxis_override ^= (axisGridHide.axisTicksHide)
-      $ layout1_plots ^= [ Left (plotBars bars2) ]
+        layout1_title .~ "Sample Bars" ++ btitle
+      $ layout1_title_style . font_size .~ 10
+      $ layout1_bottom_axis . laxis_generate .~ autoIndexAxis alabels
+      $ layout1_left_axis . laxis_override .~ (axisGridHide.axisTicksHide)
+      $ layout1_plots .~ [ Left (plotBars bars2) ]
       $ def :: Layout1 PlotIndex Double
 
-  bars2 = plot_bars_titles ^= ["Cash","Equity"]
-      $ plot_bars_values ^= addIndexes [[20,45],[45,30],[30,20],[70,25]]
-      $ plot_bars_style ^= BarsClustered
-      $ plot_bars_spacing ^= BarsFixGap 30 5
-      $ plot_bars_item_styles ^= map mkstyle (cycle defaultColorSeq)
+  bars2 = plot_bars_titles .~ ["Cash","Equity"]
+      $ plot_bars_values .~ addIndexes [[20,45],[45,30],[30,20],[70,25]]
+      $ plot_bars_style .~ BarsClustered
+      $ plot_bars_spacing .~ BarsFixGap 30 5
+      $ plot_bars_item_styles .~ map mkstyle (cycle defaultColorSeq)
       $ def
 
   alabels = [ "Jun", "Jul", "Aug", "Sep", "Oct" ]

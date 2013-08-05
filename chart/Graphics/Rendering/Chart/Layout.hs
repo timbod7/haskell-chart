@@ -7,8 +7,8 @@
 -- This module glues together axes and plots to actually create a renderable
 -- for a chart.
 --
--- Note that template haskell is used to derive accessor functions
--- (see 'Data.Accessor') for each field of the following data types:
+-- Note that Template haskell is used to derive accessor functions
+-- (see 'Control.Lens') for each field of the following data types:
 --
 --     * 'Layout1'
 -- 
@@ -21,7 +21,7 @@
 -- dropped. Hence for data field f_::F in type D, they have type
 --
 -- @
---   f :: Data.Accessor.Accessor D F
+--   f :: Control.Lens.Lens' D F
 -- @
 --
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -85,8 +85,7 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
 import Control.Monad
 import Control.Monad.Reader (local)
-import Data.Accessor.Template
-import Data.Accessor
+import Control.Lens
 import Data.Colour
 import Data.Colour.Names (white)
 import Data.Default.Class
@@ -96,25 +95,25 @@ import Data.Default.Class
 type MAxisFn t = [t] -> Maybe (AxisData t)
 
 data LayoutAxis x = LayoutAxis {
-   laxis_title_style_ :: FontStyle,
-   laxis_title_       :: String,
-   laxis_style_       :: AxisStyle,
+   _laxis_title_style :: FontStyle,
+   _laxis_title       :: String,
+   _laxis_style       :: AxisStyle,
 
    -- | Function that determines whether an axis should be visible,
    --   based upon the points plotted on this axis. The default value
    --   is 'not.null'.
-   laxis_visible_     :: [x] -> Bool,
+   _laxis_visible     :: [x] -> Bool,
 
    -- | Function that generates the axis data, based upon the
    --   points plotted. The default value is 'autoAxis'.
-   laxis_generate_    :: AxisFn x,
+   _laxis_generate    :: AxisFn x,
 
    -- | Function that can be used to override the generated axis data.
    --   The default value is 'id'.
-   laxis_override_    :: AxisData x -> AxisData x,
+   _laxis_override    :: AxisData x -> AxisData x,
 
    -- | True if left to right (bottom to top) is to show descending values.
-   laxis_reverse_     :: Bool
+   _laxis_reverse     :: Bool
 
 }
 
@@ -124,27 +123,27 @@ data LayoutAxis x = LayoutAxis {
 --   and vertical axes.
 data Layout1 x y = Layout1 {
 
-    layout1_background_      :: FillStyle,
-    layout1_plot_background_ :: Maybe FillStyle,
+    _layout1_background      :: FillStyle,
+    _layout1_plot_background :: Maybe FillStyle,
 
-    layout1_title_           :: String,
-    layout1_title_style_     :: FontStyle,
+    _layout1_title           :: String,
+    _layout1_title_style     :: FontStyle,
 
-    layout1_bottom_axis_     :: LayoutAxis x,
-    layout1_top_axis_        :: LayoutAxis x,
-    layout1_left_axis_       :: LayoutAxis y,
-    layout1_right_axis_      :: LayoutAxis y,
+    _layout1_bottom_axis     :: LayoutAxis x,
+    _layout1_top_axis        :: LayoutAxis x,
+    _layout1_left_axis       :: LayoutAxis y,
+    _layout1_right_axis      :: LayoutAxis y,
 
     -- | Function to map points from the left/right plot
     --   to the left/right axes. The default value is 'id'.
-    layout1_yaxes_control_   :: ([y],[y]) -> ([y],[y]),
+    _layout1_yaxes_control   :: ([y],[y]) -> ([y],[y]),
 
-    layout1_margin_          :: Double,
-    layout1_plots_           :: [Either (Plot x y) (Plot x y)],
-    layout1_legend_          :: Maybe LegendStyle,
+    _layout1_margin          :: Double,
+    _layout1_plots           :: [Either (Plot x y) (Plot x y)],
+    _layout1_legend          :: Maybe LegendStyle,
 
     -- | True if the grid is to be rendered on top of the Plots.
-    layout1_grid_last_       :: Bool
+    _layout1_grid_last       :: Bool
 }
 
 instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
@@ -171,9 +170,9 @@ data StackedLayout x = forall y . Ord y => StackedLayout (Layout1 x y)
 
 -- | A holder for a set of vertically stacked layouts
 data StackedLayouts x = StackedLayouts {
-      slayouts_layouts_ :: [StackedLayout x],
-      slayouts_compress_xlabels_ :: Bool,
-      slayouts_compress_legend_ :: Bool
+      _slayouts_layouts :: [StackedLayout x],
+      _slayouts_compress_xlabels :: Bool,
+      _slayouts_compress_legend :: Bool
 }
 
 {-# DEPRECATED defaultStackedLayouts  "Use the according Data.Default instance!" #-}
@@ -190,8 +189,8 @@ instance Default (StackedLayouts x) where
 -- once on the bottom chart.   The x labels may be optionally removed so that
 -- they are only shown once.
 renderStackedLayouts :: (Ord x) => StackedLayouts x -> Renderable ()
-renderStackedLayouts (StackedLayouts{slayouts_layouts_=[]}) = emptyRenderable
-renderStackedLayouts slp@(StackedLayouts{slayouts_layouts_=sls@(sl1:_)}) = gridToRenderable g
+renderStackedLayouts (StackedLayouts{_slayouts_layouts=[]}) = emptyRenderable
+renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridToRenderable g
   where
     g = fullOverlayUnder (fillBackground bg emptyRenderable)
       $ foldr (above.mkGrid) nullt (zip sls [0,1..])
@@ -204,30 +203,30 @@ renderStackedLayouts slp@(StackedLayouts{slayouts_layouts_=sls@(sl1:_)}) = gridT
           (if showLegend then noPickFn $ renderLegend l legenditems else emptyRenderable)
 
       where
-        legenditems = case (slayouts_compress_legend_ slp,isBottomPlot) of
+        legenditems = case (_slayouts_compress_legend slp,isBottomPlot) of
             (False,_) -> getLegendItems l
             (True,True) -> alllegendItems
             (True,False) -> ([],[])
 
         mkPlotArea bx tx = fmap (mapPickFn (const ()))
-                         $ layout1PlotAreaToGrid l{layout1_bottom_axis_=bx,layout1_top_axis_=tx}
+                         $ layout1PlotAreaToGrid l{_layout1_bottom_axis=bx,_layout1_top_axis=tx}
 
         showLegend = not (null (fst legenditems)) || not (null (snd legenditems))
 
         isTopPlot = i == 0
         isBottomPlot = i == length sls -1
 
-        lm = layout1_margin_ l
+        lm = _layout1_margin l
 
-        baxis = mkAxis (layout1_bottom_axis_ l) (isBottomPlot || not (slayouts_compress_xlabels_ slp))
-        taxis = mkAxis (layout1_top_axis_ l) (isTopPlot || not (slayouts_compress_xlabels_ slp))
+        baxis = mkAxis (_layout1_bottom_axis l) (isBottomPlot || not (_slayouts_compress_xlabels slp))
+        taxis = mkAxis (_layout1_top_axis l) (isTopPlot || not (_slayouts_compress_xlabels slp))
 
         mkAxis a showLabels = a{
-            laxis_generate_=const (laxis_generate_ a all_xvals),
-            laxis_override_= if showLabels then id else \ad -> ad{axis_labels_=[]}
+            _laxis_generate=const (_laxis_generate a all_xvals),
+            _laxis_override= if showLabels then id else \ad -> ad{_axis_labels=[]}
         }
 
-    bg = (\(StackedLayout l) -> layout1_background_ l) sl1
+    bg = (\(StackedLayout l) -> _layout1_background l) sl1
     
     all_xvals = concatMap (\(StackedLayout l) -> getLayout1XVals l) sls
 
@@ -254,7 +253,7 @@ addMarginsToGrid (t,b,l,r) g = aboveN [
 layout1ToRenderable :: (Ord x, Ord y) =>
                        Layout1 x y -> Renderable (Layout1Pick x y)
 layout1ToRenderable l = 
-  fillBackground (layout1_background_ l) $ gridToRenderable (layout1ToGrid l)
+  fillBackground (_layout1_background l) $ gridToRenderable (layout1ToGrid l)
 
 layout1ToGrid :: (Ord x, Ord y) =>
                  Layout1 x y -> Grid (Renderable (Layout1Pick x y))
@@ -265,20 +264,20 @@ layout1ToGrid l = aboveN
        ,  tval $ layout1LegendsToRenderable l
        ]
   where
-    lm = layout1_margin_ l
+    lm = _layout1_margin l
 
 layout1TitleToRenderable :: (Ord x, Ord y) => Layout1 x y
                                            -> Renderable (Layout1Pick x y)
-layout1TitleToRenderable l | null (layout1_title_ l) = emptyRenderable
+layout1TitleToRenderable l | null (_layout1_title l) = emptyRenderable
 layout1TitleToRenderable l = addMargins (lm/2,0,0,0)
                                         (mapPickFn L1P_Title title)
   where
-    title = label (layout1_title_style_ l) HTA_Centre VTA_Centre
-                  (layout1_title_ l)
-    lm    = layout1_margin_ l
+    title = label (_layout1_title_style l) HTA_Centre VTA_Centre
+                  (_layout1_title l)
+    lm    = _layout1_margin l
 
 getLayout1XVals :: Layout1 x y -> [x]
-getLayout1XVals l = concatMap (fst.plot_all_points_.deEither) (layout1_plots_ l)
+getLayout1XVals l = concatMap (fst._plot_all_points.deEither) (_layout1_plots l)
   where
     deEither (Left x)  = x
     deEither (Right x) = x
@@ -286,8 +285,8 @@ getLayout1XVals l = concatMap (fst.plot_all_points_.deEither) (layout1_plots_ l)
 
 getLegendItems :: Layout1 x y -> ([LegendItem],[LegendItem])
 getLegendItems l = (
-    concat [ plot_legend_ p | (Left p ) <- (layout1_plots_ l) ],
-    concat [ plot_legend_ p | (Right p) <- (layout1_plots_ l) ]
+    concat [ _plot_legend p | (Left p ) <- (_layout1_plots l) ],
+    concat [ _plot_legend p | (Right p) <- (_layout1_plots l) ]
     )
 
 renderLegend :: Layout1 x y -> ([LegendItem],[LegendItem]) -> Renderable (Layout1Pick x y)
@@ -297,9 +296,9 @@ renderLegend l (lefts,rights) = gridToRenderable g
                      , weights (1,1) $ tval $ emptyRenderable
                      , tval $ mkLegend rights ]
 
-    lm     = layout1_margin_ l
+    lm     = _layout1_margin l
 
-    mkLegend vals = case (layout1_legend_ l) of
+    mkLegend vals = case (_layout1_legend l) of
         Nothing -> emptyRenderable
         Just ls ->  case filter ((/="").fst) vals of
             []  -> emptyRenderable ;
@@ -328,10 +327,10 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
          , besideN [er,     er,  er,    btitle, er,    er,  er       ]
          ]
     
-    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 layout1_top_axis_    L1P_TopAxisTitle   
-    (btitle,_) = atitle HTA_Centre VTA_Top      0 layout1_bottom_axis_ L1P_BottomAxisTitle
-    (ltitle,lam) = atitle HTA_Right  VTA_Centre 270 layout1_left_axis_   L1P_LeftAxisTitle
-    (rtitle,ram) = atitle HTA_Left   VTA_Centre 270 layout1_right_axis_  L1P_RightAxisTitle
+    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 _layout1_top_axis    L1P_TopAxisTitle   
+    (btitle,_) = atitle HTA_Centre VTA_Top      0 _layout1_bottom_axis L1P_BottomAxisTitle
+    (ltitle,lam) = atitle HTA_Right  VTA_Centre 270 _layout1_left_axis   L1P_LeftAxisTitle
+    (rtitle,ram) = atitle HTA_Left   VTA_Centre 270 _layout1_right_axis  L1P_RightAxisTitle
 
     er = tval $ emptyRenderable
     
@@ -343,11 +342,11 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
     atitle ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
       where
         label = tval $ mapPickFn pf $ rlabel tstyle ha va rot ttext
-        gap = tval $ spacer (layout1_margin_ l,0)
-        tstyle = laxis_title_style_ (af l)
-        ttext  = laxis_title_       (af l)
+        gap = tval $ spacer (_layout1_margin l,0)
+        tstyle = _laxis_title_style (af l)
+        ttext  = _laxis_title       (af l)
 
-    plots = tval $ mfill (layout1_plot_background_ l) $ plotsToRenderable l
+    plots = tval $ mfill (_layout1_plot_background l) $ plotsToRenderable l
       where
         mfill Nothing   = id
         mfill (Just fs) = fillBackground fs
@@ -375,10 +374,10 @@ plotsToRenderable l = Renderable {
 
 renderPlots :: Layout1 x y -> RectSize -> ChartBackend (PickFn (Layout1Pick x y))
 renderPlots l sz@(w,h) = do
-    when (not (layout1_grid_last_ l)) renderGrids
+    when (not (_layout1_grid_last l)) renderGrids
     withClipRegion (Rect (Point 0 0) (Point w h)) $ do
-      mapM_ rPlot (layout1_plots_ l)
-    when (layout1_grid_last_ l) renderGrids
+      mapM_ rPlot (_layout1_plots l)
+    when (_layout1_grid_last l) renderGrids
     return pickfn
 
   where
@@ -396,12 +395,12 @@ renderPlots l sz@(w,h) = do
           xr1 = reverse xrev xr
           yr1 = reverse yrev yr
           yrange = if yrev then (0, h) else (h, 0)
-          pmfn (x,y) = Point (mapv xr1 (axis_viewport_ xaxis xr1) x)
-                             (mapv yr1 (axis_viewport_ yaxis yr1) y)
+          pmfn (x,y) = Point (mapv xr1 (_axis_viewport xaxis xr1) x)
+                             (mapv yr1 (_axis_viewport yaxis yr1) y)
           mapv (min,max) _ LMin       = min
           mapv (min,max) _ LMax       = max
           mapv _         f (LValue v) = f v
-	  in plot_render_ p pmfn
+	  in _plot_render p pmfn
     rPlot1 _ _ _ = return ()
 
     pickfn (Point x y) = do  -- Maybe monad
@@ -418,8 +417,8 @@ renderPlots l sz@(w,h) = do
             (Nothing,Just at)   -> Just (at,at)
             (Just at1,Just at2) -> Just (at1,at2)
             (Nothing,Nothing)   -> Nothing
-        mapx (AxisT _ _ rev ad) x = axis_tropweiv_ ad (reverse rev xr) x
-        mapy (AxisT _ _ rev ad) y = axis_tropweiv_ ad (reverse rev yr) y
+        mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (reverse rev xr) x
+        mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (reverse rev yr) y
 
     renderGrids = do
       maybeM () (renderAxisGrid sz) tAxis
@@ -436,31 +435,31 @@ getAxes :: Layout1 x y ->
            (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
 getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where
-    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (layout1_plots_ l)
+    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (_layout1_plots l)
     xvals                         = xvals0 ++ xvals1
-    (yvals0',yvals1')             = layout1_yaxes_control_ l (yvals0,yvals1)
+    (yvals0',yvals1')             = _layout1_yaxes_control l (yvals0,yvals1)
 
-    bAxis = mkAxis E_Bottom (layout1_bottom_axis_ l) xvals
-    tAxis = mkAxis E_Top    (layout1_top_axis_ l)    xvals
-    lAxis = mkAxis E_Left   (layout1_left_axis_ l)  yvals0'
-    rAxis = mkAxis E_Right  (layout1_right_axis_ l) yvals1'
+    bAxis = mkAxis E_Bottom (_layout1_bottom_axis l) xvals
+    tAxis = mkAxis E_Top    (_layout1_top_axis l)    xvals
+    lAxis = mkAxis E_Left   (_layout1_left_axis l)  yvals0'
+    rAxis = mkAxis E_Right  (_layout1_right_axis l) yvals1'
 
-    mkAxis t laxis vals = case laxis_visible_ laxis vals of
+    mkAxis t laxis vals = case _laxis_visible laxis vals of
         False -> Nothing
         True  -> Just (AxisT t style rev adata)
       where
-        style = laxis_style_ laxis
-        rev   = laxis_reverse_ laxis
-        adata = (laxis_override_ laxis) (laxis_generate_ laxis vals)
+        style = _laxis_style laxis
+        rev   = _laxis_reverse laxis
+        adata = (_laxis_override laxis) (_laxis_generate laxis vals)
 
 allPlottedValues :: [(Either (Plot x y) (Plot x' y'))]
                     -> ( [x], [x'], [y], [y'] )
 allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
   where
-    xvals0 = [ x | (Left p)  <- plots, x <- fst $ plot_all_points_ p]
-    yvals0 = [ y | (Left p)  <- plots, y <- snd $ plot_all_points_ p]
-    xvals1 = [ x | (Right p) <- plots, x <- fst $ plot_all_points_ p]
-    yvals1 = [ y | (Right p) <- plots, y <- snd $ plot_all_points_ p]
+    xvals0 = [ x | (Left p)  <- plots, x <- fst $ _plot_all_points p]
+    yvals0 = [ y | (Left p)  <- plots, y <- snd $ _plot_all_points p]
+    xvals1 = [ x | (Right p) <- plots, x <- fst $ _plot_all_points p]
+    yvals1 = [ y | (Right p) <- plots, y <- snd $ _plot_all_points p]
 
 {-# DEPRECATED defaultLayout1  "Use the according Data.Default instance!" #-}
 defaultLayout1 :: (PlotValue x,PlotValue y) => Layout1 x y
@@ -468,24 +467,24 @@ defaultLayout1 = def
 
 instance (PlotValue x, PlotValue y) => Default (Layout1 x y) where
   def = Layout1 
-    { layout1_background_      = solidFillStyle $ opaque white
-    , layout1_plot_background_ = Nothing
+    { _layout1_background      = solidFillStyle $ opaque white
+    , _layout1_plot_background = Nothing
 
-    , layout1_title_           = ""
-    , layout1_title_style_     = def { font_size_   = 15
-                                     , font_weight_ = FontWeightBold }
+    , _layout1_title           = ""
+    , _layout1_title_style     = def { _font_size   = 15
+                                     , _font_weight = FontWeightBold }
 
-    , layout1_top_axis_        = def {laxis_visible_ = const False}
-    , layout1_bottom_axis_     = def
-    , layout1_left_axis_       = def
-    , layout1_right_axis_      = def
+    , _layout1_top_axis        = def {_laxis_visible = const False}
+    , _layout1_bottom_axis     = def
+    , _layout1_left_axis       = def
+    , _layout1_right_axis      = def
 
-    , layout1_yaxes_control_   = id
+    , _layout1_yaxes_control   = id
 
-    , layout1_margin_          = 10
-    , layout1_plots_           = []
-    , layout1_legend_          = Just def
-    , layout1_grid_last_       = False
+    , _layout1_margin          = 10
+    , _layout1_plots           = []
+    , _layout1_legend          = Just def
+    , _layout1_grid_last       = False
     }
 
 {-# DEPRECATED defaultLayoutAxis "Use the according Data.Default instance!" #-}
@@ -494,36 +493,36 @@ defaultLayoutAxis = def
 
 instance PlotValue t => Default (LayoutAxis t) where
   def = LayoutAxis
-    { laxis_title_style_ = def { font_size_=10 }
-    , laxis_title_       = ""
-    , laxis_style_       = def
-    , laxis_visible_     = not.null
-    , laxis_generate_    = autoAxis
-    , laxis_override_    = id
-    , laxis_reverse_     = False
+    { _laxis_title_style = def { _font_size=10 }
+    , _laxis_title       = ""
+    , _laxis_style       = def
+    , _laxis_visible     = not.null
+    , _laxis_generate    = autoAxis
+    , _laxis_override    = id
+    , _laxis_reverse     = False
     }
 
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
-$( deriveAccessors ''Layout1 )
-$( deriveAccessors ''LayoutAxis )
-$( deriveAccessors ''StackedLayouts )
+$( makeLenses ''Layout1 )
+$( makeLenses ''LayoutAxis )
+$( makeLenses ''StackedLayouts )
 
 -- | Helper to update all axis styles on a Layout1 simultaneously.
 updateAllAxesStyles :: (AxisStyle -> AxisStyle) -> Layout1 x y -> Layout1 x y
-updateAllAxesStyles uf = (layout1_top_axis    .> laxis_style ^: uf) .
-                         (layout1_bottom_axis .> laxis_style ^: uf) .
-                         (layout1_left_axis   .> laxis_style ^: uf) .
-                         (layout1_right_axis  .> laxis_style ^: uf)
+updateAllAxesStyles uf = (layout1_top_axis    . laxis_style %~ uf) .
+                         (layout1_bottom_axis . laxis_style %~ uf) .
+                         (layout1_left_axis   . laxis_style %~ uf) .
+                         (layout1_right_axis  . laxis_style %~ uf)
 
 -- | Helper to set the forground color uniformly on a Layout1.
 setLayout1Foreground :: AlphaColour Double -> Layout1 x y -> Layout1 x y
 setLayout1Foreground fg =
-    updateAllAxesStyles  ( (axis_line_style  .> line_color ^= fg)
-                         . (axis_label_style .> font_color ^= fg))
-    . (layout1_title_style .> font_color ^= fg)
-    . (layout1_legend ^: fmap (legend_label_style .> font_color ^= fg))
+    updateAllAxesStyles  ( (axis_line_style  . line_color .~ fg)
+                         . (axis_label_style . font_color .~ fg))
+    . (layout1_title_style . font_color .~ fg)
+    . (layout1_legend %~ fmap (legend_label_style .> font_color .~ fg))
 
 
 linkAxes :: ([a], [a]) -> ([a], [a])
