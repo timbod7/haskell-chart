@@ -20,8 +20,8 @@ import qualified Graphics.Rendering.Cairo.Matrix as CM
 
 markLineStyle :: LineStyle
 markLineStyle = def 
-  { line_color_ = opaque red
-  , line_width_ = 1
+  { _line_color = opaque red
+  , _line_width = 1
   }
 
 -- Render a few lines and mark them appropriatly.
@@ -35,7 +35,7 @@ main = render ("test.png") 1000 500 $ do
  
 testDrawText :: Int -> ChartBackend ()
 testDrawText fontSize = 
-  withFontStyle (def { font_size_ = fromIntegral fontSize, font_name_ = "Source Sans Pro" }) $ do
+  withFontStyle (def { _font_size = fromIntegral fontSize, _font_name = "Source Sans Pro" }) $ do
     let text = "ÄÖÜ Testing " ++ show fontSize ++ "px"
     -- Text metrics
     ts <- textSize text
@@ -49,7 +49,7 @@ testDrawText fontSize =
                           <> lineTo' 500 (a + d)
       strokePath p
     -- Bounding lines: Green
-    withLineStyle (markLineStyle { line_color_ = opaque green }) $ do
+    withLineStyle (markLineStyle { _line_color = opaque green }) $ do
       p <- alignStrokePath $ moveTo' 0 0
                           <> lineTo' 500 0
                           <> moveTo' 0 (fromIntegral fontSize)
