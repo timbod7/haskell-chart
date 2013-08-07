@@ -16,4 +16,4 @@ chart = layout1ToRenderable (plotLayout pp) {_layout1_title="Graphics.Rendering.
                  [0.1,0.7,0.5::Double] "+"
     xs = [0,0.3..3] :: [Double]
 
-main = main' "test6" chart
+-- main = main' "test6" chart

@@ -6,7 +6,7 @@
 module Graphics.Rendering.Chart.Backend.Diagrams
   ( runBackend
   , defaultEnv
-  , DEnv(..)
+  , DEnv(..), DFont
   ) where
 
 import Data.Default.Class
@@ -39,6 +39,8 @@ import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 
+import Paths_Chart_diagrams ( getDataFileName )
+
 -- -----------------------------------------------------------------------
 -- Backend
 -- -----------------------------------------------------------------------
@@ -46,23 +48,67 @@ import Graphics.Rendering.Chart.Renderable
 data DEnv = DEnv
   { envAlignmentFns :: AlignmentFns
   , envFontStyle :: FontStyle
+  , envSelectFont :: FontStyle -> DFont
   }
+
+type DFont = (F.FontData, F.OutlineMap)
 
 -- | Produce a environment with no transformation and clipping. 
 --   It will use the default styles.
 defaultEnv :: AlignmentFns
-           -> DEnv
-defaultEnv alignFns = DEnv 
-  { envAlignmentFns = alignFns
-  , envFontStyle = def
-  }
+           -> IO DEnv
+defaultEnv alignFns = do
+  serifR   <- loadFont "fonts/LinLibertine_R.svg"
+  serifRB  <- loadFont "fonts/LinLibertine_RB.svg"
+  serifRBI <- loadFont "fonts/LinLibertine_RBI.svg"
+  serifRI  <- loadFont "fonts/LinLibertine_RI.svg"
+  sansR   <- loadFont "fonts/SourceSansPro_R.svg"
+  sansRB  <- loadFont "fonts/SourceSansPro_RB.svg"
+  sansRBI <- loadFont "fonts/SourceSansPro_RBI.svg"
+  sansRI  <- loadFont "fonts/SourceSansPro_RI.svg"
+  monoR  <- loadFont "fonts/SourceCodePro_R.svg"
+  monoRB <- loadFont "fonts/SourceCodePro_RB.svg"
+  
+  let selectFont :: FontStyle -> DFont
+      selectFont fs = case (_font_name fs, _font_slant fs, _font_weight fs) of
+        ("serif", FontSlantNormal , FontWeightNormal) -> serifR
+        ("serif", FontSlantNormal , FontWeightBold  ) -> serifRB
+        ("serif", FontSlantItalic , FontWeightNormal) -> serifRI
+        ("serif", FontSlantOblique, FontWeightNormal) -> serifRI
+        ("serif", FontSlantItalic , FontWeightBold  ) -> serifRBI
+        ("serif", FontSlantOblique, FontWeightBold  ) -> serifRBI
+        
+        ("sans-serif", FontSlantNormal , FontWeightNormal) -> sansR
+        ("sans-serif", FontSlantNormal , FontWeightBold  ) -> sansRB
+        ("sans-serif", FontSlantItalic , FontWeightNormal) -> sansRI
+        ("sans-serif", FontSlantOblique, FontWeightNormal) -> sansRI
+        ("sans-serif", FontSlantItalic , FontWeightBold  ) -> sansRBI
+        ("sans-serif", FontSlantOblique, FontWeightBold  ) -> sansRBI
+        
+        ("monospace", _, FontWeightNormal) -> monoR
+        ("monospace", _, FontWeightBold  ) -> monoRB
+        
+        (_, slant, weight) -> selectFont (fs { _font_name = "sans-serif" })
+  
+  return $ DEnv 
+    { envAlignmentFns = alignFns
+    , envFontStyle = def
+    , envSelectFont = selectFont
+    }
+  where
+    loadFont :: String -> IO DFont
+    loadFont file = getDataFileName file >>= return . F.outlMap
 
 -- | Run this backends renderer.
 runBackend :: (D.Renderable (D.Path R2) b)
            => DEnv   -- ^ Environment to start rendering with.
            -> ChartBackend a    -- ^ Chart render code.
            -> (Diagram b R2, a) -- ^ The diagram.
-runBackend env m =  eval env (view m)
+runBackend env m = runBackend' env $ withDefaultStyle m
+
+runBackend' :: (D.Renderable (D.Path R2) b) => DEnv
+            -> ChartBackend a -> (Diagram b R2, a)
+runBackend' env m = eval env (view m)
   where
     eval :: (D.Renderable (D.Path R2) b)
          => DEnv -> ProgramView ChartBackendInstr a -> (Diagram b R2, a)
@@ -80,7 +126,7 @@ runBackend env m =  eval env (view m)
 
     step :: (D.Renderable (D.Path R2) b)
          => DEnv -> (v -> ChartBackend a) -> v -> (Diagram b R2, a)
-    step env f =  \v -> runBackend env (f v)
+    step env f =  \v -> runBackend' env (f v)
     
     (<>#) :: (Monoid m) => m -> (() -> (m, a)) -> (m, a)
     (<>#) m f = (m, ()) <>= f
@@ -101,13 +147,12 @@ dTextSize :: (D.Renderable (D.Path R2) b)
           => DEnv -> String -> (Diagram b R2, TextSize)
 dTextSize env text = 
   let fs = envFontStyle env
-      font@(fontData,_) = fontFromName $ _font_name $ fs
-      (_,_,_,_,_,(_,_,weight,_,_,panose,ascent,descent,xHeight,capHeight,stemh,stemv,_)) = fontData
-  in (mempty, TextSize { textSizeWidth = D2.width $ F.textSVG' (fontStyleToTextOpts fs text)
-                       , textSizeAscent = 10 -- ascent
-                       , textSizeDescent = 10 -- descent
-                       , textSizeYBearing = F.bbox_dy fontData / 2 -- TODO: Is this really what we want?
-                       , textSizeHeight = _font_size $ fs -- TODO: Should we get this from the font itself?
+      (scaledH, scaledA, scaledD, scaledYB) = calcFontMetrics env
+  in (mempty, TextSize { textSizeWidth = D2.width $ F.textSVG' (fontStyleToTextOpts env text)
+                       , textSizeAscent = scaledA -- scaledH * (a' / h') -- ascent
+                       , textSizeDescent = scaledD -- scaledH * (d' / h') -- descent
+                       , textSizeYBearing = scaledYB -- -scaledH * (capHeight / h)
+                       , textSizeHeight = _font_size $ fs
                        })
 
 dAlignmentFns :: (D.Renderable (D.Path R2) b)
@@ -120,12 +165,12 @@ dDrawText env (Point x y) text
   = D.transform (toTransformation $ translate (Vector x y) 1)
   $ applyFontStyle (envFontStyle env)
   $ D2.scaleY (-1)
-  $ F.textSVG_ (fontStyleToTextOpts (envFontStyle env) text)
+  $ F.textSVG_ (fontStyleToTextOpts env text)
 
 dWith :: (D.Renderable (D.Path R2) b)
       => DEnv -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
       -> ChartBackend a -> (Diagram b R2, a)
-dWith env envF dF m = let (ma, a) = runBackend (envF env) m
+dWith env envF dF m = let (ma, a) = runBackend' (envF env) m
                       in (dF ma, a)
 
 dWithTransform :: (D.Renderable (D.Path R2) b)
@@ -207,17 +252,41 @@ applyFontStyle :: (D.HasStyle a) => FontStyle -> a -> a
 applyFontStyle fs = applyLineStyle noLineStyle 
                   . applyFillStyle (solidFillStyle $ _font_color fs)
 
--- TODO: FontSlant and FontWeight can not be expressed properly.
-fontStyleToTextOpts :: FontStyle -> String -> F.TextOpts
-fontStyleToTextOpts fs text = F.TextOpts
-  { F.txt = text
-  , F.fdo = fontFromName $ _font_name fs
-  , F.mode = F.INSIDE_H
-  , F.spacing = F.KERN
-  , F.underline = False
-  , F.textWidth = 1
-  , F.textHeight = _font_size fs
-  }
+-- | Calculate the font metrics for the currently set font style.
+--   The returned value will be @(height, ascent, descent, ybearing)@.
+calcFontMetrics :: DEnv -> (Double, Double, Double, Double)
+calcFontMetrics env = 
+  let fs = envFontStyle env
+      font@(fontData,_) = envSelectFont env fs
+      bbox = F.fontDataBoundingBox fontData
+      capHeight = F.fontDataCapHeight fontData
+      a = bbox !! 3
+      d = -bbox !! 1
+      h = unscaledH
+      a' = unscaledH
+      d' = (d / h) * h'
+      h' = (a + d) / (1 - d / h)
+      unscaledH = F.bbox_dy $ fontData
+      scaledHeight  = _font_size fs * (h' / h)
+      scaledAscent  = scaledHeight * (a' / h')
+      scaledDescent = scaledHeight * (d' / h')
+      scaledMaxHAdv = -scaledHeight * (capHeight / h)
+  in (scaledHeight, scaledAscent, scaledDescent, scaledMaxHAdv)
+
+fontStyleToTextOpts :: DEnv -> String -> F.TextOpts
+fontStyleToTextOpts env text = 
+  let fs = envFontStyle env
+      font = envSelectFont env fs
+      (scaledH, _, _, _) = calcFontMetrics env
+  in F.TextOpts
+      { F.txt = text
+      , F.fdo = font
+      , F.mode = F.INSIDE_H
+      , F.spacing = F.KERN
+      , F.underline = False
+      , F.textWidth = 1
+      , F.textHeight = scaledH -- _font_size fs
+      }
 
 fontFromName :: String -> (F.FontData, F.OutlineMap)
 fontFromName name = case name of

@@ -58,7 +58,7 @@ plotPatches patches = layout
   where
     layout = layout1_title .~ "Patch history by user"
            $ layout1_plots .~ [ Left (plotBars bars) ]
-           $ def :: Layout1 CRender LocalTime Double
+           $ def :: Layout1 LocalTime Double
         
     bars = plot_bars_titles .~ users
          $ plot_bars_style .~ BarsStacked

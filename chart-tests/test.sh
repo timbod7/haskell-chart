@@ -4,6 +4,6 @@
 cd ./tests-diffs
 rm ./*.png 
 cd ../tests
-runhaskell all_tests.hs
+runhaskell DiagramsCairo.hs
 cd ..
 ./gen-diffs-png.sh

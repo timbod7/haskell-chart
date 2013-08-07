@@ -33,4 +33,4 @@ chart = layout1ToRenderable layout
                                Left (toPlot price2)]
            $ def
 
-main = main' "test3" chart
+-- main = main' "test3" chart

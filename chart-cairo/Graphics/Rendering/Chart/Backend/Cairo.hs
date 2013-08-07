@@ -70,7 +70,10 @@ defaultEnv alignFns = CEnv
 runBackend :: CEnv -- ^ Environment to start rendering with.
            -> ChartBackend a  -- ^ Chart render code.
            -> C.Render a      -- ^ Cairo render code.
-runBackend env m = eval env (view m)
+runBackend env m = runBackend' env (withDefaultStyle m)
+
+runBackend' :: CEnv -> ChartBackend a -> C.Render a
+runBackend' env m = eval env (view m)
   where
     eval :: CEnv -> ProgramView ChartBackendInstr a -> C.Render a
     eval env (Return v)= return v
@@ -86,7 +89,7 @@ runBackend env m = eval env (view m)
     eval env (WithClipRegion r p :>>= f) = cWithClipRegion env r p >>= step env f
 
     step :: CEnv -> (v -> ChartBackend a) -> v -> C.Render a
-    step env f =  \v -> runBackend env (f v)
+    step env f =  \v -> runBackend' env (f v)
     
 walkPath :: Path -> C.Render ()
 walkPath (MoveTo p path) = C.moveTo (p_x p) (p_y p) >> walkPath path
@@ -128,7 +131,7 @@ cDrawText env p text = preserveCState0 $ do
 cWithTransform :: CEnv -> Matrix -> ChartBackend a -> C.Render a
 cWithTransform env m p = preserveCState0 $ do
   C.transform (convertMatrix m)
-  runBackend env p
+  runBackend' env p
 
 cWithFontStyle :: CEnv -> FontStyle -> ChartBackend a -> C.Render a
 cWithFontStyle env font p = preserveCState0 $ do
@@ -136,11 +139,11 @@ cWithFontStyle env font p = preserveCState0 $ do
                    (convertFontSlant $ G._font_slant font) 
                    (convertFontWeight $ G._font_weight font)
   C.setFontSize (G._font_size font)
-  runBackend env{ceFontColor=G._font_color font} p
+  runBackend' env{ceFontColor=G._font_color font} p
 
 cWithFillStyle :: CEnv -> FillStyle -> ChartBackend a -> C.Render a
 cWithFillStyle env fs p = do
-  runBackend env{ceFillColor=G._fill_colour fs} p
+  runBackend' env{ceFillColor=G._fill_colour fs} p
 
 cWithLineStyle :: CEnv -> LineStyle -> ChartBackend a -> C.Render a
 cWithLineStyle env ls p = preserveCState0 $ do
@@ -148,12 +151,12 @@ cWithLineStyle env ls p = preserveCState0 $ do
   C.setLineCap (convertLineCap $ G._line_cap ls)
   C.setLineJoin (convertLineJoin $ G._line_join ls)
   C.setDash (G._line_dashes ls) 0
-  runBackend env{cePathColor=G._line_color ls} p
+  runBackend' env{cePathColor=G._line_color ls} p
 
 cWithClipRegion :: CEnv -> Rect -> ChartBackend a -> C.Render a
 cWithClipRegion env r p = preserveCState0 $ do
   setClipRegion r
-  runBackend env p
+  runBackend' env p
 
 -- -----------------------------------------------------------------------
 -- Output rendering functions
@@ -283,7 +286,7 @@ cArcNegative p r a1 a2 = C.arcNegative (p_x p) (p_y p) r a1 a2
 cRenderToPNGFile :: ChartBackend a -> Int -> Int -> FilePath -> IO a
 cRenderToPNGFile cr width height path = 
     C.withImageSurface C.FormatARGB32 width height $ \result -> do
-    a <- C.renderWith result $ runBackend (defaultEnv bitmapAlignmentFns) cr 
+    a <- C.renderWith result $ runBackend' (defaultEnv bitmapAlignmentFns) cr 
     C.surfaceWriteToPNG result path
     return a
 
@@ -299,7 +302,7 @@ cRenderToSVGFile  = cRenderToFile C.withSVGSurface
 cRenderToFile withSurface cr width height path = 
     withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
     C.renderWith result $ do
-      runBackend (defaultEnv vectorAlignmentFns) cr
+      runBackend' (defaultEnv vectorAlignmentFns) cr
       C.showPage
     C.surfaceFinish result
 
