@@ -39,8 +39,6 @@ import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 
-import Debug.Trace
-
 import Paths_Chart_diagrams ( getDataFileName )
 
 -- -----------------------------------------------------------------------
@@ -260,7 +258,8 @@ calcFontMetrics :: DEnv -> (Double, Double, Double, Double)
 calcFontMetrics env = 
   let fs = envFontStyle env
       font@(fontData,_) = envSelectFont env fs
-      (_,_,bbox,_,_,(fontHadv,_,weight,_,unitsPerEm,panose,ascent,descent,xHeight,capHeight,stemh,stemv,_)) = fontData
+      bbox = F.fontDataBoundingBox fontData
+      capHeight = F.fontDataCapHeight fontData
       a = bbox !! 3
       d = -bbox !! 1
       h = unscaledH
