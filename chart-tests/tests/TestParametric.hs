@@ -24,4 +24,4 @@ chart lwidth = layout1ToRenderable layout
            $ layout1_plots .~ [Left (toPlot circleP)]
            $ def
 
-main = main' "test1" (chart 0.25)
+-- main = main' "test1" (chart 0.25)

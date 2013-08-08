@@ -42,12 +42,13 @@ module Graphics.Rendering.Chart.Drawing
   , strokePointPath
   , fillPointPath
   
-  -- * Transformation Helpers
+  -- * Transformation and Style Helpers
   , withRotation
   , withTranslation
   , withScale
   , withScaleX, withScaleY
   , withPointStyle
+  , withDefaultStyle
   
   -- * Text Drawing
   , drawTextA
@@ -119,6 +120,9 @@ withPointStyle :: PointStyle -> ChartBackend a -> ChartBackend a
 withPointStyle (PointStyle cl bcl bw _ _) m = do
   withLineStyle (def { _line_color = bcl, _line_width = bw }) $ do
     withFillStyle (solidFillStyle cl) m
+
+withDefaultStyle :: ChartBackend a -> ChartBackend a
+withDefaultStyle = withLineStyle def . withFillStyle def . withFontStyle def
 
 -- -----------------------------------------------------------------------
 -- Alignment Helpers

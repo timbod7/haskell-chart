@@ -30,6 +30,6 @@ chart xrev yrev = layout1ToRenderable layout
            $ layout1_plots .~ [Left (toPlot points), Left (toPlot lines) ]
            $ def
 
-main = main' "test4" (chart False False)
+-- main = main' "test4" (chart False False)
 
 

@@ -41,6 +41,6 @@ chart lwidth = layout1ToRenderable (layout 1001 (trial bits) :: Layout1 Double L
     s1 = solidLine lwidth $ opaque green
     s2 = solidLine lwidth $ opaque blue
 
-main = main' "test5" (chart 0.25)
+-- main = main' "test5" (chart 0.25)
 
 

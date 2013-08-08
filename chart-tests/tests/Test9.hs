@@ -32,6 +32,6 @@ chart borders = layout1ToRenderable layout
   bstyle = if borders then Just (solidLine 1.0 $ opaque black) else Nothing
   mkstyle c = (solidFillStyle c, bstyle)
 
-main = main' "test9" (chart True)
+-- main = main' "test9" (chart True)
 
 

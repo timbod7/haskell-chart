@@ -17,6 +17,6 @@ chart = mapPickFn (const ()) $ pieToRenderable layout
                                       | (s,v,o) <- values ]
            $ def
 
-main = main' "test8" chart
+-- main = main' "test8" chart
 
 

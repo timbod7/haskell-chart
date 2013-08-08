@@ -22,6 +22,20 @@ import Graphics.Rendering.Chart.Backend.Types
 
 -- | The abstract drawing operation generated when using the
 --   the chart drawing API.
+--   
+--   See the documentation of the different function for the correct semantics
+--   of each instruction:
+--   
+--   * 'strokePath', 'fillPath'
+--   
+--   * 'drawText', 'textSize'
+--   
+--   * 'getPointAlignFn', 'getCoordAlignFn', 'AlignmentFns'
+--   
+--   * 'withTransform', 'withClipRegion'
+--   
+--   * 'withLineStyle', 'withFillStyle', 'withFontStyle'
+--   
 data ChartBackendInstr a where
   StrokePath :: Path -> ChartBackendInstr ()
   FillPath   :: Path -> ChartBackendInstr ()
@@ -42,6 +56,12 @@ data ChartBackendInstr a where
 --   the bottom left corner. The unit used by coordinates, the font size,
 --   and lengths is the always the same, but depends on the backend.
 --   All angles are measured in radians.
+--   
+--   The line, fill and font style are set to their default values 
+--   initially.
+--   
+--   Information about the semantics of the instructions can be 
+--   found in the documentation of 'ChartBackendInstr'.
 type ChartBackend a = Program ChartBackendInstr a
 
 {-# DEPRECATED CRender  "Use the new name ChartBackend!" #-}
