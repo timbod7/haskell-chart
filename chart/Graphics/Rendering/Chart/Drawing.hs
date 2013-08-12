@@ -136,7 +136,7 @@ alignPath f = foldPath (\p -> moveTo $ f p)
                        (\p -> arcNeg $ f p)
                        (close)
 
--- | Align the path using the environments alignment function for points.
+-- | Align the path using the environment's alignment function for points.
 --   This is generally useful when stroking. 
 --   See 'alignPath' and 'getPointAlignFn'.
 alignStrokePath :: Path -> ChartBackend Path
@@ -144,7 +144,7 @@ alignStrokePath p = do
   f <- getPointAlignFn
   return $ alignPath f p
 
--- | Align the path using the environments alignment function for coordinates.
+-- | Align the path using the environment's alignment function for coordinates.
 --   This is generally useful when filling. 
 --   See 'alignPath' and 'getCoordAlignFn'.
 alignFillPath :: Path -> ChartBackend Path
@@ -168,14 +168,14 @@ alignFillPoints p = do
   f <- getCoordAlignFn
   return $ fmap f p
 
--- | Align the point using the environments alignment function for points.
+-- | Align the point using the environment's alignment function for points.
 --   See 'getPointAlignFn'.
 alignStrokePoint :: Point -> ChartBackend Point
 alignStrokePoint p = do 
     alignfn <- getPointAlignFn
     return (alignfn p)
 
--- | Align the point using the environments alignment function for coordinates.
+-- | Align the point using the environment's alignment function for coordinates.
 --   See 'getCoordAlignFn'.
 alignFillPoint :: Point -> ChartBackend Point
 alignFillPoint p = do 
