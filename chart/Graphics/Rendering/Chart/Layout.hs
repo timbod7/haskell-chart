@@ -164,11 +164,11 @@ data Layout1Pick x y = L1P_Legend String
 
 type LegendItem = (String,Rect -> ChartBackend ())
 
--- | A layout with it's y type hidded, so that it can be stacked
+-- | A layout with its y type hidden, so that it can be stacked
 -- with other layouts (with differing y types)
 data StackedLayout x = forall y . Ord y => StackedLayout (Layout1 x y)
 
--- | A holder for a set of vertically stacked layouts
+-- | A container for a set of vertically stacked layouts
 data StackedLayouts x = StackedLayouts {
       _slayouts_layouts :: [StackedLayout x],
       _slayouts_compress_xlabels :: Bool,
