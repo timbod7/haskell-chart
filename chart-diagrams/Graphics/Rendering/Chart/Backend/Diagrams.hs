@@ -155,11 +155,11 @@ runBackend' env m = eval env (view m)
 
 dStrokePath :: (D.Renderable (D.Path R2) b)
             => DEnv -> Path -> Diagram b R2
-dStrokePath env p = applyFillStyle noFillStyle $ D.stroke $ convertPath p
+dStrokePath env p = applyFillStyle noFillStyle $ D.stroke $ convertPath False p
 
 dFillPath :: (D.Renderable (D.Path R2) b)
           => DEnv -> Path -> Diagram b R2
-dFillPath env p = applyLineStyle noLineStyle $ D.stroke $ convertPath p
+dFillPath env p = applyLineStyle noLineStyle $ D.stroke $ convertPath True p
 
 dTextSize :: (D.Renderable (D.Path R2) b)
           => DEnv -> String -> (Diagram b R2, TextSize)
@@ -209,7 +209,7 @@ dWithFontStyle env fs = dWith env (\e -> e { envFontStyle = fs }) $ id -- TODO
 
 dWithClipRegion :: (D.Renderable (D.Path R2) b)
                 => DEnv -> Rect -> ChartBackend a -> (Diagram b R2, a)
-dWithClipRegion env clip = dWith env id $ D2.clipBy (convertPath $ rectPath clip)
+dWithClipRegion env clip = dWith env id $ D2.clipBy (convertPath True $ rectPath clip)
 
 -- -----------------------------------------------------------------------
 -- Converions Helpers
@@ -326,52 +326,53 @@ convertLineJoin join = case join of
   LineJoinRound -> D.LineJoinRound
   LineJoinBevel -> D.LineJoinBevel
 
--- | Convert paths.
-convertPath :: Path -> D.Path R2
-convertPath path = 
-  let (start, t, restM) = pathToTrail (Point 0 0) $ makeLinesExplicit path
+-- | Convert paths. The boolean says wether all trails 
+--   of the path shall be closed or remain open.
+convertPath :: Bool -> Path -> D.Path R2
+convertPath closeAll path = 
+  let (start, t, restM) = pathToTrail closeAll (Point 0 0) $ makeLinesExplicit path
   in D.pathFromTrailAt t start <> case restM of
     Nothing -> mempty
-    Just rest -> convertPath rest
+    Just rest -> convertPath closeAll rest
 
-pathToTrail :: Point -> Path 
+pathToTrail :: Bool -> Point -> Path 
             -> (D.Point R2, Trail R2, Maybe Path)
-pathToTrail _ (MoveTo p0 path) = 
-  let (t, close, rest) = pathToTrail' path p0
+pathToTrail closeAll _ (MoveTo p0 path) = 
+  let (t, close, rest) = pathToTrail' closeAll path p0
   in (pointToP2 p0, makeTrail close t, rest)
-pathToTrail _ path@(Arc c r s _ _) = 
+pathToTrail closeAll _ path@(Arc c r s _ _) = 
   let p0 = translateP (pointToVec c) $ rotateP s $ Point r 0
-      (t, close, rest) = pathToTrail' path p0
+      (t, close, rest) = pathToTrail' closeAll path p0
   in (pointToP2 p0, makeTrail close t, rest)
-pathToTrail _ path@(ArcNeg c r s _ _) = 
+pathToTrail closeAll _ path@(ArcNeg c r s _ _) = 
   let p0 = translateP (pointToVec c) $ rotateP s $ Point r 0
-      (t, close, rest) = pathToTrail' path p0
+      (t, close, rest) = pathToTrail' closeAll path p0
   in (pointToP2 p0, makeTrail close t, rest)
-pathToTrail start path = 
-  let (t, close, rest) = pathToTrail' path start
+pathToTrail closeAll start path = 
+  let (t, close, rest) = pathToTrail' closeAll path start
   in (pointToP2 start, makeTrail close t, rest)
 
 makeTrail :: Bool -> D.Trail' D.Line R2 -> Trail R2
 makeTrail True  t = D.wrapTrail $ D.closeLine t
 makeTrail False t = D.wrapTrail $ t
 
-pathToTrail' :: Path -> Point -> (D.Trail' D.Line R2, Bool, Maybe Path)
-pathToTrail' p@(MoveTo _ _) _ = (mempty, False, Just p)
-pathToTrail' (LineTo p1 path) p0 = 
-  let (t, c, rest) = pathToTrail' path p1
-  in ( (pointToP2 p0 ~~ pointToP2 p1) <> t, c, rest )
-pathToTrail' (Arc p0 r s e path) _ = 
+pathToTrail' :: Bool -> Path -> Point -> (D.Trail' D.Line R2, Bool, Maybe Path)
+pathToTrail' closeAll p@(MoveTo _ _) _ = (mempty, False || closeAll, Just p)
+pathToTrail' closeAll (LineTo p1 path) p0 = 
+  let (t, c, rest) = pathToTrail' closeAll path p1
+  in ( (pointToP2 p0 ~~ pointToP2 p1) <> t, c || closeAll, rest )
+pathToTrail' closeAll (Arc p0 r s e path) _ = 
   let endP = translateP (pointToVec p0) $ rotateP e $ Point r 0
-      (t, c, rest) = pathToTrail' path endP
+      (t, c, rest) = pathToTrail' closeAll path endP
       arcTrail = D2.scale r $ D2.arc (Rad s) (Rad e)
-  in ( arcTrail <> t, c, rest )
-pathToTrail' (ArcNeg p0 r s e path) _ = 
+  in ( arcTrail <> t, c || closeAll, rest )
+pathToTrail' closeAll (ArcNeg p0 r s e path) _ = 
   let endP = translateP (pointToVec p0) $ rotateP e $ Point r 0
-      (t, c, rest) = pathToTrail' path endP
+      (t, c, rest) = pathToTrail' closeAll path endP
       arcTrail = D2.scale r $ D2.arcCW (Rad s) (Rad e)
-  in ( arcTrail <> t, c, rest )
-pathToTrail' End _ = (mempty, False, Nothing)
-pathToTrail' Close _ = (mempty, True, Nothing)
+  in ( arcTrail <> t, c || closeAll, rest )
+pathToTrail' closeAll End _ = (mempty, False || closeAll, Nothing)
+pathToTrail' closeAll Close _ = (mempty, True || closeAll, Nothing)
 
 
 
