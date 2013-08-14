@@ -131,6 +131,32 @@ Executable ChartsTestDiagramsCairo
   Ghc-Options: -threaded
   default-language:    Haskell2010
 
+Executable ChartsTestDiagramsSVG
+  if flag(cairo) && flag(diagrams)
+    Build-Depends: 
+      base >= 3 && < 5, 
+      old-locale, 
+      array,
+      time, 
+      mtl, 
+      colour          >= 2.2.1,
+      lens            >= 3.9,
+      data-default-class < 0.1,
+      random          >= 1.0,
+      containers      >= 0.5,
+      old-time        >= 1.0,
+      Chart           >= 0.17,
+      Chart-diagrams  >= 0.1,
+      diagrams-svg    >= 0.6.1,
+      diagrams-lib    >= 0.6.1,
+      diagrams-core   >= 0.6.1
+  if !flag(cairo) || !flag(diagrams)
+    Buildable: False
+  Main-is: DiagramsSVG.hs
+  Hs-Source-Dirs: tests
+  Ghc-Options: -threaded
+  default-language:    Haskell2010
+
 Executable ChartsTestDrawingCairo
   if flag(cairo)
     Build-Depends: 

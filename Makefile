@@ -29,16 +29,6 @@ sdist:
 	cd chart-cairo && $(CABAL) sdist
 	cd chart-gtk && $(CABAL) sdist
 
-tests-basic:
-	cd chart-tests/tests && $(RUNGHC) all_tests.hs
-
-test-picking:
-	cd chart-tests/tests/gtk && $(RUNGHC) TestPicking.hs
-
-test-cairo-rendering:
-	cd chart-tests/tests/drawing && $(RUNGHC) TestApi.hs
-
-test-darcs-usage:
-	$(CABAL) install xml
-	cd chart-gtk/tests && $(RUNGHC) darcs_usage.hs
+tests:
+	cd chart-tests && $(CABAL) install --flags="cairo gtk diagrams"
 
