@@ -6,6 +6,7 @@
 module Graphics.Rendering.Chart.Backend.Diagrams
   ( runBackend
   , defaultEnv
+  , customFontEnv
   , DEnv(..), DFont
   ) where
 
@@ -14,6 +15,8 @@ import Data.Colour
 import Data.Colour.SRGB
 import Data.List (unfoldr)
 import Data.Monoid
+import Data.Traversable
+import qualified Data.Map as M
 
 import Control.Monad.Operational
 
@@ -53,21 +56,18 @@ data DEnv = DEnv
 
 type DFont = (F.FontData, F.OutlineMap)
 
--- | Produce a environment with no transformation and clipping. 
---   It will use the default styles.
-defaultEnv :: AlignmentFns
-           -> IO DEnv
-defaultEnv alignFns = do
-  serifR   <- loadFont "fonts/LinLibertine_R.svg"
-  serifRB  <- loadFont "fonts/LinLibertine_RB.svg"
-  serifRBI <- loadFont "fonts/LinLibertine_RBI.svg"
-  serifRI  <- loadFont "fonts/LinLibertine_RI.svg"
-  sansR   <- loadFont "fonts/SourceSansPro_R.svg"
-  sansRB  <- loadFont "fonts/SourceSansPro_RB.svg"
-  sansRBI <- loadFont "fonts/SourceSansPro_RBI.svg"
-  sansRI  <- loadFont "fonts/SourceSansPro_RI.svg"
-  monoR  <- loadFont "fonts/SourceCodePro_R.svg"
-  monoRB <- loadFont "fonts/SourceCodePro_RB.svg"
+defaultFonts :: IO (FontStyle -> DFont)
+defaultFonts = do
+  serifR   <- loadDefaultFont "fonts/LinLibertine_R.svg"
+  serifRB  <- loadDefaultFont "fonts/LinLibertine_RB.svg"
+  serifRBI <- loadDefaultFont "fonts/LinLibertine_RBI.svg"
+  serifRI  <- loadDefaultFont "fonts/LinLibertine_RI.svg"
+  sansR   <- loadDefaultFont "fonts/SourceSansPro_R.svg"
+  sansRB  <- loadDefaultFont "fonts/SourceSansPro_RB.svg"
+  sansRBI <- loadDefaultFont "fonts/SourceSansPro_RBI.svg"
+  sansRI  <- loadDefaultFont "fonts/SourceSansPro_RI.svg"
+  monoR  <- loadDefaultFont "fonts/SourceCodePro_R.svg"
+  monoRB <- loadDefaultFont "fonts/SourceCodePro_RB.svg"
   
   let selectFont :: FontStyle -> DFont
       selectFont fs = case (_font_name fs, _font_slant fs, _font_weight fs) of
@@ -90,14 +90,32 @@ defaultEnv alignFns = do
         
         (_, slant, weight) -> selectFont (fs { _font_name = "sans-serif" })
   
+  return selectFont
+  
+loadDefaultFont :: FilePath -> IO DFont
+loadDefaultFont file = getDataFileName file >>= return . F.outlMap
+
+loadFont :: FilePath -> IO DFont
+loadFont = return . F.outlMap
+
+customFontEnv :: AlignmentFns -> M.Map (String, FontSlant, FontWeight) FilePath -> IO DEnv
+customFontEnv alignFns fontFiles = do
+  fonts <- traverse loadFont fontFiles
+  selectFont <- defaultFonts
   return $ DEnv 
     { envAlignmentFns = alignFns
     , envFontStyle = def
-    , envSelectFont = selectFont
+    , envSelectFont = \fs -> 
+        case M.lookup (_font_name fs, _font_slant fs, _font_weight fs) fonts of
+          Just font -> font
+          Nothing -> selectFont fs
     }
-  where
-    loadFont :: String -> IO DFont
-    loadFont file = getDataFileName file >>= return . F.outlMap
+
+-- | Produce a environment with no transformation and clipping. 
+--   It will use the default styles.
+defaultEnv :: AlignmentFns
+           -> IO DEnv
+defaultEnv alignFns = customFontEnv alignFns M.empty
 
 -- | Run this backends renderer.
 runBackend :: (D.Renderable (D.Path R2) b)
