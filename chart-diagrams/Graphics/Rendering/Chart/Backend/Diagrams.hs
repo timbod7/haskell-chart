@@ -8,6 +8,10 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , defaultEnv
   , customFontEnv
   , DEnv(..), DFont
+  , renderableToEPSFile
+  , renderableToSVG
+  , renderableToSVGFile
+  , renderableToSVG'
   ) where
 
 import Data.Default.Class
