@@ -17,6 +17,7 @@ import Data.List (unfoldr)
 import Data.Monoid
 import Data.Traversable
 import qualified Data.Map as M
+import qualified Data.ByteString.Lazy as BS
 
 import Control.Monad.Operational
 
@@ -32,6 +33,11 @@ import Diagrams.Prelude
 import qualified Diagrams.Prelude as D
 import qualified Diagrams.TwoD as D2
 import qualified Diagrams.TwoD.Arc as D2
+import qualified Diagrams.Backend.SVG as DSVG
+import qualified Diagrams.Backend.Postscript as DEPS
+
+import Text.Blaze.Svg.Renderer.Utf8 ( renderSvg )
+import qualified Text.Blaze.Svg11 as S
 
 import qualified Graphics.SVGFonts.ReadFont as F
 
@@ -43,6 +49,44 @@ import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 
 import Paths_Chart_diagrams ( getDataFileName )
+
+-- -----------------------------------------------------------------------
+-- General Utility Functions
+-- -----------------------------------------------------------------------
+
+-- | Output the given renderable to an SVG file of the specifed size
+--   (in points), to the specified file.
+renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
+renderableToSVGFile r w h file = do
+  (svg, x) <- renderableToSVG r w h
+  BS.writeFile file svg
+  return x
+
+renderableToSVG :: Renderable a -> Int -> Int -> IO (BS.ByteString, PickFn a)
+renderableToSVG  r w h = do
+  (svg, x) <- renderableToSVG' r w h
+  return (renderSvg svg, x)
+
+renderableToSVG' :: Renderable a -> Int -> Int -> IO (S.Svg, PickFn a)
+renderableToSVG' r w h = do
+  env <- defaultEnv vectorAlignmentFns
+  let cr = render r (fromIntegral w, fromIntegral h)
+  let (d, x) = runBackend env cr
+  let svg = D.renderDia DSVG.SVG (DSVG.SVGOptions $ D2.Dims (fromIntegral w) (fromIntegral h)) d
+  return (svg, x)
+
+renderableToEPSFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
+renderableToEPSFile r w h file = do
+  env <- defaultEnv vectorAlignmentFns
+  let cr = render r (fromIntegral w, fromIntegral h)
+  let (d, x) = runBackend env cr
+  let psOpts = DEPS.PostscriptOptions 
+                  file 
+                  (D2.Dims (fromIntegral w) (fromIntegral h)) 
+                  DEPS.EPS
+  D.renderDia DEPS.Postscript psOpts d
+  return x
+  
 
 -- -----------------------------------------------------------------------
 -- Backend
