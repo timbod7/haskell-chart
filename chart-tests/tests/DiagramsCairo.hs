@@ -23,8 +23,7 @@ main1 args = do
   env <- defaultEnv bitmapAlignmentFns
   let renderDiagram :: (String, (Int, Int), T.OutputType -> Renderable ()) -> IO ()
       renderDiagram (n,(w,h),ir) = do
-        let cr = render (ir T.PNG) (fromIntegral w, fromIntegral h)
-        let (d, _) = runBackend env cr
-        fst $ renderDia Cairo (CairoOptions (n ++ ".png") (Dims (fromIntegral w) (fromIntegral h)) PNG True) d
+        let (d, _) = runBackendR env (ir T.PNG) (fromIntegral w) (fromIntegral h)
+        fst $ renderDia Cairo (CairoOptions (n ++ ".png") (Dims (fromIntegral w) (fromIntegral h)) PNG False) d
   showTests (fmap (\(x,_,_) -> x) allTests) renderDiagram
   

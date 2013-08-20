@@ -5,6 +5,7 @@
 -- | The backend to render charts with the diagrams library.
 module Graphics.Rendering.Chart.Backend.Diagrams
   ( runBackend
+  , runBackendR
   , defaultEnv
   , customFontEnv
   , DEnv(..), DFont
@@ -60,33 +61,31 @@ import Paths_Chart_diagrams ( getDataFileName )
 
 -- | Output the given renderable to an SVG file of the specifed size
 --   (in points), to the specified file.
-renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
+renderableToSVGFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
 renderableToSVGFile r w h file = do
   (svg, x) <- renderableToSVG r w h
   BS.writeFile file svg
   return x
 
-renderableToSVG :: Renderable a -> Int -> Int -> IO (BS.ByteString, PickFn a)
+renderableToSVG :: Renderable a -> Double -> Double -> IO (BS.ByteString, PickFn a)
 renderableToSVG  r w h = do
   (svg, x) <- renderableToSVG' r w h
   return (renderSvg svg, x)
 
-renderableToSVG' :: Renderable a -> Int -> Int -> IO (S.Svg, PickFn a)
+renderableToSVG' :: Renderable a -> Double -> Double -> IO (S.Svg, PickFn a)
 renderableToSVG' r w h = do
   env <- defaultEnv vectorAlignmentFns
-  let cr = render r (fromIntegral w, fromIntegral h)
-  let (d, x) = runBackend env cr
-  let svg = D.renderDia DSVG.SVG (DSVG.SVGOptions $ D2.Dims (fromIntegral w) (fromIntegral h)) d
+  let (d, x) = runBackendR env r w h
+  let svg = D.renderDia DSVG.SVG (DSVG.SVGOptions $ D2.Dims w h) d
   return (svg, x)
 
-renderableToEPSFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
+renderableToEPSFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
 renderableToEPSFile r w h file = do
   env <- defaultEnv vectorAlignmentFns
-  let cr = render r (fromIntegral w, fromIntegral h)
-  let (d, x) = runBackend env cr
+  let (d, x) = runBackendR env r w h
   let psOpts = DEPS.PostscriptOptions 
                   file 
-                  (D2.Dims (fromIntegral w) (fromIntegral h)) 
+                  (D2.Dims w h) 
                   DEPS.EPS
   D.renderDia DEPS.Postscript psOpts d
   return x
@@ -164,6 +163,18 @@ customFontEnv alignFns fontFiles = do
 defaultEnv :: AlignmentFns
            -> IO DEnv
 defaultEnv alignFns = customFontEnv alignFns M.empty
+
+-- | Run this backends renderer.
+runBackendR :: (D.Backend b R2, D.Renderable (D.Path R2) b)
+           => DEnv   -- ^ Environment to start rendering with.
+           -> Renderable a    -- ^ Chart render code.
+           -> Double -- ^ The width.
+           -> Double -- ^ The height.
+           -> (Diagram b R2, PickFn a) -- ^ The diagram.
+runBackendR env r w h = 
+  let cr = render r (w, h)
+      (d, x) = runBackend env cr
+  in (D2.reflectY $ D2.view (p2 (0,0)) (r2 (w,h)) d, x)
 
 -- | Run this backends renderer.
 runBackend :: (D.Renderable (D.Path R2) b)

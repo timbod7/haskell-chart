@@ -22,8 +22,7 @@ main1 args = do
   env <- defaultEnv bitmapAlignmentFns
   let renderDiagram :: (String, (Int, Int), T.OutputType -> Renderable ()) -> IO ()
       renderDiagram (n,(w,h),ir) = do
-        let cr = render (ir T.PNG) (fromIntegral w, fromIntegral h)
-        let (d, _) = runBackend env cr
+        let (d, _) = runBackendR env (ir T.PNG) (fromIntegral w) (fromIntegral h)
         renderSVG (n ++ ".svg") (Dims (fromIntegral w) (fromIntegral h))  d
   showTests (fmap (\(x,_,_) -> x) allTests) renderDiagram
   
