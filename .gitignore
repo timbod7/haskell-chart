@@ -1,4 +1,6 @@
 *~
+*.hi
+*.o
 cabal-dev/
 chart/dist/
 chart-gtk/dist/
