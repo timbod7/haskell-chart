@@ -131,12 +131,13 @@ renderableToEPSFile' r env file = do
 
 -- | The diagrams backend environement.
 data DEnv = DEnv
-  { envAlignmentFns :: AlignmentFns
-  , envFontStyle :: FontStyle
-  , envSelectFont :: FontStyle -> DFont
-  , envOutputSize :: (Double, Double)
+  { envAlignmentFns :: AlignmentFns     -- ^ The used alignment functions.
+  , envFontStyle :: FontStyle           -- ^ The current/initial font style.
+  , envSelectFont :: FontStyle -> DFont -- ^ The font selection function.
+  , envOutputSize :: (Double, Double)   -- ^ The size of the rendered output.
   }
 
+-- | A font a delivered by SVGFonts.
 type DFont = (F.FontData, F.OutlineMap)
 
 defaultFonts :: IO (FontStyle -> DFont)
