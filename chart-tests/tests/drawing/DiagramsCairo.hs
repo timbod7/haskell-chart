@@ -16,6 +16,6 @@ main = (flip mapM_) tests $ \(name, w, h, draw) -> do
 
 render :: FilePath -> Int -> Int -> ChartBackend a -> IO ()
 render f w h m = do
-  env <- defaultEnv vectorAlignmentFns
+  env <- defaultEnv bitmapAlignmentFns (fromIntegral w) (fromIntegral h)
   let (d, _) = runBackend env m
-  fst $ renderDia Cairo (CairoOptions f (Dims (fromIntegral w) (fromIntegral h)) PNG True) d
+  fst $ renderDia Cairo (CairoOptions f (Dims (fromIntegral w) (fromIntegral h)) PNG False) d
