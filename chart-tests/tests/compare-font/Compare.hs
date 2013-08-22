@@ -82,6 +82,7 @@ render f w h m = do
     C.setMatrix (CM.translate (fromIntegral w/2) 0 CM.identity)
     C.rectangle 0 0 500 500
     C.clip
+    C.scale 1 (-1)
     rd
   C.surfaceWriteToPNG s f
 
