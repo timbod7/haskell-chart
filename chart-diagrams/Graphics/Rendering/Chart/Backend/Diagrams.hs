@@ -42,7 +42,8 @@ import Diagrams.Prelude
 import qualified Diagrams.Prelude as D
 import qualified Diagrams.TwoD as D2
 import qualified Diagrams.TwoD.Arc as D2
-import qualified Diagrams.Backend.SVG as DSVG.
+import qualified Diagrams.Backend.Postscript as DEPS
+import qualified Diagrams.Backend.SVG as DSVG
 
 import Text.Blaze.Svg.Renderer.Utf8 ( renderSvg )
 import qualified Text.Blaze.Svg11 as S
@@ -99,23 +100,23 @@ renderableToSVG r w h = do
 
 -- | Output the given renderable as a SVG using the given environment.
 renderableToSVG' :: Renderable a -> DEnv -> (S.Svg, PickFn a)
-renderableToSVG' r env = do
+renderableToSVG' r env = 
   let (w, h) = envOutputSize env
-      (d, x) = runBackendR env r w h
+      (d, x) = runBackendR env r
       svg = D.renderDia DSVG.SVG (DSVG.SVGOptions $ D2.Dims w h) d
   in (svg, x)
 
 -- | Output the given renderable to a EPS file using the default environment.
 renderableToEPSFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
 renderableToEPSFile r w h file = do
-  env <- defaultEnv vectorAlignmentFns (w,h)
+  env <- defaultEnv vectorAlignmentFns w h
   renderableToEPSFile' r env file
 
 -- | Output the given renderable to a EPS file using the given environment.
 renderableToEPSFile' :: Renderable a -> DEnv -> FilePath -> IO (PickFn a)
 renderableToEPSFile' r env file = do
   let (w, h) = envOutputSize env
-  let (d, x) = runBackendR env r w h
+  let (d, x) = runBackendR env r
   let psOpts = DEPS.PostscriptOptions 
                   file 
                   (D2.Dims w h) 
@@ -212,11 +213,11 @@ runBackendR :: (D.Backend b R2, D.Renderable (D.Path R2) b)
            -> Renderable a -- ^ Chart render code.
            -> (Diagram b R2, PickFn a) -- ^ The diagram.
 runBackendR env r = 
-  let cr = render r (envOutputSize size)
+  let cr = render r (envOutputSize env)
   in runBackend env cr
 
 -- | Run this backends renderer.
-runBackend :: (D.Renderable (D.Path R2) b)
+runBackend :: (D.Backend b R2, D.Renderable (D.Path R2) b)
            => DEnv   -- ^ Environment to start rendering with.
            -> ChartBackend a    -- ^ Chart render code.
            -> (Diagram b R2, a) -- ^ The diagram.
