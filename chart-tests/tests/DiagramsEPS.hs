@@ -4,9 +4,8 @@ import Graphics.Rendering.Chart.Backend.Diagrams
 
 import Diagrams.Core.Types ( renderDia )
 import Diagrams.TwoD ( SizeSpec2D(..) )
-import Diagrams.Backend.Cairo
-import Diagrams.Backend.Cairo.Internal
 import Graphics.Rendering.Chart.Renderable ( render, Renderable )
+import qualified Diagrams.Backend.Postscript as DEPS
 
 import System.Environment ( getArgs )
 
@@ -23,8 +22,7 @@ main1 args = do
   env <- defaultEnv bitmapAlignmentFns 500 500
   let renderDiagram :: (String, (Int, Int), T.OutputType -> Renderable ()) -> IO ()
       renderDiagram (n,(w,h),ir) = do
-        let env' = env { envOutputSize = (fromIntegral w, fromIntegral h) }
-        let (d, _) = runBackendR env' (ir T.PNG)
-        fst $ renderDia Cairo (CairoOptions (n ++ ".png") (Dims (fromIntegral w) (fromIntegral h)) PNG False) d
+        renderableToEPSFile' (ir T.PDF) (env { envOutputSize = (fromIntegral w, fromIntegral h) }) (n ++ ".eps")
+        return ()
   showTests (fmap (\(x,_,_) -> x) allTests) renderDiagram
   

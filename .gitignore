@@ -1,4 +1,6 @@
 *~
+*.hi
+*.o
 cabal-dev/
 chart/dist/
 chart-gtk/dist/
@@ -8,11 +10,16 @@ chart-tests/dist/
 chart-tests/tests/*.png
 chart-tests/tests/*.pdf
 chart-tests/tests/*.svg
+chart-tests/tests/*.eps
 chart-tests/tests/drawing/*.png
+chart-tests/tests/drawing/*.pdf
+chart-tests/tests/drawing/*.svg
+chart-tests/tests/drawing/*.eps
 chart-tests/tests-reference/
 chart-tests/tests-diffs/
 chart/tests/*.png
 chart/tests/*.pdf
 chart/tests/*.svg
+chart/tests/*.eps
 chart/tests-reference/
 chart/tests-diffs/

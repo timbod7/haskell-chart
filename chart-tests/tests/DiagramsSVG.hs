@@ -19,11 +19,10 @@ main = do
 main1 :: [String] -> IO ()
 main1 args = do
   -- Only load the environment once, to speed things up.
-  env <- defaultEnv bitmapAlignmentFns
+  env <- defaultEnv bitmapAlignmentFns 500 500
   let renderDiagram :: (String, (Int, Int), T.OutputType -> Renderable ()) -> IO ()
       renderDiagram (n,(w,h),ir) = do
-        let cr = render (ir T.PNG) (fromIntegral w, fromIntegral h)
-        let (d, _) = runBackend env cr
-        renderSVG (n ++ ".svg") (Dims (fromIntegral w) (fromIntegral h))  d
+        renderableToSVGFile' (ir T.SVG) (env { envOutputSize = (fromIntegral w, fromIntegral h) }) (n ++ ".svg")
+        return ()
   showTests (fmap (\(x,_,_) -> x) allTests) renderDiagram
   

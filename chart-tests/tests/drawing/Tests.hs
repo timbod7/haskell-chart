@@ -130,6 +130,10 @@ testFill = withTestEnv $ do
               <> lineTo' 400 125
               <> lineTo' 400 400
               <> lineTo' 125 400
+              <> moveTo' 450 450
+              <> lineTo' 500 450
+              <> lineTo' 500 500
+              <> lineTo' 450 500
     fillPath $ arcNeg' 125 400 75 0 (1.5 * pi)
             <> lineTo' 125 400
 
