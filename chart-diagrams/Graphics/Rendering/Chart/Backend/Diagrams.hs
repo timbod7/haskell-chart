@@ -28,9 +28,10 @@ import Data.Traversable
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.ByteString.Lazy as BS
+import qualified Data.Text as T
 
 import Control.Monad.Operational
-import Control.Monad.State.Strict
+import Control.Monad.State.Lazy
 
 import Diagrams.Core.Transform ( Transformation(..) )
 import Diagrams.Prelude 
@@ -50,6 +51,7 @@ import qualified Diagrams.Backend.SVG as DSVG
 import Text.Blaze.Svg.Renderer.Utf8 ( renderSvg )
 import qualified Text.Blaze.Svg11 as Svg
 
+import qualified Graphics.SVGFonts.CharReference as F
 import qualified Graphics.SVGFonts.ReadFont as F
 
 import Graphics.Rendering.Chart.Backend as G
@@ -229,8 +231,17 @@ runBackend :: (D.Backend b R2, D.Renderable (D.Path R2) b)
            -> ChartBackend a    -- ^ Chart render code.
            -> (Diagram b R2, a) -- ^ The diagram.
 runBackend env m = 
-  let (d, x) = evalState (runBackend' (withDefaultStyle m)) env
-  in (D2.reflectY $ D2.view (p2 (0,0)) (r2 (envOutputSize env)) d, x)
+  let (d, x, _) = runBackendWithGlyphs env m
+  in (d, x)
+
+-- | Run this backends renderer.
+runBackendWithGlyphs :: (D.Backend b R2, D.Renderable (D.Path R2) b)
+                     => DEnv   -- ^ Environment to start rendering with.
+                     -> ChartBackend a    -- ^ Chart render code.
+                     -> (Diagram b R2, a, M.Map (String, FontSlant, FontWeight) (S.Set String))
+runBackendWithGlyphs env m = 
+  let ((d, x), env') = runState (runBackend' (withDefaultStyle m)) env
+  in (D2.reflectY $ D2.view (p2 (0,0)) (r2 (envOutputSize env)) d, x, envUsedGlyphs env')
 
 runBackend' :: (D.Renderable (D.Path R2) b) 
             => ChartBackend a -> DState (Diagram b R2, a)
@@ -265,11 +276,14 @@ runBackend' m = eval (view m)
       (mb, b) <- f a
       return (mb <> ma, b)
 
+-- | Executes the given state locally, but preserves the changes to the 'envUsedGlyphs'
+--   map. Assumes that values are never removed from the map inbetween.
 dLocal :: DState a -> DState a
 dLocal m = do
   env <- get
   x <- m
-  put env
+  env' <- get
+  put $ env { envUsedGlyphs = envUsedGlyphs env' }
   return x
 
 dStrokePath :: (D.Renderable (D.Path R2) b)
@@ -305,6 +319,7 @@ dDrawText :: (D.Renderable (D.Path R2) b)
           => Point -> String -> DState (Diagram b R2)
 dDrawText (Point x y) text = do
   env <- get
+  addGlyphsOfString text
   return $ D.transform (toTransformation $ translate (Vector x y) 1)
          $ applyFontStyle (envFontStyle env)
          $ D2.scaleY (-1)
@@ -342,6 +357,22 @@ dWithClipRegion clip = dWith id $ D2.clipBy (convertPath True $ rectPath clip)
 -- -----------------------------------------------------------------------
 -- Converions Helpers
 -- -----------------------------------------------------------------------
+
+addGlyphsOfString :: String -> DState ()
+addGlyphsOfString s = do
+  env <- get
+  let fs = envFontStyle env
+  let fontData = fst $ envSelectFont env fs
+  let ligatures = ((filter ((>1) . length)) . (M.keys) . F.fontDataGlyphs) fontData
+  let glyphs = fmap T.unpack $ F.characterStrings s ligatures
+  modify $ \env -> 
+    let gKey = (_font_name fs, _font_slant fs, _font_weight fs)
+        gMap = envUsedGlyphs env
+        entry = case M.lookup gKey gMap of
+          Nothing -> S.fromList glyphs
+          Just gs -> gs `S.union` S.fromList glyphs
+    in env { envUsedGlyphs = M.insert gKey entry gMap }
+  return ()
 
 pointToP2 :: Point -> P2
 pointToP2 (Point x y) = p2 (x,y)
