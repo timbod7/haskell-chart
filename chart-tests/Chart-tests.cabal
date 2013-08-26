@@ -121,9 +121,9 @@ Executable ChartsTestDiagramsCairo
       old-time        >= 1.0,
       Chart           >= 0.17,
       Chart-diagrams  >= 0.1,
-      diagrams-cairo  >= 0.6.1,
-      diagrams-lib    >= 0.6.1,
-      diagrams-core   >= 0.6.1
+      diagrams-cairo  >= 0.7,
+      diagrams-lib    >= 0.7,
+      diagrams-core   >= 0.7
   if !flag(cairo) || !flag(diagrams)
     Buildable: False
   Main-is: DiagramsCairo.hs
@@ -132,7 +132,7 @@ Executable ChartsTestDiagramsCairo
   default-language:    Haskell2010
 
 Executable ChartsTestDiagramsSVG
-  if flag(cairo) && flag(diagrams)
+  if flag(diagrams)
     Build-Depends: 
       base >= 3 && < 5, 
       old-locale, 
@@ -147,12 +147,38 @@ Executable ChartsTestDiagramsSVG
       old-time        >= 1.0,
       Chart           >= 0.17,
       Chart-diagrams  >= 0.1,
-      diagrams-svg    >= 0.6.1,
-      diagrams-lib    >= 0.6.1,
-      diagrams-core   >= 0.6.1
-  if !flag(cairo) || !flag(diagrams)
+      diagrams-svg    >= 0.7,
+      diagrams-lib    >= 0.7,
+      diagrams-core   >= 0.7
+  if !flag(diagrams)
     Buildable: False
   Main-is: DiagramsSVG.hs
+  Hs-Source-Dirs: tests
+  Ghc-Options: -threaded
+  default-language:    Haskell2010
+
+Executable ChartsTestDiagramsEPS
+  if flag(diagrams)
+    Build-Depends: 
+      base >= 3 && < 5, 
+      old-locale, 
+      array,
+      time, 
+      mtl, 
+      colour          >= 2.2.1,
+      lens            >= 3.9,
+      data-default-class < 0.1,
+      random          >= 1.0,
+      containers      >= 0.5,
+      old-time        >= 1.0,
+      Chart           >= 0.17,
+      Chart-diagrams  >= 0.1,
+      diagrams-postscript    >= 0.7,
+      diagrams-lib    >= 0.7,
+      diagrams-core   >= 0.7
+  if !flag(diagrams)
+    Buildable: False
+  Main-is: DiagramsEPS.hs
   Hs-Source-Dirs: tests
   Ghc-Options: -threaded
   default-language:    Haskell2010
@@ -197,9 +223,9 @@ Executable ChartsTestDrawingDiagramsCairo
       old-time        >= 1.0,
       Chart           >= 1.0,
       Chart-diagrams  >= 1.0,
-      diagrams-cairo  >= 0.6.1,
-      diagrams-lib    >= 0.6.1,
-      diagrams-core   >= 0.6.1
+      diagrams-cairo  >= 0.7,
+      diagrams-lib    >= 0.7,
+      diagrams-core   >= 0.7
   if !flag(cairo) || !flag(diagrams)
     Buildable: False
   Main-is: DiagramsCairo.hs
@@ -225,9 +251,9 @@ Executable ChartsTestCompareFonts
       Chart           >= 0.17,
       Chart-diagrams  >= 0.1,
       Chart-cairo     >= 0.1,
-      diagrams-cairo  >= 0.6.1,
-      diagrams-lib    >= 0.6.1,
-      diagrams-core   >= 0.6.1
+      diagrams-cairo  >= 0.7,
+      diagrams-lib    >= 0.7,
+      diagrams-core   >= 0.7
   if !flag(cairo) || !flag(diagrams)
     Buildable: False
   Main-is: Compare.hs
