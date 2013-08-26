@@ -1,0 +1,1 @@
+../chart-tests/tests/ExampleStocks.hs
