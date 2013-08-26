@@ -26,6 +26,7 @@ import Data.List (unfoldr)
 import Data.Monoid
 import Data.Traversable
 import qualified Data.Map as M
+import qualified Data.Set as S
 import qualified Data.ByteString.Lazy as BS
 
 import Control.Monad.Operational
@@ -46,7 +47,7 @@ import qualified Diagrams.Backend.Postscript as DEPS
 import qualified Diagrams.Backend.SVG as DSVG
 
 import Text.Blaze.Svg.Renderer.Utf8 ( renderSvg )
-import qualified Text.Blaze.Svg11 as S
+import qualified Text.Blaze.Svg11 as Svg
 
 import qualified Graphics.SVGFonts.ReadFont as F
 
@@ -93,13 +94,13 @@ renderableToSVGString'  r env =
 
 -- | Output the given renderable as a SVG of the specifed size
 --   (in points) using the default environment.
-renderableToSVG :: Renderable a -> Double -> Double -> IO (S.Svg, PickFn a)
+renderableToSVG :: Renderable a -> Double -> Double -> IO (Svg.Svg, PickFn a)
 renderableToSVG r w h = do
   env <- defaultEnv vectorAlignmentFns w h
   return $ renderableToSVG' r env
 
 -- | Output the given renderable as a SVG using the given environment.
-renderableToSVG' :: Renderable a -> DEnv -> (S.Svg, PickFn a)
+renderableToSVG' :: Renderable a -> DEnv -> (Svg.Svg, PickFn a)
 renderableToSVG' r env = 
   let (w, h) = envOutputSize env
       (d, x) = runBackendR env r
@@ -135,6 +136,7 @@ data DEnv = DEnv
   , envFontStyle :: FontStyle           -- ^ The current/initial font style.
   , envSelectFont :: FontStyle -> DFont -- ^ The font selection function.
   , envOutputSize :: (Double, Double)   -- ^ The size of the rendered output.
+  , envUsedGlyphs :: M.Map (String, FontSlant, FontWeight) (S.Set String) 
   }
 
 -- | A font a delivered by SVGFonts.
@@ -199,6 +201,7 @@ customFontEnv alignFns w h fontFiles = do
           Just font -> font
           Nothing -> selectFont fs
     , envOutputSize = (w,h)
+    , envUsedGlyphs = M.empty
     }
 
 -- | Produce a default environment with the default fonts.
