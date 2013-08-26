@@ -254,12 +254,12 @@ runBackend' m = eval (view m)
          => (v -> ChartBackend a) -> v -> DState (Diagram b R2, a)
     step f v = runBackend' (f v)
     
-    (<>#) :: (Monoid m) => DState m -> (() -> DState (m, a)) -> DState (m, a)
+    (<>#) :: (Monad s, Monoid m) => s m -> (() -> s (m, a)) -> s (m, a)
     (<>#) m f = do
       ma <- m
       return (ma, ()) <>= f
     
-    (<>=) :: (Monoid m) => DState (m, a) -> (a -> DState (m, b)) -> DState (m, b)
+    (<>=) :: (Monad s, Monoid m) => s (m, a) -> (a -> s (m, b)) -> s (m, b)
     (<>=) m f = do
       (ma, a) <- m
       (mb, b) <- f a
