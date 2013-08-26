@@ -17,14 +17,14 @@ import Graphics.Rendering.Chart.Geometry
 data LineCap = LineCapButt   -- ^ Just cut the line straight.
              | LineCapRound  -- ^ Make a rounded line end.
              | LineCapSquare -- ^ Make a square that ends the line.
-             deriving Show
+             deriving (Show, Eq, Ord)
 
 -- | The different supported ways to join line ends.
 data LineJoin = LineJoinMiter -- ^ Extends the outline until they meet each other.
               | LineJoinRound -- ^ Draw a circle fragment to connet line end.
               | LineJoinBevel -- ^ Like miter, but cuts it off if a certain 
                               --   threshold is exceeded.
-              deriving Show
+              deriving (Show, Eq, Ord)
 
 -- | Data type for the style of a line.
 data LineStyle = LineStyle 
@@ -39,7 +39,7 @@ data LineStyle = LineStyle
   -- ^ How to end a line.
   , _line_join   :: LineJoin
   -- ^ How to connect two lines.
-  } deriving Show
+  } deriving (Show, Eq)
 
 -- | The default line style.
 instance Default LineStyle where
@@ -59,7 +59,7 @@ instance Default LineStyle where
 data FontSlant = FontSlantNormal  -- ^ Normal font style without slant.
                | FontSlantItalic  -- ^ With a slight slant.
                | FontSlantOblique -- ^ With a greater slant.
-               deriving Show
+               deriving (Show, Eq, Ord)
 
 -- | The default font slant.
 instance Default FontSlant where
@@ -68,7 +68,7 @@ instance Default FontSlant where
 -- | The possible weights of a font.
 data FontWeight = FontWeightNormal -- ^ Normal font style without weight.
                 | FontWeightBold   -- ^ Bold font.
-                deriving Show
+                deriving (Show, Eq, Ord)
 
 -- | The default font weight.
 instance Default FontWeight where
@@ -86,7 +86,7 @@ data FontStyle = FontStyle {
       -- ^ The weight to render with.
       _font_color  :: AlphaColour Double
       -- ^ The color to render text with.
-} deriving Show
+} deriving (Show, Eq)
 
 -- | The default font style.
 instance Default FontStyle where
@@ -104,10 +104,17 @@ defaultFontStyle :: FontStyle
 defaultFontStyle = def
 
 -- | Possible horizontal anchor points for text.
-data HTextAnchor = HTA_Left | HTA_Centre | HTA_Right deriving Show
+data HTextAnchor = HTA_Left 
+                 | HTA_Centre 
+                 | HTA_Right 
+                 deriving (Show, Eq, Ord)
 
 -- | Possible vertical anchor points for text.
-data VTextAnchor = VTA_Top | VTA_Centre | VTA_Bottom | VTA_BaseLine deriving Show
+data VTextAnchor = VTA_Top 
+                 | VTA_Centre 
+                 | VTA_Bottom 
+                 | VTA_BaseLine 
+                 deriving (Show, Eq, Ord)
 
 -- | Text metrics returned by 'textSize'.
 data TextSize = TextSize 
@@ -116,7 +123,7 @@ data TextSize = TextSize
   , textSizeDescent  :: Double -- ^ The decent or space below the baseline.
   , textSizeYBearing :: Double -- ^ The Y bearing.
   , textSizeHeight   :: Double -- ^ The total height of the text.
-  } deriving Show
+  } deriving (Show, Eq)
 
 -- -----------------------------------------------------------------------
 -- Fill Types
@@ -126,13 +133,13 @@ data TextSize = TextSize
 --
 --   The contained Cairo action sets the required fill
 --   style in the Cairo rendering state.
-newtype FillStyle = FillStyleSolid { _fill_colour :: AlphaColour Double } deriving Show
+newtype FillStyle = FillStyleSolid 
+  { _fill_colour :: AlphaColour Double 
+  } deriving (Show, Eq)
 
 -- | The default fill style.
 instance Default FillStyle where
-  def = FillStyleSolid
-    { _fill_colour = opaque white
-    }
+  def = FillStyleSolid { _fill_colour = opaque white }
 
 -------------------------------------------------------------------------
 
