@@ -45,6 +45,7 @@ import Diagrams.Prelude
 import qualified Diagrams.Prelude as D
 import qualified Diagrams.TwoD as D2
 import qualified Diagrams.TwoD.Arc as D2
+import qualified Diagrams.TwoD.Text as D2
 import qualified Diagrams.Backend.Postscript as DEPS
 import qualified Diagrams.Backend.SVG as DSVG
 
@@ -141,9 +142,6 @@ data DEnv = DEnv
   , envOutputSize :: (Double, Double)   -- ^ The size of the rendered output.
   , envUsedGlyphs :: M.Map (String, FontSlant, FontWeight) (S.Set String)
     -- ^ The map of all glyphs that are used from a specific font.
-  , envRenderWithSVGFonts :: Bool
-    -- ^ If the backend should use SVGFonts or the normal diarams 
-    --   text primitive when rendering fonts.
   }
 
 -- | A font a delivered by SVGFonts.
@@ -211,7 +209,6 @@ customFontEnv alignFns w h fontFiles = do
           Nothing -> selectFont fs
     , envOutputSize = (w,h)
     , envUsedGlyphs = M.empty
-    , envRenderWithSVGFonts = True
     }
 
 -- | Produce a default environment with the default fonts.
@@ -236,39 +233,46 @@ runBackend :: (D.Backend b R2, D.Renderable (D.Path R2) b)
            -> ChartBackend a    -- ^ Chart render code.
            -> (Diagram b R2, a) -- ^ The diagram.
 runBackend env m = 
-  let (d, x, _) = runBackendWithGlyphs env m
-  in (d, x)
+  let (d, x) = evalState (runBackend' TextRenderSvg m) env
+  in (adjustOutputDiagram env d, x)
 
 -- | Run this backends renderer.
-runBackendWithGlyphs :: (D.Backend b R2, D.Renderable (D.Path R2) b)
+runBackendWithGlyphs :: ( D.Backend b R2
+                        , D.Renderable (D.Path R2) b
+                        , D.Renderable (D2.Text) b)
                      => DEnv   -- ^ Environment to start rendering with.
                      -> ChartBackend a    -- ^ Chart render code.
                      -> (Diagram b R2, a, M.Map (String, FontSlant, FontWeight) (S.Set String))
 runBackendWithGlyphs env m = 
-  let ((d, x), env') = runState (runBackend' (withDefaultStyle m)) env
-  in (D2.reflectY $ D2.view (p2 (0,0)) (r2 (envOutputSize env)) d, x, envUsedGlyphs env')
+  let ((d, x), env') = runState (runBackend' TextRenderNative (withDefaultStyle m)) env
+  in (adjustOutputDiagram env d, x, envUsedGlyphs env')
 
-runBackend' :: (D.Renderable (D.Path R2) b) 
-            => ChartBackend a -> DState (Diagram b R2, a)
-runBackend' m = eval (view m)
+data TextRender a where
+  TextRenderNative :: TextRender (D2.Text)
+  TextRenderSvg    :: TextRender (D.Path R2)
+
+runBackend' :: (D.Renderable (D.Path R2) b, D.Renderable t b) 
+            => TextRender t -> ChartBackend a -> DState (Diagram b R2, a)
+runBackend' tr m = eval tr (view m)
   where
-    eval :: (D.Renderable (D.Path R2) b)
-         => ProgramView ChartBackendInstr a -> DState (Diagram b R2, a)
-    eval (Return v) = return (mempty, v)
-    eval (StrokePath p   :>>= f) = dStrokePath p   <># step f
-    eval (FillPath   p   :>>= f) = dFillPath   p   <># step f
-    eval (DrawText   p s :>>= f) = dDrawText   p s <># step f
-    eval (GetTextSize  s :>>= f) = dTextSize     s <>= step f
-    eval (GetAlignments  :>>= f) = dAlignmentFns   <>= step f
-    eval (WithTransform m p :>>= f)  = dWithTransform  m  p <>= step f
-    eval (WithFontStyle fs p :>>= f) = dWithFontStyle  fs p <>= step f
-    eval (WithFillStyle fs p :>>= f) = dWithFillStyle  fs p <>= step f
-    eval (WithLineStyle ls p :>>= f) = dWithLineStyle  ls p <>= step f
-    eval (WithClipRegion r p :>>= f) = dWithClipRegion r  p <>= step f
+    eval :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+         => TextRender t -> ProgramView ChartBackendInstr a -> DState (Diagram b R2, a)
+    eval tr (Return v) = return (mempty, v)
+    eval tr (StrokePath p   :>>= f) = dStrokePath  p   <># step tr f
+    eval tr (FillPath   p   :>>= f) = dFillPath    p   <># step tr f
+    eval tr@TextRenderSvg    (DrawText   p s :>>= f) = dDrawTextSvg    p s <># step tr f
+    eval tr@TextRenderNative (DrawText   p s :>>= f) = dDrawTextNative p s <># step tr f
+    eval tr (GetTextSize  s :>>= f) = dTextSize      s <>= step tr f
+    eval tr (GetAlignments  :>>= f) = dAlignmentFns    <>= step tr f
+    eval tr (WithTransform m p :>>= f)  = dWithTransform  tr m  p <>= step tr f
+    eval tr (WithFontStyle fs p :>>= f) = dWithFontStyle  tr fs p <>= step tr f
+    eval tr (WithFillStyle fs p :>>= f) = dWithFillStyle  tr fs p <>= step tr f
+    eval tr (WithLineStyle ls p :>>= f) = dWithLineStyle  tr ls p <>= step tr f
+    eval tr (WithClipRegion r p :>>= f) = dWithClipRegion tr r  p <>= step tr f
 
-    step :: (D.Renderable (D.Path R2) b)
-         => (v -> ChartBackend a) -> v -> DState (Diagram b R2, a)
-    step f v = runBackend' (f v)
+    step :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+         => TextRender t -> (v -> ChartBackend a) -> v -> DState (Diagram b R2, a)
+    step tr f v = runBackend' tr (f v)
     
     (<>#) :: (Monad s, Monoid m) => s m -> (() -> s (m, a)) -> s (m, a)
     (<>#) m f = do
@@ -320,44 +324,51 @@ dAlignmentFns = do
   env <- get
   return (mempty, envAlignmentFns env)
 
-dDrawText :: (D.Renderable (D.Path R2) b)
-          => Point -> String -> DState (Diagram b R2)
-dDrawText (Point x y) text = do
+dDrawTextSvg :: (D.Renderable (D.Path R2) b)
+             => Point -> String -> DState (Diagram b R2)
+dDrawTextSvg (Point x y) text = do
   env <- get
-  addGlyphsOfString text
   return $ D.transform (toTransformation $ translate (Vector x y) 1)
-         $ applyFontStyle (envFontStyle env)
+         $ applyFontStyleSVG (envFontStyle env)
          $ D2.scaleY (-1)
          $ F.textSVG_ (fontStyleToTextOpts env text)
 
-dWith :: (D.Renderable (D.Path R2) b)
-      => (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
+dDrawTextNative :: (D.Renderable D2.Text b)
+                => Point -> String -> DState (Diagram b R2)
+dDrawTextNative (Point x y) text = do
+  env <- get
+  addGlyphsOfString text
+  return $ applyFontStyleText (envFontStyle env) 
+         $ D2.baselineText text
+
+dWith :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+      => TextRender t -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
       -> ChartBackend a -> DState (Diagram b R2, a)
-dWith envF dF m = dLocal $ do
+dWith tr envF dF m = dLocal $ do
   env <- get
   put $ envF env
-  (ma, a) <- runBackend' m
+  (ma, a) <- runBackend' tr m
   return (dF ma, a)
 
-dWithTransform :: (D.Renderable (D.Path R2) b)
-               => Matrix -> ChartBackend a -> DState (Diagram b R2, a)
-dWithTransform t = dWith id $ D.transform (toTransformation t)
+dWithTransform :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+               => TextRender t -> Matrix -> ChartBackend a -> DState (Diagram b R2, a)
+dWithTransform tr t = dWith tr id $ D.transform (toTransformation t)
 
-dWithLineStyle :: (D.Renderable (D.Path R2) b)
-               => LineStyle -> ChartBackend a -> DState (Diagram b R2, a)
-dWithLineStyle ls = dWith id $ applyLineStyle ls
+dWithLineStyle :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+               => TextRender t -> LineStyle -> ChartBackend a -> DState (Diagram b R2, a)
+dWithLineStyle tr ls = dWith tr id $ applyLineStyle ls
 
-dWithFillStyle :: (D.Renderable (D.Path R2) b)
-               => FillStyle -> ChartBackend a -> DState (Diagram b R2, a)
-dWithFillStyle fs = dWith id $ applyFillStyle fs
+dWithFillStyle :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+               => TextRender t -> FillStyle -> ChartBackend a -> DState (Diagram b R2, a)
+dWithFillStyle tr fs = dWith tr id $ applyFillStyle fs
 
-dWithFontStyle :: (D.Renderable (D.Path R2) b)
-               => FontStyle -> ChartBackend a -> DState (Diagram b R2, a)
-dWithFontStyle fs = dWith (\e -> e { envFontStyle = fs }) $ id
+dWithFontStyle :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+               => TextRender t -> FontStyle -> ChartBackend a -> DState (Diagram b R2, a)
+dWithFontStyle tr fs = dWith tr (\e -> e { envFontStyle = fs }) $ id
 
-dWithClipRegion :: (D.Renderable (D.Path R2) b)
-                => Rect -> ChartBackend a -> DState (Diagram b R2, a)
-dWithClipRegion clip = dWith id $ D2.clipBy (convertPath True $ rectPath clip)
+dWithClipRegion :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+                => TextRender t -> Rect -> ChartBackend a -> DState (Diagram b R2, a)
+dWithClipRegion tr clip = dWith tr id $ D2.clipBy (convertPath True $ rectPath clip)
 
 -- -----------------------------------------------------------------------
 -- Converions Helpers
@@ -381,6 +392,9 @@ addGlyphsOfString s = do
 
 pointToP2 :: Point -> P2
 pointToP2 (Point x y) = p2 (x,y)
+
+adjustOutputDiagram :: (D.Backend b R2) => DEnv -> Diagram b R2 -> Diagram b R2
+adjustOutputDiagram env d = D2.reflectY $ D2.view (p2 (0,0)) (r2 (envOutputSize env)) d
 
 noLineStyle :: LineStyle
 noLineStyle = def 
@@ -430,9 +444,16 @@ applyFillStyle fs = case fs of
   FillStyleSolid cl -> D.fillColor cl
 
 -- | Apply all pure diagrams properties from the font style.
-applyFontStyle :: (D.HasStyle a) => FontStyle -> a -> a
-applyFontStyle fs = applyLineStyle noLineStyle 
-                  . applyFillStyle (solidFillStyle $ _font_color fs)
+applyFontStyleSVG :: (D.HasStyle a) => FontStyle -> a -> a
+applyFontStyleSVG fs = applyLineStyle noLineStyle 
+                     . applyFillStyle (solidFillStyle $ _font_color fs)
+
+applyFontStyleText :: (D.HasStyle a) => FontStyle -> a -> a
+applyFontStyleText fs = D2.font (_font_name fs)
+                      . D2.fontSize (_font_size fs)
+                      . D2.fontSlant (convertFontSlant $ _font_slant fs)
+                      . D2.fontWeight (convertFontWeight $ _font_weight fs)
+                      . D.fillColor (_font_color fs)
 
 -- | Calculate the font metrics for the currently set font style.
 --   The returned value will be @(height, ascent, descent, ybearing)@.
@@ -489,6 +510,17 @@ convertLineJoin join = case join of
   LineJoinMiter -> D.LineJoinMiter
   LineJoinRound -> D.LineJoinRound
   LineJoinBevel -> D.LineJoinBevel
+
+convertFontSlant :: FontSlant -> D2.FontSlant
+convertFontSlant fs = case fs of
+  FontSlantNormal  -> D2.FontSlantNormal
+  FontSlantItalic  -> D2.FontSlantItalic
+  FontSlantOblique -> D2.FontSlantOblique
+
+convertFontWeight :: FontWeight -> D2.FontWeight
+convertFontWeight fw = case fw of
+  FontWeightBold   -> D2.FontWeightBold
+  FontWeightNormal -> D2.FontWeightNormal
 
 -- | Convert paths. The boolean says wether all trails 
 --   of the path shall be closed or remain open.
