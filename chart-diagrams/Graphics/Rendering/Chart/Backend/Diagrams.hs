@@ -140,6 +140,10 @@ data DEnv = DEnv
   , envSelectFont :: FontStyle -> DFont -- ^ The font selection function.
   , envOutputSize :: (Double, Double)   -- ^ The size of the rendered output.
   , envUsedGlyphs :: M.Map (String, FontSlant, FontWeight) (S.Set String)
+    -- ^ The map of all glyphs that are used from a specific font.
+  , envRenderWithSVGFonts :: Bool
+    -- ^ If the backend should use SVGFonts or the normal diarams 
+    --   text primitive when rendering fonts.
   }
 
 -- | A font a delivered by SVGFonts.
@@ -207,6 +211,7 @@ customFontEnv alignFns w h fontFiles = do
           Nothing -> selectFont fs
     , envOutputSize = (w,h)
     , envUsedGlyphs = M.empty
+    , envRenderWithSVGFonts = True
     }
 
 -- | Produce a default environment with the default fonts.
