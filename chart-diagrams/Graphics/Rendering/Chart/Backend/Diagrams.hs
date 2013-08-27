@@ -233,7 +233,7 @@ runBackend :: (D.Backend b R2, D.Renderable (D.Path R2) b)
            -> ChartBackend a    -- ^ Chart render code.
            -> (Diagram b R2, a) -- ^ The diagram.
 runBackend env m = 
-  let (d, x) = evalState (runBackend' TextRenderSvg m) env
+  let (d, x) = evalState (runBackend' TextRenderSvg $ withDefaultStyle m) env
   in (adjustOutputDiagram env d, x)
 
 -- | Run this backends renderer.
@@ -242,18 +242,22 @@ runBackendWithGlyphs :: ( D.Backend b R2
                         , D.Renderable (D2.Text) b)
                      => DEnv   -- ^ Environment to start rendering with.
                      -> ChartBackend a    -- ^ Chart render code.
-                     -> (Diagram b R2, a, M.Map (String, FontSlant, FontWeight) (S.Set String))
+                     -> ( Diagram b R2, a
+                        , M.Map (String, FontSlant, FontWeight) (S.Set String))
 runBackendWithGlyphs env m = 
-  let ((d, x), env') = runState (runBackend' TextRenderNative (withDefaultStyle m)) env
+  let ((d, x), env') = runState (runBackend' TextRenderNative $ withDefaultStyle m) env
   in (adjustOutputDiagram env d, x, envUsedGlyphs env')
 
+-- | Flag to decide which technique should ne used to render text.
+--   The type parameter is the primitive that has to be supported by 
+--   a backend when rendering text using this technique.
 data TextRender a where
   TextRenderNative :: TextRender (D2.Text)
   TextRenderSvg    :: TextRender (D.Path R2)
 
 runBackend' :: (D.Renderable (D.Path R2) b, D.Renderable t b) 
             => TextRender t -> ChartBackend a -> DState (Diagram b R2, a)
-runBackend' tr m = eval tr (view m)
+runBackend' tr m = eval tr $ view $ m
   where
     eval :: (D.Renderable (D.Path R2) b, D.Renderable t b)
          => TextRender t -> ProgramView ChartBackendInstr a -> DState (Diagram b R2, a)
