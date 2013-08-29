@@ -164,26 +164,49 @@ defaultFonts = do
   
   let selectFont :: FontStyle -> DFont
       selectFont fs = case (_font_name fs, _font_slant fs, _font_weight fs) of
-        ("serif", FontSlantNormal , FontWeightNormal) -> serifR
-        ("serif", FontSlantNormal , FontWeightBold  ) -> serifRB
-        ("serif", FontSlantItalic , FontWeightNormal) -> serifRI
-        ("serif", FontSlantOblique, FontWeightNormal) -> serifRI
-        ("serif", FontSlantItalic , FontWeightBold  ) -> serifRBI
-        ("serif", FontSlantOblique, FontWeightBold  ) -> serifRBI
+        ("serif", FontSlantNormal , FontWeightNormal) -> alterFontFamily "serif" serifR
+        ("serif", FontSlantNormal , FontWeightBold  ) -> alterFontFamily "serif" serifRB
+        ("serif", FontSlantItalic , FontWeightNormal) -> alterFontFamily "serif" serifRI
+        ("serif", FontSlantOblique, FontWeightNormal) -> alterFontFamily "serif" serifRI
+        ("serif", FontSlantItalic , FontWeightBold  ) -> alterFontFamily "serif" serifRBI
+        ("serif", FontSlantOblique, FontWeightBold  ) -> alterFontFamily "serif" serifRBI
         
-        ("sans-serif", FontSlantNormal , FontWeightNormal) -> sansR
-        ("sans-serif", FontSlantNormal , FontWeightBold  ) -> sansRB
-        ("sans-serif", FontSlantItalic , FontWeightNormal) -> sansRI
-        ("sans-serif", FontSlantOblique, FontWeightNormal) -> sansRI
-        ("sans-serif", FontSlantItalic , FontWeightBold  ) -> sansRBI
-        ("sans-serif", FontSlantOblique, FontWeightBold  ) -> sansRBI
+        ("sans-serif", FontSlantNormal , FontWeightNormal) -> alterFontFamily "sans-serif" sansR
+        ("sans-serif", FontSlantNormal , FontWeightBold  ) -> alterFontFamily "sans-serif" sansRB
+        ("sans-serif", FontSlantItalic , FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
+        ("sans-serif", FontSlantOblique, FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
+        ("sans-serif", FontSlantItalic , FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
+        ("sans-serif", FontSlantOblique, FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
         
-        ("monospace", _, FontWeightNormal) -> monoR
-        ("monospace", _, FontWeightBold  ) -> monoRB
+        ("monospace", _, FontWeightNormal) -> alterFontFamily "monospace" monoR
+        ("monospace", _, FontWeightBold  ) -> alterFontFamily "monospace" monoRB
+        
+        (fam, FontSlantNormal , FontWeightNormal) | fam `isFontFamily` serifR   -> serifR
+        (fam, FontSlantNormal , FontWeightBold  ) | fam `isFontFamily` serifRB  -> serifRB
+        (fam, FontSlantItalic , FontWeightNormal) | fam `isFontFamily` serifRI  -> serifRI
+        (fam, FontSlantOblique, FontWeightNormal) | fam `isFontFamily` serifRI  -> serifRI
+        (fam, FontSlantItalic , FontWeightBold  ) | fam `isFontFamily` serifRBI -> serifRBI
+        (fam, FontSlantOblique, FontWeightBold  ) | fam `isFontFamily` serifRBI -> serifRBI
+        
+        (fam, FontSlantNormal , FontWeightNormal) | fam `isFontFamily` sansR   -> sansR
+        (fam, FontSlantNormal , FontWeightBold  ) | fam `isFontFamily` sansRB  -> sansRB
+        (fam, FontSlantItalic , FontWeightNormal) | fam `isFontFamily` sansRI  -> sansRI
+        (fam, FontSlantOblique, FontWeightNormal) | fam `isFontFamily` sansRI  -> sansRI
+        (fam, FontSlantItalic , FontWeightBold  ) | fam `isFontFamily` sansRBI -> sansRBI
+        (fam, FontSlantOblique, FontWeightBold  ) | fam `isFontFamily` sansRBI -> sansRBI
+        
+        (fam, _, FontWeightNormal) | fam `isFontFamily` monoR  -> monoR
+        (fam, _, FontWeightBold  ) | fam `isFontFamily` monoRB -> monoRB
         
         (_, slant, weight) -> selectFont (fs { _font_name = "sans-serif" })
   
   return selectFont
+
+alterFontFamily :: String -> DFont -> DFont
+alterFontFamily n (fd, om) = (fd { F.fontDataFamily = n }, om)
+
+isFontFamily :: String -> DFont -> Bool
+isFontFamily n (fd, _) = n == F.fontDataFamily fd
   
 loadDefaultFont :: FilePath -> IO DFont
 loadDefaultFont file = getDataFileName file >>= return . F.outlMap
