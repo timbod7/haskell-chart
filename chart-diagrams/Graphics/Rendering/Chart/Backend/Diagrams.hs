@@ -428,7 +428,8 @@ dDrawTextNative :: (D.Renderable D2.Text b)
 dDrawTextNative (Point x y) text = do
   env <- get
   addGlyphsOfString text
-  return $ applyFontStyleText (envFontStyle env) 
+  return $ D.transform (toTransformation $ translate (Vector x y) 1)
+         $ applyFontStyleText (envFontStyle env) 
          $ D2.scaleY (-1)
          $ D2.baselineText text
 
