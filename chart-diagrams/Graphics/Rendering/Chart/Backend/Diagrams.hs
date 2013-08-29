@@ -54,6 +54,7 @@ import qualified Text.Blaze.Svg11 as Svg
 
 import qualified Graphics.SVGFonts.CharReference as F
 import qualified Graphics.SVGFonts.ReadFont as F
+import Graphics.SVGFonts.WriteFont ( makeSvgFont )
 
 import Graphics.Rendering.Chart.Backend as G
 import Graphics.Rendering.Chart.Backend.Impl
@@ -108,7 +109,7 @@ renderableToSVG' :: Renderable a -> DEnv -> (Svg.Svg, PickFn a)
 renderableToSVG' r env = 
   let (w, h) = envOutputSize env
       (d, x) = runBackendR env r
-      svg = D.renderDia DSVG.SVG (DSVG.SVGOptions $ D2.Dims w h) d
+      svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) Nothing) d
   in (svg, x)
 
 -- | Output the given renderable to a EPS file using the default environment.
