@@ -9,14 +9,24 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , defaultEnv
   , customFontEnv
   , DEnv(..), DFont
+  
+  -- * EPS Utility Functions.
   , renderableToEPSFile
   , renderableToEPSFile'
+  
+  -- * SVG Utility Functions
   , renderableToSVG
   , renderableToSVG'
   , renderableToSVGFile
   , renderableToSVGFile'
   , renderableToSVGString
   , renderableToSVGString'
+  
+  -- * SVG Embedded Font Utility Functions
+  , renderableToEmbeddedFontSVG
+  , renderableToEmbeddedFontSVG'
+  , renderableToEmbeddedFontSVGFile
+  , renderableToEmbeddedFontSVGFile'
   ) where
 
 import Data.Default.Class
@@ -66,7 +76,7 @@ import Graphics.Rendering.Chart.Renderable
 import Paths_Chart_diagrams ( getDataFileName )
 
 -- -----------------------------------------------------------------------
--- General Utility Functions
+-- SVG Utility Functions
 -- -----------------------------------------------------------------------
 
 -- | Output the given renderable to a SVG file of the specifed size
@@ -112,8 +122,39 @@ renderableToSVG' r env =
       svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) Nothing) d
   in (svg, x)
 
-renderableToEmbeddedFontSVG :: Renderable a -> DEnv -> (Svg.Svg, PickFn a)
-renderableToEmbeddedFontSVG r env =
+-- -----------------------------------------------------------------------
+-- SVG Embedded Font Utility Functions
+-- -----------------------------------------------------------------------
+
+-- | Output the given renderable to a SVG file of the specifed size
+--   (in points), to the specified file using the default environment.
+--   Font are embedded to save space.
+renderableToEmbeddedFontSVGFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
+renderableToEmbeddedFontSVGFile r w h file = do
+  (svg, x) <- renderableToEmbeddedFontSVG r w h
+  BS.writeFile file $ renderSvg svg
+  return x
+
+-- | Output the given renderable to a SVG file using the given environment.
+--   Font are embedded to save space.
+renderableToEmbeddedFontSVGFile' :: Renderable a -> DEnv -> FilePath -> IO (PickFn a)
+renderableToEmbeddedFontSVGFile' r env file = do
+  let (svg, x) = renderableToEmbeddedFontSVG' r env
+  BS.writeFile file $ renderSvg svg
+  return x
+
+-- | Output the given renderable as a SVG of the specifed size
+--   (in points) using the default environment.
+--   Font are embedded to save space.
+renderableToEmbeddedFontSVG :: Renderable a -> Double -> Double -> IO (Svg.Svg, PickFn a)
+renderableToEmbeddedFontSVG r w h = do
+  env <- defaultEnv vectorAlignmentFns w h
+  return $ renderableToEmbeddedFontSVG' r env
+
+-- | Output the given renderable as a SVG using the given environment.
+--   Font are embedded to save space.
+renderableToEmbeddedFontSVG' :: Renderable a -> DEnv -> (Svg.Svg, PickFn a)
+renderableToEmbeddedFontSVG' r env =
   let size@(w, h) = envOutputSize env
       cr = render r size
       (d, x, gs) = runBackendWithGlyphs env cr
@@ -128,6 +169,10 @@ renderableToEmbeddedFontSVG r env =
         -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
       svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) fontDefs) d
   in (svg, x)
+
+-- -----------------------------------------------------------------------
+-- EPS Utility Functions
+-- -----------------------------------------------------------------------
 
 -- | Output the given renderable to a EPS file using the default environment.
 renderableToEPSFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
