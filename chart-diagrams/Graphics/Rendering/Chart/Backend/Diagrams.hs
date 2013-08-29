@@ -112,6 +112,23 @@ renderableToSVG' r env =
       svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) Nothing) d
   in (svg, x)
 
+renderableToEmbeddedFontSVG :: Renderable a -> DEnv -> (Svg.Svg, PickFn a)
+renderableToEmbeddedFontSVG r env =
+  let size@(w, h) = envOutputSize env
+      cr = render r size
+      (d, x, gs) = runBackendWithGlyphs env cr
+      fontDefs = Just $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
+        let fs = envFontStyle env
+        let font = envSelectFont env $ fs { _font_name = fFam
+                                          , _font_slant = fSlant
+                                          , _font_weight = fWeight 
+                                          }
+        makeSvgFont font usedGs
+        -- M.Map (String, FontSlant, FontWeight) (S.Set String)
+        -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
+      svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) fontDefs) d
+  in (svg, x)
+
 -- | Output the given renderable to a EPS file using the default environment.
 renderableToEPSFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
 renderableToEPSFile r w h file = do
