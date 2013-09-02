@@ -437,8 +437,7 @@ dWith :: (D.Renderable (D.Path R2) b, D.Renderable t b)
       => TextRender t -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
       -> ChartBackend a -> DState (Diagram b R2, a)
 dWith tr envF dF m = dLocal $ do
-  env <- get
-  put $ envF env
+  modify envF
   (ma, a) <- runBackend' tr m
   return (dF ma, a)
 
