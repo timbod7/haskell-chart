@@ -117,6 +117,38 @@ data LayoutAxis x = LayoutAxis {
 
 }
 
+-- | On which axis to display something.
+data ShowOnAxis = ShowOnAxis1    -- ^ Display it on the bottom or left axis.
+                | ShowOnBothAxis -- ^ Display it on both axis of a orientation.
+                | ShowOnAxis2    -- ^ Display it on the top or right axis.
+
+-- | A Layout value is a single plot area, with single x and y
+--   axis. The title is at the top and the legend at the bottom. It's
+--   parametrized by the types of values to be plotted on the x
+--   and y axes.
+data Layout x y = Layout {
+    _layout_background      :: FillStyle,
+    _layout_plot_background :: Maybe FillStyle,
+
+    _layout_title           :: String,
+    _layout_title_style     :: FontStyle,
+
+
+    _layout_x_axis          :: LayoutAxis x,  -- rules to generate the x axis
+    _layout_x_show_ticks    :: ShowOnAxis,    -- whether to show the ticks on the top or bottom axes
+    _layout_x_show_labels   :: ShowOnAxis,    -- whether to show the labels on the top or bottom axes
+
+    _layout_y_axis          :: LayoutAxis y,  -- rules to generate the y axis
+    _layout_y_show_ticks    :: ShowOnAxis,    -- whether to show the ticks on the left or right axes
+    _layout_y_show_labels   :: ShowOnAxis,    -- whether to show the labels on the left or right axes
+
+    _layout_plots           :: [Plot x y],
+
+    _layout_legend          :: Maybe LegendStyle,
+    _layout_margin          :: Double,
+    _layout_grid_last       :: Bool
+}
+
 -- | A Layout1 value is a single plot area, with optional: axes on
 --   each of the 4 sides; title at the top; legend at the bottom. It's
 --   parameterised by the types of values to be plotted on the horizonal
