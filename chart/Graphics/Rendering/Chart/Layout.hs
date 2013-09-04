@@ -149,6 +149,15 @@ data Layout x y = Layout {
     _layout_grid_last       :: Bool
 }
 
+data LayoutPick x y = LayoutPick_Legend String
+                    | LayoutPick_Title String
+                    | LayoutPick_XAxisTitle String
+                    | LayoutPick_YAxisTitle String
+                    | LayoutPick_PlotArea x y
+                    | LayoutPick_XAxis x
+                    | LayoutPick_YAxis x
+                    deriving (Show)
+
 -- | A Layout1 value is a single plot area, with optional: axes on
 --   each of the 4 sides; title at the top; legend at the bottom. It's
 --   parameterised by the types of values to be plotted on the horizonal
@@ -232,11 +241,11 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
           `wideAbove`
           (addMarginsToGrid (lm,lm,lm,lm) $ mkPlotArea baxis taxis)
           `aboveWide`
-          (if showLegend then noPickFn $ renderLegend l legenditems else emptyRenderable)
+          (if showLegend then noPickFn $ renderLegend1 l legenditems else emptyRenderable)
 
       where
         legenditems = case (_slayouts_compress_legend slp,isBottomPlot) of
-            (False,_) -> getLegendItems l
+            (False,_) -> getLegendItems1 l
             (True,True) -> alllegendItems
             (True,False) -> ([],[])
 
@@ -263,7 +272,7 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
     all_xvals = concatMap (\(StackedLayout l) -> getLayout1XVals l) sls
 
     alllegendItems = (concatMap (fst.legendItems) sls, concatMap (snd.legendItems) sls)
-    legendItems (StackedLayout l) = (getLegendItems l)
+    legendItems (StackedLayout l) = (getLegendItems1 l)
     
     noPickFn :: Renderable a -> Renderable ()
     noPickFn = mapPickFn (const ())
@@ -298,6 +307,16 @@ layout1ToGrid l = aboveN
   where
     lm = _layout1_margin l
 
+layoutTitleToRenderable :: (Ord x, Ord y) => Layout x y
+                                           -> Renderable (Layout1Pick x y)
+layoutTitleToRenderable l | null (_layout_title l) = emptyRenderable
+layoutTitleToRenderable l = addMargins (lm/2,0,0,0)
+                                       (mapPickFn L1P_Title title)
+  where
+    title = label (_layout_title_style l) HTA_Centre VTA_Centre
+                  (_layout_title l)
+    lm    = _layout_margin l
+
 layout1TitleToRenderable :: (Ord x, Ord y) => Layout1 x y
                                            -> Renderable (Layout1Pick x y)
 layout1TitleToRenderable l | null (_layout1_title l) = emptyRenderable
@@ -308,21 +327,39 @@ layout1TitleToRenderable l = addMargins (lm/2,0,0,0)
                   (_layout1_title l)
     lm    = _layout1_margin l
 
+getLayoutXVals :: Layout x y -> [x]
+getLayoutXVals l = concatMap (fst . _plot_all_points) (_layout_plots l)
+
 getLayout1XVals :: Layout1 x y -> [x]
 getLayout1XVals l = concatMap (fst._plot_all_points.deEither) (_layout1_plots l)
   where
     deEither (Left x)  = x
     deEither (Right x) = x
 
+getLegendItems :: Layout x y -> [LegendItem]
+getLegendItems l = concat [ _plot_legend p | p <- _layout_plots l ]
 
-getLegendItems :: Layout1 x y -> ([LegendItem],[LegendItem])
-getLegendItems l = (
+getLegendItems1 :: Layout1 x y -> ([LegendItem],[LegendItem])
+getLegendItems1 l = (
     concat [ _plot_legend p | (Left p ) <- (_layout1_plots l) ],
     concat [ _plot_legend p | (Right p) <- (_layout1_plots l) ]
     )
 
-renderLegend :: Layout1 x y -> ([LegendItem],[LegendItem]) -> Renderable (Layout1Pick x y)
-renderLegend l (lefts,rights) = gridToRenderable g
+renderLegend :: Layout x y -> [LegendItem] -> Renderable (LayoutPick x y)
+renderLegend l legItems = gridToRenderable g
+  where
+    g      = besideN [ tval $ mkLegend legItems
+                     , weights (1,1) $ tval $ emptyRenderable ]
+    lm     = _layout_margin l
+    mkLegend vals = case (_layout_legend l) of
+        Nothing -> emptyRenderable
+        Just ls -> case filter ((/="").fst) vals of
+            []  -> emptyRenderable ;
+            lvs -> addMargins (0,lm,lm,lm) $ mapPickFn LayoutPick_Legend 
+                                           $ legendToRenderable (Legend ls lvs)
+
+renderLegend1 :: Layout1 x y -> ([LegendItem],[LegendItem]) -> Renderable (Layout1Pick x y)
+renderLegend1 l (lefts,rights) = gridToRenderable g
   where
     g      = besideN [ tval $ mkLegend lefts
                      , weights (1,1) $ tval $ emptyRenderable
@@ -337,9 +374,13 @@ renderLegend l (lefts,rights) = gridToRenderable g
             lvs -> addMargins (0,lm,lm,lm) $
                        mapPickFn L1P_Legend $ legendToRenderable (Legend ls lvs)
 
+layoutLegendsToRenderable :: (Ord x, Ord y) =>
+                              Layout x y -> Renderable (LayoutPick x y)
+layoutLegendsToRenderable l = renderLegend l (getLegendItems l)
+
 layout1LegendsToRenderable :: (Ord x, Ord y) =>
                               Layout1 x y -> Renderable (Layout1Pick x y)
-layout1LegendsToRenderable l = renderLegend l (getLegendItems l)
+layout1LegendsToRenderable l = renderLegend1 l (getLegendItems1 l)
 
 layout1PlotAreaToGrid :: forall x y. (Ord x, Ord y) =>
                           Layout1 x y -> Grid (Renderable (Layout1Pick x y))
@@ -383,7 +424,7 @@ layout1PlotAreaToGrid l = layer2 `overlay` layer1
         mfill Nothing   = id
         mfill (Just fs) = fillBackground fs
 
-    (ba,la,ta,ra) = getAxes l
+    (ba,la,ta,ra) = getAxes1 l
     baxis = tval $ maybe emptyRenderable
                          (mapPickFn L1P_BottomAxis . axisToRenderable) ba
     taxis = tval $ maybe emptyRenderable
@@ -413,7 +454,7 @@ renderPlots l sz@(w,h) = do
     return pickfn
 
   where
-    (bAxis,lAxis,tAxis,rAxis) = getAxes l
+    (bAxis,lAxis,tAxis,rAxis) = getAxes1 l
 
     rPlot (Left  p) = rPlot1 bAxis lAxis p
     rPlot (Right p) = rPlot1 bAxis rAxis p
@@ -463,11 +504,11 @@ axesSpacer f1 a1 f2 a2 = embedRenderable $ do
     oh2 <- maybeM (0,0) axisOverhang a2
     return (spacer (f1 oh1, f2 oh2))
 
-getAxes :: Layout1 x y ->
+getAxes1 :: Layout1 x y ->
            (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
-getAxes l = (bAxis,lAxis,tAxis,rAxis)
+getAxes1 l = (bAxis,lAxis,tAxis,rAxis)
   where
-    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues (_layout1_plots l)
+    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues1 (_layout1_plots l)
     xvals                         = xvals0 ++ xvals1
     (yvals0',yvals1')             = _layout1_yaxes_control l (yvals0,yvals1)
 
@@ -484,9 +525,16 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
         rev   = _laxis_reverse laxis
         adata = (_laxis_override laxis) (_laxis_generate laxis vals)
 
-allPlottedValues :: [(Either (Plot x y) (Plot x' y'))]
+allPlottedValues :: [Plot x y]
+                    -> ( [x], [y] )
+allPlottedValues plots = (xvals, yvals)
+  where
+    xvals = [ x | p <- plots, x <- fst $ _plot_all_points p]
+    yvals = [ y | p <- plots, y <- snd $ _plot_all_points p]
+
+allPlottedValues1 :: [(Either (Plot x y) (Plot x' y'))]
                     -> ( [x], [x'], [y], [y'] )
-allPlottedValues plots = (xvals0,xvals1,yvals0,yvals1)
+allPlottedValues1 plots = (xvals0,xvals1,yvals0,yvals1)
   where
     xvals0 = [ x | (Left p)  <- plots, x <- fst $ _plot_all_points p]
     yvals0 = [ y | (Left p)  <- plots, y <- snd $ _plot_all_points p]
