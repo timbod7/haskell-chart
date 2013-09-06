@@ -36,6 +36,7 @@ module Graphics.Rendering.Chart.Layout(
     LayoutPick(..),
     StackedLayouts(..),
     StackedLayout(..),
+    ShowOnAxis(..),
     MAxisFn,
 
     defaultLayout1,
