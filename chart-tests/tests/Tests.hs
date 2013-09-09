@@ -272,8 +272,8 @@ test11b otype = test11_ f
 -- More of an example that a test:
 -- configuring axes explicitly configured axes
 
-test12 :: OutputType -> Renderable (Layout1Pick Int Int)
-test12 otype = layout1ToRenderable layout
+test12 :: OutputType -> Renderable (LayoutPick Int Int)
+test12 otype = layoutToRenderable layout
   where
     vs1 :: [(Int,Int)]
     vs1 = [ (2,10), (3,40), (8,400), (12,60) ]
@@ -299,10 +299,10 @@ test12 otype = layout1ToRenderable layout
     plot = plot_lines_values .~ [vs1]
          $ def
 
-    layout = layout1_plots .~ [Left (toPlot plot)]
-           $ layout1_bottom_axis . laxis_generate .~ const baxis
-           $ layout1_left_axis   . laxis_generate .~ const laxis
-           $ layout1_title .~ "Explicit Axes"
+    layout = layout_plots .~ [toPlot plot]
+           $ layout_x_axis . laxis_generate .~ const baxis
+           $ layout_y_axis . laxis_generate .~ const laxis
+           $ layout_title .~ "Explicit Axes"
            $ def
 
 
@@ -319,8 +319,8 @@ test13 otype = fillBackground fwhite $ (gridToRenderable t)
     pointPlot = plot_points_style.~ filledCircles 2 (opaque red)
                 $  plot_points_values .~ [(x,x)|x<-points]
                 $  def
-    p = Left (toPlot pointPlot)
-    annotated h v = layout1ToRenderable ( layout1_plots .~ [Left (toPlot labelPlot), Left (toPlot rotPlot), p] $ def )
+    p = toPlot pointPlot
+    annotated h v = layoutToRenderable ( layout_plots .~ [toPlot labelPlot, toPlot rotPlot, p] $ def )
       where labelPlot = plot_annotation_hanchor .~ h
                       $ plot_annotation_vanchor .~ v
                       $ plot_annotation_values  .~ [(x,x,"Hello World\n(plain)")|x<-points]

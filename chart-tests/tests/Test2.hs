@@ -48,7 +48,7 @@ chart prices showMinMax lwidth = layout1ToRenderable layout
 
     layout = layout1_title .~"Price History"
            $ layout1_background .~ solidFillStyle bg
-           $ updateAllAxesStyles (axis_grid_style .~ solidLine 1 fg1)
+           $ updateAllAxesStyles1 (axis_grid_style .~ solidLine 1 fg1)
            $ layout1_left_axis . laxis_override .~ axisGridHide
            $ layout1_right_axis . laxis_override .~ axisGridHide
            $ layout1_bottom_axis . laxis_override .~ axisGridHide
