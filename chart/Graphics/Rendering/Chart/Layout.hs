@@ -76,11 +76,11 @@ module Graphics.Rendering.Chart.Layout(
     layout_title,
     layout_title_style,
     layout_x_axis,
-    layout_x_show_ticks,
-    layout_x_show_labels,
+    layout_x_top_axis,
+    layout_x_bottom_axis,
     layout_y_axis,
-    layout_y_show_ticks,
-    layout_y_show_labels,
+    layout_y_left_axis,
+    layout_y_right_axis,
     layout_margin,
     layout_plots,
     layout_legend,
@@ -156,14 +156,13 @@ data Layout x y = Layout {
     _layout_title           :: String,
     _layout_title_style     :: FontStyle,
 
+    _layout_x_axis          :: LayoutAxis x,   -- ^ Rules to generate the x axis.
+    _layout_x_top_axis      :: AxisVisibility, -- ^ Visibility options for the top axis.
+    _layout_x_bottom_axis   :: AxisVisibility, -- ^ Visibility options for the bottom axis.
 
-    _layout_x_axis          :: LayoutAxis x,  -- rules to generate the x axis
-    _layout_x_show_ticks    :: ShowOnAxis,    -- whether to show the ticks on the top or bottom axes
-    _layout_x_show_labels   :: ShowOnAxis,    -- whether to show the labels on the top or bottom axes
-
-    _layout_y_axis          :: LayoutAxis y,  -- rules to generate the y axis
-    _layout_y_show_ticks    :: ShowOnAxis,    -- whether to show the ticks on the left or right axes
-    _layout_y_show_labels   :: ShowOnAxis,    -- whether to show the labels on the left or right axes
+    _layout_y_axis          :: LayoutAxis y,   -- ^ Rules to generate the y axis.
+    _layout_y_left_axis     :: AxisVisibility, -- ^ Visibility options for the left axis.
+    _layout_y_right_axis    :: AxisVisibility, -- ^ Visibility options for the right axis.
 
     _layout_plots           :: [Plot x y],
 
@@ -664,42 +663,29 @@ axesSpacer f1 a1 f2 a2 = embedRenderable $ do
     oh2 <- maybeM (0,0) axisOverhang a2
     return (spacer (f1 oh1, f2 oh2))
 
-getAxes :: Layout x y ->
+getAxes :: forall x y. Layout x y ->
            (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
 getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where
     (xvals, yvals) = allPlottedValues (_layout_plots l)
 
-    bAxis = mkAxis E_Bottom (_layout_x_show_ticks l) (_layout_x_show_labels l) 
-                            (_layout_x_axis l) xvals
-    tAxis = mkAxis E_Top    (_layout_x_show_ticks l) (_layout_x_show_labels l) 
-                            (_layout_x_axis l) xvals
-    lAxis = mkAxis E_Left   (_layout_y_show_ticks l) (_layout_y_show_labels l) 
-                            (_layout_y_axis l) yvals
-    rAxis = mkAxis E_Right  (_layout_y_show_ticks l) (_layout_y_show_labels l) 
-                            (_layout_y_axis l) yvals
+    bAxis = mkAxis E_Bottom (getAxis l _layout_x_axis _layout_x_bottom_axis) xvals
+    tAxis = mkAxis E_Top    (getAxis l _layout_x_axis _layout_x_top_axis   ) xvals
+    lAxis = mkAxis E_Left   (getAxis l _layout_y_axis _layout_y_left_axis  ) yvals
+    rAxis = mkAxis E_Right  (getAxis l _layout_y_axis _layout_y_right_axis ) yvals
     
-    -- | @setProps edge ticks labels adata@
-    setProps :: RectEdge -> ShowOnAxis -> ShowOnAxis -> AxisData z -> Maybe (AxisData z)
-    setProps edge ticks labels adata = case (ticks, labels, edge) of
-      (ShowOnAxis1, ShowOnAxis1, E_Top   ) -> Nothing
-      (ShowOnAxis1, _          , E_Top   ) -> Just $ axisTicksHide adata
-      (_          , ShowOnAxis1, E_Top   ) -> Just $ axisLabelsHide adata
-      (ShowOnAxis1, ShowOnAxis1, E_Right ) -> Nothing
-      (ShowOnAxis1, _          , E_Right ) -> Just $ axisTicksHide adata
-      (_          , ShowOnAxis1, E_Right ) -> Just $ axisLabelsHide adata
-      (ShowOnAxis2, ShowOnAxis2, E_Bottom) -> Nothing
-      (ShowOnAxis2, _          , E_Bottom) -> Just $ axisTicksHide adata
-      (_          , ShowOnAxis2, E_Bottom) -> Just $ axisLabelsHide adata
-      (ShowOnAxis2, ShowOnAxis2, E_Left  ) -> Nothing
-      (ShowOnAxis2, _          , E_Left  ) -> Just $ axisTicksHide adata
-      (_          , ShowOnAxis2, E_Left  ) -> Just $ axisLabelsHide adata
-      (_, _, _) -> Just adata
+    getAxis :: Layout x y 
+            -> (Layout x y -> LayoutAxis z) 
+            -> (Layout x y -> AxisVisibility) 
+            -> LayoutAxis z 
+    getAxis ly selAxis selVis = (selAxis ly) 
+                              { _laxis_override = (\ad -> ad { _axis_visibility = selVis ly }) 
+                                                . _laxis_override (selAxis ly) }
     
-    mkAxis :: RectEdge -> ShowOnAxis -> ShowOnAxis -> LayoutAxis z -> [z] -> Maybe (AxisT z)
-    mkAxis edge ticks labels laxis vals = case _laxis_visible laxis vals of
+    mkAxis :: RectEdge -> LayoutAxis z -> [z] -> Maybe (AxisT z)
+    mkAxis edge laxis vals = case _laxis_visible laxis vals of
         False -> Nothing
-        True  -> AxisT edge style rev `fmap` setProps edge ticks labels adata
+        True  -> Just $ AxisT edge style rev adata
       where
         style = _laxis_style laxis
         rev   = _laxis_reverse laxis
@@ -778,11 +764,15 @@ instance (PlotValue x, PlotValue y) => Default (Layout x y) where
                                     , _font_weight = FontWeightBold }
     
     , _layout_x_axis        = def
-    , _layout_x_show_ticks  = def
-    , _layout_x_show_labels = def
+    , _layout_x_top_axis    = def { _axis_show_line   = False
+                                  , _axis_show_ticks  = False
+                                  , _axis_show_labels = False }
+    , _layout_x_bottom_axis = def
     , _layout_y_axis        = def
-    , _layout_y_show_ticks  = def
-    , _layout_y_show_labels = def
+    , _layout_y_left_axis   = def
+    , _layout_y_right_axis  = def { _axis_show_line   = False
+                                  , _axis_show_ticks  = False
+                                  , _axis_show_labels = False }
 
     , _layout_margin          = 10
     , _layout_plots           = []
