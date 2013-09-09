@@ -179,11 +179,15 @@ axisGridAtLabels ad   = ad{ _axis_grid = map fst vs }
 
 -- | Modifier to remove ticks from an axis
 axisTicksHide       :: AxisData x -> AxisData x
-axisTicksHide ad     = ad{ _axis_ticks  = [] }
+axisTicksHide ad     = ad { _axis_visibility = (_axis_visibility ad) 
+                                             { _axis_show_ticks = False }
+                          }
 
 -- | Modifier to remove labels from an axis
 axisLabelsHide      :: AxisData x -> AxisData x
-axisLabelsHide ad    = ad{ _axis_labels = []}
+axisLabelsHide ad    = ad { _axis_visibility = (_axis_visibility ad) 
+                                             { _axis_show_labels = False} 
+                          }
 
 -- | Modifier to change labels on an axis
 axisLabelsOverride  :: [(x,String)] -> AxisData x -> AxisData x
@@ -191,11 +195,15 @@ axisLabelsOverride o ad = ad{ _axis_labels = [o] }
 
 minsizeAxis :: AxisT x -> ChartBackend RectSize
 minsizeAxis (AxisT at as rev ad) = do
+    let labelVis = _axis_show_labels $ _axis_visibility $ ad
+        tickVis  = _axis_show_ticks  $ _axis_visibility $ ad
+        labels = if labelVis then labelTexts ad else []
+        ticks = if tickVis then _axis_ticks ad else []
     labelSizes <- withFontStyle (_axis_label_style as) $ do
-      mapM (mapM textDimension) (labelTexts ad)
+                    mapM (mapM textDimension) labels
 
     let ag      = _axis_label_gap as
-    let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- _axis_ticks ad ])
+    let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- ticks ])
 
     let hw = maximum0 (map (maximum0.map fst) labelSizes)
     let hh = ag + tsize + (sum . intersperse ag . map (maximum0.map snd) $ labelSizes)
@@ -219,6 +227,7 @@ maximum0 vs = maximum vs
 -- | Calculate the amount by which the labels extend beyond
 --   the ends of the axis.
 axisOverhang :: (Ord x) => AxisT x -> ChartBackend (Double,Double)
+axisOverhang (AxisT _ _ _ ad) | _axis_show_labels (_axis_visibility ad) = return (0,0)
 axisOverhang (AxisT at as rev ad) = do
     let labels = map snd . sort . concat . _axis_labels $ ad
     labelSizes <- withFontStyle (_axis_label_style as) $ do
@@ -238,16 +247,20 @@ axisOverhang (AxisT at as rev ad) = do
 renderAxis :: AxisT x -> RectSize -> ChartBackend (PickFn x)
 renderAxis at@(AxisT et as rev ad) sz = do
   let ls = _axis_line_style as
-  withLineStyle (ls {_line_cap = LineCapSquare}) $ do
-    p <- alignStrokePoints [Point sx sy,Point ex ey]
-    strokePointPath p
-  withLineStyle (ls {_line_cap = LineCapButt}) $ do
-    mapM_ drawTick (_axis_ticks ad)
-  withFontStyle (_axis_label_style as) $ do
-    labelSizes <- mapM (mapM textDimension) (labelTexts ad)
-    let sizes = map ((+ag).maximum0.map coord) labelSizes
-    let offsets = scanl (+) ag sizes
-    mapM_ drawLabels (zip offsets  (_axis_labels ad))
+      vis = _axis_visibility ad
+  when (_axis_show_line vis) $ do 
+    withLineStyle (ls {_line_cap = LineCapSquare}) $ do
+      p <- alignStrokePoints [Point sx sy,Point ex ey]
+      strokePointPath p
+  when (_axis_show_ticks vis) $ do
+    withLineStyle (ls {_line_cap = LineCapButt}) $ do
+      mapM_ drawTick (_axis_ticks ad)
+  when (_axis_show_labels vis) $ do
+    withFontStyle (_axis_label_style as) $ do
+      labelSizes <- mapM (mapM textDimension) (labelTexts ad)
+      let sizes = map ((+ag).maximum0.map coord) labelSizes
+      let offsets = scanl (+) ag sizes
+      mapM_ drawLabels (zip offsets  (_axis_labels ad))
   return pickfn
  where
    (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
