@@ -429,22 +429,20 @@ layoutPlotAreaToGrid l = layer2 `overlay` layer1
   where
     layer1 = aboveN
          [ besideN [er,     er,  er,    er   ]
-         , besideN [er,     er,  er,    er   ]
          , besideN [er,     er,  er,    weights (1,1) plots ]
          ]
 
     layer2 = aboveN
-         [ besideN [er,     er,  er,    ttitle, er,    er,  er       ]
-         , besideN [er,     er,  tl,    taxis,  tr,    er,  er       ]
-         , besideN [ltitle, lam, laxis, er,     raxis, ram, rtitle   ]
-         , besideN [er,     er,  bl,    baxis,  br,    er,  er       ]
-         , besideN [er,     er,  er,    btitle, er,    er,  er       ]
+         [ besideN [er,     er,  tl,    taxis,  tr    ]
+         , besideN [ltitle, lam, laxis, er,     raxis ]
+         , besideN [er,     er,  bl,    baxis,  br    ]
+         , besideN [er,     er,  er,    btitle, er    ]
          ]
     
     (ttitle, _  ) = atitle HTA_Centre VTA_Bottom   0 _layout_x_axis LayoutPick_XAxisTitle   
     (btitle, _  ) = atitle HTA_Centre VTA_Top      0 _layout_x_axis LayoutPick_XAxisTitle
     (ltitle, lam) = atitle HTA_Right  VTA_Centre 270 _layout_y_axis LayoutPick_YAxisTitle
-    (rtitle, ram) = atitle HTA_Left   VTA_Centre 270 _layout_y_axis LayoutPick_YAxisTitle
+    (rtitle, _  ) = atitle HTA_Left   VTA_Centre 270 _layout_y_axis LayoutPick_YAxisTitle
 
     er = tval $ emptyRenderable
     
