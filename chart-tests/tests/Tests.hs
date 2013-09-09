@@ -43,32 +43,32 @@ chooseLineWidth SVG = 0.25
 
 fwhite = solidFillStyle $ opaque white
 
-test1a :: Double -> Renderable (Layout1Pick Double Double)
+test1a :: Double -> Renderable (LayoutPick Double Double)
 test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3],
                                  besideN [rf g4, rf g5, rf g6] ]
 
-    g1 = layout1_title .~ "minimal"
-       $ layout1_bottom_axis . laxis_override .~ (axisGridHide.axisTicksHide)
-       $ layout1_left_axis . laxis_override .~ (axisGridHide.axisTicksHide)
+    g1 = layout_title .~ "minimal"
+       $ layout_x_bottom_axis %~ axisHideTicks
+       $ layout_y_left_axis %~ axisHideTicks
        $ Test1.layout lwidth
 
-    g2 = layout1_title .~ "with borders"
-       $ layout1_bottom_axis . laxis_override .~ (axisGridHide.axisTicksHide)
-       $ layout1_left_axis . laxis_override .~ (axisGridHide.axisTicksHide)
-       $ layout1_top_axis %~ axisBorderOnly
-       $ layout1_right_axis %~ axisBorderOnly
+    g2 = layout_title .~ "with borders"
+       $ layout_x_bottom_axis %~ axisHideTicks
+       $ layout_y_left_axis %~ axisHideTicks
+       $ layout_x_top_axis %~ axisShowLine
+       $ layout_y_right_axis %~ axisShowLine
        $ Test1.layout lwidth
 
-    g3 = layout1_title .~ "default"
+    g3 = layout_title .~ "default"
        $ Test1.layout lwidth
 
-    g4 = layout1_title .~ "tight grid"
-       $ layout1_left_axis . laxis_generate .~ axis
-       $ layout1_left_axis . laxis_override .~ axisGridAtTicks
-       $ layout1_bottom_axis . laxis_generate .~ axis
-       $ layout1_bottom_axis . laxis_override .~ axisGridAtTicks
+    g4 = layout_title .~ "tight grid"
+       $ layout_y_axis . laxis_generate .~ axis
+       $ layout_y_axis . laxis_override .~ axisGridAtTicks
+       $ layout_x_axis . laxis_generate .~ axis
+       $ layout_x_axis . laxis_override .~ axisGridAtTicks
        $ Test1.layout lwidth
       where
         axis = autoScaledAxis (
@@ -77,16 +77,16 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
           $ def
           )
 
-    g5 = layout1_title .~ "y linked"
-       $ layout1_yaxes_control .~ linkAxes
+    g5 = layout_title .~ "y linked"
+       $ layout_y_right_axis  %~ axisShowLine . axisShowTicks. axisShowLabels
        $ Test1.layout lwidth
 
-    g6 = layout1_title .~ "everything"
-       $ layout1_yaxes_control .~ linkAxes
-       $ layout1_top_axis . laxis_visible .~ const True
+    g6 = layout_title .~ "everything"
+       $ layout_y_right_axis  %~ axisShowLine . axisShowTicks. axisShowLabels
+       $ layout_x_top_axis  %~ axisShowLine . axisShowTicks. axisShowLabels
        $ Test1.layout lwidth
 
-    rf = tval . layout1ToRenderable
+    rf = tval . layoutToRenderable
 
     axisBorderOnly :: LayoutAxis x -> LayoutAxis x
     axisBorderOnly = (laxis_visible .~ const True)
@@ -274,6 +274,7 @@ test12 otype = layout1ToRenderable layout
     vs1 = [ (2,10), (3,40), (8,400), (12,60) ]
 
     baxis = AxisData {
+        _axis_visibility = def,
         _axis_viewport = vmap (0,15),
         _axis_tropweiv = invmap (0,15),
         _axis_ticks    = [(v,3) | v <- [0,1..15]],
@@ -282,6 +283,7 @@ test12 otype = layout1ToRenderable layout
     }    
 
     laxis = AxisData {
+        _axis_visibility = def,
         _axis_viewport = vmap (0,500),
         _axis_tropweiv = invmap (0,500),
         _axis_ticks    = [(v,3) | v <- [0,25..500]],
