@@ -821,6 +821,32 @@ instance (PlotValue x, PlotValue y) => Default (Layout x y) where
     , _layout_grid_last       = False
     }
 
+instance (PlotValue x, PlotValue y1, PlotValue y2) => Default (LayoutLR x y1 y2) where
+  def = LayoutLR
+    { _layoutlr_background      = solidFillStyle $ opaque white
+    , _layoutlr_plot_background = Nothing
+
+    , _layoutlr_title           = ""
+    , _layoutlr_title_style     = def { _font_size   = 15
+                                      , _font_weight = FontWeightBold }
+
+    , _layoutlr_x_axis          = def
+    , _layoutlr_x_top_axis      = def { _axis_show_line   = False
+                                      , _axis_show_ticks  = False
+                                      , _axis_show_labels = False }
+    , _layoutlr_x_bottom_axis   = def
+
+    , _layoutlr_y_left_axis     = def
+    , _layoutlr_y_right_axis    = def
+    
+    , _layoutlr_left_plots      = []
+    , _layoutlr_right_plots     = []
+
+    , _layoutlr_legend          = Just def
+    , _layoutlr_margin          = 10
+    , _layoutlr_grid_last       = False
+    }
+
 {-# DEPRECATED defaultLayoutAxis "Use the according Data.Default instance!" #-}
 defaultLayoutAxis :: PlotValue t => LayoutAxis t
 defaultLayoutAxis = def
