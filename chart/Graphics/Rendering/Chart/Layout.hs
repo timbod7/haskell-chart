@@ -676,9 +676,12 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
             -> (Layout x y -> LayoutAxis z) 
             -> (Layout x y -> AxisVisibility) 
             -> LayoutAxis z 
-    getAxis ly selAxis selVis = (selAxis ly) 
-                              { _laxis_override = (\ad -> ad { _axis_visibility = selVis ly }) 
-                                                . _laxis_override (selAxis ly) }
+    getAxis ly selAxis selVis = 
+      let vis = selVis ly
+      in (selAxis ly) { _laxis_override = (\ad -> ad { _axis_visibility = selVis ly }) 
+                                        . _laxis_override (selAxis ly)
+                      , _laxis_visible = \_ -> _axis_show_labels vis || _axis_show_line vis || _axis_show_ticks vis
+                      }
     
     mkAxis :: RectEdge -> LayoutAxis z -> [z] -> Maybe (AxisT z)
     mkAxis edge laxis vals = case _laxis_visible laxis vals of

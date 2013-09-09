@@ -222,7 +222,7 @@ minsizeAxis (AxisT at as rev ad) = do
     labelSizes <- withFontStyle (_axis_label_style as) $ do
                     mapM (mapM textDimension) labels
 
-    let ag      = _axis_label_gap as
+    let ag      = if labelVis then _axis_label_gap as else 0
     let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- ticks ])
 
     let hw = maximum0 (map (maximum0.map fst) labelSizes)
