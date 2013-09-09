@@ -52,6 +52,8 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
     g1 = layout_title .~ "minimal"
        $ layout_x_bottom_axis %~ axisHideTicks
        $ layout_y_left_axis %~ axisHideTicks
+       $ layout_x_axis . laxis_override .~ axisGridHide
+       $ layout_y_axis . laxis_override .~ axisGridHide
        $ Test1.layout lwidth
 
     g2 = layout_title .~ "with borders"
@@ -59,6 +61,8 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
        $ layout_y_left_axis %~ axisHideTicks
        $ layout_x_top_axis %~ axisShowLine
        $ layout_y_right_axis %~ axisShowLine
+       $ layout_x_axis . laxis_override .~ axisGridHide
+       $ layout_y_axis . laxis_override .~ axisGridHide
        $ Test1.layout lwidth
 
     g3 = layout_title .~ "default"
