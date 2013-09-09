@@ -39,7 +39,12 @@ module Graphics.Rendering.Chart.Axis.Types(
     axisTicksHide,
     axisLabelsHide,
     axisLabelsOverride,
+    
+    axis_show_line,
+    axis_show_ticks,
+    axis_show_labels,
 
+    axis_visibility,
     axis_viewport,
     axis_tropweiv,
     axis_ticks,
@@ -75,9 +80,25 @@ class Ord a => PlotValue a where
     fromValue:: Double -> a
     autoAxis :: AxisFn a
 
+-- | Configures whick visual elements of a axis are shown at the
+--   appropriate edge of a plot area.
+data AxisVisibility = AxisVisibility
+  { -- | Whether to display a line along the axis.
+    _axis_show_line :: Bool
+    
+    -- | Whether to display the tick marks.
+  , _axis_show_ticks :: Bool
+
+    -- | Whether to display the labels.
+  , _axis_show_labels :: Bool
+  }
+
 -- | The basic data associated with an axis showing values of type x.
 data AxisData x = AxisData {
-
+    
+    -- | Which parts of the axis shall be displayed.
+    _axis_visibility :: AxisVisibility,
+    
     -- | The _axis_viewport function maps values into device coordinates.
     _axis_viewport :: Range -> x -> Double,
 
@@ -383,6 +404,13 @@ instance Default AxisStyle where
     , _axis_label_gap   = 10
     }
 
+instance Default AxisVisibility where
+  def = AxisVisibility
+    { _axis_show_line   = True
+    , _axis_show_ticks  = True
+    , _axis_show_labels = True
+    }
+
 ----------------------------------------------------------------------
 
 -- | A linear mapping of points in one range to another.
@@ -409,6 +437,7 @@ invLinMap f t (v3,v4) (d1,d2) d =
   where
     doubleRange = t v4 - t v3
 
+$( makeLenses ''AxisVisibility )
 $( makeLenses ''AxisData )
 $( makeLenses ''AxisStyle )
 
