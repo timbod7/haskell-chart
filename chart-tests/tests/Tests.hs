@@ -97,8 +97,8 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
                    . (laxis_override .~ (axisGridHide.axisTicksHide.axisLabelsHide))
 
 ----------------------------------------------------------------------
-test4d :: OutputType -> Renderable (Layout1Pick Double Double)
-test4d otype = layout1ToRenderable layout
+test4d :: OutputType -> Renderable (LayoutPick Double Double)
+test4d otype = layoutToRenderable layout
   where
 
     points = plot_points_style .~ filledCircles 3 (opaque red)
@@ -110,18 +110,18 @@ test4d otype = layout1ToRenderable layout
           $ plot_lines_title .~ "values"
           $ def
 
-    layout = layout1_title .~ "Log/Linear Example"
-           $ layout1_bottom_axis . laxis_title .~ "horizontal"
-           $ layout1_bottom_axis . laxis_reverse .~ False
-           $ layout1_left_axis . laxis_generate .~ autoScaledLogAxis def
-           $ layout1_left_axis . laxis_title .~ "vertical"
-           $ layout1_left_axis . laxis_reverse .~ False
-	   $ layout1_plots .~ [Left (toPlot points `joinPlot` toPlot lines) ]
+    layout = layout_title .~ "Log/Linear Example"
+           $ layout_x_axis . laxis_title .~ "horizontal"
+           $ layout_x_axis . laxis_reverse .~ False
+           $ layout_y_axis . laxis_generate .~ autoScaledLogAxis def
+           $ layout_y_axis . laxis_title .~ "vertical"
+           $ layout_y_axis . laxis_reverse .~ False
+	   $ layout_plots .~ [ toPlot points `joinPlot` toPlot lines ]
            $ def
 
 ----------------------------------------------------------------------
 
-test9 :: PlotBarsAlignment -> OutputType -> Renderable (Layout1Pick PlotIndex Double)
+test9 :: PlotBarsAlignment -> OutputType -> Renderable (LayoutPick PlotIndex Double)
 test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g0, rf g1, rf g2],
@@ -157,18 +157,19 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
        $ plot_bars_spacing .~ BarsFixGap 10 5
        $ bars2
 
-    rf = tval . layout1ToRenderable
+    rf = tval . layoutToRenderable
 
     alabels = [ "Jun", "Jul", "Aug", "Sep", "Oct" ]
 
 
     layout title bars =
-             layout1_title .~ (show alignment ++ "/" ++ title)
-           $ layout1_title_style . font_size .~ 10
-           $ layout1_bottom_axis . laxis_generate .~ autoIndexAxis alabels
-           $ layout1_left_axis . laxis_override .~ (axisGridHide.axisTicksHide)
-           $ layout1_plots .~ [ Left (plotBars bars) ]
-           $ def :: Layout1 PlotIndex Double
+             layout_title .~ (show alignment ++ "/" ++ title)
+           $ layout_title_style . font_size .~ 10
+           $ layout_x_axis . laxis_generate .~ autoIndexAxis alabels
+           $ layout_y_axis . laxis_override .~ axisGridHide
+           $ layout_y_left_axis %~ axisHideTicks
+           $ layout_plots .~ [ plotBars bars ]
+           $ def :: Layout PlotIndex Double
 
     bars1 = plot_bars_titles .~ ["Cash"]
           $ plot_bars_values .~ addIndexes [[20],[45],[30],[70]]

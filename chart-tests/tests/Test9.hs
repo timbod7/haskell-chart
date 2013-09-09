@@ -8,16 +8,17 @@ import Data.Default.Class
 
 import Utils
 
-chart :: Bool -> Renderable (Layout1Pick PlotIndex Double)
-chart borders = layout1ToRenderable layout
+chart :: Bool -> Renderable (LayoutPick PlotIndex Double)
+chart borders = layoutToRenderable layout
  where
   layout = 
-        layout1_title .~ "Sample Bars" ++ btitle
-      $ layout1_title_style . font_size .~ 10
-      $ layout1_bottom_axis . laxis_generate .~ autoIndexAxis alabels
-      $ layout1_left_axis . laxis_override .~ (axisGridHide.axisTicksHide)
-      $ layout1_plots .~ [ Left (plotBars bars2) ]
-      $ def :: Layout1 PlotIndex Double
+        layout_title .~ "Sample Bars" ++ btitle
+      $ layout_title_style . font_size .~ 10
+      $ layout_x_axis . laxis_generate .~ autoIndexAxis alabels
+      $ layout_y_axis . laxis_override .~ axisGridHide
+      $ layout_y_left_axis %~ axisHideTicks
+      $ layout_plots .~ [ plotBars bars2 ]
+      $ def :: Layout PlotIndex Double
 
   bars2 = plot_bars_titles .~ ["Cash","Equity"]
       $ plot_bars_values .~ addIndexes [[20,45],[45,30],[30,20],[70,25]]

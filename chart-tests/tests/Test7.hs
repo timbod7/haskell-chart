@@ -8,8 +8,8 @@ import Data.Default.Class
 
 import Utils
 
-chart :: Renderable (Layout1Pick Double Double)
-chart = layout1ToRenderable layout
+chart :: Renderable (LayoutPick Double Double)
+chart = layoutToRenderable layout
   where
     vals :: [(Double,Double,Double,Double)]
     vals = [ (x,sin (exp x),sin x/2,cos x/10) | x <- [1..20]]
@@ -22,9 +22,9 @@ chart = layout1ToRenderable layout
            $ plot_points_title .~ "test data"
            $ def
 
-    layout = layout1_title .~ "Error Bars"
-           $ layout1_plots .~ [Left (toPlot bars),
-                               Left (toPlot points)]
+    layout = layout_title .~ "Error Bars"
+           $ layout_plots .~ [ toPlot bars
+                             , toPlot points ]
            $ def
 
 -- main = main' "test7" chart
