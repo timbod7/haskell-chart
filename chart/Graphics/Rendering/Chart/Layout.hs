@@ -185,6 +185,44 @@ data LayoutPick x y = LayoutPick_Legend String
                     | LayoutPick_YAxis y
                     deriving (Show)
 
+-- | A LayoutLR value is a single plot area, with an x axis and
+--   independent left and right y axes, with a title at the top;
+--   legend at the bottom. It's parametrized by the types of values
+--   to be plotted on the x and two y axes.
+data LayoutLR x y1 y2 = LayoutLR 
+  { _layoutlr_background      :: FillStyle
+  , _layoutlr_plot_background :: Maybe FillStyle
+
+  , _layoutlr_title           :: String
+  , _layoutlr_title_style     :: FontStyle
+
+  , _layoutlr_x_axis          :: LayoutAxis x   -- ^ Rules to generate the x axis
+  , _layoutlr_x_top_axis      :: AxisVisibility -- ^ Visibility options for the top axis.
+  , _layoutlr_x_bottom_axis   :: AxisVisibility -- ^ Visibility options for the bottom axis.
+
+  , _layoutlr_y_left_axis     :: LayoutAxis y1 -- ^ Rules to generate the left y axis
+  , _layoutlr_y_right_axis    :: LayoutAxis y2 -- ^ Rules to generate the right y axis
+  
+  , _layoutlr_left_plots      :: [Plot x y1]
+  , _layoutlr_right_plots     :: [Plot x y2]
+
+
+  , _layoutlr_legend          :: Maybe LegendStyle
+  , _layoutlr_margin          :: Double
+  , _layoutlr_grid_last       :: Bool
+  }
+
+data LayoutLRPick x y1 y2 = LayoutLRPick_Legend String
+                          | LayoutLRPick_Title String
+                          | LayoutLRPick_XAxisTitle String
+                          | LayoutLRPick_YLeftAxisTitle String
+                          | LayoutLRPick_YRightAxisTitle String
+                          | LayoutLRPick_PlotArea x y1 y2
+                          | LayoutLRPick_XAxis x
+                          | LayoutLRPick_YLeftAxis y1
+                          | LayoutLRPick_YRightAxis y2
+                          deriving (Show)
+
 -- | A Layout1 value is a single plot area, with optional: axes on
 --   each of the 4 sides; title at the top; legend at the bottom. It's
 --   parameterised by the types of values to be plotted on the horizonal
