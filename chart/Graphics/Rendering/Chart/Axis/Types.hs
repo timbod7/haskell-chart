@@ -41,6 +41,13 @@ module Graphics.Rendering.Chart.Axis.Types(
     axisLabelsHide,
     axisLabelsOverride,
     
+    axisHideLine,
+    axisShowLine,
+    axisHideTicks,
+    axisShowTicks,
+    axisHideLabels,
+    axisShowLabels,
+    
     axis_show_line,
     axis_show_ticks,
     axis_show_labels,
@@ -143,6 +150,19 @@ type AxisFn x = [x] -> AxisData x
 -- | Collect the information we need to render an axis. The
 --   bool is true if the axis direction is reversed.
 data AxisT x = AxisT RectEdge AxisStyle Bool (AxisData x)
+
+axisHideLine :: AxisVisibility -> AxisVisibility
+axisHideLine vis = vis { _axis_show_line = False }
+axisShowLine :: AxisVisibility -> AxisVisibility
+axisShowLine vis = vis { _axis_show_line = True }
+axisHideTicks :: AxisVisibility -> AxisVisibility
+axisHideTicks vis = vis { _axis_show_ticks = False }
+axisShowTicks :: AxisVisibility -> AxisVisibility
+axisShowTicks vis = vis { _axis_show_ticks = True }
+axisHideLabels :: AxisVisibility -> AxisVisibility
+axisHideLabels vis = vis { _axis_show_labels = False }
+axisShowLabels :: AxisVisibility -> AxisVisibility
+axisShowLabels vis = vis { _axis_show_labels = True }
 
 -- | Construct a renderable from an axis, in order that
 -- it can be composed with other renderables and drawn. This
