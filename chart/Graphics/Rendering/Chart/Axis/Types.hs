@@ -11,6 +11,7 @@
 
 module Graphics.Rendering.Chart.Axis.Types(
     AxisData(..),
+    AxisVisibility(..),
     AxisT(..),
     AxisStyle(..),
     PlotValue(..),
@@ -357,6 +358,7 @@ renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
 -- labels, and the labelling function
 makeAxis :: PlotValue x => (x -> String) -> ([x],[x],[x]) -> AxisData x
 makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
+    _axis_visibility = def,
     _axis_viewport = newViewport,
     _axis_tropweiv = newTropweiv,
     _axis_ticks    = newTicks,
@@ -376,6 +378,7 @@ makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
 makeAxis' :: Ord x => (x -> Double) -> (Double -> x) -> (x -> String)
                    -> ([x],[x],[x]) -> AxisData x
 makeAxis' t f labelf (labelvs, tickvs, gridvs) = AxisData {
+    _axis_visibility = def,
     _axis_viewport = linMap t (minimum labelvs, maximum labelvs),
     _axis_tropweiv = invLinMap f t (minimum labelvs, maximum labelvs),
     _axis_ticks    = zip tickvs (repeat 2)  ++  zip labelvs (repeat 5),

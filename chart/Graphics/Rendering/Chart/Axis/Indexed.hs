@@ -13,6 +13,8 @@ module Graphics.Rendering.Chart.Axis.Indexed(
     autoIndexAxis,
     addIndexes,
 ) where
+ 
+import Data.Default.Class
 
 import Graphics.Rendering.Chart.Axis.Types
 
@@ -34,6 +36,7 @@ addIndexes as = map (\(i,a) -> (PlotIndex i,a))  (zip [0..] as)
 --   list of strings are the labels to be used.
 autoIndexAxis :: Integral i => [String] -> [i] -> AxisData i
 autoIndexAxis labels vs = AxisData {
+    _axis_visibility = def { _axis_show_ticks = False },
     _axis_viewport = vport,
     _axis_tropweiv = invport,
     _axis_ticks    = [],
