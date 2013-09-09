@@ -222,7 +222,7 @@ minsizeAxis (AxisT at as rev ad) = do
     labelSizes <- withFontStyle (_axis_label_style as) $ do
                     mapM (mapM textDimension) labels
 
-    let ag      = if labelVis then _axis_label_gap as else 0
+    let ag      = _axis_label_gap as
     let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- ticks ])
 
     let hw = maximum0 (map (maximum0.map fst) labelSizes)
@@ -247,7 +247,6 @@ maximum0 vs = maximum vs
 -- | Calculate the amount by which the labels extend beyond
 --   the ends of the axis.
 axisOverhang :: (Ord x) => AxisT x -> ChartBackend (Double,Double)
-axisOverhang (AxisT _ _ _ ad) | _axis_show_labels (_axis_visibility ad) = return (0,0)
 axisOverhang (AxisT at as rev ad) = do
     let labels = map snd . sort . concat . _axis_labels $ ad
     labelSizes <- withFontStyle (_axis_label_style as) $ do
