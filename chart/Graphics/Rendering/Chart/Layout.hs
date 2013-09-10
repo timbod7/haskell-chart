@@ -705,30 +705,41 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where
     (xvals, yvals) = allPlottedValues (_layout_plots l)
 
-    bAxis = mkAxis E_Bottom (getAxis l _layout_x_axis _layout_x_bottom_axis) xvals
-    tAxis = mkAxis E_Top    (getAxis l _layout_x_axis _layout_x_top_axis   ) xvals
-    lAxis = mkAxis E_Left   (getAxis l _layout_y_axis _layout_y_left_axis  ) yvals
-    rAxis = mkAxis E_Right  (getAxis l _layout_y_axis _layout_y_right_axis ) yvals
-    
-    getAxis :: Layout x y 
-            -> (Layout x y -> LayoutAxis z) 
-            -> (Layout x y -> AxisVisibility) 
-            -> LayoutAxis z 
-    getAxis ly selAxis selVis = 
-      let vis = selVis ly
-      in (selAxis ly) { _laxis_override = (\ad -> ad { _axis_visibility = selVis ly }) 
-                                        . _laxis_override (selAxis ly)
-                      , _laxis_visible = \_ -> _axis_show_labels vis || _axis_show_line vis || _axis_show_ticks vis
-                      }
-    
-    mkAxis :: RectEdge -> LayoutAxis z -> [z] -> Maybe (AxisT z)
-    mkAxis edge laxis vals = case _laxis_visible laxis vals of
-        False -> Nothing
-        True  -> Just $ AxisT edge style rev adata
-      where
-        style = _laxis_style laxis
-        rev   = _laxis_reverse laxis
-        adata = (_laxis_override laxis) (_laxis_generate laxis vals)
+    bAxis = mkAxis E_Bottom (overrideAxisVisibility l _layout_x_axis _layout_x_bottom_axis) xvals
+    tAxis = mkAxis E_Top    (overrideAxisVisibility l _layout_x_axis _layout_x_top_axis   ) xvals
+    lAxis = mkAxis E_Left   (overrideAxisVisibility l _layout_y_axis _layout_y_left_axis  ) yvals
+    rAxis = mkAxis E_Right  (overrideAxisVisibility l _layout_y_axis _layout_y_right_axis ) yvals
+
+getAxesLR :: LayoutLR x yl yr ->
+           (Maybe (AxisT x), Maybe (AxisT yl), Maybe (AxisT x), Maybe (AxisT yr))
+getAxesLR l = (bAxis,lAxis,tAxis,rAxis)
+  where
+    (xvals, yvalsL, yvalsR) = allPlottedValuesLR (_layoutlr_plots l)
+
+    bAxis = mkAxis E_Bottom (overrideAxisVisibility l _layoutlr_x_axis _layoutlr_x_bottom_axis) xvals
+    tAxis = mkAxis E_Top    (overrideAxisVisibility l _layoutlr_x_axis _layoutlr_x_top_axis   ) xvals
+    lAxis = mkAxis E_Left   (_layoutlr_y_left_axis l)  yvalsL
+    rAxis = mkAxis E_Right  (_layoutlr_y_right_axis l) yvalsR
+
+mkAxis :: RectEdge -> LayoutAxis z -> [z] -> Maybe (AxisT z)
+mkAxis edge laxis vals = case _laxis_visible laxis vals of
+    False -> Nothing
+    True  -> Just $ AxisT edge style rev adata
+  where
+    style = _laxis_style laxis
+    rev   = _laxis_reverse laxis
+    adata = (_laxis_override laxis) (_laxis_generate laxis vals)
+
+overrideAxisVisibility :: layout 
+                       -> (layout -> LayoutAxis z) 
+                       -> (layout -> AxisVisibility) 
+                       -> LayoutAxis z 
+overrideAxisVisibility ly selAxis selVis = 
+  let vis = selVis ly
+  in (selAxis ly) { _laxis_override = (\ad -> ad { _axis_visibility = selVis ly }) 
+                                    . _laxis_override (selAxis ly)
+                  , _laxis_visible = \_ -> _axis_show_labels vis || _axis_show_line vis || _axis_show_ticks vis
+                  }
 
 getAxes1 :: Layout1 x y ->
            (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
@@ -757,6 +768,15 @@ allPlottedValues plots = (xvals, yvals)
   where
     xvals = [ x | p <- plots, x <- fst $ _plot_all_points p]
     yvals = [ y | p <- plots, y <- snd $ _plot_all_points p]
+
+allPlottedValuesLR :: [(Either (Plot x yl) (Plot x yr))]
+                    -> ( [x], [yl], [yr] )
+allPlottedValuesLR plots = (xvalsL ++ xvalsR, yvalsL, yvalsR)
+  where
+    xvalsL = [ x | (Left p)  <- plots, x <- fst $ _plot_all_points p]
+    yvalsL = [ y | (Left p)  <- plots, y <- snd $ _plot_all_points p]
+    xvalsR = [ x | (Right p) <- plots, x <- fst $ _plot_all_points p]
+    yvalsR = [ y | (Right p) <- plots, y <- snd $ _plot_all_points p]
 
 allPlottedValues1 :: [(Either (Plot x y) (Plot x' y'))]
                     -> ( [x], [x'], [y], [y'] )
