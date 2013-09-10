@@ -28,72 +28,89 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ExistentialQuantification #-}
 
-module Graphics.Rendering.Chart.Layout(
-    Layout1(..),
-    Layout(..),
-    LayoutAxis(..),
-    Layout1Pick(..),
-    LayoutPick(..),
-    StackedLayouts(..),
-    StackedLayout(..),
-    ShowOnAxis(..),
-    MAxisFn,
+module Graphics.Rendering.Chart.Layout
+  ( Layout1(..)
+  , Layout(..)
+  , LayoutLR(..)
+  , LayoutAxis(..)
+  , Layout1Pick(..)
+  , LayoutPick(..)
+  , LayoutLRPick(..)
+  , StackedLayouts(..)
+  , StackedLayout(..)
+  , ShowOnAxis(..)
+  , MAxisFn
+  
+  , defaultLayout1
+  , layout1ToRenderable
+  , layoutToRenderable
+  , layoutToRenderableLR
+  , linkAxes
+  , independentAxes
 
-    defaultLayout1,
-    layout1ToRenderable,
-    layoutToRenderable,
-    linkAxes,
-    independentAxes,
+  , updateAllAxesStyles
+  , setLayout1Foreground
+  , updateAllAxesStyles1
+  , setLayoutForeground
 
-    updateAllAxesStyles,
-    setLayout1Foreground,
-    updateAllAxesStyles1,
-    setLayoutForeground,
+  , defaultLayoutAxis
+  , laxis_title_style
+  , laxis_title
+  , laxis_style
+  , laxis_visible
+  , laxis_generate
+  , laxis_override
+  , laxis_reverse
 
-    defaultLayoutAxis,
-    laxis_title_style,
-    laxis_title,
-    laxis_style,
-    laxis_visible,
-    laxis_generate,
-    laxis_override,
-    laxis_reverse,
-
-    layout1_background,
-    layout1_plot_background,
-    layout1_title,
-    layout1_title_style,
-    layout1_left_axis,
-    layout1_right_axis,
-    layout1_top_axis,
-    layout1_bottom_axis,
-    layout1_yaxes_control,
-    layout1_margin,
-    layout1_plots,
-    layout1_legend,
-    layout1_grid_last,
+  , layout1_background
+  , layout1_plot_background
+  , layout1_title
+  , layout1_title_style
+  , layout1_left_axis
+  , layout1_right_axis
+  , layout1_top_axis
+  , layout1_bottom_axis
+  , layout1_yaxes_control
+  , layout1_margin
+  , layout1_plots
+  , layout1_legend
+  , layout1_grid_last
     
-    layout_background,
-    layout_plot_background,
-    layout_title,
-    layout_title_style,
-    layout_x_axis,
-    layout_x_top_axis,
-    layout_x_bottom_axis,
-    layout_y_axis,
-    layout_y_left_axis,
-    layout_y_right_axis,
-    layout_margin,
-    layout_plots,
-    layout_legend,
-    layout_grid_last,
+  , layout_background
+  , layout_plot_background
+  , layout_title
+  , layout_title_style
+  , layout_x_axis
+  , layout_x_top_axis
+  , layout_x_bottom_axis
+  , layout_y_axis
+  , layout_y_left_axis
+  , layout_y_right_axis
+  , layout_margin
+  , layout_plots
+  , layout_legend
+  , layout_grid_last
+      
+  , layoutlr_background
+  , layoutlr_plot_background
+  , layoutlr_title
+  , layoutlr_title_style
+  , layoutlr_x_axis
+  , layoutlr_x_top_axis
+  , layoutlr_x_bottom_axis
+  , layoutlr_y_left_axis
+  , layoutlr_y_right_axis
+  , layoutlr_plots
+  , layoutlr_legend
+  , layoutlr_margin
+  , layoutlr_grid_last
 
-    defaultStackedLayouts,
-    slayouts_layouts,
-    slayouts_compress_xlabels,
-    slayouts_compress_legend,
+  , defaultStackedLayouts
+  , slayouts_layouts
+  , slayouts_compress_xlabels
+  , slayouts_compress_legend
 
-    renderStackedLayouts,
+  , renderStackedLayouts
   ) where
 
 import Graphics.Rendering.Chart.Axis
@@ -1021,6 +1038,7 @@ instance PlotValue t => Default (LayoutAxis t) where
 -- for each field.
 $( makeLenses ''Layout1 )
 $( makeLenses ''Layout )
+$( makeLenses ''LayoutLR )
 $( makeLenses ''LayoutAxis )
 $( makeLenses ''StackedLayouts )
 
