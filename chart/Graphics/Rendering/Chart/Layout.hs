@@ -48,10 +48,12 @@ module Graphics.Rendering.Chart.Layout
   , linkAxes
   , independentAxes
 
+  , setLayoutForeground
   , updateAllAxesStyles
   , setLayout1Foreground
   , updateAllAxesStyles1
-  , setLayoutForeground
+  , setLayoutLRForeground
+  , updateAllAxesStylesLR
 
   , defaultLayoutAxis
   , laxis_title_style
