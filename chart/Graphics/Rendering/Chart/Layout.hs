@@ -292,7 +292,8 @@ type LegendItem = (String,Rect -> ChartBackend ())
 
 -- | A layout with its y type hidden, so that it can be stacked
 -- with other layouts (with differing y types)
-data StackedLayout x = forall y . Ord y => StackedLayout (Layout1 x y)
+data StackedLayout x = forall y     . (Ord y)          => StackedLayout (Layout x y)
+                     | forall yl yr . (Ord yl, Ord yr) => StackedLayoutLR (LayoutLR x yl yr)
 
 -- | A container for a set of vertically stacked layouts
 data StackedLayouts x = StackedLayouts {
@@ -314,50 +315,98 @@ instance Default (StackedLayouts x) where
 -- The legends from all the charts may be optionally combined, and shown
 -- once on the bottom chart.   The x labels may be optionally removed so that
 -- they are only shown once.
-renderStackedLayouts :: (Ord x) => StackedLayouts x -> Renderable ()
+renderStackedLayouts :: forall x. (Ord x) => StackedLayouts x -> Renderable ()
 renderStackedLayouts (StackedLayouts{_slayouts_layouts=[]}) = emptyRenderable
 renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridToRenderable g
   where
     g = fullOverlayUnder (fillBackground bg emptyRenderable)
       $ foldr (above.mkGrid) nullt (zip sls [0,1..])
-      
-    mkGrid ((StackedLayout l),i)
-        = (noPickFn $ layout1TitleToRenderable l)
+    
+    mkGrid :: (StackedLayout x, Int) -> Grid (Renderable ())
+    mkGrid (sl, i)
+        = titleR
           `wideAbove`
-          (addMarginsToGrid (lm,lm,lm,lm) $ mkPlotArea baxis taxis)
+          (addMarginsToGrid (lm,lm,lm,lm) $ mkPlotArea usedAxis bottomVis topVis)
           `aboveWide`
-          (if showLegend then noPickFn $ renderLegend1 l legenditems else emptyRenderable)
-
+          (if showLegend then legendR else emptyRenderable)
       where
+        titleR = case sl of
+                   StackedLayout l -> noPickFn $ layoutTitleToRenderable l
+                   StackedLayoutLR l -> noPickFn $ layoutLRTitleToRenderable l
+        legendR = case sl of
+                    StackedLayout l -> noPickFn $ renderLegend l $ fst legenditems
+                    StackedLayoutLR l -> noPickFn $ renderLegendLR l legenditems
+        
         legenditems = case (_slayouts_compress_legend slp,isBottomPlot) of
-            (False,_) -> getLegendItems1 l
-            (True,True) -> alllegendItems
+            (False,_) -> case sl of
+                           StackedLayout l -> (getLegendItems l, [])
+                           StackedLayoutLR l -> getLegendItemsLR l
+            (True,True) -> allLegendItems
             (True,False) -> ([],[])
-
-        mkPlotArea bx tx = fmap (mapPickFn (const ()))
-                         $ layout1PlotAreaToGrid l{_layout1_bottom_axis=bx,_layout1_top_axis=tx}
+        
+        --mkPlotArea :: LayoutAxis x -> LayoutAxis x -> Grid (Renderable ())
+        mkPlotArea :: LayoutAxis x -> AxisVisibility -> AxisVisibility -> Grid (Renderable ())
+        mkPlotArea axis bVis tVis = case sl of
+          StackedLayout l -> fmap noPickFn 
+                           $ layoutPlotAreaToGrid 
+                           $ l { _layout_x_axis        = axis
+                               , _layout_x_bottom_axis = bVis
+                               , _layout_x_top_axis    = tVis 
+                               }
+          StackedLayoutLR l -> fmap noPickFn 
+                             $ layoutLRPlotAreaToGrid 
+                             $ l { _layoutlr_x_axis        = axis
+                                 , _layoutlr_x_bottom_axis = bVis
+                                 , _layoutlr_x_top_axis    = tVis 
+                                 }
 
         showLegend = not (null (fst legenditems)) || not (null (snd legenditems))
 
         isTopPlot = i == 0
         isBottomPlot = i == length sls -1
 
-        lm = _layout1_margin l
-
-        baxis = mkAxis (_layout1_bottom_axis l) (isBottomPlot || not (_slayouts_compress_xlabels slp))
-        taxis = mkAxis (_layout1_top_axis l) (isTopPlot || not (_slayouts_compress_xlabels slp))
-
-        mkAxis a showLabels = a{
-            _laxis_generate=const (_laxis_generate a all_xvals),
-            _laxis_override= if showLabels then id else \ad -> ad{_axis_labels=[]}
-        }
-
-    bg = (\(StackedLayout l) -> _layout1_background l) sl1
+        lm = case sl of
+          StackedLayout l -> _layout_margin l
+          StackedLayoutLR l -> _layoutlr_margin l
+        
+        xAxis :: LayoutAxis x
+        xAxis = case sl of
+          StackedLayout l -> _layout_x_axis l
+          StackedLayoutLR l -> _layoutlr_x_axis l
+        
+        usedAxis :: LayoutAxis x
+        usedAxis = xAxis 
+          { _laxis_generate = const (_laxis_generate xAxis all_xvals) }
+        
+        bottomVis = mkVis (getBottomVis sl) (isBottomPlot || not (_slayouts_compress_xlabels slp))
+        topVis    = mkVis (getTopVis sl)    (isTopPlot || not (_slayouts_compress_xlabels slp))
+        
+        getTopVis :: StackedLayout x -> AxisVisibility
+        getTopVis (StackedLayout l) = _layout_x_top_axis l
+        getTopVis (StackedLayoutLR l) = _layoutlr_x_top_axis l
+        
+        getBottomVis :: StackedLayout x -> AxisVisibility
+        getBottomVis (StackedLayout l) = _layout_x_bottom_axis l
+        getBottomVis (StackedLayoutLR l) = _layoutlr_x_bottom_axis l
+        
+        mkVis :: AxisVisibility -> Bool -> AxisVisibility
+        mkVis vis showLabels = vis { _axis_show_labels = showLabels }
     
-    all_xvals = concatMap (\(StackedLayout l) -> getLayout1XVals l) sls
+    bg = case sl1 of
+           StackedLayout l -> _layout_background l
+           StackedLayoutLR l -> _layoutlr_background l
+    
+    getXVals :: StackedLayout x -> [x]
+    getXVals (StackedLayout l) = getLayoutXVals l
+    getXVals (StackedLayoutLR l) = getLayoutLRXVals l
+    
+    all_xvals = concatMap getXVals sls
 
-    alllegendItems = (concatMap (fst.legendItems) sls, concatMap (snd.legendItems) sls)
-    legendItems (StackedLayout l) = (getLegendItems1 l)
+    allLegendItems = (concatMap (fst.legendItems) sls, concatMap (snd.legendItems) sls)
+    
+    legendItems :: StackedLayout x -> ([LegendItem], [LegendItem])
+    legendItems (StackedLayout l)   = (getLegendItems l, [])
+    lebendItems (StackedLayoutLR l) = getLegendItemsLR l
     
     noPickFn :: Renderable a -> Renderable ()
     noPickFn = mapPickFn (const ())
