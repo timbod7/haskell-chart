@@ -44,7 +44,7 @@ module Graphics.Rendering.Chart.Layout
   , defaultLayout1
   , layout1ToRenderable
   , layoutToRenderable
-  , layoutToRenderableLR
+  , layoutLRToRenderable
   , linkAxes
   , independentAxes
 
@@ -239,7 +239,7 @@ data LayoutLRPick x y1 y2 = LayoutLRPick_Legend String
                           deriving (Show)
 
 instance (Ord x, Ord yl, Ord yr) => ToRenderable (LayoutLR x yl yr) where
-  toRenderable = setPickFn nullPickFn . layoutToRenderableLR
+  toRenderable = setPickFn nullPickFn . layoutLRToRenderable
 
 -- | A Layout1 value is a single plot area, with optional: axes on
 --   each of the 4 sides; title at the top; legend at the bottom. It's
@@ -379,10 +379,10 @@ layoutToRenderable :: (Ord x, Ord y) =>
 layoutToRenderable l = 
   fillBackground (_layout_background l) $ gridToRenderable (layoutToGrid l)
 
-layoutToRenderableLR :: (Ord x, Ord yl, Ord yr) =>
+layoutLRToRenderable :: (Ord x, Ord yl, Ord yr) =>
                        LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
-layoutToRenderableLR l = 
-  fillBackground (_layoutlr_background l) $ gridToRenderable (layoutToGridLR l)
+layoutLRToRenderable l = 
+  fillBackground (_layoutlr_background l) $ gridToRenderable (layoutLRToGrid l)
 
 layout1ToRenderable :: (Ord x, Ord y) =>
                        Layout1 x y -> Renderable (Layout1Pick x y)
@@ -400,13 +400,13 @@ layoutToGrid l = aboveN
   where
     lm = _layout_margin l
 
-layoutToGridLR :: (Ord x, Ord yl, Ord yr) 
+layoutLRToGrid :: (Ord x, Ord yl, Ord yr) 
                => LayoutLR x yl yr -> Grid (Renderable (LayoutLRPick x yl yr))
-layoutToGridLR l = aboveN
-       [  tval $ layoutTitleToRenderableLR l
+layoutLRToGrid l = aboveN
+       [  tval $ layoutLRTitleToRenderable l
        ,  weights (1,1) $ tval $ gridToRenderable $
-              addMarginsToGrid (lm,lm,lm,lm) (layoutPlotAreaToGridLR l)
-       ,  tval $ layoutLegendsToRenderableLR l
+              addMarginsToGrid (lm,lm,lm,lm) (layoutLRPlotAreaToGrid l)
+       ,  tval $ layoutLRLegendsToRenderable l
        ]
   where
     lm = _layoutlr_margin l
@@ -432,10 +432,10 @@ layoutTitleToRenderable l = addMargins (lm/2,0,0,0)
                   (_layout_title l)
     lm    = _layout_margin l
 
-layoutTitleToRenderableLR :: (Ord x, Ord yl, Ord yr) 
+layoutLRTitleToRenderable :: (Ord x, Ord yl, Ord yr) 
                           => LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
-layoutTitleToRenderableLR l | null (_layoutlr_title l) = emptyRenderable
-layoutTitleToRenderableLR l = addMargins (lm/2,0,0,0)
+layoutLRTitleToRenderable l | null (_layoutlr_title l) = emptyRenderable
+layoutLRTitleToRenderable l = addMargins (lm/2,0,0,0)
                                          (mapPickFn LayoutLRPick_Title title)
   where
     title = label (_layoutlr_title_style l) HTA_Centre VTA_Centre
@@ -455,8 +455,8 @@ layout1TitleToRenderable l = addMargins (lm/2,0,0,0)
 getLayoutXVals :: Layout x y -> [x]
 getLayoutXVals l = concatMap (fst . _plot_all_points) (_layout_plots l)
 
-getLayoutXValsLR :: LayoutLR x yl yr -> [x]
-getLayoutXValsLR l = concatMap deEither $ _layoutlr_plots l
+getLayoutLRXVals :: LayoutLR x yl yr -> [x]
+getLayoutLRXVals l = concatMap deEither $ _layoutlr_plots l
   where
     deEither :: Either (Plot x yl) (Plot x yr) -> [x]
     deEither (Left x)  = fst $ _plot_all_points x
@@ -530,9 +530,9 @@ layoutLegendsToRenderable :: (Ord x, Ord y) =>
                               Layout x y -> Renderable (LayoutPick x y)
 layoutLegendsToRenderable l = renderLegend l (getLegendItems l)
 
-layoutLegendsToRenderableLR :: (Ord x, Ord yl, Ord yr) =>
+layoutLRLegendsToRenderable :: (Ord x, Ord yl, Ord yr) =>
                               LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
-layoutLegendsToRenderableLR l = renderLegendLR l (getLegendItemsLR l)
+layoutLRLegendsToRenderable l = renderLegendLR l (getLegendItemsLR l)
 
 layout1LegendsToRenderable :: (Ord x, Ord y) =>
                               Layout1 x y -> Renderable (Layout1Pick x y)
@@ -593,10 +593,10 @@ layoutPlotAreaToGrid l = layer2 `overlay` layer1
     tr = tval $ axesSpacer snd ta fst ra
     br = tval $ axesSpacer snd ba snd ra
 
-layoutPlotAreaToGridLR :: forall x yl yr. (Ord x, Ord yl, Ord yr) 
+layoutLRPlotAreaToGrid :: forall x yl yr. (Ord x, Ord yl, Ord yr) 
                        => LayoutLR x yl yr 
                        -> Grid (Renderable (LayoutLRPick x yl yr))
-layoutPlotAreaToGridLR l = layer2 `overlay` layer1
+layoutLRPlotAreaToGrid l = layer2 `overlay` layer1
   where
     layer1 = aboveN
          [ besideN [er,     er,  er,    er   ]
