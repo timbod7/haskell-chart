@@ -587,35 +587,18 @@ plotsToRenderable1 l = Renderable {
 
 renderPlots :: Layout x y -> RectSize -> ChartBackend (PickFn (LayoutPick x y))
 renderPlots l sz@(w,h) = do
-    when (not (_layout_grid_last l)) renderGrids
+    when (not (_layout_grid_last l)) (renderGrids sz axes)
     withClipRegion (Rect (Point 0 0) (Point w h)) $ do
       mapM_ rPlot (_layout_plots l)
-    when (_layout_grid_last l) renderGrids
+    when (_layout_grid_last l) (renderGrids sz axes)
     return pickfn
-
   where
-    (bAxis,lAxis,tAxis,rAxis) = getAxes l
+    axes@(bAxis,lAxis,tAxis,rAxis) = getAxes l
     
-    -- rPlot :: Plot x y -> ChartBackend ()
-    rPlot p = rPlot1 bAxis lAxis p
+    rPlot p = renderSinglePlot sz bAxis lAxis p
 
     xr = (0, w)
     yr = (h, 0)
-    reverse rev (a,b) = if rev then (b,a) else (a,b)
-    
-    -- rPlot1 :: Maybe (AxisT x) -> Maybe (AxisT y) -> Plot x y -> ChartBackend ()
-    rPlot1 (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p =
-      let 
-          xr1 = reverse xrev xr
-          yr1 = reverse yrev yr
-          yrange = if yrev then (0, h) else (h, 0)
-          pmfn (x,y) = Point (mapv xr1 (_axis_viewport xaxis xr1) x)
-                             (mapv yr1 (_axis_viewport yaxis yr1) y)
-          mapv (min,max) _ LMin       = min
-          mapv (min,max) _ LMax       = max
-          mapv _         f (LValue v) = f v
-          in _plot_render p pmfn
-    rPlot1 _ _ _ = return ()
     
     -- pickfn :: PickFn (LayoutPick x y)
     pickfn (Point x y) = do  -- Maybe monad
@@ -631,45 +614,55 @@ renderPlots l sz@(w,h) = do
             (Just at,_)   -> Just at
             (_,Just at)   -> Just at
             (Nothing,Nothing)   -> Nothing
-        mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (reverse rev xr) x
-        mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (reverse rev yr) y
+        mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (optPairReverse rev xr) x
+        mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (optPairReverse rev yr) y
 
-    renderGrids = do
-      maybeM () (renderAxisGrid sz) tAxis
-      maybeM () (renderAxisGrid sz) bAxis
-      maybeM () (renderAxisGrid sz) lAxis
-      maybeM () (renderAxisGrid sz) rAxis
-
-renderPlots1 :: Layout1 x y -> RectSize -> ChartBackend (PickFn (Layout1Pick x y))
-renderPlots1 l sz@(w,h) = do
-    when (not (_layout1_grid_last l)) renderGrids
+renderPlotsLR :: LayoutLR x yl yr -> RectSize -> ChartBackend (PickFn (LayoutLRPick x yl yr))
+renderPlotsLR l sz@(w,h) = do
+    when (not (_layoutlr_grid_last l)) (renderGrids sz axes)
     withClipRegion (Rect (Point 0 0) (Point w h)) $ do
-      mapM_ rPlot (_layout1_plots l)
-    when (_layout1_grid_last l) renderGrids
+      mapM_ rPlot (_layoutlr_plots l)
+    when (_layoutlr_grid_last l) (renderGrids sz axes)
     return pickfn
-
   where
-    (bAxis,lAxis,tAxis,rAxis) = getAxes1 l
+    axes@(bAxis,lAxis,tAxis,rAxis) = getAxesLR l
 
-    rPlot (Left  p) = rPlot1 bAxis lAxis p
-    rPlot (Right p) = rPlot1 bAxis rAxis p
+    rPlot (Left  p) = renderSinglePlot sz bAxis lAxis p
+    rPlot (Right p) = renderSinglePlot sz bAxis rAxis p
 
     xr = (0, w)
     yr = (h, 0)
-    reverse rev (a,b) = if rev then (b,a) else (a,b)
 
-    rPlot1 (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p =
-      let 
-          xr1 = reverse xrev xr
-          yr1 = reverse yrev yr
-          yrange = if yrev then (0, h) else (h, 0)
-          pmfn (x,y) = Point (mapv xr1 (_axis_viewport xaxis xr1) x)
-                             (mapv yr1 (_axis_viewport yaxis yr1) y)
-          mapv (min,max) _ LMin       = min
-          mapv (min,max) _ LMax       = max
-          mapv _         f (LValue v) = f v
-	  in _plot_render p pmfn
-    rPlot1 _ _ _ = return ()
+    pickfn (Point x y) = do  -- Maybe monad
+        xat <- mxat
+        (yatL,yatR) <- myats
+        return (LayoutLRPick_PlotArea (mapx xat x) (mapy yatL y) (mapy yatR y))
+      where
+        mxat = case (bAxis,tAxis) of
+            (Just at,_)       -> Just at
+            (_,Just at)       -> Just at
+            (Nothing,Nothing) -> Nothing
+        myats = case (lAxis,rAxis) of
+            (Just at1,Just at2) -> Just (at1,at2)
+            (_,_)   -> Nothing
+        mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (optPairReverse rev xr) x
+        mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (optPairReverse rev yr) y
+
+renderPlots1 :: Layout1 x y -> RectSize -> ChartBackend (PickFn (Layout1Pick x y))
+renderPlots1 l sz@(w,h) = do
+    when (not (_layout1_grid_last l)) (renderGrids sz axes)
+    withClipRegion (Rect (Point 0 0) (Point w h)) $ do
+      mapM_ rPlot (_layout1_plots l)
+    when (_layout1_grid_last l) (renderGrids sz axes)
+    return pickfn
+  where
+    axes@(bAxis,lAxis,tAxis,rAxis) = getAxes1 l
+
+    rPlot (Left  p) = renderSinglePlot sz bAxis lAxis p
+    rPlot (Right p) = renderSinglePlot sz bAxis rAxis p
+
+    xr = (0, w)
+    yr = (h, 0)
 
     pickfn (Point x y) = do  -- Maybe monad
         xat <- mxat
@@ -685,14 +678,31 @@ renderPlots1 l sz@(w,h) = do
             (Nothing,Just at)   -> Just (at,at)
             (Just at1,Just at2) -> Just (at1,at2)
             (Nothing,Nothing)   -> Nothing
-        mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (reverse rev xr) x
-        mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (reverse rev yr) y
+        mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (optPairReverse rev xr) x
+        mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (optPairReverse rev yr) y
 
-    renderGrids = do
-      maybeM () (renderAxisGrid sz) tAxis
-      maybeM () (renderAxisGrid sz) bAxis
-      maybeM () (renderAxisGrid sz) lAxis
-      maybeM () (renderAxisGrid sz) rAxis
+renderGrids :: RectSize -> (Maybe (AxisT x), Maybe (AxisT yl), Maybe (AxisT x), Maybe (AxisT yr)) -> ChartBackend ()
+renderGrids sz (bAxis, lAxis, tAxis, rAxis) = do
+  maybeM () (renderAxisGrid sz) tAxis
+  maybeM () (renderAxisGrid sz) bAxis
+  maybeM () (renderAxisGrid sz) lAxis
+  maybeM () (renderAxisGrid sz) rAxis
+
+optPairReverse :: Bool -> (a,a) -> (a,a)
+optPairReverse rev (a,b) = if rev then (b,a) else (a,b)
+
+renderSinglePlot :: RectSize -> Maybe (AxisT x) -> Maybe (AxisT y) -> Plot x y -> ChartBackend ()
+renderSinglePlot (w, h) (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p =
+  let xr = optPairReverse xrev (0, w)
+      yr = optPairReverse yrev (h, 0)
+      yrange = if yrev then (0, h) else (h, 0)
+      pmfn (x,y) = Point (mapv xr (_axis_viewport xaxis xr) x)
+                         (mapv yr (_axis_viewport yaxis yr) y)
+      mapv (min,max) _ LMin       = min
+      mapv (min,max) _ LMax       = max
+      mapv _         f (LValue v) = f v
+  in _plot_render p pmfn
+renderSinglePlot _ _ _ _ = return ()
 
 axesSpacer :: (Ord x, Ord y) 
            => ((Double, Double) -> Double) -> Maybe (AxisT x)
