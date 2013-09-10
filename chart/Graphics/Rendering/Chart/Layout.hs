@@ -1044,15 +1044,21 @@ $( makeLenses ''StackedLayouts )
 
 -- | Helper to update all axis styles on a Layout1 simultaneously.
 updateAllAxesStyles :: (AxisStyle -> AxisStyle) -> Layout x y -> Layout x y
-updateAllAxesStyles uf = (layout_x_axis    . laxis_style %~ uf) .
-                         (layout_y_axis   . laxis_style %~ uf)
+updateAllAxesStyles uf = (layout_x_axis . laxis_style %~ uf) .
+                         (layout_y_axis . laxis_style %~ uf)
+
+-- | Helper to update all axis styles on a LayoutLR simultaneously.
+updateAllAxesStylesLR :: (AxisStyle -> AxisStyle) -> LayoutLR x yl yr -> LayoutLR x yl yr
+updateAllAxesStylesLR uf = (layoutlr_x_axis       . laxis_style %~ uf)
+                         . (layoutlr_y_left_axis  . laxis_style %~ uf)
+                         . (layoutlr_y_right_axis . laxis_style %~ uf)
 
 -- | Helper to update all axis styles on a Layout1 simultaneously.
 updateAllAxesStyles1 :: (AxisStyle -> AxisStyle) -> Layout1 x y -> Layout1 x y
 updateAllAxesStyles1 uf = (layout1_top_axis    . laxis_style %~ uf) .
-                         (layout1_bottom_axis . laxis_style %~ uf) .
-                         (layout1_left_axis   . laxis_style %~ uf) .
-                         (layout1_right_axis  . laxis_style %~ uf)
+                          (layout1_bottom_axis . laxis_style %~ uf) .
+                          (layout1_left_axis   . laxis_style %~ uf) .
+                          (layout1_right_axis  . laxis_style %~ uf)
 
 -- | Helper to set the forground color uniformly on a Layout.
 setLayoutForeground :: AlphaColour Double -> Layout x y -> Layout x y
@@ -1061,6 +1067,14 @@ setLayoutForeground fg =
                          . (axis_label_style . font_color .~ fg))
                          . (layout_title_style . font_color .~ fg)
                          . (layout_legend %~ fmap (legend_label_style .> font_color .~ fg))
+
+-- | Helper to set the forground color uniformly on a LayoutLR.
+setLayoutLRForeground :: AlphaColour Double -> LayoutLR x yl yr -> LayoutLR x yl yr
+setLayoutLRForeground fg = updateAllAxesStylesLR 
+  ( (axis_line_style  . line_color .~ fg)
+  . (axis_label_style . font_color .~ fg))
+  . (layoutlr_title_style . font_color .~ fg)
+  . (layoutlr_legend %~ fmap (legend_label_style .> font_color .~ fg))
 
 -- | Helper to set the forground color uniformly on a Layout1.
 setLayout1Foreground :: AlphaColour Double -> Layout1 x y -> Layout1 x y
