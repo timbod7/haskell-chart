@@ -203,9 +203,7 @@ data LayoutLR x y1 y2 = LayoutLR
   , _layoutlr_y_left_axis     :: LayoutAxis y1 -- ^ Rules to generate the left y axis
   , _layoutlr_y_right_axis    :: LayoutAxis y2 -- ^ Rules to generate the right y axis
   
-  , _layoutlr_left_plots      :: [Plot x y1]
-  , _layoutlr_right_plots     :: [Plot x y2]
-
+  , _layoutlr_plots      :: [Either (Plot x y1) (Plot x y2)]
 
   , _layoutlr_legend          :: Maybe LegendStyle
   , _layoutlr_margin          :: Double
@@ -839,8 +837,7 @@ instance (PlotValue x, PlotValue y1, PlotValue y2) => Default (LayoutLR x y1 y2)
     , _layoutlr_y_left_axis     = def
     , _layoutlr_y_right_axis    = def
     
-    , _layoutlr_left_plots      = []
-    , _layoutlr_right_plots     = []
+    , _layoutlr_plots      = []
 
     , _layoutlr_legend          = Just def
     , _layoutlr_margin          = 10
