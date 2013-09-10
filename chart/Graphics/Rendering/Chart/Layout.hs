@@ -694,6 +694,10 @@ renderPlots1 l sz@(w,h) = do
       maybeM () (renderAxisGrid sz) lAxis
       maybeM () (renderAxisGrid sz) rAxis
 
+axesSpacer :: (Ord x, Ord y) 
+           => ((Double, Double) -> Double) -> Maybe (AxisT x)
+           -> ((Double, Double) -> Double) -> Maybe (AxisT y)
+           -> Renderable a
 axesSpacer f1 a1 f2 a2 = embedRenderable $ do
     oh1 <- maybeM (0,0) axisOverhang a1
     oh2 <- maybeM (0,0) axisOverhang a2
