@@ -13,19 +13,19 @@ import Utils
 
 -- demonstrate Candles
 
-chart :: Double -> Renderable (Layout1Pick LocalTime Double)
-chart lwidth = layout1ToRenderable layout
+chart :: Double -> Renderable (LayoutLRPick LocalTime Double Double)
+chart lwidth = layoutLRToRenderable layout
   where
-    layout = layout1_title .~"Stock Prices"
-           $ layout1_background .~ solidFillStyle (opaque white)
-           $ layout1_left_axis . laxis_override .~ axisTicksHide
- 	   $ layout1_plots .~ [ Right (toPlot msftArea)
-                              , Right (toPlot msftLine)
-                              , Right (toPlot msftCandle)
-                              , Left  (toPlot aaplArea)
-                              , Left  (toPlot aaplLine)
-                              , Left  (toPlot aaplCandle) ]
-           $ setLayout1Foreground (opaque black)
+    layout = layoutlr_title .~"Stock Prices"
+           $ layoutlr_background .~ solidFillStyle (opaque white)
+           $ layoutlr_y_left_axis . laxis_override .~ axisTicksHide
+ 	   $ layoutlr_plots .~ [ Right (toPlot msftArea)
+                               , Right (toPlot msftLine)
+                               , Right (toPlot msftCandle)
+                               , Left  (toPlot aaplArea)
+                               , Left  (toPlot aaplLine)
+                               , Left  (toPlot aaplCandle) ]
+           $ setLayoutLRForeground (opaque black)
            $ def
 
     aaplLine = plot_lines_style  .~ lineStyle 2 green

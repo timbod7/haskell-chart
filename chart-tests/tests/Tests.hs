@@ -183,8 +183,8 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
 
 -------------------------------------------------------------------------------
 
-test10 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable (Layout1Pick LocalTime Double)
-test10 prices otype = layout1ToRenderable layout
+test10 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable (LayoutLRPick LocalTime Double Double)
+test10 prices otype = layoutLRToRenderable layout
   where
 
     lineStyle c = line_width .~ 3 * chooseLineWidth otype
@@ -212,13 +212,13 @@ test10 prices otype = layout1ToRenderable layout
     fg = opaque black
     fg1 = opaque $ sRGB 0.0 0.0 0.15
 
-    layout = layout1_title .~"Price History"
-           $ layout1_background .~ solidFillStyle (opaque white)
-           $ layout1_right_axis . laxis_override .~ axisGridHide
- 	   $ layout1_plots .~ [ Left (toPlot price1_area), Right (toPlot price2_area)
-                              , Left (toPlot price1),      Right (toPlot price2)
-                              ]
-           $ setLayout1Foreground fg
+    layout = layoutlr_title .~"Price History"
+           $ layoutlr_background .~ solidFillStyle (opaque white)
+           $ layoutlr_y_right_axis . laxis_override .~ axisGridHide
+ 	   $ layoutlr_plots .~ [ Left (toPlot price1_area), Right (toPlot price2_area)
+                               , Left (toPlot price1),      Right (toPlot price2)
+                               ]
+           $ setLayoutLRForeground fg
            $ def
 
 -------------------------------------------------------------------------------
