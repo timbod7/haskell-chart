@@ -221,6 +221,9 @@ data LayoutLRPick x y1 y2 = LayoutLRPick_Legend String
                           | LayoutLRPick_YRightAxis y2
                           deriving (Show)
 
+instance (Ord x, Ord yl, Ord yr) => ToRenderable (LayoutLR x yl yr) where
+  toRenderable = setPickFn nullPickFn . layoutToRenderableLR
+
 -- | A Layout1 value is a single plot area, with optional: axes on
 --   each of the 4 sides; title at the top; legend at the bottom. It's
 --   parameterised by the types of values to be plotted on the horizonal
@@ -359,6 +362,11 @@ layoutToRenderable :: (Ord x, Ord y) =>
 layoutToRenderable l = 
   fillBackground (_layout_background l) $ gridToRenderable (layoutToGrid l)
 
+layoutToRenderableLR :: (Ord x, Ord yl, Ord yr) =>
+                       LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
+layoutToRenderableLR l = 
+  fillBackground (_layoutlr_background l) $ gridToRenderable (layoutToGridLR l)
+
 layout1ToRenderable :: (Ord x, Ord y) =>
                        Layout1 x y -> Renderable (Layout1Pick x y)
 layout1ToRenderable l = 
@@ -374,6 +382,17 @@ layoutToGrid l = aboveN
        ]
   where
     lm = _layout_margin l
+
+layoutToGridLR :: (Ord x, Ord yl, Ord yr) 
+               => LayoutLR x yl yr -> Grid (Renderable (LayoutLRPick x yl yr))
+layoutToGridLR l = aboveN
+       [  tval $ layoutTitleToRenderableLR l
+       ,  weights (1,1) $ tval $ gridToRenderable $
+              addMarginsToGrid (lm,lm,lm,lm) (layoutPlotAreaToGridLR l)
+       ,  tval $ layoutLegendsToRenderableLR l
+       ]
+  where
+    lm = _layoutlr_margin l
 
 layout1ToGrid :: (Ord x, Ord y) =>
                  Layout1 x y -> Grid (Renderable (Layout1Pick x y))
@@ -396,6 +415,16 @@ layoutTitleToRenderable l = addMargins (lm/2,0,0,0)
                   (_layout_title l)
     lm    = _layout_margin l
 
+layoutTitleToRenderableLR :: (Ord x, Ord yl, Ord yr) 
+                          => LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
+layoutTitleToRenderableLR l | null (_layoutlr_title l) = emptyRenderable
+layoutTitleToRenderableLR l = addMargins (lm/2,0,0,0)
+                                         (mapPickFn LayoutLRPick_Title title)
+  where
+    title = label (_layoutlr_title_style l) HTA_Centre VTA_Centre
+                  (_layoutlr_title l)
+    lm    = _layoutlr_margin l
+
 layout1TitleToRenderable :: (Ord x, Ord y) => Layout1 x y
                                            -> Renderable (Layout1Pick x y)
 layout1TitleToRenderable l | null (_layout1_title l) = emptyRenderable
@@ -409,6 +438,13 @@ layout1TitleToRenderable l = addMargins (lm/2,0,0,0)
 getLayoutXVals :: Layout x y -> [x]
 getLayoutXVals l = concatMap (fst . _plot_all_points) (_layout_plots l)
 
+getLayoutXValsLR :: LayoutLR x yl yr -> [x]
+getLayoutXValsLR l = concatMap deEither $ _layoutlr_plots l
+  where
+    deEither :: Either (Plot x yl) (Plot x yr) -> [x]
+    deEither (Left x)  = fst $ _plot_all_points x
+    deEither (Right x) = fst $ _plot_all_points x
+
 getLayout1XVals :: Layout1 x y -> [x]
 getLayout1XVals l = concatMap (fst._plot_all_points.deEither) (_layout1_plots l)
   where
@@ -417,6 +453,12 @@ getLayout1XVals l = concatMap (fst._plot_all_points.deEither) (_layout1_plots l)
 
 getLegendItems :: Layout x y -> [LegendItem]
 getLegendItems l = concat [ _plot_legend p | p <- _layout_plots l ]
+
+getLegendItemsLR :: LayoutLR x yl yr -> ([LegendItem],[LegendItem])
+getLegendItemsLR l = (
+    concat [ _plot_legend p | (Left p ) <- (_layoutlr_plots l) ],
+    concat [ _plot_legend p | (Right p) <- (_layoutlr_plots l) ]
+    )
 
 getLegendItems1 :: Layout1 x y -> ([LegendItem],[LegendItem])
 getLegendItems1 l = (
@@ -437,6 +479,20 @@ renderLegend l legItems = gridToRenderable g
             lvs -> addMargins (0,lm,lm,lm) $ mapPickFn LayoutPick_Legend 
                                            $ legendToRenderable (Legend ls lvs)
 
+renderLegendLR :: LayoutLR x yl yr -> ([LegendItem],[LegendItem]) -> Renderable (LayoutLRPick x yl yr)
+renderLegendLR l (lefts,rights) = gridToRenderable g
+  where
+    g      = besideN [ tval $ mkLegend lefts
+                     , weights (1,1) $ tval $ emptyRenderable
+                     , tval $ mkLegend rights ]
+    lm     = _layoutlr_margin l
+    mkLegend vals = case (_layoutlr_legend l) of
+        Nothing -> emptyRenderable
+        Just ls ->  case filter ((/="").fst) vals of
+            []  -> emptyRenderable ;
+            lvs -> addMargins (0,lm,lm,lm) $
+                       mapPickFn LayoutLRPick_Legend $ legendToRenderable (Legend ls lvs)
+
 renderLegend1 :: Layout1 x y -> ([LegendItem],[LegendItem]) -> Renderable (Layout1Pick x y)
 renderLegend1 l (lefts,rights) = gridToRenderable g
   where
@@ -456,6 +512,10 @@ renderLegend1 l (lefts,rights) = gridToRenderable g
 layoutLegendsToRenderable :: (Ord x, Ord y) =>
                               Layout x y -> Renderable (LayoutPick x y)
 layoutLegendsToRenderable l = renderLegend l (getLegendItems l)
+
+layoutLegendsToRenderableLR :: (Ord x, Ord yl, Ord yr) =>
+                              LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
+layoutLegendsToRenderableLR l = renderLegendLR l (getLegendItemsLR l)
 
 layout1LegendsToRenderable :: (Ord x, Ord y) =>
                               Layout1 x y -> Renderable (Layout1Pick x y)
@@ -510,6 +570,63 @@ layoutPlotAreaToGrid l = layer2 `overlay` layer1
                          (mapPickFn LayoutPick_YAxis . axisToRenderable) la
     raxis = tval $ maybe emptyRenderable
                          (mapPickFn LayoutPick_YAxis . axisToRenderable) ra
+
+    tl = tval $ axesSpacer fst ta fst la
+    bl = tval $ axesSpacer fst ba snd la
+    tr = tval $ axesSpacer snd ta fst ra
+    br = tval $ axesSpacer snd ba snd ra
+
+layoutPlotAreaToGridLR :: forall x yl yr. (Ord x, Ord yl, Ord yr) 
+                       => LayoutLR x yl yr 
+                       -> Grid (Renderable (LayoutLRPick x yl yr))
+layoutPlotAreaToGridLR l = layer2 `overlay` layer1
+  where
+    layer1 = aboveN
+         [ besideN [er,     er,  er,    er   ]
+         , besideN [er,     er,  er,    weights (1,1) plots ]
+         ]
+
+    layer2 = aboveN
+         [ besideN [er,     er,  tl,    taxis,  tr,    er,  er       ]
+         , besideN [ltitle, lam, laxis, er,     raxis, ram, rtitle   ]
+         , besideN [er,     er,  bl,    baxis,  br,    er,  er       ]
+         , besideN [er,     er,  er,    btitle, er,    er,  er       ]
+         ]
+    
+    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 _layoutlr_x_axis    LayoutLRPick_XAxisTitle   
+    (btitle,_) = atitle HTA_Centre VTA_Top      0 _layoutlr_x_axis LayoutLRPick_XAxisTitle
+    (ltitle,lam) = atitle HTA_Right  VTA_Centre 270 _layoutlr_y_left_axis   LayoutLRPick_YLeftAxisTitle
+    (rtitle,ram) = atitle HTA_Left   VTA_Centre 270 _layoutlr_y_right_axis  LayoutLRPick_YRightAxisTitle
+
+    er = tval $ emptyRenderable
+    
+    atitle :: HTextAnchor -> VTextAnchor 
+            -> Double 
+            -> (LayoutLR x yl yr -> LayoutAxis z) 
+            -> (String -> LayoutLRPick x yl yr) 
+            -> ( Grid (Renderable (LayoutLRPick x yl yr))
+               , Grid (Renderable (LayoutLRPick x yl yr)) )
+    atitle ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
+      where
+        label = tval $ mapPickFn pf $ rlabel tstyle ha va rot ttext
+        gap = tval $ spacer (_layoutlr_margin l,0)
+        tstyle = _laxis_title_style (af l)
+        ttext  = _laxis_title       (af l)
+
+    plots = tval $ mfill (_layoutlr_plot_background l) $ plotsToRenderableLR l
+      where
+        mfill Nothing   = id
+        mfill (Just fs) = fillBackground fs
+
+    (ba,la,ta,ra) = getAxesLR l
+    baxis = tval $ maybe emptyRenderable
+                         (mapPickFn LayoutLRPick_XAxis . axisToRenderable) ba
+    taxis = tval $ maybe emptyRenderable
+                         (mapPickFn LayoutLRPick_XAxis .    axisToRenderable) ta
+    laxis = tval $ maybe emptyRenderable
+                         (mapPickFn LayoutLRPick_YLeftAxis .   axisToRenderable) la
+    raxis = tval $ maybe emptyRenderable
+                         (mapPickFn LayoutLRPick_YRightAxis .  axisToRenderable) ra
 
     tl = tval $ axesSpacer fst ta fst la
     bl = tval $ axesSpacer fst ba snd la
@@ -577,6 +694,12 @@ plotsToRenderable :: Layout x y -> Renderable (LayoutPick x y)
 plotsToRenderable l = Renderable {
         minsize = return (0,0),
         render  = renderPlots l
+    }
+
+plotsToRenderableLR :: LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
+plotsToRenderableLR l = Renderable {
+        minsize = return (0,0),
+        render  = renderPlotsLR l
     }
 
 plotsToRenderable1 :: Layout1 x y -> Renderable (Layout1Pick x y)
