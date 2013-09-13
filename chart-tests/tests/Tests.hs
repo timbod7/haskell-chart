@@ -237,18 +237,18 @@ test11_ f = f layout1 layout2
           $ plot_points_title .~ "spots"
           $ def
 
-    layout1 = layout1_title .~ "Multi typed stack"
- 	   $ layout1_plots .~ [Left (toPlot plot1)]
-           $ layout1_left_axis . laxis_title .~ "integer values"
-           $ def
+    layout1 = layout_title .~ "Multi typed stack"
+            $ layout_plots .~ [toPlot plot1]
+            $ layout_y_axis . laxis_title .~ "integer values"
+            $ def
 
     plot2 = plot_lines_values .~ [vs2]
           $ plot_lines_title .~ "lines"
           $ def
 
-    layout2 = layout1_plots .~ [Left (toPlot plot2)]
-           $ layout1_left_axis . laxis_title .~ "double values"
-           $ def
+    layout2 = layout_plots .~ [toPlot plot2]
+            $ layout_y_axis . laxis_title .~ "double values"
+            $ def
 
 test11a :: OutputType -> Renderable ()
 test11a otype = test11_ f
