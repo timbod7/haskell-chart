@@ -363,7 +363,7 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
         showLegend = not (null (fst legenditems)) || not (null (snd legenditems))
 
         isTopPlot = i == 0
-        isBottomPlot = i == length sls -1
+        isBottomPlot = i == length sls - 1
 
         lm = case sl of
           StackedLayout l -> _layout_margin l
