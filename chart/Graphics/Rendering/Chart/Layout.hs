@@ -80,6 +80,8 @@ module Graphics.Rendering.Chart.Layout
   , layoutlr_bottom_axis_visibility
   , layoutlr_y_left_axis
   , layoutlr_y_right_axis
+  , layoutlr_left_axis_visibility
+  , layoutlr_right_axis_visibility
   , layoutlr_plots
   , layoutlr_legend
   , layoutlr_margin
@@ -198,7 +200,9 @@ data LayoutLR x y1 y2 = LayoutLR
   , _layoutlr_bottom_axis_visibility :: AxisVisibility -- ^ Visibility options for the bottom axis.
 
   , _layoutlr_y_left_axis     :: LayoutAxis y1 -- ^ Rules to generate the left y axis
+  , _layoutlr_left_axis_visibility :: AxisVisibility -- ^ Visibility options for the left axis.
   , _layoutlr_y_right_axis    :: LayoutAxis y2 -- ^ Rules to generate the right y axis
+  , _layoutlr_right_axis_visibility :: AxisVisibility  -- ^ Visibility options for the right axis.
   
   , _layoutlr_plots      :: [Either (Plot x y1) (Plot x y2)]
 
@@ -565,11 +569,11 @@ layoutLRPlotAreaToGrid l = layer2 `overlay` layer1
     baxis = tval $ maybe emptyRenderable
                          (mapPickFn LayoutLRPick_XAxis . axisToRenderable) ba
     taxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutLRPick_XAxis .    axisToRenderable) ta
+                         (mapPickFn LayoutLRPick_XAxis . axisToRenderable) ta
     laxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutLRPick_YLeftAxis .   axisToRenderable) la
+                         (mapPickFn LayoutLRPick_YLeftAxis . axisToRenderable) la
     raxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutLRPick_YRightAxis .  axisToRenderable) ra
+                         (mapPickFn LayoutLRPick_YRightAxis . axisToRenderable) ra
 
     tl = tval $ axesSpacer fst ta fst la
     bl = tval $ axesSpacer fst ba snd la
@@ -702,8 +706,8 @@ getAxesLR l = (bAxis,lAxis,tAxis,rAxis)
 
     bAxis = mkAxis E_Bottom (overrideAxisVisibility l _layoutlr_x_axis _layoutlr_bottom_axis_visibility) xvals
     tAxis = mkAxis E_Top    (overrideAxisVisibility l _layoutlr_x_axis _layoutlr_top_axis_visibility   ) xvals
-    lAxis = mkAxis E_Left   (_layoutlr_y_left_axis l)  yvalsL
-    rAxis = mkAxis E_Right  (_layoutlr_y_right_axis l) yvalsR
+    lAxis = mkAxis E_Left   (overrideAxisVisibility l _layoutlr_y_left_axis  _layoutlr_left_axis_visibility ) yvalsL
+    rAxis = mkAxis E_Right  (overrideAxisVisibility l _layoutlr_y_right_axis _layoutlr_right_axis_visibility) yvalsR
 
 mkAxis :: RectEdge -> LayoutAxis z -> [z] -> Maybe (AxisT z)
 mkAxis edge laxis vals = case _laxis_visible laxis vals of
@@ -782,8 +786,10 @@ instance (PlotValue x, PlotValue y1, PlotValue y2) => Default (LayoutLR x y1 y2)
                                              , _axis_show_labels = False }
     , _layoutlr_bottom_axis_visibility = def
 
-    , _layoutlr_y_left_axis     = def
-    , _layoutlr_y_right_axis    = def
+    , _layoutlr_y_left_axis           = def
+    , _layoutlr_left_axis_visibility  = def
+    , _layoutlr_y_right_axis          = def
+    , _layoutlr_right_axis_visibility = def
     
     , _layoutlr_plots      = []
 
