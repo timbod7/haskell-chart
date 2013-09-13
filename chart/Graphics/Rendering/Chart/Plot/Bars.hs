@@ -69,8 +69,8 @@ data PlotBarsSpacing
 -- | How bars for a given (x,[y]) are aligned with respect to screen
 --   coordinate corresponding to x (deviceX).
 data PlotBarsAlignment = BarsLeft      -- ^ The left edge of bars is at deviceX
-                       | BarsCentered  -- ^ The right edge of bars is at deviceX
-                       | BarsRight     -- ^ Bars are centered around deviceX
+                       | BarsCentered  -- ^ Bars are centered around deviceX
+                       | BarsRight     -- ^ The right edge of bars is at deviceX
      deriving (Show)
 
 -- | Value describing how to plot a set of bars.
