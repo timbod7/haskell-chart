@@ -50,17 +50,17 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
                                  besideN [rf g4, rf g5, rf g6] ]
 
     g1 = layout_title .~ "minimal"
-       $ layout_x_bottom_axis %~ axisHideTicks
-       $ layout_y_left_axis %~ axisHideTicks
+       $ layout_bottom_axis_visibility %~ axisHideTicks
+       $ layout_left_axis_visibility %~ axisHideTicks
        $ layout_x_axis . laxis_override .~ axisGridHide
        $ layout_y_axis . laxis_override .~ axisGridHide
        $ Test1.layout lwidth
 
     g2 = layout_title .~ "with borders"
-       $ layout_x_bottom_axis %~ axisHideTicks
-       $ layout_y_left_axis %~ axisHideTicks
-       $ layout_x_top_axis %~ axisShowLine
-       $ layout_y_right_axis %~ axisShowLine
+       $ layout_bottom_axis_visibility %~ axisHideTicks
+       $ layout_left_axis_visibility %~ axisHideTicks
+       $ layout_top_axis_visibility %~ axisShowLine
+       $ layout_right_axis_visibility %~ axisShowLine
        $ layout_x_axis . laxis_override .~ axisGridHide
        $ layout_y_axis . laxis_override .~ axisGridHide
        $ Test1.layout lwidth
@@ -82,12 +82,12 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
           )
 
     g5 = layout_title .~ "y linked"
-       $ layout_y_right_axis  %~ axisShowLine . axisShowTicks. axisShowLabels
+       $ layout_right_axis_visibility  %~ axisShowLine . axisShowTicks. axisShowLabels
        $ Test1.layout lwidth
 
     g6 = layout_title .~ "everything"
-       $ layout_y_right_axis  %~ axisShowLine . axisShowTicks. axisShowLabels
-       $ layout_x_top_axis  %~ axisShowLine . axisShowTicks. axisShowLabels
+       $ layout_right_axis_visibility  %~ axisShowLine . axisShowTicks. axisShowLabels
+       $ layout_top_axis_visibility  %~ axisShowLine . axisShowTicks. axisShowLabels
        $ Test1.layout lwidth
 
     rf = tval . layoutToRenderable
@@ -167,7 +167,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
            $ layout_title_style . font_size .~ 10
            $ layout_x_axis . laxis_generate .~ autoIndexAxis alabels
            $ layout_y_axis . laxis_override .~ axisGridHide
-           $ layout_y_left_axis %~ axisHideTicks
+           $ layout_left_axis_visibility %~ axisHideTicks
            $ layout_plots .~ [ plotBars bars ]
            $ def :: Layout PlotIndex Double
 
