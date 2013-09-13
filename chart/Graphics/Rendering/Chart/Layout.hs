@@ -61,11 +61,11 @@ module Graphics.Rendering.Chart.Layout
   , layout_title
   , layout_title_style
   , layout_x_axis
-  , layout_x_top_axis
-  , layout_x_bottom_axis
+  , layout_top_axis_visibility
+  , layout_bottom_axis_visibility
   , layout_y_axis
-  , layout_y_left_axis
-  , layout_y_right_axis
+  , layout_left_axis_visibility
+  , layout_right_axis_visibility
   , layout_margin
   , layout_plots
   , layout_legend
@@ -76,8 +76,8 @@ module Graphics.Rendering.Chart.Layout
   , layoutlr_title
   , layoutlr_title_style
   , layoutlr_x_axis
-  , layoutlr_x_top_axis
-  , layoutlr_x_bottom_axis
+  , layoutlr_top_axis_visibility
+  , layoutlr_bottom_axis_visibility
   , layoutlr_y_left_axis
   , layoutlr_y_right_axis
   , layoutlr_plots
@@ -156,12 +156,12 @@ data Layout x y = Layout {
     _layout_title_style     :: FontStyle,
 
     _layout_x_axis          :: LayoutAxis x,   -- ^ Rules to generate the x axis.
-    _layout_x_top_axis      :: AxisVisibility, -- ^ Visibility options for the top axis.
-    _layout_x_bottom_axis   :: AxisVisibility, -- ^ Visibility options for the bottom axis.
+    _layout_top_axis_visibility    :: AxisVisibility, -- ^ Visibility options for the top axis.
+    _layout_bottom_axis_visibility :: AxisVisibility, -- ^ Visibility options for the bottom axis.
 
     _layout_y_axis          :: LayoutAxis y,   -- ^ Rules to generate the y axis.
-    _layout_y_left_axis     :: AxisVisibility, -- ^ Visibility options for the left axis.
-    _layout_y_right_axis    :: AxisVisibility, -- ^ Visibility options for the right axis.
+    _layout_left_axis_visibility  :: AxisVisibility, -- ^ Visibility options for the left axis.
+    _layout_right_axis_visibility :: AxisVisibility, -- ^ Visibility options for the right axis.
 
     _layout_plots           :: [Plot x y],
 
@@ -194,8 +194,8 @@ data LayoutLR x y1 y2 = LayoutLR
   , _layoutlr_title_style     :: FontStyle
 
   , _layoutlr_x_axis          :: LayoutAxis x   -- ^ Rules to generate the x axis
-  , _layoutlr_x_top_axis      :: AxisVisibility -- ^ Visibility options for the top axis.
-  , _layoutlr_x_bottom_axis   :: AxisVisibility -- ^ Visibility options for the bottom axis.
+  , _layoutlr_top_axis_visibility    :: AxisVisibility -- ^ Visibility options for the top axis.
+  , _layoutlr_bottom_axis_visibility :: AxisVisibility -- ^ Visibility options for the bottom axis.
 
   , _layoutlr_y_left_axis     :: LayoutAxis y1 -- ^ Rules to generate the left y axis
   , _layoutlr_y_right_axis    :: LayoutAxis y2 -- ^ Rules to generate the right y axis
@@ -282,15 +282,15 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
         mkPlotArea axis bVis tVis = case sl of
           StackedLayout l -> fmap noPickFn 
                            $ layoutPlotAreaToGrid 
-                           $ l { _layout_x_axis        = axis
-                               , _layout_x_bottom_axis = bVis
-                               , _layout_x_top_axis    = tVis 
+                           $ l { _layout_x_axis                 = axis
+                               , _layout_bottom_axis_visibility = bVis
+                               , _layout_top_axis_visibility    = tVis 
                                }
           StackedLayoutLR l -> fmap noPickFn 
                              $ layoutLRPlotAreaToGrid 
                              $ l { _layoutlr_x_axis        = axis
-                                 , _layoutlr_x_bottom_axis = bVis
-                                 , _layoutlr_x_top_axis    = tVis 
+                                 , _layoutlr_bottom_axis_visibility = bVis
+                                 , _layoutlr_top_axis_visibility    = tVis 
                                  }
 
         showLegend = not (null (fst legenditems)) || not (null (snd legenditems))
@@ -315,12 +315,12 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
         topVis    = mkVis (getTopVis sl)    (isTopPlot || not (_slayouts_compress_xlabels slp))
         
         getTopVis :: StackedLayout x -> AxisVisibility
-        getTopVis (StackedLayout l) = _layout_x_top_axis l
-        getTopVis (StackedLayoutLR l) = _layoutlr_x_top_axis l
+        getTopVis (StackedLayout l)   = _layout_top_axis_visibility l
+        getTopVis (StackedLayoutLR l) = _layoutlr_top_axis_visibility l
         
         getBottomVis :: StackedLayout x -> AxisVisibility
-        getBottomVis (StackedLayout l) = _layout_x_bottom_axis l
-        getBottomVis (StackedLayoutLR l) = _layoutlr_x_bottom_axis l
+        getBottomVis (StackedLayout l)   = _layout_bottom_axis_visibility l
+        getBottomVis (StackedLayoutLR l) = _layoutlr_bottom_axis_visibility l
         
         mkVis :: AxisVisibility -> Bool -> AxisVisibility
         mkVis vis showLabels = vis { _axis_show_labels = showLabels }
@@ -689,10 +689,10 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where
     (xvals, yvals) = allPlottedValues (_layout_plots l)
 
-    bAxis = mkAxis E_Bottom (overrideAxisVisibility l _layout_x_axis _layout_x_bottom_axis) xvals
-    tAxis = mkAxis E_Top    (overrideAxisVisibility l _layout_x_axis _layout_x_top_axis   ) xvals
-    lAxis = mkAxis E_Left   (overrideAxisVisibility l _layout_y_axis _layout_y_left_axis  ) yvals
-    rAxis = mkAxis E_Right  (overrideAxisVisibility l _layout_y_axis _layout_y_right_axis ) yvals
+    bAxis = mkAxis E_Bottom (overrideAxisVisibility l _layout_x_axis _layout_bottom_axis_visibility) xvals
+    tAxis = mkAxis E_Top    (overrideAxisVisibility l _layout_x_axis _layout_top_axis_visibility   ) xvals
+    lAxis = mkAxis E_Left   (overrideAxisVisibility l _layout_y_axis _layout_left_axis_visibility  ) yvals
+    rAxis = mkAxis E_Right  (overrideAxisVisibility l _layout_y_axis _layout_right_axis_visibility ) yvals
 
 getAxesLR :: LayoutLR x yl yr ->
            (Maybe (AxisT x), Maybe (AxisT yl), Maybe (AxisT x), Maybe (AxisT yr))
@@ -700,8 +700,8 @@ getAxesLR l = (bAxis,lAxis,tAxis,rAxis)
   where
     (xvals, yvalsL, yvalsR) = allPlottedValuesLR (_layoutlr_plots l)
 
-    bAxis = mkAxis E_Bottom (overrideAxisVisibility l _layoutlr_x_axis _layoutlr_x_bottom_axis) xvals
-    tAxis = mkAxis E_Top    (overrideAxisVisibility l _layoutlr_x_axis _layoutlr_x_top_axis   ) xvals
+    bAxis = mkAxis E_Bottom (overrideAxisVisibility l _layoutlr_x_axis _layoutlr_bottom_axis_visibility) xvals
+    tAxis = mkAxis E_Top    (overrideAxisVisibility l _layoutlr_x_axis _layoutlr_top_axis_visibility   ) xvals
     lAxis = mkAxis E_Left   (_layoutlr_y_left_axis l)  yvalsL
     rAxis = mkAxis E_Right  (_layoutlr_y_right_axis l) yvalsR
 
@@ -750,16 +750,16 @@ instance (PlotValue x, PlotValue y) => Default (Layout x y) where
     , _layout_title_style     = def { _font_size   = 15
                                     , _font_weight = FontWeightBold }
     
-    , _layout_x_axis        = def
-    , _layout_x_top_axis    = def { _axis_show_line   = False
-                                  , _axis_show_ticks  = False
-                                  , _axis_show_labels = False }
-    , _layout_x_bottom_axis = def
-    , _layout_y_axis        = def
-    , _layout_y_left_axis   = def
-    , _layout_y_right_axis  = def { _axis_show_line   = False
-                                  , _axis_show_ticks  = False
-                                  , _axis_show_labels = False }
+    , _layout_x_axis                 = def
+    , _layout_top_axis_visibility    = def { _axis_show_line   = False
+                                           , _axis_show_ticks  = False
+                                           , _axis_show_labels = False }
+    , _layout_bottom_axis_visibility = def
+    , _layout_y_axis                 = def
+    , _layout_left_axis_visibility   = def
+    , _layout_right_axis_visibility  = def { _axis_show_line   = False
+                                           , _axis_show_ticks  = False
+                                           , _axis_show_labels = False }
 
     , _layout_margin          = 10
     , _layout_plots           = []
@@ -776,11 +776,11 @@ instance (PlotValue x, PlotValue y1, PlotValue y2) => Default (LayoutLR x y1 y2)
     , _layoutlr_title_style     = def { _font_size   = 15
                                       , _font_weight = FontWeightBold }
 
-    , _layoutlr_x_axis          = def
-    , _layoutlr_x_top_axis      = def { _axis_show_line   = False
-                                      , _axis_show_ticks  = False
-                                      , _axis_show_labels = False }
-    , _layoutlr_x_bottom_axis   = def
+    , _layoutlr_x_axis                 = def
+    , _layoutlr_top_axis_visibility    = def { _axis_show_line   = False
+                                             , _axis_show_ticks  = False
+                                             , _axis_show_labels = False }
+    , _layoutlr_bottom_axis_visibility = def
 
     , _layoutlr_y_left_axis     = def
     , _layoutlr_y_right_axis    = def
