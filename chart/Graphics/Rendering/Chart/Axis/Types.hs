@@ -37,16 +37,14 @@ module Graphics.Rendering.Chart.Axis.Types(
     axisGridAtBigTicks,
     axisGridAtLabels,
     axisGridHide,
-    axisTicksHide,
-    axisLabelsHide,
     axisLabelsOverride,
     
-    axisHideLine,
-    axisShowLine,
-    axisHideTicks,
-    axisShowTicks,
-    axisHideLabels,
-    axisShowLabels,
+    axisLineHide,
+    axisLineShow,
+    axisTicksHide,
+    axisTicksShow,
+    axisLabelsHide,
+    axisLabelsShow,
     
     axis_show_line,
     axis_show_ticks,
@@ -151,18 +149,20 @@ type AxisFn x = [x] -> AxisData x
 --   bool is true if the axis direction is reversed.
 data AxisT x = AxisT RectEdge AxisStyle Bool (AxisData x)
 
-axisHideLine :: AxisVisibility -> AxisVisibility
-axisHideLine vis = vis { _axis_show_line = False }
-axisShowLine :: AxisVisibility -> AxisVisibility
-axisShowLine vis = vis { _axis_show_line = True }
-axisHideTicks :: AxisVisibility -> AxisVisibility
-axisHideTicks vis = vis { _axis_show_ticks = False }
-axisShowTicks :: AxisVisibility -> AxisVisibility
-axisShowTicks vis = vis { _axis_show_ticks = True }
-axisHideLabels :: AxisVisibility -> AxisVisibility
-axisHideLabels vis = vis { _axis_show_labels = False }
-axisShowLabels :: AxisVisibility -> AxisVisibility
-axisShowLabels vis = vis { _axis_show_labels = True }
+axisLineHide :: AxisVisibility -> AxisVisibility
+axisLineHide vis = vis { _axis_show_line = False }
+axisLineShow :: AxisVisibility -> AxisVisibility
+axisLineShow vis = vis { _axis_show_line = True }
+
+axisTicksHide :: AxisVisibility -> AxisVisibility
+axisTicksHide vis = vis { _axis_show_ticks = False }
+axisTicksShow :: AxisVisibility -> AxisVisibility
+axisTicksShow vis = vis { _axis_show_ticks = True }
+
+axisLabelsHide :: AxisVisibility -> AxisVisibility
+axisLabelsHide vis = vis { _axis_show_labels = False }
+axisLabelsShow :: AxisVisibility -> AxisVisibility
+axisLabelsShow vis = vis { _axis_show_labels = True }
 
 -- | Construct a renderable from an axis, in order that
 -- it can be composed with other renderables and drawn. This
@@ -196,18 +196,6 @@ axisGridAtLabels ad   = ad{ _axis_grid = map fst vs }
     vs = case _axis_labels ad of
         [] -> []
         ls -> head ls
-
--- | Modifier to remove ticks from an axis
-axisTicksHide       :: AxisData x -> AxisData x
-axisTicksHide ad     = ad { _axis_visibility = (_axis_visibility ad) 
-                                             { _axis_show_ticks = False }
-                          }
-
--- | Modifier to remove labels from an axis
-axisLabelsHide      :: AxisData x -> AxisData x
-axisLabelsHide ad    = ad { _axis_visibility = (_axis_visibility ad) 
-                                             { _axis_show_labels = False} 
-                          }
 
 -- | Modifier to change labels on an axis
 axisLabelsOverride  :: [(x,String)] -> AxisData x -> AxisData x
