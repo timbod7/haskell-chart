@@ -29,11 +29,9 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
 module Graphics.Rendering.Chart.Layout
-  ( Layout1(..)
-  , Layout(..)
+  ( Layout(..)
   , LayoutLR(..)
   , LayoutAxis(..)
-  , Layout1Pick(..)
   , LayoutPick(..)
   , LayoutLRPick(..)
   , StackedLayouts(..)
@@ -41,17 +39,11 @@ module Graphics.Rendering.Chart.Layout
   , ShowOnAxis(..)
   , MAxisFn
   
-  , defaultLayout1
-  , layout1ToRenderable
   , layoutToRenderable
   , layoutLRToRenderable
-  , linkAxes
-  , independentAxes
 
   , setLayoutForeground
   , updateAllAxesStyles
-  , setLayout1Foreground
-  , updateAllAxesStyles1
   , setLayoutLRForeground
   , updateAllAxesStylesLR
 
@@ -63,20 +55,6 @@ module Graphics.Rendering.Chart.Layout
   , laxis_generate
   , laxis_override
   , laxis_reverse
-
-  , layout1_background
-  , layout1_plot_background
-  , layout1_title
-  , layout1_title_style
-  , layout1_left_axis
-  , layout1_right_axis
-  , layout1_top_axis
-  , layout1_bottom_axis
-  , layout1_yaxes_control
-  , layout1_margin
-  , layout1_plots
-  , layout1_legend
-  , layout1_grid_last
     
   , layout_background
   , layout_plot_background
