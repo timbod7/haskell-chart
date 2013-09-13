@@ -51,7 +51,6 @@ module Graphics.Rendering.Chart.Layout
   , laxis_title_style
   , laxis_title
   , laxis_style
-  , laxis_visible
   , laxis_generate
   , laxis_override
   , laxis_reverse
@@ -118,11 +117,6 @@ data LayoutAxis x = LayoutAxis {
    _laxis_title_style :: FontStyle,
    _laxis_title       :: String,
    _laxis_style       :: AxisStyle,
-
-   -- | Function that determines whether an axis should be visible,
-   --   based upon the points plotted on this axis. The default value
-   --   is 'not.null'.
-   _laxis_visible     :: [x] -> Bool,
 
    -- | Function that generates the axis data, based upon the
    --   points plotted. The default value is 'autoAxis'.
@@ -710,13 +704,15 @@ getAxesLR l = (bAxis,lAxis,tAxis,rAxis)
     rAxis = mkAxis E_Right  (overrideAxisVisibility l _layoutlr_right_axis _layoutlr_right_axis_visibility) yvalsR
 
 mkAxis :: RectEdge -> LayoutAxis z -> [z] -> Maybe (AxisT z)
-mkAxis edge laxis vals = case _laxis_visible laxis vals of
+mkAxis edge laxis vals = case axisVisible of
     False -> Nothing
     True  -> Just $ AxisT edge style rev adata
   where
     style = _laxis_style laxis
     rev   = _laxis_reverse laxis
     adata = (_laxis_override laxis) (_laxis_generate laxis vals)
+    vis   = _axis_visibility adata
+    axisVisible = _axis_show_labels vis || _axis_show_line vis || _axis_show_ticks vis
 
 overrideAxisVisibility :: layout 
                        -> (layout -> LayoutAxis z) 
@@ -726,7 +722,6 @@ overrideAxisVisibility ly selAxis selVis =
   let vis = selVis ly
   in (selAxis ly) { _laxis_override = (\ad -> ad { _axis_visibility = selVis ly }) 
                                     . _laxis_override (selAxis ly)
-                  , _laxis_visible = \_ -> _axis_show_labels vis || _axis_show_line vis || _axis_show_ticks vis
                   }
 
 allPlottedValues :: [Plot x y]
@@ -807,7 +802,6 @@ instance PlotValue t => Default (LayoutAxis t) where
     { _laxis_title_style = def { _font_size=10 }
     , _laxis_title       = ""
     , _laxis_style       = def
-    , _laxis_visible     = not.null
     , _laxis_generate    = autoAxis
     , _laxis_override    = id
     , _laxis_reverse     = False
