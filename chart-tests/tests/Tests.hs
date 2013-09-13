@@ -92,10 +92,6 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
 
     rf = tval . layoutToRenderable
 
-    axisBorderOnly :: LayoutAxis x -> LayoutAxis x
-    axisBorderOnly = (laxis_visible .~ const True)
-                   . (laxis_override .~ (axisGridHide.axisTicksHide.axisLabelsHide))
-
 ----------------------------------------------------------------------
 test4d :: OutputType -> Renderable (LayoutPick Double Double)
 test4d otype = layoutToRenderable layout
