@@ -49,8 +49,8 @@ chart prices showMinMax lwidth = layoutLRToRenderable layout
     layout = layoutlr_title .~"Price History"
            $ layoutlr_background .~ solidFillStyle bg
            $ updateAllAxesStylesLR (axis_grid_style .~ solidLine 1 fg1)
-           $ layoutlr_y_left_axis . laxis_override .~ axisGridHide
-           $ layoutlr_y_right_axis . laxis_override .~ axisGridHide
+           $ layoutlr_left_axis . laxis_override .~ axisGridHide
+           $ layoutlr_right_axis . laxis_override .~ axisGridHide
            $ layoutlr_x_axis . laxis_override .~ axisGridHide
  	   $ layoutlr_plots .~ ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
            $ layoutlr_grid_last .~ False

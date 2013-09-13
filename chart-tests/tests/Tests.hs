@@ -214,7 +214,7 @@ test10 prices otype = layoutLRToRenderable layout
 
     layout = layoutlr_title .~"Price History"
            $ layoutlr_background .~ solidFillStyle (opaque white)
-           $ layoutlr_y_right_axis . laxis_override .~ axisGridHide
+           $ layoutlr_right_axis . laxis_override .~ axisGridHide
  	   $ layoutlr_plots .~ [ Left (toPlot price1_area), Right (toPlot price2_area)
                                , Left (toPlot price1),      Right (toPlot price2)
                                ]
