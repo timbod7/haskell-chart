@@ -221,51 +221,6 @@ data LayoutLRPick x y1 y2 = LayoutLRPick_Legend String
 instance (Ord x, Ord yl, Ord yr) => ToRenderable (LayoutLR x yl yr) where
   toRenderable = setPickFn nullPickFn . layoutLRToRenderable
 
--- | A Layout1 value is a single plot area, with optional: axes on
---   each of the 4 sides; title at the top; legend at the bottom. It's
---   parameterised by the types of values to be plotted on the horizonal
---   and vertical axes.
-data Layout1 x y = Layout1 {
-
-    _layout1_background      :: FillStyle,
-    _layout1_plot_background :: Maybe FillStyle,
-
-    _layout1_title           :: String,
-    _layout1_title_style     :: FontStyle,
-
-    _layout1_bottom_axis     :: LayoutAxis x,
-    _layout1_top_axis        :: LayoutAxis x,
-    _layout1_left_axis       :: LayoutAxis y,
-    _layout1_right_axis      :: LayoutAxis y,
-
-    -- | Function to map points from the left/right plot
-    --   to the left/right axes. The default value is 'id'.
-    _layout1_yaxes_control   :: ([y],[y]) -> ([y],[y]),
-
-    _layout1_margin          :: Double,
-    _layout1_plots           :: [Either (Plot x y) (Plot x y)],
-    _layout1_legend          :: Maybe LegendStyle,
-
-    -- | True if the grid is to be rendered on top of the Plots.
-    _layout1_grid_last       :: Bool
-}
-
-instance (Ord x, Ord y) => ToRenderable (Layout1 x y) where
-  toRenderable = setPickFn nullPickFn . layout1ToRenderable
-
-data Layout1Pick x y = L1P_Legend String
-                     | L1P_Title String
-                     | L1P_BottomAxisTitle String
-                     | L1P_TopAxisTitle String
-                     | L1P_LeftAxisTitle String
-                     | L1P_RightAxisTitle String
-                     | L1P_PlotArea x y y
-                     | L1P_BottomAxis x
-                     | L1P_TopAxis x
-                     | L1P_LeftAxis y
-                     | L1P_RightAxis y
-    deriving (Show)
-
 type LegendItem = (String,Rect -> ChartBackend ())
 
 -- | A layout with its y type hidden, so that it can be stacked
@@ -413,11 +368,6 @@ layoutLRToRenderable :: (Ord x, Ord yl, Ord yr) =>
 layoutLRToRenderable l = 
   fillBackground (_layoutlr_background l) $ gridToRenderable (layoutLRToGrid l)
 
-layout1ToRenderable :: (Ord x, Ord y) =>
-                       Layout1 x y -> Renderable (Layout1Pick x y)
-layout1ToRenderable l = 
-  fillBackground (_layout1_background l) $ gridToRenderable (layout1ToGrid l)
-
 layoutToGrid :: (Ord x, Ord y) =>
                  Layout x y -> Grid (Renderable (LayoutPick x y))
 layoutToGrid l = aboveN
@@ -440,17 +390,6 @@ layoutLRToGrid l = aboveN
   where
     lm = _layoutlr_margin l
 
-layout1ToGrid :: (Ord x, Ord y) =>
-                 Layout1 x y -> Grid (Renderable (Layout1Pick x y))
-layout1ToGrid l = aboveN
-       [  tval $ layout1TitleToRenderable l
-       ,  weights (1,1) $ tval $ gridToRenderable $
-              addMarginsToGrid (lm,lm,lm,lm) (layout1PlotAreaToGrid l)
-       ,  tval $ layout1LegendsToRenderable l
-       ]
-  where
-    lm = _layout1_margin l
-
 layoutTitleToRenderable :: (Ord x, Ord y) => Layout x y
                                            -> Renderable (LayoutPick x y)
 layoutTitleToRenderable l | null (_layout_title l) = emptyRenderable
@@ -471,16 +410,6 @@ layoutLRTitleToRenderable l = addMargins (lm/2,0,0,0)
                   (_layoutlr_title l)
     lm    = _layoutlr_margin l
 
-layout1TitleToRenderable :: (Ord x, Ord y) => Layout1 x y
-                                           -> Renderable (Layout1Pick x y)
-layout1TitleToRenderable l | null (_layout1_title l) = emptyRenderable
-layout1TitleToRenderable l = addMargins (lm/2,0,0,0)
-                                        (mapPickFn L1P_Title title)
-  where
-    title = label (_layout1_title_style l) HTA_Centre VTA_Centre
-                  (_layout1_title l)
-    lm    = _layout1_margin l
-
 getLayoutXVals :: Layout x y -> [x]
 getLayoutXVals l = concatMap (fst . _plot_all_points) (_layout_plots l)
 
@@ -491,12 +420,6 @@ getLayoutLRXVals l = concatMap deEither $ _layoutlr_plots l
     deEither (Left x)  = fst $ _plot_all_points x
     deEither (Right x) = fst $ _plot_all_points x
 
-getLayout1XVals :: Layout1 x y -> [x]
-getLayout1XVals l = concatMap (fst._plot_all_points.deEither) (_layout1_plots l)
-  where
-    deEither (Left x)  = x
-    deEither (Right x) = x
-
 getLegendItems :: Layout x y -> [LegendItem]
 getLegendItems l = concat [ _plot_legend p | p <- _layout_plots l ]
 
@@ -504,12 +427,6 @@ getLegendItemsLR :: LayoutLR x yl yr -> ([LegendItem],[LegendItem])
 getLegendItemsLR l = (
     concat [ _plot_legend p | (Left p ) <- (_layoutlr_plots l) ],
     concat [ _plot_legend p | (Right p) <- (_layoutlr_plots l) ]
-    )
-
-getLegendItems1 :: Layout1 x y -> ([LegendItem],[LegendItem])
-getLegendItems1 l = (
-    concat [ _plot_legend p | (Left p ) <- (_layout1_plots l) ],
-    concat [ _plot_legend p | (Right p) <- (_layout1_plots l) ]
     )
 
 renderLegend :: Layout x y -> [LegendItem] -> Renderable (LayoutPick x y)
@@ -539,22 +456,6 @@ renderLegendLR l (lefts,rights) = gridToRenderable g
             lvs -> addMargins (0,lm,lm,lm) $
                        mapPickFn LayoutLRPick_Legend $ legendToRenderable (Legend ls lvs)
 
-renderLegend1 :: Layout1 x y -> ([LegendItem],[LegendItem]) -> Renderable (Layout1Pick x y)
-renderLegend1 l (lefts,rights) = gridToRenderable g
-  where
-    g      = besideN [ tval $ mkLegend lefts
-                     , weights (1,1) $ tval $ emptyRenderable
-                     , tval $ mkLegend rights ]
-
-    lm     = _layout1_margin l
-
-    mkLegend vals = case (_layout1_legend l) of
-        Nothing -> emptyRenderable
-        Just ls ->  case filter ((/="").fst) vals of
-            []  -> emptyRenderable ;
-            lvs -> addMargins (0,lm,lm,lm) $
-                       mapPickFn L1P_Legend $ legendToRenderable (Legend ls lvs)
-
 layoutLegendsToRenderable :: (Ord x, Ord y) =>
                               Layout x y -> Renderable (LayoutPick x y)
 layoutLegendsToRenderable l = renderLegend l (getLegendItems l)
@@ -562,10 +463,6 @@ layoutLegendsToRenderable l = renderLegend l (getLegendItems l)
 layoutLRLegendsToRenderable :: (Ord x, Ord yl, Ord yr) =>
                               LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
 layoutLRLegendsToRenderable l = renderLegendLR l (getLegendItemsLR l)
-
-layout1LegendsToRenderable :: (Ord x, Ord y) =>
-                              Layout1 x y -> Renderable (Layout1Pick x y)
-layout1LegendsToRenderable l = renderLegend1 l (getLegendItems1 l)
 
 layoutPlotAreaToGrid :: forall x y. (Ord x, Ord y) =>
                           Layout x y -> Grid (Renderable (LayoutPick x y))
@@ -679,63 +576,6 @@ layoutLRPlotAreaToGrid l = layer2 `overlay` layer1
     tr = tval $ axesSpacer snd ta fst ra
     br = tval $ axesSpacer snd ba snd ra
 
-layout1PlotAreaToGrid :: forall x y. (Ord x, Ord y) =>
-                          Layout1 x y -> Grid (Renderable (Layout1Pick x y))
-layout1PlotAreaToGrid l = layer2 `overlay` layer1
-  where
-    layer1 = aboveN
-         [ besideN [er,     er,  er,    er   ]
-         , besideN [er,     er,  er,    er   ]
-         , besideN [er,     er,  er,    weights (1,1) plots ]
-         ]
-
-    layer2 = aboveN
-         [ besideN [er,     er,  er,    ttitle, er,    er,  er       ]
-         , besideN [er,     er,  tl,    taxis,  tr,    er,  er       ]
-         , besideN [ltitle, lam, laxis, er,     raxis, ram, rtitle   ]
-         , besideN [er,     er,  bl,    baxis,  br,    er,  er       ]
-         , besideN [er,     er,  er,    btitle, er,    er,  er       ]
-         ]
-    
-    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 _layout1_top_axis    L1P_TopAxisTitle   
-    (btitle,_) = atitle HTA_Centre VTA_Top      0 _layout1_bottom_axis L1P_BottomAxisTitle
-    (ltitle,lam) = atitle HTA_Right  VTA_Centre 270 _layout1_left_axis   L1P_LeftAxisTitle
-    (rtitle,ram) = atitle HTA_Left   VTA_Centre 270 _layout1_right_axis  L1P_RightAxisTitle
-
-    er = tval $ emptyRenderable
-    
-    atitle :: HTextAnchor -> VTextAnchor 
-            -> Double 
-            -> (Layout1 x y -> LayoutAxis z) 
-            -> (String -> Layout1Pick x y) 
-            -> (Grid (Renderable (Layout1Pick x y)), Grid (Renderable (Layout1Pick x y)))
-    atitle ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
-      where
-        label = tval $ mapPickFn pf $ rlabel tstyle ha va rot ttext
-        gap = tval $ spacer (_layout1_margin l,0)
-        tstyle = _laxis_title_style (af l)
-        ttext  = _laxis_title       (af l)
-
-    plots = tval $ mfill (_layout1_plot_background l) $ plotsToRenderable1 l
-      where
-        mfill Nothing   = id
-        mfill (Just fs) = fillBackground fs
-
-    (ba,la,ta,ra) = getAxes1 l
-    baxis = tval $ maybe emptyRenderable
-                         (mapPickFn L1P_BottomAxis . axisToRenderable) ba
-    taxis = tval $ maybe emptyRenderable
-                         (mapPickFn L1P_TopAxis .    axisToRenderable) ta
-    laxis = tval $ maybe emptyRenderable
-                         (mapPickFn L1P_LeftAxis .   axisToRenderable) la
-    raxis = tval $ maybe emptyRenderable
-                         (mapPickFn L1P_RightAxis .  axisToRenderable) ra
-
-    tl = tval $ axesSpacer fst ta fst la
-    bl = tval $ axesSpacer fst ba snd la
-    tr = tval $ axesSpacer snd ta fst ra
-    br = tval $ axesSpacer snd ba snd ra
-
 plotsToRenderable :: Layout x y -> Renderable (LayoutPick x y)
 plotsToRenderable l = Renderable {
         minsize = return (0,0),
@@ -746,12 +586,6 @@ plotsToRenderableLR :: LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
 plotsToRenderableLR l = Renderable {
         minsize = return (0,0),
         render  = renderPlotsLR l
-    }
-
-plotsToRenderable1 :: Layout1 x y -> Renderable (Layout1Pick x y)
-plotsToRenderable1 l = Renderable {
-        minsize = return (0,0),
-        render  = renderPlots1 l
     }
 
 renderPlots :: Layout x y -> RectSize -> ChartBackend (PickFn (LayoutPick x y))
@@ -814,39 +648,6 @@ renderPlotsLR l sz@(w,h) = do
         myats = case (lAxis,rAxis) of
             (Just at1,Just at2) -> Just (at1,at2)
             (_,_)   -> Nothing
-        mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (optPairReverse rev xr) x
-        mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (optPairReverse rev yr) y
-
-renderPlots1 :: Layout1 x y -> RectSize -> ChartBackend (PickFn (Layout1Pick x y))
-renderPlots1 l sz@(w,h) = do
-    when (not (_layout1_grid_last l)) (renderGrids sz axes)
-    withClipRegion (Rect (Point 0 0) (Point w h)) $ do
-      mapM_ rPlot (_layout1_plots l)
-    when (_layout1_grid_last l) (renderGrids sz axes)
-    return pickfn
-  where
-    axes@(bAxis,lAxis,tAxis,rAxis) = getAxes1 l
-
-    rPlot (Left  p) = renderSinglePlot sz bAxis lAxis p
-    rPlot (Right p) = renderSinglePlot sz bAxis rAxis p
-
-    xr = (0, w)
-    yr = (h, 0)
-
-    pickfn (Point x y) = do  -- Maybe monad
-        xat <- mxat
-        (yat1,yat2) <- myats
-        return (L1P_PlotArea (mapx xat x) (mapy yat1 y)  (mapy yat2 y))
-      where
-        mxat = case (bAxis,tAxis) of
-            (Just at,_)       -> Just at
-            (_,Just at)       -> Just at
-            (Nothing,Nothing) -> Nothing
-        myats = case (lAxis,rAxis) of
-            (Just at,Nothing)   -> Just (at,at)
-            (Nothing,Just at)   -> Just (at,at)
-            (Just at1,Just at2) -> Just (at1,at2)
-            (Nothing,Nothing)   -> Nothing
         mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (optPairReverse rev xr) x
         mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (optPairReverse rev yr) y
 
@@ -924,27 +725,6 @@ overrideAxisVisibility ly selAxis selVis =
                   , _laxis_visible = \_ -> _axis_show_labels vis || _axis_show_line vis || _axis_show_ticks vis
                   }
 
-getAxes1 :: Layout1 x y ->
-           (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
-getAxes1 l = (bAxis,lAxis,tAxis,rAxis)
-  where
-    (xvals0,xvals1,yvals0,yvals1) = allPlottedValues1 (_layout1_plots l)
-    xvals                         = xvals0 ++ xvals1
-    (yvals0',yvals1')             = _layout1_yaxes_control l (yvals0,yvals1)
-
-    bAxis = mkAxis E_Bottom (_layout1_bottom_axis l) xvals
-    tAxis = mkAxis E_Top    (_layout1_top_axis l)    xvals
-    lAxis = mkAxis E_Left   (_layout1_left_axis l)  yvals0'
-    rAxis = mkAxis E_Right  (_layout1_right_axis l) yvals1'
-
-    mkAxis t laxis vals = case _laxis_visible laxis vals of
-        False -> Nothing
-        True  -> Just (AxisT t style rev adata)
-      where
-        style = _laxis_style laxis
-        rev   = _laxis_reverse laxis
-        adata = (_laxis_override laxis) (_laxis_generate laxis vals)
-
 allPlottedValues :: [Plot x y]
                     -> ( [x], [y] )
 allPlottedValues plots = (xvals, yvals)
@@ -960,41 +740,6 @@ allPlottedValuesLR plots = (xvalsL ++ xvalsR, yvalsL, yvalsR)
     yvalsL = [ y | (Left p)  <- plots, y <- snd $ _plot_all_points p]
     xvalsR = [ x | (Right p) <- plots, x <- fst $ _plot_all_points p]
     yvalsR = [ y | (Right p) <- plots, y <- snd $ _plot_all_points p]
-
-allPlottedValues1 :: [(Either (Plot x y) (Plot x' y'))]
-                    -> ( [x], [x'], [y], [y'] )
-allPlottedValues1 plots = (xvals0,xvals1,yvals0,yvals1)
-  where
-    xvals0 = [ x | (Left p)  <- plots, x <- fst $ _plot_all_points p]
-    yvals0 = [ y | (Left p)  <- plots, y <- snd $ _plot_all_points p]
-    xvals1 = [ x | (Right p) <- plots, x <- fst $ _plot_all_points p]
-    yvals1 = [ y | (Right p) <- plots, y <- snd $ _plot_all_points p]
-
-{-# DEPRECATED defaultLayout1  "Use the according Data.Default instance!" #-}
-defaultLayout1 :: (PlotValue x,PlotValue y) => Layout1 x y
-defaultLayout1 = def
-
-instance (PlotValue x, PlotValue y) => Default (Layout1 x y) where
-  def = Layout1 
-    { _layout1_background      = solidFillStyle $ opaque white
-    , _layout1_plot_background = Nothing
-
-    , _layout1_title           = ""
-    , _layout1_title_style     = def { _font_size   = 15
-                                     , _font_weight = FontWeightBold }
-
-    , _layout1_top_axis        = def {_laxis_visible = const False}
-    , _layout1_bottom_axis     = def
-    , _layout1_left_axis       = def
-    , _layout1_right_axis      = def
-
-    , _layout1_yaxes_control   = id
-
-    , _layout1_margin          = 10
-    , _layout1_plots           = []
-    , _layout1_legend          = Just def
-    , _layout1_grid_last       = False
-    }
 
 instance (PlotValue x, PlotValue y) => Default (Layout x y) where
   def = Layout
@@ -1065,7 +810,6 @@ instance PlotValue t => Default (LayoutAxis t) where
 ----------------------------------------------------------------------
 -- Template haskell to derive an instance of Data.Accessor.Accessor
 -- for each field.
-$( makeLenses ''Layout1 )
 $( makeLenses ''Layout )
 $( makeLenses ''LayoutLR )
 $( makeLenses ''LayoutAxis )
@@ -1082,13 +826,6 @@ updateAllAxesStylesLR uf = (layoutlr_x_axis       . laxis_style %~ uf)
                          . (layoutlr_y_left_axis  . laxis_style %~ uf)
                          . (layoutlr_y_right_axis . laxis_style %~ uf)
 
--- | Helper to update all axis styles on a Layout1 simultaneously.
-updateAllAxesStyles1 :: (AxisStyle -> AxisStyle) -> Layout1 x y -> Layout1 x y
-updateAllAxesStyles1 uf = (layout1_top_axis    . laxis_style %~ uf) .
-                          (layout1_bottom_axis . laxis_style %~ uf) .
-                          (layout1_left_axis   . laxis_style %~ uf) .
-                          (layout1_right_axis  . laxis_style %~ uf)
-
 -- | Helper to set the forground color uniformly on a Layout.
 setLayoutForeground :: AlphaColour Double -> Layout x y -> Layout x y
 setLayoutForeground fg =
@@ -1104,18 +841,3 @@ setLayoutLRForeground fg = updateAllAxesStylesLR
   . (axis_label_style . font_color .~ fg))
   . (layoutlr_title_style . font_color .~ fg)
   . (layoutlr_legend %~ fmap (legend_label_style .> font_color .~ fg))
-
--- | Helper to set the forground color uniformly on a Layout1.
-setLayout1Foreground :: AlphaColour Double -> Layout1 x y -> Layout1 x y
-setLayout1Foreground fg =
-    updateAllAxesStyles1  ( (axis_line_style  . line_color .~ fg)
-                         . (axis_label_style . font_color .~ fg))
-    . (layout1_title_style . font_color .~ fg)
-    . (layout1_legend %~ fmap (legend_label_style .> font_color .~ fg))
-
-
-linkAxes :: ([a], [a]) -> ([a], [a])
-linkAxes        (ys1,ys2) = (ys1++ys2,ys1++ys2)
-
-independentAxes :: (a, b) -> (a, b)
-independentAxes (ys1,ys2) = (ys1,ys2)
