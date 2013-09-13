@@ -21,11 +21,9 @@ styleSymbol ind = symbolSequence !! ind
                                  , Triangle, DownTriangle, Plus, Star
                                  , FilledCircle ]
 
--- When defaultLayout1 has been generalized, change this signature to 
--- [InternalPlot x y] -> Layout1 x y z
-iplot :: [InternalPlot Double Double] -> Layout1 Double Double
-iplot foobar = (def :: Layout1 Double Double) {
-        _layout1_plots = concat $ zipWith toplot (ip foobar) [0..]
+iplot :: (PlotValue x, PlotValue y) => [InternalPlot x y] -> Layout x y
+iplot foobar = def {
+        _layout_plots = concat $ zipWith toplot (ip foobar) [0..]
     }
   where
     ip (xs@(IPX _ _):xyss) = map (\ys -> (xs,ys)) yss ++ ip rest
@@ -35,7 +33,7 @@ iplot foobar = (def :: Layout1 Double Double) {
     ip   []     = []
     isIPY (IPY _ _) = True
     isIPY _         = False
-    toplot (IPX xs _, IPY ys yks) ind = map Left plots
+    toplot (IPX xs _, IPY ys yks) ind = plots
       where
         vs = zip xs ys
         plots = case catMaybes $ map plotas yks of
@@ -140,10 +138,10 @@ data PlotKind = Name String | FilledCircle | HollowCircle
               deriving ( Eq, Show, Ord )
 data InternalPlot x y = IPY [y] [PlotKind] | IPX [x] [PlotKind]
 
-newtype Layout1DDD = Layout1DDD { plotLayout :: Layout1 Double Double }
+newtype Layout1DDD = Layout1DDD { plotLayout :: Layout Double Double }
 
-layout1DddToRenderable :: Layout1DDD -> Renderable (Layout1Pick Double Double)
-layout1DddToRenderable = layout1ToRenderable . plotLayout
+layout1DddToRenderable :: Layout1DDD -> Renderable (LayoutPick Double Double)
+layout1DddToRenderable = layoutToRenderable . plotLayout
 
 instance ToRenderable Layout1DDD where
   toRenderable = setPickFn nullPickFn . toRenderable
