@@ -30,6 +30,7 @@ sdist:
 	cd chart && $(CABAL) sdist
 	cd chart-cairo && $(CABAL) sdist
 	cd chart-gtk && $(CABAL) sdist
+	cd chart-diagrams && $(CABAL) sdist
 
 tests:
 	cd chart-tests && $(CABAL) install --flags="cairo gtk diagrams"
