@@ -78,6 +78,9 @@ updateCanvas :: Renderable a -> G.DrawingArea  -> IO Bool
 updateCanvas chart canvas = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
+    regio <- G.regionRectangle $ GE.Rectangle 0 0 width height
     let sz = (fromIntegral width,fromIntegral height)
+    G.drawWindowBeginPaintRegion win regio
     G.renderWithDrawable win $ runBackend (defaultEnv bitmapAlignmentFns) (render chart sz) 
+    G.drawWindowEndPaint win
     return True
