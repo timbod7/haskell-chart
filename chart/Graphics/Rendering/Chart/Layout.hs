@@ -265,30 +265,38 @@ instance (Ord x, Ord yl, Ord yr) => ToRenderable (LayoutLR x yl yr) where
 type LegendItem = (String,Rect -> ChartBackend ())
 
 -- | A layout with its y type hidden, so that it can be stacked
--- with other layouts (with differing y types)
+--   with other layouts with differing y axis, but the same x axis.
+--   See 'StackedLayouts'.
 data StackedLayout x = forall y     . (Ord y)          => StackedLayout (Layout x y)
+                       -- ^ A 'Layout' to stack.
                      | forall yl yr . (Ord yl, Ord yr) => StackedLayoutLR (LayoutLR x yl yr)
+                       -- ^ A 'LayoutLR' to stack.
 
--- | A container for a set of vertically stacked layouts
-data StackedLayouts x = StackedLayouts {
-      _slayouts_layouts :: [StackedLayout x],
-      _slayouts_compress_xlabels :: Bool,
-      _slayouts_compress_legend :: Bool
-}
+-- | A container for a set of vertically 'StackedLayout's.
+--   The x axis of the different layouts will be aligned.
+data StackedLayouts x = StackedLayouts 
+  { _slayouts_layouts :: [StackedLayout x]
+    -- ^ The stacked layouts from top (first element) to bottom (last element).
+  , _slayouts_compress_xlabels :: Bool
+    -- ^ If most of the labels along the x axis should be hidden to make the chart more compact.
+  , _slayouts_compress_legend :: Bool
+    -- ^ If the different legends shall be combined in one legend at the bottom.
+  }
 
 {-# DEPRECATED defaultStackedLayouts  "Use the according Data.Default instance!" #-}
 defaultStackedLayouts :: StackedLayouts x
 defaultStackedLayouts = def
 
+-- | A empty 'StackedLayout' with both compressions applied.
 instance Default (StackedLayouts x) where
   def = StackedLayouts [] True True
 
 -- | Render several layouts with the same x-axis type and range,
 --   vertically stacked so that their origins and x-values are aligned.
 --
--- The legends from all the charts may be optionally combined, and shown
--- once on the bottom chart.   The x labels may be optionally removed so that
--- they are only shown once.
+--   The legends from all the charts may be optionally combined, and shown
+--   once on the bottom chart. The x labels may be optionally removed so that
+--   they are only shown once. See 'StackedLayouts' for further information.
 renderStackedLayouts :: forall x. (Ord x) => StackedLayouts x -> Renderable ()
 renderStackedLayouts (StackedLayouts{_slayouts_layouts=[]}) = emptyRenderable
 renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridToRenderable g
@@ -399,18 +407,18 @@ addMarginsToGrid (t,b,l,r) g = aboveN [
     bs = tval $ spacer (0,b)
     rs = tval $ spacer (r,0)
 
-layoutToRenderable :: (Ord x, Ord y) =>
-                       Layout x y -> Renderable (LayoutPick x y)
-layoutToRenderable l = 
-  fillBackground (_layout_background l) $ gridToRenderable (layoutToGrid l)
+-- | Render the given 'Layout'.
+layoutToRenderable :: (Ord x, Ord y) => Layout x y -> Renderable (LayoutPick x y)
+layoutToRenderable l = fillBackground (_layout_background l) 
+                     $ gridToRenderable (layoutToGrid l)
 
-layoutLRToRenderable :: (Ord x, Ord yl, Ord yr) =>
-                       LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
-layoutLRToRenderable l = 
-  fillBackground (_layoutlr_background l) $ gridToRenderable (layoutLRToGrid l)
+-- | Render the given 'LayoutLR'.
+layoutLRToRenderable :: (Ord x, Ord yl, Ord yr) 
+                     => LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
+layoutLRToRenderable l = fillBackground (_layoutlr_background l) 
+                       $ gridToRenderable (layoutLRToGrid l)
 
-layoutToGrid :: (Ord x, Ord y) =>
-                 Layout x y -> Grid (Renderable (LayoutPick x y))
+layoutToGrid :: (Ord x, Ord y) => Layout x y -> Grid (Renderable (LayoutPick x y))
 layoutToGrid l = aboveN
        [  tval $ layoutTitleToRenderable l
        ,  weights (1,1) $ tval $ gridToRenderable $
