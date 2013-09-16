@@ -10,15 +10,17 @@
 -- Note that Template haskell is used to derive accessor functions
 -- (see 'Control.Lens') for each field of the following data types:
 --
---     * 'Layout1'
+--     * 'Layout'
+--     
+--     * 'LayoutLR'
 -- 
 --     * 'StackedLayouts'
 --
 --     * 'LayoutAxis'
 --
 -- These accessors are not shown in this API documentation.  They have
--- the same name as the field, but with the trailing underscore
--- dropped. Hence for data field f_::F in type D, they have type
+-- the same name as the field, but with the leading underscore
+-- dropped. Hence for data field _f::F in type D, they have type
 --
 -- @
 --   f :: Control.Lens.Lens' D F
