@@ -469,15 +469,19 @@ getLayoutLRXVals l = concatMap deEither $ _layoutlr_plots l
     deEither (Left x)  = fst $ _plot_all_points x
     deEither (Right x) = fst $ _plot_all_points x
 
+-- | Extract all 'LegendItem's from the plots of a 'Layout'.
 getLegendItems :: Layout x y -> [LegendItem]
 getLegendItems l = concat [ _plot_legend p | p <- _layout_plots l ]
 
+-- | Extract all 'LegendItem's from the plots of a 'LayoutLR'.
+--   Left and right plot legend items are still separated.
 getLegendItemsLR :: LayoutLR x yl yr -> ([LegendItem],[LegendItem])
 getLegendItemsLR l = (
     concat [ _plot_legend p | (Left p ) <- (_layoutlr_plots l) ],
     concat [ _plot_legend p | (Right p) <- (_layoutlr_plots l) ]
     )
 
+-- | Render the given 'LegendItem's for a 'Layout'.
 renderLegend :: Layout x y -> [LegendItem] -> Renderable (LayoutPick x y)
 renderLegend l legItems = gridToRenderable g
   where
@@ -491,6 +495,7 @@ renderLegend l legItems = gridToRenderable g
             lvs -> addMargins (0,lm,lm,lm) $ mapPickFn LayoutPick_Legend 
                                            $ legendToRenderable (Legend ls lvs)
 
+-- | Render the given 'LegendItem's for a 'LayoutLR'.
 renderLegendLR :: LayoutLR x yl yr -> ([LegendItem],[LegendItem]) -> Renderable (LayoutLRPick x yl yr)
 renderLegendLR l (lefts,rights) = gridToRenderable g
   where
@@ -505,14 +510,18 @@ renderLegendLR l (lefts,rights) = gridToRenderable g
             lvs -> addMargins (0,lm,lm,lm) $
                        mapPickFn LayoutLRPick_Legend $ legendToRenderable (Legend ls lvs)
 
+-- | Render the legend of a 'Layout'.
 layoutLegendsToRenderable :: (Ord x, Ord y) =>
                               Layout x y -> Renderable (LayoutPick x y)
 layoutLegendsToRenderable l = renderLegend l (getLegendItems l)
 
+-- | Render the legend of a 'LayoutLR'.
 layoutLRLegendsToRenderable :: (Ord x, Ord yl, Ord yr) =>
                               LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
 layoutLRLegendsToRenderable l = renderLegendLR l (getLegendItemsLR l)
 
+-- | Render the plot area of a 'Layout'. This consists of the 
+--   actual plot area with all plots, the axis and their titles.
 layoutPlotAreaToGrid :: forall x y. (Ord x, Ord y) =>
                           Layout x y -> Grid (Renderable (LayoutPick x y))
 layoutPlotAreaToGrid l = layer2 `overlay` layer1
@@ -568,6 +577,8 @@ layoutPlotAreaToGrid l = layer2 `overlay` layer1
     tr = tval $ axesSpacer snd ta fst ra
     br = tval $ axesSpacer snd ba snd ra
 
+-- | Render the plot area of a 'LayoutLR'. This consists of the 
+--   actual plot area with all plots, the axis and their titles.
 layoutLRPlotAreaToGrid :: forall x yl yr. (Ord x, Ord yl, Ord yr) 
                        => LayoutLR x yl yr 
                        -> Grid (Renderable (LayoutLRPick x yl yr))
@@ -625,18 +636,21 @@ layoutLRPlotAreaToGrid l = layer2 `overlay` layer1
     tr = tval $ axesSpacer snd ta fst ra
     br = tval $ axesSpacer snd ba snd ra
 
+-- | Render the plots of a 'Layout'.
 plotsToRenderable :: Layout x y -> Renderable (LayoutPick x y)
 plotsToRenderable l = Renderable {
         minsize = return (0,0),
         render  = renderPlots l
     }
 
+-- | Render the plots of a 'LayoutLR'.
 plotsToRenderableLR :: LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
 plotsToRenderableLR l = Renderable {
         minsize = return (0,0),
         render  = renderPlotsLR l
     }
 
+-- | Render the plots of a 'Layout' to a plot area of given size.
 renderPlots :: Layout x y -> RectSize -> ChartBackend (PickFn (LayoutPick x y))
 renderPlots l sz@(w,h) = do
     when (not (_layout_grid_last l)) (renderGrids sz axes)
@@ -669,6 +683,7 @@ renderPlots l sz@(w,h) = do
         mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (optPairReverse rev xr) x
         mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (optPairReverse rev yr) y
 
+-- | Render the plots of a 'LayoutLR' to a plot area of given size.
 renderPlotsLR :: LayoutLR x yl yr -> RectSize -> ChartBackend (PickFn (LayoutLRPick x yl yr))
 renderPlotsLR l sz@(w,h) = do
     when (not (_layoutlr_grid_last l)) (renderGrids sz axes)
@@ -700,6 +715,7 @@ renderPlotsLR l sz@(w,h) = do
         mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (optPairReverse rev xr) x
         mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (optPairReverse rev yr) y
 
+-- | Render the grids of the given axis to a plot area of given size.
 renderGrids :: RectSize -> (Maybe (AxisT x), Maybe (AxisT yl), Maybe (AxisT x), Maybe (AxisT yr)) -> ChartBackend ()
 renderGrids sz (bAxis, lAxis, tAxis, rAxis) = do
   maybeM () (renderAxisGrid sz) tAxis
@@ -707,9 +723,12 @@ renderGrids sz (bAxis, lAxis, tAxis, rAxis) = do
   maybeM () (renderAxisGrid sz) lAxis
   maybeM () (renderAxisGrid sz) rAxis
 
+-- | Swap the contents of the pair depending on the flag.
 optPairReverse :: Bool -> (a,a) -> (a,a)
 optPairReverse rev (a,b) = if rev then (b,a) else (a,b)
 
+-- | Render a single set of plot data onto a plot area of given size using
+--   the given x and y axis.
 renderSinglePlot :: RectSize -> Maybe (AxisT x) -> Maybe (AxisT y) -> Plot x y -> ChartBackend ()
 renderSinglePlot (w, h) (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p =
   let xr = optPairReverse xrev (0, w)
@@ -732,8 +751,9 @@ axesSpacer f1 a1 f2 a2 = embedRenderable $ do
     oh2 <- maybeM (0,0) axisOverhang a2
     return (spacer (f1 oh1, f2 oh2))
 
-getAxes :: forall x y. Layout x y ->
-           (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
+-- | Get the bottom, left, top and right axis (in that order) of a 'Layout'.
+getAxes :: forall x y. Layout x y 
+        -> (Maybe (AxisT x), Maybe (AxisT y), Maybe (AxisT x), Maybe (AxisT y))
 getAxes l = (bAxis,lAxis,tAxis,rAxis)
   where
     (xvals, yvals) = allPlottedValues (_layout_plots l)
@@ -743,8 +763,9 @@ getAxes l = (bAxis,lAxis,tAxis,rAxis)
     lAxis = mkAxis E_Left   (overrideAxisVisibility l _layout_y_axis _layout_left_axis_visibility  ) yvals
     rAxis = mkAxis E_Right  (overrideAxisVisibility l _layout_y_axis _layout_right_axis_visibility ) yvals
 
-getAxesLR :: LayoutLR x yl yr ->
-           (Maybe (AxisT x), Maybe (AxisT yl), Maybe (AxisT x), Maybe (AxisT yr))
+-- | Get the bottom, left, top and right axis (in that order) of a 'LayoutLR'.
+getAxesLR :: LayoutLR x yl yr 
+          -> (Maybe (AxisT x), Maybe (AxisT yl), Maybe (AxisT x), Maybe (AxisT yr))
 getAxesLR l = (bAxis,lAxis,tAxis,rAxis)
   where
     (xvals, yvalsL, yvalsR) = allPlottedValuesLR (_layoutlr_plots l)
@@ -754,6 +775,8 @@ getAxesLR l = (bAxis,lAxis,tAxis,rAxis)
     lAxis = mkAxis E_Left   (overrideAxisVisibility l _layoutlr_left_axis  _layoutlr_left_axis_visibility ) yvalsL
     rAxis = mkAxis E_Right  (overrideAxisVisibility l _layoutlr_right_axis _layoutlr_right_axis_visibility) yvalsR
 
+-- | Construct a axis for the given edge using the attributes 
+--   from a 'LayoutAxis' the given values.
 mkAxis :: RectEdge -> LayoutAxis z -> [z] -> Maybe (AxisT z)
 mkAxis edge laxis vals = case axisVisible of
     False -> Nothing
@@ -765,6 +788,7 @@ mkAxis edge laxis vals = case axisVisible of
     vis   = _axis_visibility adata
     axisVisible = _axis_show_labels vis || _axis_show_line vis || _axis_show_ticks vis
 
+-- | Override the visibility of a selected axis with the selected 'AxisVisibility'.
 overrideAxisVisibility :: layout 
                        -> (layout -> LayoutAxis z) 
                        -> (layout -> AxisVisibility) 
@@ -775,6 +799,7 @@ overrideAxisVisibility ly selAxis selVis =
                                     . _laxis_override (selAxis ly)
                   }
 
+-- | Extract all values to be plotted from the 'Plot's.
 allPlottedValues :: [Plot x y]
                     -> ( [x], [y] )
 allPlottedValues plots = (xvals, yvals)
@@ -782,6 +807,7 @@ allPlottedValues plots = (xvals, yvals)
     xvals = [ x | p <- plots, x <- fst $ _plot_all_points p]
     yvals = [ y | p <- plots, y <- snd $ _plot_all_points p]
 
+-- | Extract all values to be plotted from the 'Plot's.
 allPlottedValuesLR :: [(Either (Plot x yl) (Plot x yr))]
                     -> ( [x], [yl], [yr] )
 allPlottedValuesLR plots = (xvalsL ++ xvalsR, yvalsL, yvalsR)
@@ -791,6 +817,9 @@ allPlottedValuesLR plots = (xvalsL ++ xvalsR, yvalsL, yvalsR)
     xvalsR = [ x | (Right p) <- plots, x <- fst $ _plot_all_points p]
     yvalsR = [ y | (Right p) <- plots, y <- snd $ _plot_all_points p]
 
+-- | Empty 'Layout' without title and plots. The background is white and 
+--   the grid is drawn beneath all plots. There will be a legend. The top
+--   and right axis will not be visible.
 instance (PlotValue x, PlotValue y) => Default (Layout x y) where
   def = Layout
     { _layout_background      = solidFillStyle $ opaque white
@@ -817,6 +846,9 @@ instance (PlotValue x, PlotValue y) => Default (Layout x y) where
     , _layout_grid_last       = False
     }
 
+-- | Empty 'LayoutLR' without title and plots. The background is white and 
+--   the grid is drawn beneath all plots. There will be a legend. The top
+--   axis will not be visible.
 instance (PlotValue x, PlotValue y1, PlotValue y2) => Default (LayoutLR x y1 y2) where
   def = LayoutLR
     { _layoutlr_background      = solidFillStyle $ opaque white
