@@ -133,8 +133,11 @@ data AxisData x = AxisData {
 
 -- | Control values for how an axis gets displayed.
 data AxisStyle = AxisStyle {
+    -- | 'LineStyle' to use for axis line and ticks.
     _axis_line_style  :: LineStyle,
+    -- | 'FontStyle' to use for axis labels.
     _axis_label_style :: FontStyle,
+    -- | 'LineStyle' to use for axis grid.
     _axis_grid_style  :: LineStyle,
 
     -- | How far the labels are to be drawn from the axis.
@@ -149,18 +152,27 @@ type AxisFn x = [x] -> AxisData x
 --   bool is true if the axis direction is reversed.
 data AxisT x = AxisT RectEdge AxisStyle Bool (AxisData x)
 
+-- | Hide the axis line.
 axisLineHide :: AxisVisibility -> AxisVisibility
 axisLineHide vis = vis { _axis_show_line = False }
+
+-- | Show the axis line.
 axisLineShow :: AxisVisibility -> AxisVisibility
 axisLineShow vis = vis { _axis_show_line = True }
 
+-- | Hide ticks on axis.
 axisTicksHide :: AxisVisibility -> AxisVisibility
 axisTicksHide vis = vis { _axis_show_ticks = False }
+
+-- | Show ticks on axis.
 axisTicksShow :: AxisVisibility -> AxisVisibility
 axisTicksShow vis = vis { _axis_show_ticks = True }
 
+-- | Hide labels on axis.
 axisLabelsHide :: AxisVisibility -> AxisVisibility
 axisLabelsHide vis = vis { _axis_show_labels = False }
+
+-- | Show labels on axis.
 axisLabelsShow :: AxisVisibility -> AxisVisibility
 axisLabelsShow vis = vis { _axis_show_labels = True }
 
@@ -409,9 +421,11 @@ makeAxis' t f labelf (labelvs, tickvs, gridvs) = AxisData {
 
 ----------------------------------------------------------------------
 
+-- | The default 'LineStyle' of an axis.
 defaultAxisLineStyle :: LineStyle
 defaultAxisLineStyle = solidLine 1 $ opaque black
 
+-- | The default 'LineStyle' of a plot area grid.
 defaultGridLineStyle :: LineStyle
 defaultGridLineStyle = dashedLine 1 [5,5] $ opaque lightgrey
 
@@ -427,6 +441,7 @@ instance Default AxisStyle where
     , _axis_label_gap   = 10
     }
 
+-- | By default all parts of a axis are visible.
 instance Default AxisVisibility where
   def = AxisVisibility
     { _axis_show_line   = True
