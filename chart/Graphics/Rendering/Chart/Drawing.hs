@@ -9,9 +9,7 @@
 -- Note that Template Haskell is used to derive accessor functions
 -- (see 'Control.Lens') for each field of the following data types:
 --
---    * 'LineStyle'
---
---    * 'FontStyle'
+--    * 'PointStyle'
 --
 -- These accessors are not shown in this API documentation.  They have
 -- the same name as the field, but with the trailing underscore
@@ -21,6 +19,8 @@
 --   f :: Control.Lens.Lens' D F
 -- @
 --
+
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Drawing
   ( -- * Point Types and Drawing
@@ -75,6 +75,13 @@ module Graphics.Rendering.Chart.Drawing
   
   -- * Backend and general Types
   , module Graphics.Rendering.Chart.Backend
+  
+  -- * Accessors
+  , point_color
+  , point_border_color
+  , point_border_width
+  , point_radius
+  , point_shape
 ) where
 
 import Data.Default.Class
@@ -304,10 +311,7 @@ data PointShape = PointShapeCircle           -- ^ A circle.
                 | PointShapeStar  -- ^ Combination of a cross and a plus.
 
 -- | Abstract data type for the style of a plotted point.
---
---   The contained Cairo action draws a point in the desired
---   style, at the supplied device coordinates.
-data PointStyle = PointStyle 
+data PointStyle = PointStyle
   { _point_color :: AlphaColour Double
   -- ^ The color to fill the point with.
   , _point_border_color :: AlphaColour Double
@@ -463,3 +467,4 @@ stars radius w cl =
 solidFillStyle :: AlphaColour Double -> FillStyle
 solidFillStyle cl = FillStyleSolid cl
 
+$( makeLenses ''PointStyle )
