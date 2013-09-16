@@ -162,8 +162,14 @@ cWithClipRegion env r p = preserveCState0 $ do
 -- Output rendering functions
 -- -----------------------------------------------------------------------
 
-data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
+-- | The cairo backend to use.
+data CairoBackend = CairoPNG -- ^ The PNG backend.
+                  | CairoSVG -- ^ The SVG backend.
+                  | CairoPS  -- ^ The postscript backend.
+                  | CairoPDF -- ^ The PDF backend.
 
+-- | Render to a file of given width and height (in that order) using
+--   the given cairo backend.
 renderToFile :: ChartBackend a -> CairoBackend -> Int -> Int -> FilePath -> IO ()
 renderToFile m b = case b of
   CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
