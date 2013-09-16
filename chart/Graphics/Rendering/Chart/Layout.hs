@@ -136,26 +136,43 @@ data LayoutAxis x = LayoutAxis {
 --   axis. The title is at the top and the legend at the bottom. It's
 --   parametrized by the types of values to be plotted on the x
 --   and y axes.
-data Layout x y = Layout {
-    _layout_background      :: FillStyle,
-    _layout_plot_background :: Maybe FillStyle,
+data Layout x y = Layout 
+  { _layout_background      :: FillStyle
+    -- ^ How to fill the background of everything.
+  , _layout_plot_background :: Maybe FillStyle
+    -- ^ How to fill the background of the plot, 
+    --   if different from the overall background.
 
-    _layout_title           :: String,
-    _layout_title_style     :: FontStyle,
+  , _layout_title           :: String
+    -- ^ Title to display above the chart.
+  , _layout_title_style     :: FontStyle
+    -- ^ Font style to use for the title.
 
-    _layout_x_axis          :: LayoutAxis x,   -- ^ Rules to generate the x axis.
-    _layout_top_axis_visibility    :: AxisVisibility, -- ^ Visibility options for the top axis.
-    _layout_bottom_axis_visibility :: AxisVisibility, -- ^ Visibility options for the bottom axis.
+  , _layout_x_axis                 :: LayoutAxis x
+    -- ^ Rules to generate the x axis.
+  , _layout_top_axis_visibility    :: AxisVisibility
+    -- ^ Visibility options for the top axis.
+  , _layout_bottom_axis_visibility :: AxisVisibility
+    -- ^ Visibility options for the bottom axis.
 
-    _layout_y_axis          :: LayoutAxis y,   -- ^ Rules to generate the y axis.
-    _layout_left_axis_visibility  :: AxisVisibility, -- ^ Visibility options for the left axis.
-    _layout_right_axis_visibility :: AxisVisibility, -- ^ Visibility options for the right axis.
+  , _layout_y_axis                :: LayoutAxis y
+    -- ^ Rules to generate the y axis.
+  , _layout_left_axis_visibility  :: AxisVisibility
+    -- ^ Visibility options for the left axis.
+  , _layout_right_axis_visibility :: AxisVisibility
+    -- ^ Visibility options for the right axis.
 
-    _layout_plots           :: [Plot x y],
+  , _layout_plots           :: [Plot x y]
+    -- ^ The data sets to plot in the chart.
+    --   The are ploted over each other.
 
-    _layout_legend          :: Maybe LegendStyle,
-    _layout_margin          :: Double,
-    _layout_grid_last       :: Bool
+  , _layout_legend          :: Maybe LegendStyle
+    -- ^ How to style the legend.
+  , _layout_margin          :: Double
+    -- ^ The margin distance to use.
+  , _layout_grid_last       :: Bool
+    -- ^ If the grid shall be rendered
+    --   beneath (@False@) or over (@True@) all plots.
 }
 
 instance (Ord x, Ord y) => ToRenderable (Layout x y) where
