@@ -38,7 +38,6 @@ module Graphics.Rendering.Chart.Layout
   , LayoutLRPick(..)
   , StackedLayouts(..)
   , StackedLayout(..)
-  , ShowOnAxis(..)
   , MAxisFn
   
   , layoutToRenderable
@@ -132,15 +131,6 @@ data LayoutAxis x = LayoutAxis {
    _laxis_reverse     :: Bool
 
 }
-
--- | On which axis to display something.
-data ShowOnAxis = ShowOnAxis1    -- ^ Display it on the bottom or left axis.
-                | ShowOnBothAxis -- ^ Display it on both axis of a orientation.
-                | ShowOnAxis2    -- ^ Display it on the top or right axis.
-
--- | Only show things in the bottom or left axis.
-instance Default ShowOnAxis where
-  def = ShowOnAxis1
 
 -- | A Layout value is a single plot area, with single x and y
 --   axis. The title is at the top and the legend at the bottom. It's
