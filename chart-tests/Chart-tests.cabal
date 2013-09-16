@@ -147,7 +147,7 @@ Executable ChartsTestDiagramsSVG
       old-time        >= 1.0,
       Chart           >= 0.17,
       Chart-diagrams  >= 0.1,
-      diagrams-svg    >= 0.7,
+      diagrams-svg    >= 0.8,
       diagrams-lib    >= 0.7,
       diagrams-core   >= 0.7
   if !flag(diagrams)
