@@ -114,23 +114,33 @@ import Data.Default.Class
 --   given the points plotted against that axis.
 type MAxisFn t = [t] -> Maybe (AxisData t)
 
-data LayoutAxis x = LayoutAxis {
-   _laxis_title_style :: FontStyle,
-   _laxis_title       :: String,
-   _laxis_style       :: AxisStyle,
+-- | Type of axis that is used in 'Layout' and 'LayoutLR'.
+--   
+--   To generate the actual axis type ('AxisData' and 'AxisT')
+--   the '_laxis_generate' function is called and custom settings
+--   are applied with '_laxis_override'. Note that the 'AxisVisibility'
+--   values in 'Layout' and 'LayoutLR' override visibility related 
+--   settings of the axis.
+data LayoutAxis x = LayoutAxis
+  { _laxis_title_style :: FontStyle
+    -- ^ Font style to use for the axis title.
+  , _laxis_title       :: String
+    -- ^ Title displayed for the axis.
+  , _laxis_style       :: AxisStyle
+    -- ^ Axis style applied.
 
-   -- | Function that generates the axis data, based upon the
-   --   points plotted. The default value is 'autoAxis'.
-   _laxis_generate    :: AxisFn x,
-
-   -- | Function that can be used to override the generated axis data.
-   --   The default value is 'id'.
-   _laxis_override    :: AxisData x -> AxisData x,
-
-   -- | True if left to right (bottom to top) is to show descending values.
-   _laxis_reverse     :: Bool
-
-}
+  , _laxis_generate    :: AxisFn x
+    -- ^ Function that generates the axis data, based upon the
+    --   points plotted. The default value is 'autoAxis'.
+  
+  , _laxis_override    :: AxisData x -> AxisData x
+    -- ^ Function that can be used to override the generated axis data.
+    --   The default value is 'id'.
+  
+  , _laxis_reverse     :: Bool
+    -- ^ True if left to right (bottom to top) is to show descending values.
+  
+  }
 
 -- | A Layout value is a single plot area, with single x and y
 --   axis. The title is at the top and the legend at the bottom. It's
@@ -173,18 +183,20 @@ data Layout x y = Layout
   , _layout_grid_last       :: Bool
     -- ^ If the grid shall be rendered
     --   beneath (@False@) or over (@True@) all plots.
-}
+  }
 
 instance (Ord x, Ord y) => ToRenderable (Layout x y) where
   toRenderable = setPickFn nullPickFn . layoutToRenderable
 
-data LayoutPick x y = LayoutPick_Legend String
-                    | LayoutPick_Title String
-                    | LayoutPick_XAxisTitle String
-                    | LayoutPick_YAxisTitle String
-                    | LayoutPick_PlotArea x y
-                    | LayoutPick_XAxis x
-                    | LayoutPick_YAxis y
+-- | Information on what is at a specifc location of a 'Layout'.
+--   This is delivered by the 'PickFn' of a 'Renderable'.
+data LayoutPick x y = LayoutPick_Legend String -- ^ A legend entry.
+                    | LayoutPick_Title String  -- ^ The title.
+                    | LayoutPick_XAxisTitle String -- ^ The title of the x axis.
+                    | LayoutPick_YAxisTitle String -- ^ The title of the y axis.
+                    | LayoutPick_PlotArea x y -- ^ The plot area at the given plot coordinates.
+                    | LayoutPick_XAxis x -- ^ The x axis at the given plot coordinate.
+                    | LayoutPick_YAxis y -- ^ The y axis at the given plot coordinate.
                     deriving (Show)
 
 -- | A LayoutLR value is a single plot area, with an x axis and
@@ -193,36 +205,58 @@ data LayoutPick x y = LayoutPick_Legend String
 --   to be plotted on the x and two y axes.
 data LayoutLR x y1 y2 = LayoutLR 
   { _layoutlr_background      :: FillStyle
+    -- ^ How to fill the background of everything.
   , _layoutlr_plot_background :: Maybe FillStyle
+    -- ^ How to fill the background of the plot, 
+    --   if different from the overall background.
 
   , _layoutlr_title           :: String
+    -- ^ Title to display above the chart.
   , _layoutlr_title_style     :: FontStyle
+    -- ^ Font style to use for the title.
 
-  , _layoutlr_x_axis                 :: LayoutAxis x   -- ^ Rules to generate the x axis
-  , _layoutlr_top_axis_visibility    :: AxisVisibility -- ^ Visibility options for the top axis.
-  , _layoutlr_bottom_axis_visibility :: AxisVisibility -- ^ Visibility options for the bottom axis.
+  , _layoutlr_x_axis                 :: LayoutAxis x
+    -- ^ Rules to generate the x axis.
+  , _layoutlr_top_axis_visibility    :: AxisVisibility
+    -- ^ Visibility options for the top axis.
+  , _layoutlr_bottom_axis_visibility :: AxisVisibility
+    -- ^ Visibility options for the bottom axis.
 
-  , _layoutlr_left_axis             :: LayoutAxis y1   -- ^ Rules to generate the left y axis
-  , _layoutlr_left_axis_visibility  :: AxisVisibility  -- ^ Visibility options for the left axis.
-  , _layoutlr_right_axis            :: LayoutAxis y2   -- ^ Rules to generate the right y axis
-  , _layoutlr_right_axis_visibility :: AxisVisibility  -- ^ Visibility options for the right axis.
+  , _layoutlr_left_axis             :: LayoutAxis y1
+    -- ^ Rules to generate the left y axis.
+  , _layoutlr_left_axis_visibility  :: AxisVisibility
+    -- ^ Visibility options for the left axis.
+  , _layoutlr_right_axis            :: LayoutAxis y2
+    -- ^ Rules to generate the right y axis.
+  , _layoutlr_right_axis_visibility :: AxisVisibility
+    -- ^ Visibility options for the right axis.
   
   , _layoutlr_plots      :: [Either (Plot x y1) (Plot x y2)]
+    -- ^ The data sets to plot in the chart.
+    --   The are ploted over each other.
+    --   The either type associates the plot with the
+    --   left or right y axis.
 
   , _layoutlr_legend          :: Maybe LegendStyle
+    -- ^ How to style the legend.
   , _layoutlr_margin          :: Double
+    -- ^ The margin distance to use.
   , _layoutlr_grid_last       :: Bool
+    -- ^ If the grid shall be rendered
+    --   beneath (@False@) or over (@True@) all plots.
   }
 
-data LayoutLRPick x y1 y2 = LayoutLRPick_Legend String
-                          | LayoutLRPick_Title String
-                          | LayoutLRPick_XAxisTitle String
-                          | LayoutLRPick_YLeftAxisTitle String
-                          | LayoutLRPick_YRightAxisTitle String
-                          | LayoutLRPick_PlotArea x y1 y2
-                          | LayoutLRPick_XAxis x
-                          | LayoutLRPick_YLeftAxis y1
-                          | LayoutLRPick_YRightAxis y2
+-- | Information on what is at a specifc location of a 'LayoutLR'.
+--   This is delivered by the 'PickFn' of a 'Renderable'.
+data LayoutLRPick x y1 y2 = LayoutLRPick_Legend String -- ^ A legend entry.
+                          | LayoutLRPick_Title String  -- ^ The title.
+                          | LayoutLRPick_XAxisTitle String      -- ^ The title of the x axis.
+                          | LayoutLRPick_YLeftAxisTitle String  -- ^ The title of the left y axis.
+                          | LayoutLRPick_YRightAxisTitle String -- ^ The title of the right y axis.
+                          | LayoutLRPick_PlotArea x y1 y2 -- ^ The plot area at the given plot coordinates.
+                          | LayoutLRPick_XAxis x       -- ^ The x axis at the given plot coordinate.
+                          | LayoutLRPick_YLeftAxis y1  -- ^ The left y axis at the given plot coordinate.
+                          | LayoutLRPick_YRightAxis y2 -- ^ The right y axis at the given plot coordinate.
                           deriving (Show)
 
 instance (Ord x, Ord yl, Ord yr) => ToRenderable (LayoutLR x yl yr) where
