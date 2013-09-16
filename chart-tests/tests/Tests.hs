@@ -251,18 +251,19 @@ test11a otype = test11_ f
    where
      f l1 l2 = renderStackedLayouts 
              $ slayouts_layouts .~ [StackedLayout l1, StackedLayout l2]
-             $ slayouts_compress_xlabels .~ False
              $ slayouts_compress_legend .~ False
              $ def
  
 test11b :: OutputType -> Renderable ()
 test11b otype = test11_ f
-   where
-     f l1 l2 = renderStackedLayouts 
-             $ slayouts_layouts .~ [StackedLayout l1, StackedLayout l2]
-             $ slayouts_compress_xlabels .~ True
-             $ slayouts_compress_legend .~ True
-             $ def
+  where
+    f l1 l2 = renderStackedLayouts 
+            $ slayouts_layouts .~ [StackedLayout l1', StackedLayout l2]
+            $ slayouts_compress_legend .~ True
+            $ def
+      where
+        l1' = layout_bottom_axis_visibility %~ axisLabelsHide
+            $ l1
 
 -------------------------------------------------------------------------------
 -- More of an example that a test:
