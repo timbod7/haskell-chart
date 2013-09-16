@@ -89,7 +89,6 @@ module Graphics.Rendering.Chart.Layout
 
   , defaultStackedLayouts
   , slayouts_layouts
-  , slayouts_compress_xlabels
   , slayouts_compress_legend
 
   , renderStackedLayouts
@@ -277,8 +276,6 @@ data StackedLayout x = forall y     . (Ord y)          => StackedLayout (Layout 
 data StackedLayouts x = StackedLayouts 
   { _slayouts_layouts :: [StackedLayout x]
     -- ^ The stacked layouts from top (first element) to bottom (last element).
-  , _slayouts_compress_xlabels :: Bool
-    -- ^ If most of the labels along the x axis should be hidden to make the chart more compact.
   , _slayouts_compress_legend :: Bool
     -- ^ If the different legends shall be combined in one legend at the bottom.
   }
@@ -287,16 +284,15 @@ data StackedLayouts x = StackedLayouts
 defaultStackedLayouts :: StackedLayouts x
 defaultStackedLayouts = def
 
--- | A empty 'StackedLayout' with both compressions applied.
+-- | A empty 'StackedLayout' with compressions applied.
 instance Default (StackedLayouts x) where
-  def = StackedLayouts [] True True
+  def = StackedLayouts [] True
 
 -- | Render several layouts with the same x-axis type and range,
 --   vertically stacked so that their origins and x-values are aligned.
 --
 --   The legends from all the charts may be optionally combined, and shown
---   once on the bottom chart. The x labels may be optionally removed so that
---   they are only shown once. See 'StackedLayouts' for further information.
+--   once on the bottom chart. See 'StackedLayouts' for further information.
 renderStackedLayouts :: forall x. (Ord x) => StackedLayouts x -> Renderable ()
 renderStackedLayouts (StackedLayouts{_slayouts_layouts=[]}) = emptyRenderable
 renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridToRenderable g
@@ -308,7 +304,7 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
     mkGrid (sl, i)
         = titleR
           `wideAbove`
-          (addMarginsToGrid (lm,lm,lm,lm) $ mkPlotArea usedAxis bottomVis topVis)
+          (addMarginsToGrid (lm,lm,lm,lm) $ mkPlotArea usedAxis)
           `aboveWide`
           (if showLegend then legendR else emptyRenderable)
       where
@@ -326,25 +322,17 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
             (True,True) -> allLegendItems
             (True,False) -> ([],[])
         
-        --mkPlotArea :: LayoutAxis x -> LayoutAxis x -> Grid (Renderable ())
-        mkPlotArea :: LayoutAxis x -> AxisVisibility -> AxisVisibility -> Grid (Renderable ())
-        mkPlotArea axis bVis tVis = case sl of
+        mkPlotArea :: LayoutAxis x -> Grid (Renderable ())
+        mkPlotArea axis = case sl of
           StackedLayout l -> fmap noPickFn 
                            $ layoutPlotAreaToGrid 
-                           $ l { _layout_x_axis                 = axis
-                               , _layout_bottom_axis_visibility = bVis
-                               , _layout_top_axis_visibility    = tVis 
-                               }
+                           $ l { _layout_x_axis = axis }
           StackedLayoutLR l -> fmap noPickFn 
                              $ layoutLRPlotAreaToGrid 
-                             $ l { _layoutlr_x_axis        = axis
-                                 , _layoutlr_bottom_axis_visibility = bVis
-                                 , _layoutlr_top_axis_visibility    = tVis 
-                                 }
+                             $ l { _layoutlr_x_axis = axis }
 
         showLegend = not (null (fst legenditems)) || not (null (snd legenditems))
 
-        isTopPlot = i == 0
         isBottomPlot = i == length sls - 1
 
         lm = case sl of
@@ -360,20 +348,6 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
         usedAxis = xAxis 
           { _laxis_generate = const (_laxis_generate xAxis all_xvals) }
         
-        bottomVis = mkVis (getBottomVis sl) (isBottomPlot || not (_slayouts_compress_xlabels slp))
-        topVis    = mkVis (getTopVis sl)    (isTopPlot || not (_slayouts_compress_xlabels slp))
-        
-        getTopVis :: StackedLayout x -> AxisVisibility
-        getTopVis (StackedLayout l)   = _layout_top_axis_visibility l
-        getTopVis (StackedLayoutLR l) = _layoutlr_top_axis_visibility l
-        
-        getBottomVis :: StackedLayout x -> AxisVisibility
-        getBottomVis (StackedLayout l)   = _layout_bottom_axis_visibility l
-        getBottomVis (StackedLayoutLR l) = _layoutlr_bottom_axis_visibility l
-        
-        mkVis :: AxisVisibility -> Bool -> AxisVisibility
-        mkVis vis showLabels = vis { _axis_show_labels = showLabels }
-    
     bg = case sl1 of
            StackedLayout l -> _layout_background l
            StackedLayoutLR l -> _layoutlr_background l
