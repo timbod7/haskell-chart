@@ -18,7 +18,7 @@ chart lwidth = layoutLRToRenderable layout
   where
     layout = layoutlr_title .~"Stock Prices"
            $ layoutlr_background .~ solidFillStyle (opaque white)
-           $ layoutlr_left_axis_visibility %~ axisTicksHide
+           $ layoutlr_left_axis_visibility . axis_show_ticks .~ False
  	   $ layoutlr_plots .~ [ Right (toPlot msftArea)
                                , Right (toPlot msftLine)
                                , Right (toPlot msftCandle)

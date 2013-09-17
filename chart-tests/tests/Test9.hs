@@ -16,7 +16,7 @@ chart borders = layoutToRenderable layout
       $ layout_title_style . font_size .~ 10
       $ layout_x_axis . laxis_generate .~ autoIndexAxis alabels
       $ layout_y_axis . laxis_override .~ axisGridHide
-      $ layout_left_axis_visibility %~ axisTicksHide
+      $ layout_left_axis_visibility . axis_show_ticks .~ False
       $ layout_plots .~ [ plotBars bars2 ]
       $ def :: Layout PlotIndex Double
 

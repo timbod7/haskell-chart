@@ -50,17 +50,17 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
                                  besideN [rf g4, rf g5, rf g6] ]
 
     g1 = layout_title .~ "minimal"
-       $ layout_bottom_axis_visibility %~ axisTicksHide
-       $ layout_left_axis_visibility %~ axisTicksHide
+       $ layout_bottom_axis_visibility . axis_show_ticks .~ False
+       $ layout_left_axis_visibility   . axis_show_ticks .~ False
        $ layout_x_axis . laxis_override .~ axisGridHide
        $ layout_y_axis . laxis_override .~ axisGridHide
        $ Test1.layout lwidth
 
     g2 = layout_title .~ "with borders"
-       $ layout_bottom_axis_visibility %~ axisTicksHide
-       $ layout_left_axis_visibility %~ axisTicksHide
-       $ layout_top_axis_visibility %~ axisLineShow
-       $ layout_right_axis_visibility %~ axisLineShow
+       $ layout_bottom_axis_visibility . axis_show_ticks .~ False
+       $ layout_left_axis_visibility   . axis_show_ticks .~ False
+       $ layout_top_axis_visibility    . axis_show_line   .~ True
+       $ layout_right_axis_visibility  . axis_show_line   .~ True
        $ layout_x_axis . laxis_override .~ axisGridHide
        $ layout_y_axis . laxis_override .~ axisGridHide
        $ Test1.layout lwidth
@@ -82,12 +82,18 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
           )
 
     g5 = layout_title .~ "y linked"
-       $ layout_right_axis_visibility  %~ axisLineShow . axisTicksShow. axisLabelsShow
+       $ layout_right_axis_visibility . axis_show_line   .~ True
+       $ layout_right_axis_visibility . axis_show_ticks  .~ True
+       $ layout_right_axis_visibility . axis_show_labels .~ True
        $ Test1.layout lwidth
 
     g6 = layout_title .~ "everything"
-       $ layout_right_axis_visibility  %~ axisLineShow . axisTicksShow. axisLabelsShow
-       $ layout_top_axis_visibility  %~ axisLineShow . axisTicksShow. axisLabelsShow
+       $ layout_right_axis_visibility . axis_show_line   .~ True
+       $ layout_right_axis_visibility . axis_show_ticks  .~ True
+       $ layout_right_axis_visibility . axis_show_labels .~ True
+       $ layout_top_axis_visibility . axis_show_line   .~ True
+       $ layout_top_axis_visibility . axis_show_ticks  .~ True
+       $ layout_top_axis_visibility . axis_show_labels .~ True
        $ Test1.layout lwidth
 
     rf = tval . layoutToRenderable
@@ -163,7 +169,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
            $ layout_title_style . font_size .~ 10
            $ layout_x_axis . laxis_generate .~ autoIndexAxis alabels
            $ layout_y_axis . laxis_override .~ axisGridHide
-           $ layout_left_axis_visibility %~ axisTicksHide
+           $ layout_left_axis_visibility . axis_show_ticks .~ False
            $ layout_plots .~ [ plotBars bars ]
            $ def :: Layout PlotIndex Double
 
@@ -262,7 +268,7 @@ test11b otype = test11_ f
             $ slayouts_compress_legend .~ True
             $ def
       where
-        l1' = layout_bottom_axis_visibility %~ axisLabelsHide
+        l1' = layout_bottom_axis_visibility . axis_show_labels .~ False
             $ l1
 
 -------------------------------------------------------------------------------
