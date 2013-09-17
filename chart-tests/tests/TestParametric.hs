@@ -8,8 +8,8 @@ import Data.Default.Class
 
 import Utils
 
-chart :: Double -> Renderable (Layout1Pick Double Double)
-chart lwidth = layout1ToRenderable layout
+chart :: Double -> Renderable (LayoutPick Double Double)
+chart lwidth = layoutToRenderable layout
   where
     circle = [ (r a * sin (a*dr),r a * cos (a*dr)) | a <- [0,0.5..360::Double] ]
       where
@@ -20,8 +20,8 @@ chart lwidth = layout1ToRenderable layout
             $ plot_lines_style .~ solidLine lwidth (opaque blue) 
             $ def
 
-    layout = layout1_title .~ "Parametric Plot"
-           $ layout1_plots .~ [Left (toPlot circleP)]
+    layout = layout_title .~ "Parametric Plot"
+           $ layout_plots .~ [toPlot circleP]
            $ def
 
 -- main = main' "test1" (chart 0.25)

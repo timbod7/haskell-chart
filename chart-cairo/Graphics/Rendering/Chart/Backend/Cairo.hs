@@ -162,8 +162,14 @@ cWithClipRegion env r p = preserveCState0 $ do
 -- Output rendering functions
 -- -----------------------------------------------------------------------
 
-data CairoBackend = CairoPNG | CairoSVG | CairoPS | CairoPDF
+-- | The cairo backend to use.
+data CairoBackend = CairoPNG -- ^ The PNG backend.
+                  | CairoSVG -- ^ The SVG backend.
+                  | CairoPS  -- ^ The postscript backend.
+                  | CairoPDF -- ^ The PDF backend.
 
+-- | Render to a file of given width and height (in that order) using
+--   the given cairo backend.
 renderToFile :: ChartBackend a -> CairoBackend -> Int -> Int -> FilePath -> IO ()
 renderToFile m b = case b of
   CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
@@ -312,17 +318,17 @@ cRenderToFile withSurface cr width height path =
 
 instance PlotPDFType (IO a) where
     pld fn args = do
-        renderableToPDFFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
+        renderableToPDFFile (layoutDddToRenderable $ uplot (reverse args)) 640 480 fn
         return undefined
 
 instance PlotPSType (IO a) where
     pls fn args = do
-        renderableToPSFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
+        renderableToPSFile (layoutDddToRenderable $ uplot (reverse args)) 640 480 fn
         return undefined
 
 instance PlotPNGType (IO a) where
     plp fn args = do
-        renderableToPNGFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
+        renderableToPNGFile (layoutDddToRenderable $ uplot (reverse args)) 640 480 fn
         return undefined
 
 -- -----------------------------------------------------------------------

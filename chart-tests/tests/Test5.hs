@@ -12,15 +12,15 @@ import Utils
 ----------------------------------------------------------------------
 -- Example thanks to Russell O'Connor
 
-chart :: Double -> Renderable (Layout1Pick Double LogValue)
-chart lwidth = layout1ToRenderable (layout 1001 (trial bits) :: Layout1 Double LogValue)
+chart :: Double -> Renderable (LayoutPick Double LogValue)
+chart lwidth = layoutToRenderable (layout 1001 (trial bits) :: Layout Double LogValue)
   where
     bits = randoms $ mkStdGen 0
 
-    layout n t = layout1_title .~ "Simulation of betting on a biased coin"
-               $ layout1_plots .~ [
-                      Left (toPlot (plot "f=0.05" s1 n 0 (t 0.05))),
-                      Left (toPlot (plot "f=0.1" s2 n 0 (t 0.1)))
+    layout n t = layout_title .~ "Simulation of betting on a biased coin"
+               $ layout_plots .~ [
+                      toPlot (plot "f=0.05" s1 n 0 (t 0.05)),
+                      toPlot (plot "f=0.1" s2 n 0 (t 0.1))
                      ]
                $ def
 

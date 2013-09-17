@@ -1,5 +1,5 @@
 import Graphics.Rendering.Chart
-import Graphics.Rendering.Chart.Layout(layout1ToRenderable)
+import Graphics.Rendering.Chart.Layout(layoutLRToRenderable)
 import Graphics.Rendering.Chart.Grid
 import Graphics.Rendering.Chart.Backend.Cairo
 import qualified Graphics.UI.Gtk as G
@@ -16,11 +16,11 @@ import Data.IORef
 import System.Environment(getArgs)
 import Prices(prices2)
 
-type PickType = Layout1Pick LocalTime Double
+type PickType = LayoutLRPick LocalTime Double Double
 
 chart :: [(LocalTime,Double,Double)] 
-      -> Bool -> Double -> Renderable (Layout1Pick LocalTime Double)
-chart prices showMinMax lwidth = layout1ToRenderable layout
+      -> Bool -> Double -> Renderable (LayoutLRPick LocalTime Double Double)
+chart prices showMinMax lwidth = layoutLRToRenderable layout
   where
 
     lineStyle c = line_width .~ 3 * lwidth
@@ -54,15 +54,15 @@ chart prices showMinMax lwidth = layout1ToRenderable layout
     fg = opaque white
     fg1 = opaque $ sRGB 0.0 0.0 0.15
 
-    layout = layout1_title .~"Price History"
-           $ layout1_background .~ solidFillStyle bg
-           $ updateAllAxesStyles (axis_grid_style .~ solidLine 1 fg1)
-           $ layout1_left_axis . laxis_override .~ axisGridHide
-           $ layout1_right_axis . laxis_override .~ axisGridHide
-           $ layout1_bottom_axis . laxis_override .~ axisGridHide
- 	   $ layout1_plots .~ ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
-           $ layout1_grid_last .~ False
-           $ setLayout1Foreground fg
+    layout = layoutlr_title .~"Price History"
+           $ layoutlr_background .~ solidFillStyle bg
+           $ updateAllAxesStylesLR (axis_grid_style .~ solidLine 1 fg1)
+           $ layoutlr_left_axis . laxis_override .~ axisGridHide
+           $ layoutlr_right_axis . laxis_override .~ axisGridHide
+           $ layoutlr_x_axis . laxis_override .~ axisGridHide
+ 	   $ layoutlr_plots .~ ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
+           $ layoutlr_grid_last .~ False
+           $ setLayoutLRForeground fg
            $ def
 
 updateCanvas :: Renderable a -> G.DrawingArea -> IORef (Maybe (PickFn a)) -> IO Bool

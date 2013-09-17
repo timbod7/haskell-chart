@@ -8,8 +8,8 @@ import Data.Default.Class
 
 import Utils
 
-chart :: Bool -> Bool -> Renderable (Layout1Pick Double Double)
-chart xrev yrev = layout1ToRenderable layout
+chart :: Bool -> Bool -> Renderable (LayoutPick Double Double)
+chart xrev yrev = layoutToRenderable layout
   where
 
     points = plot_points_style .~ filledCircles 3 (opaque red)
@@ -21,13 +21,13 @@ chart xrev yrev = layout1ToRenderable layout
           $ plot_lines_title .~ "values"
           $ def
 
-    layout = layout1_title .~ "Log/Linear Example"
-           $ layout1_bottom_axis . laxis_title .~ "horizontal"
-           $ layout1_bottom_axis . laxis_reverse .~ xrev
-           $ layout1_left_axis . laxis_generate .~ autoScaledLogAxis def
-           $ layout1_left_axis . laxis_title .~ "vertical"
-           $ layout1_left_axis . laxis_reverse .~ yrev
-           $ layout1_plots .~ [Left (toPlot points), Left (toPlot lines) ]
+    layout = layout_title .~ "Log/Linear Example"
+           $ layout_x_axis . laxis_title .~ "horizontal"
+           $ layout_x_axis . laxis_reverse .~ xrev
+           $ layout_y_axis . laxis_generate .~ autoScaledLogAxis def
+           $ layout_y_axis . laxis_title .~ "vertical"
+           $ layout_y_axis . laxis_reverse .~ yrev
+           $ layout_plots .~ [ toPlot points, toPlot lines ]
            $ def
 
 -- main = main' "test4" (chart False False)
