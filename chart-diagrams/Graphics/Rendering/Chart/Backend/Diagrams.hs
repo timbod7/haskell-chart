@@ -9,14 +9,24 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , defaultEnv
   , customFontEnv
   , DEnv(..), DFont
+  
+  -- * EPS Utility Functions.
   , renderableToEPSFile
   , renderableToEPSFile'
+  
+  -- * SVG Utility Functions
   , renderableToSVG
   , renderableToSVG'
   , renderableToSVGFile
   , renderableToSVGFile'
   , renderableToSVGString
   , renderableToSVGString'
+  
+  -- * SVG Embedded Font Utility Functions
+  , renderableToEmbeddedFontSVG
+  , renderableToEmbeddedFontSVG'
+  , renderableToEmbeddedFontSVGFile
+  , renderableToEmbeddedFontSVGFile'
   ) where
 
 import Data.Default.Class
@@ -26,9 +36,12 @@ import Data.List (unfoldr)
 import Data.Monoid
 import Data.Traversable
 import qualified Data.Map as M
+import qualified Data.Set as S
 import qualified Data.ByteString.Lazy as BS
+import qualified Data.Text as T
 
 import Control.Monad.Operational
+import Control.Monad.State.Lazy
 
 import Diagrams.Core.Transform ( Transformation(..) )
 import Diagrams.Prelude 
@@ -42,13 +55,16 @@ import Diagrams.Prelude
 import qualified Diagrams.Prelude as D
 import qualified Diagrams.TwoD as D2
 import qualified Diagrams.TwoD.Arc as D2
+import qualified Diagrams.TwoD.Text as D2
 import qualified Diagrams.Backend.Postscript as DEPS
 import qualified Diagrams.Backend.SVG as DSVG
 
 import Text.Blaze.Svg.Renderer.Utf8 ( renderSvg )
-import qualified Text.Blaze.Svg11 as S
+import qualified Text.Blaze.Svg11 as Svg
 
+import qualified Graphics.SVGFonts.CharReference as F
 import qualified Graphics.SVGFonts.ReadFont as F
+import Graphics.SVGFonts.WriteFont ( makeSvgFont )
 
 import Graphics.Rendering.Chart.Backend as G
 import Graphics.Rendering.Chart.Backend.Impl
@@ -60,7 +76,7 @@ import Graphics.Rendering.Chart.Renderable
 import Paths_Chart_diagrams ( getDataFileName )
 
 -- -----------------------------------------------------------------------
--- General Utility Functions
+-- SVG Utility Functions
 -- -----------------------------------------------------------------------
 
 -- | Output the given renderable to a SVG file of the specifed size
@@ -93,18 +109,70 @@ renderableToSVGString'  r env =
 
 -- | Output the given renderable as a SVG of the specifed size
 --   (in points) using the default environment.
-renderableToSVG :: Renderable a -> Double -> Double -> IO (S.Svg, PickFn a)
+renderableToSVG :: Renderable a -> Double -> Double -> IO (Svg.Svg, PickFn a)
 renderableToSVG r w h = do
   env <- defaultEnv vectorAlignmentFns w h
   return $ renderableToSVG' r env
 
 -- | Output the given renderable as a SVG using the given environment.
-renderableToSVG' :: Renderable a -> DEnv -> (S.Svg, PickFn a)
+renderableToSVG' :: Renderable a -> DEnv -> (Svg.Svg, PickFn a)
 renderableToSVG' r env = 
   let (w, h) = envOutputSize env
       (d, x) = runBackendR env r
-      svg = D.renderDia DSVG.SVG (DSVG.SVGOptions $ D2.Dims w h) d
+      svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) Nothing) d
   in (svg, x)
+
+-- -----------------------------------------------------------------------
+-- SVG Embedded Font Utility Functions
+-- -----------------------------------------------------------------------
+
+-- | Output the given renderable to a SVG file of the specifed size
+--   (in points), to the specified file using the default environment.
+--   Font are embedded to save space.
+renderableToEmbeddedFontSVGFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
+renderableToEmbeddedFontSVGFile r w h file = do
+  (svg, x) <- renderableToEmbeddedFontSVG r w h
+  BS.writeFile file $ renderSvg svg
+  return x
+
+-- | Output the given renderable to a SVG file using the given environment.
+--   Font are embedded to save space.
+renderableToEmbeddedFontSVGFile' :: Renderable a -> DEnv -> FilePath -> IO (PickFn a)
+renderableToEmbeddedFontSVGFile' r env file = do
+  let (svg, x) = renderableToEmbeddedFontSVG' r env
+  BS.writeFile file $ renderSvg svg
+  return x
+
+-- | Output the given renderable as a SVG of the specifed size
+--   (in points) using the default environment.
+--   Font are embedded to save space.
+renderableToEmbeddedFontSVG :: Renderable a -> Double -> Double -> IO (Svg.Svg, PickFn a)
+renderableToEmbeddedFontSVG r w h = do
+  env <- defaultEnv vectorAlignmentFns w h
+  return $ renderableToEmbeddedFontSVG' r env
+
+-- | Output the given renderable as a SVG using the given environment.
+--   Font are embedded to save space.
+renderableToEmbeddedFontSVG' :: Renderable a -> DEnv -> (Svg.Svg, PickFn a)
+renderableToEmbeddedFontSVG' r env =
+  let size@(w, h) = envOutputSize env
+      cr = render r size
+      (d, x, gs) = runBackendWithGlyphs env cr
+      fontDefs = Just $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
+        let fs = envFontStyle env
+        let font = envSelectFont env $ fs { _font_name = fFam
+                                          , _font_slant = fSlant
+                                          , _font_weight = fWeight 
+                                          }
+        makeSvgFont font usedGs
+        -- M.Map (String, FontSlant, FontWeight) (S.Set String)
+        -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
+      svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) fontDefs) d
+  in (svg, x)
+
+-- -----------------------------------------------------------------------
+-- EPS Utility Functions
+-- -----------------------------------------------------------------------
 
 -- | Output the given renderable to a EPS file using the default environment.
 renderableToEPSFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
@@ -135,10 +203,14 @@ data DEnv = DEnv
   , envFontStyle :: FontStyle           -- ^ The current/initial font style.
   , envSelectFont :: FontStyle -> DFont -- ^ The font selection function.
   , envOutputSize :: (Double, Double)   -- ^ The size of the rendered output.
+  , envUsedGlyphs :: M.Map (String, FontSlant, FontWeight) (S.Set String)
+    -- ^ The map of all glyphs that are used from a specific font.
   }
 
 -- | A font a delivered by SVGFonts.
 type DFont = (F.FontData, F.OutlineMap)
+
+type DState a = State DEnv a
 
 defaultFonts :: IO (FontStyle -> DFont)
 defaultFonts = do
@@ -155,26 +227,49 @@ defaultFonts = do
   
   let selectFont :: FontStyle -> DFont
       selectFont fs = case (_font_name fs, _font_slant fs, _font_weight fs) of
-        ("serif", FontSlantNormal , FontWeightNormal) -> serifR
-        ("serif", FontSlantNormal , FontWeightBold  ) -> serifRB
-        ("serif", FontSlantItalic , FontWeightNormal) -> serifRI
-        ("serif", FontSlantOblique, FontWeightNormal) -> serifRI
-        ("serif", FontSlantItalic , FontWeightBold  ) -> serifRBI
-        ("serif", FontSlantOblique, FontWeightBold  ) -> serifRBI
+        ("serif", FontSlantNormal , FontWeightNormal) -> alterFontFamily "serif" serifR
+        ("serif", FontSlantNormal , FontWeightBold  ) -> alterFontFamily "serif" serifRB
+        ("serif", FontSlantItalic , FontWeightNormal) -> alterFontFamily "serif" serifRI
+        ("serif", FontSlantOblique, FontWeightNormal) -> alterFontFamily "serif" serifRI
+        ("serif", FontSlantItalic , FontWeightBold  ) -> alterFontFamily "serif" serifRBI
+        ("serif", FontSlantOblique, FontWeightBold  ) -> alterFontFamily "serif" serifRBI
         
-        ("sans-serif", FontSlantNormal , FontWeightNormal) -> sansR
-        ("sans-serif", FontSlantNormal , FontWeightBold  ) -> sansRB
-        ("sans-serif", FontSlantItalic , FontWeightNormal) -> sansRI
-        ("sans-serif", FontSlantOblique, FontWeightNormal) -> sansRI
-        ("sans-serif", FontSlantItalic , FontWeightBold  ) -> sansRBI
-        ("sans-serif", FontSlantOblique, FontWeightBold  ) -> sansRBI
+        ("sans-serif", FontSlantNormal , FontWeightNormal) -> alterFontFamily "sans-serif" sansR
+        ("sans-serif", FontSlantNormal , FontWeightBold  ) -> alterFontFamily "sans-serif" sansRB
+        ("sans-serif", FontSlantItalic , FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
+        ("sans-serif", FontSlantOblique, FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
+        ("sans-serif", FontSlantItalic , FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
+        ("sans-serif", FontSlantOblique, FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
         
-        ("monospace", _, FontWeightNormal) -> monoR
-        ("monospace", _, FontWeightBold  ) -> monoRB
+        ("monospace", _, FontWeightNormal) -> alterFontFamily "monospace" monoR
+        ("monospace", _, FontWeightBold  ) -> alterFontFamily "monospace" monoRB
+        
+        (fam, FontSlantNormal , FontWeightNormal) | fam `isFontFamily` serifR   -> serifR
+        (fam, FontSlantNormal , FontWeightBold  ) | fam `isFontFamily` serifRB  -> serifRB
+        (fam, FontSlantItalic , FontWeightNormal) | fam `isFontFamily` serifRI  -> serifRI
+        (fam, FontSlantOblique, FontWeightNormal) | fam `isFontFamily` serifRI  -> serifRI
+        (fam, FontSlantItalic , FontWeightBold  ) | fam `isFontFamily` serifRBI -> serifRBI
+        (fam, FontSlantOblique, FontWeightBold  ) | fam `isFontFamily` serifRBI -> serifRBI
+        
+        (fam, FontSlantNormal , FontWeightNormal) | fam `isFontFamily` sansR   -> sansR
+        (fam, FontSlantNormal , FontWeightBold  ) | fam `isFontFamily` sansRB  -> sansRB
+        (fam, FontSlantItalic , FontWeightNormal) | fam `isFontFamily` sansRI  -> sansRI
+        (fam, FontSlantOblique, FontWeightNormal) | fam `isFontFamily` sansRI  -> sansRI
+        (fam, FontSlantItalic , FontWeightBold  ) | fam `isFontFamily` sansRBI -> sansRBI
+        (fam, FontSlantOblique, FontWeightBold  ) | fam `isFontFamily` sansRBI -> sansRBI
+        
+        (fam, _, FontWeightNormal) | fam `isFontFamily` monoR  -> monoR
+        (fam, _, FontWeightBold  ) | fam `isFontFamily` monoRB -> monoRB
         
         (_, slant, weight) -> selectFont (fs { _font_name = "sans-serif" })
   
   return selectFont
+
+alterFontFamily :: String -> DFont -> DFont
+alterFontFamily n (fd, om) = (fd { F.fontDataFamily = n }, om)
+
+isFontFamily :: String -> DFont -> Bool
+isFontFamily n (fd, _) = n == F.fontDataFamily fd
   
 loadDefaultFont :: FilePath -> IO DFont
 loadDefaultFont file = getDataFileName file >>= return . F.outlMap
@@ -199,6 +294,7 @@ customFontEnv alignFns w h fontFiles = do
           Just font -> font
           Nothing -> selectFont fs
     , envOutputSize = (w,h)
+    , envUsedGlyphs = M.empty
     }
 
 -- | Produce a default environment with the default fonts.
@@ -223,104 +319,173 @@ runBackend :: (D.Backend b R2, D.Renderable (D.Path R2) b)
            -> ChartBackend a    -- ^ Chart render code.
            -> (Diagram b R2, a) -- ^ The diagram.
 runBackend env m = 
-  let (d, x) = runBackend' env (withDefaultStyle m)
-  in (D2.reflectY $ D2.view (p2 (0,0)) (r2 (envOutputSize env)) d, x)
+  let (d, x) = evalState (runBackend' TextRenderSvg $ withDefaultStyle m) env
+  in (adjustOutputDiagram env d, x)
 
-runBackend' :: (D.Renderable (D.Path R2) b) => DEnv
-            -> ChartBackend a -> (Diagram b R2, a)
-runBackend' env m = eval env (view m)
+-- | Run this backends renderer.
+runBackendWithGlyphs :: ( D.Backend b R2
+                        , D.Renderable (D.Path R2) b
+                        , D.Renderable (D2.Text) b)
+                     => DEnv   -- ^ Environment to start rendering with.
+                     -> ChartBackend a    -- ^ Chart render code.
+                     -> ( Diagram b R2, a
+                        , M.Map (String, FontSlant, FontWeight) (S.Set String))
+runBackendWithGlyphs env m = 
+  let ((d, x), env') = runState (runBackend' TextRenderNative $ withDefaultStyle m) env
+  in (adjustOutputDiagram env d, x, envUsedGlyphs env')
+
+-- | Flag to decide which technique should ne used to render text.
+--   The type parameter is the primitive that has to be supported by 
+--   a backend when rendering text using this technique.
+data TextRender a where
+  TextRenderNative :: TextRender (D2.Text)
+  TextRenderSvg    :: TextRender (D.Path R2)
+
+runBackend' :: (D.Renderable (D.Path R2) b, D.Renderable t b) 
+            => TextRender t -> ChartBackend a -> DState (Diagram b R2, a)
+runBackend' tr m = eval tr $ view $ m
   where
-    eval :: (D.Renderable (D.Path R2) b)
-         => DEnv -> ProgramView ChartBackendInstr a -> (Diagram b R2, a)
-    eval env (Return v) = (mempty, v)
-    eval env (StrokePath p :>>= f) = dStrokePath env p   <># step env f
-    eval env (FillPath p   :>>= f) = dFillPath   env p   <># step env f
-    eval env (DrawText p s :>>= f) = dDrawText   env p s <># step env f
-    eval env (GetTextSize s :>>= f) = dTextSize env s   <>= step env f
-    eval env (GetAlignments :>>= f) = dAlignmentFns env <>= step env f
-    eval env (WithTransform m p :>>= f)  = dWithTransform env m  p <>= step env f
-    eval env (WithFontStyle fs p :>>= f) = dWithFontStyle env fs p <>= step env f
-    eval env (WithFillStyle fs p :>>= f) = dWithFillStyle env fs p <>= step env f
-    eval env (WithLineStyle ls p :>>= f) = dWithLineStyle env ls p <>= step env f
-    eval env (WithClipRegion r p :>>= f) = dWithClipRegion env r p <>= step env f
+    eval :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+         => TextRender t -> ProgramView ChartBackendInstr a -> DState (Diagram b R2, a)
+    eval tr (Return v) = return (mempty, v)
+    eval tr (StrokePath p   :>>= f) = dStrokePath  p   <># step tr f
+    eval tr (FillPath   p   :>>= f) = dFillPath    p   <># step tr f
+    eval tr@TextRenderSvg    (DrawText   p s :>>= f) = dDrawTextSvg    p s <># step tr f
+    eval tr@TextRenderNative (DrawText   p s :>>= f) = dDrawTextNative p s <># step tr f
+    eval tr (GetTextSize  s :>>= f) = dTextSize      s <>= step tr f
+    eval tr (GetAlignments  :>>= f) = dAlignmentFns    <>= step tr f
+    eval tr (WithTransform m p :>>= f)  = dWithTransform  tr m  p <>= step tr f
+    eval tr (WithFontStyle fs p :>>= f) = dWithFontStyle  tr fs p <>= step tr f
+    eval tr (WithFillStyle fs p :>>= f) = dWithFillStyle  tr fs p <>= step tr f
+    eval tr (WithLineStyle ls p :>>= f) = dWithLineStyle  tr ls p <>= step tr f
+    eval tr (WithClipRegion r p :>>= f) = dWithClipRegion tr r  p <>= step tr f
 
-    step :: (D.Renderable (D.Path R2) b)
-         => DEnv -> (v -> ChartBackend a) -> v -> (Diagram b R2, a)
-    step env f =  \v -> runBackend' env (f v)
+    step :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+         => TextRender t -> (v -> ChartBackend a) -> v -> DState (Diagram b R2, a)
+    step tr f v = runBackend' tr (f v)
     
-    (<>#) :: (Monoid m) => m -> (() -> (m, a)) -> (m, a)
-    (<>#) m f = (m, ()) <>= f
+    (<>#) :: (Monad s, Monoid m) => s m -> (() -> s (m, a)) -> s (m, a)
+    (<>#) m f = do
+      ma <- m
+      return (ma, ()) <>= f
     
-    (<>=) :: (Monoid m) => (m, a) -> (a -> (m, b)) -> (m, b)
-    (<>=) (ma, a) f = let (mb, b) = f a
-                      in (mb <> ma, b)
+    (<>=) :: (Monad s, Monoid m) => s (m, a) -> (a -> s (m, b)) -> s (m, b)
+    (<>=) m f = do
+      (ma, a) <- m
+      (mb, b) <- f a
+      return (mb <> ma, b)
+
+-- | Executes the given state locally, but preserves the changes to the 'envUsedGlyphs'
+--   map. Assumes that values are never removed from the map inbetween.
+dLocal :: DState a -> DState a
+dLocal m = do
+  env <- get
+  x <- m
+  env' <- get
+  put $ env { envUsedGlyphs = envUsedGlyphs env' }
+  return x
 
 dStrokePath :: (D.Renderable (D.Path R2) b)
-            => DEnv -> Path -> Diagram b R2
-dStrokePath env p = applyFillStyle noFillStyle $ D.stroke $ convertPath False p
+            => Path -> DState (Diagram b R2)
+dStrokePath p = return $ applyFillStyle noFillStyle $ D.stroke $ convertPath False p
 
 dFillPath :: (D.Renderable (D.Path R2) b)
-          => DEnv -> Path -> Diagram b R2
-dFillPath env p = applyLineStyle noLineStyle $ D.stroke $ convertPath True p
+          => Path -> DState (Diagram b R2)
+dFillPath p = return $ applyLineStyle noLineStyle $ D.stroke $ convertPath True p
 
 dTextSize :: (D.Renderable (D.Path R2) b)
-          => DEnv -> String -> (Diagram b R2, TextSize)
-dTextSize env text = {-# SCC "dTextSize" #-}
+          => String -> DState (Diagram b R2, TextSize)
+dTextSize text = do
+  env <- get
   let fs = envFontStyle env
-      (scaledH, scaledA, scaledD, scaledYB) = calcFontMetrics env
-  in (mempty, TextSize { textSizeWidth = {-# SCC "D2.width" #-} D2.width $ 
-                          {-# SCC "F.textSVG'" #-} F.textSVG' $ 
-                            {-# SCC "fontStyleToTextOpts" #-} fontStyleToTextOpts env text
-                       , textSizeAscent = scaledA -- scaledH * (a' / h') -- ascent
-                       , textSizeDescent = scaledD -- scaledH * (d' / h') -- descent
-                       , textSizeYBearing = scaledYB -- -scaledH * (capHeight / h)
-                       , textSizeHeight = _font_size $ fs
-                       })
+  let (scaledH, scaledA, scaledD, scaledYB) = calcFontMetrics env
+  return (mempty, TextSize 
+                { textSizeWidth = D2.width $ F.textSVG' 
+                                           $ fontStyleToTextOpts env text
+                , textSizeAscent = scaledA -- scaledH * (a' / h') -- ascent
+                , textSizeDescent = scaledD -- scaledH * (d' / h') -- descent
+                , textSizeYBearing = scaledYB -- -scaledH * (capHeight / h)
+                , textSizeHeight = _font_size $ fs
+                })
 
 dAlignmentFns :: (D.Renderable (D.Path R2) b)
-              => DEnv -> (Diagram b R2, AlignmentFns)
-dAlignmentFns env = (mempty, envAlignmentFns env) -- TODO
+              => DState (Diagram b R2, AlignmentFns)
+dAlignmentFns = do
+  env <- get
+  return (mempty, envAlignmentFns env)
 
-dDrawText :: (D.Renderable (D.Path R2) b)
-          => DEnv -> Point -> String -> Diagram b R2
-dDrawText env (Point x y) text 
-  = {-# SCC "dDrawText" #-} D.transform (toTransformation $ translate (Vector x y) 1)
-  $ applyFontStyle (envFontStyle env)
-  $ D2.scaleY (-1)
-  $ F.textSVG_ (fontStyleToTextOpts env text)
+dDrawTextSvg :: (D.Renderable (D.Path R2) b)
+             => Point -> String -> DState (Diagram b R2)
+dDrawTextSvg (Point x y) text = do
+  env <- get
+  return $ D.transform (toTransformation $ translate (Vector x y) 1)
+         $ applyFontStyleSVG (envFontStyle env)
+         $ D2.scaleY (-1)
+         $ F.textSVG_ (fontStyleToTextOpts env text)
 
-dWith :: (D.Renderable (D.Path R2) b)
-      => DEnv -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
-      -> ChartBackend a -> (Diagram b R2, a)
-dWith env envF dF m = let (ma, a) = runBackend' (envF env) m
-                      in (dF ma, a)
+dDrawTextNative :: (D.Renderable D2.Text b)
+                => Point -> String -> DState (Diagram b R2)
+dDrawTextNative (Point x y) text = do
+  env <- get
+  addGlyphsOfString text
+  return $ D.transform (toTransformation $ translate (Vector x y) 1)
+         $ applyFontStyleText (envFontStyle env) 
+         $ D2.scaleY (-1)
+         $ D2.baselineText text
 
-dWithTransform :: (D.Renderable (D.Path R2) b)
-               => DEnv -> Matrix -> ChartBackend a -> (Diagram b R2, a)
-dWithTransform env t = dWith env id $ D.transform (toTransformation t)
+dWith :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+      => TextRender t -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
+      -> ChartBackend a -> DState (Diagram b R2, a)
+dWith tr envF dF m = dLocal $ do
+  modify envF
+  (ma, a) <- runBackend' tr m
+  return (dF ma, a)
 
-dWithLineStyle :: (D.Renderable (D.Path R2) b)
-               => DEnv -> LineStyle -> ChartBackend a -> (Diagram b R2, a)
-dWithLineStyle env ls = dWith env id $ applyLineStyle ls
+dWithTransform :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+               => TextRender t -> Matrix -> ChartBackend a -> DState (Diagram b R2, a)
+dWithTransform tr t = dWith tr id $ D.transform (toTransformation t)
 
-dWithFillStyle :: (D.Renderable (D.Path R2) b)
-               => DEnv -> FillStyle -> ChartBackend a -> (Diagram b R2, a)
-dWithFillStyle env fs = dWith env id $ applyFillStyle fs
+dWithLineStyle :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+               => TextRender t -> LineStyle -> ChartBackend a -> DState (Diagram b R2, a)
+dWithLineStyle tr ls = dWith tr id $ applyLineStyle ls
 
-dWithFontStyle :: (D.Renderable (D.Path R2) b)
-               => DEnv -> FontStyle -> ChartBackend a -> (Diagram b R2, a)
-dWithFontStyle env fs = dWith env (\e -> e { envFontStyle = fs }) $ id -- TODO
+dWithFillStyle :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+               => TextRender t -> FillStyle -> ChartBackend a -> DState (Diagram b R2, a)
+dWithFillStyle tr fs = dWith tr id $ applyFillStyle fs
 
-dWithClipRegion :: (D.Renderable (D.Path R2) b)
-                => DEnv -> Rect -> ChartBackend a -> (Diagram b R2, a)
-dWithClipRegion env clip = dWith env id $ D2.clipBy (convertPath True $ rectPath clip)
+dWithFontStyle :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+               => TextRender t -> FontStyle -> ChartBackend a -> DState (Diagram b R2, a)
+dWithFontStyle tr fs = dWith tr (\e -> e { envFontStyle = fs }) $ id
+
+dWithClipRegion :: (D.Renderable (D.Path R2) b, D.Renderable t b)
+                => TextRender t -> Rect -> ChartBackend a -> DState (Diagram b R2, a)
+dWithClipRegion tr clip = dWith tr id $ D2.clipBy (convertPath True $ rectPath clip)
 
 -- -----------------------------------------------------------------------
 -- Converions Helpers
 -- -----------------------------------------------------------------------
 
+addGlyphsOfString :: String -> DState ()
+addGlyphsOfString s = do
+  env <- get
+  let fs = envFontStyle env
+  let fontData = fst $ envSelectFont env fs
+  let ligatures = ((filter ((>1) . length)) . (M.keys) . F.fontDataGlyphs) fontData
+  let glyphs = fmap T.unpack $ F.characterStrings s ligatures
+  modify $ \env -> 
+    let gKey = (_font_name fs, _font_slant fs, _font_weight fs)
+        gMap = envUsedGlyphs env
+        entry = case M.lookup gKey gMap of
+          Nothing -> S.fromList glyphs
+          Just gs -> gs `S.union` S.fromList glyphs
+    in env { envUsedGlyphs = M.insert gKey entry gMap }
+  return ()
+
 pointToP2 :: Point -> P2
 pointToP2 (Point x y) = p2 (x,y)
+
+adjustOutputDiagram :: (D.Backend b R2) => DEnv -> Diagram b R2 -> Diagram b R2
+adjustOutputDiagram env d = D2.reflectY $ D2.view (p2 (0,0)) (r2 (envOutputSize env)) d
 
 noLineStyle :: LineStyle
 noLineStyle = def 
@@ -370,9 +535,16 @@ applyFillStyle fs = case fs of
   FillStyleSolid cl -> D.fillColor cl
 
 -- | Apply all pure diagrams properties from the font style.
-applyFontStyle :: (D.HasStyle a) => FontStyle -> a -> a
-applyFontStyle fs = applyLineStyle noLineStyle 
-                  . applyFillStyle (solidFillStyle $ _font_color fs)
+applyFontStyleSVG :: (D.HasStyle a) => FontStyle -> a -> a
+applyFontStyleSVG fs = applyLineStyle noLineStyle 
+                     . applyFillStyle (solidFillStyle $ _font_color fs)
+
+applyFontStyleText :: (D.HasStyle a) => FontStyle -> a -> a
+applyFontStyleText fs = D2.font (_font_name fs)
+                      . D2.fontSize (_font_size fs)
+                      . D2.fontSlant (convertFontSlant $ _font_slant fs)
+                      . D2.fontWeight (convertFontWeight $ _font_weight fs)
+                      . D.fillColor (_font_color fs)
 
 -- | Calculate the font metrics for the currently set font style.
 --   The returned value will be @(height, ascent, descent, ybearing)@.
@@ -429,6 +601,17 @@ convertLineJoin join = case join of
   LineJoinMiter -> D.LineJoinMiter
   LineJoinRound -> D.LineJoinRound
   LineJoinBevel -> D.LineJoinBevel
+
+convertFontSlant :: FontSlant -> D2.FontSlant
+convertFontSlant fs = case fs of
+  FontSlantNormal  -> D2.FontSlantNormal
+  FontSlantItalic  -> D2.FontSlantItalic
+  FontSlantOblique -> D2.FontSlantOblique
+
+convertFontWeight :: FontWeight -> D2.FontWeight
+convertFontWeight fw = case fw of
+  FontWeightBold   -> D2.FontWeightBold
+  FontWeightNormal -> D2.FontWeightNormal
 
 -- | Convert paths. The boolean says wether all trails 
 --   of the path shall be closed or remain open.
