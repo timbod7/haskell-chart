@@ -5,8 +5,8 @@ import Graphics.Rendering.Chart.Simple
 
 import Utils
 
-chart :: Renderable (Layout1Pick Double Double)
-chart = layout1ToRenderable (plotLayout pp) {_layout1_title="Graphics.Rendering.Chart.Simple example"}
+chart :: Renderable (LayoutPick Double Double)
+chart = layoutToRenderable (plotLayout pp) {_layout_title="Graphics.Rendering.Chart.Simple example"}
   where
     pp = plot xs sin "sin"
                  cos "cos" "o"

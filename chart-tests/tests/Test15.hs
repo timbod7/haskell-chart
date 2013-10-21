@@ -8,16 +8,17 @@ import Data.Default.Class
 
 import Utils
 
-chart lo = layout1ToRenderable layout
+chart lo = layoutToRenderable layout
  where
   layout = 
-        layout1_title .~ "Legend Test"
-      $ layout1_title_style . font_size .~ 10
-      $ layout1_bottom_axis . laxis_generate .~ autoIndexAxis alabels
-      $ layout1_left_axis . laxis_override .~ (axisGridHide.axisTicksHide)
-      $ layout1_plots .~ [ Left (plotBars bars2) ]
-      $ layout1_legend .~ Just lstyle
-      $ def :: Layout1 PlotIndex Double
+        layout_title .~ "Legend Test"
+      $ layout_title_style . font_size .~ 10
+      $ layout_x_axis . laxis_generate .~ autoIndexAxis alabels
+      $ layout_y_axis . laxis_override .~ axisGridHide
+      $ layout_left_axis_visibility . axis_show_ticks .~ False
+      $ layout_plots .~ [ plotBars bars2 ]
+      $ layout_legend .~ Just lstyle
+      $ def :: Layout PlotIndex Double
 
   bars2 = plot_bars_titles .~ ["A","B","C","D","E","F","G","H","I","J"]
       $ plot_bars_values .~ addIndexes [[2,3,4,2,1,5,6,4,8,1,3],

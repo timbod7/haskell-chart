@@ -27,8 +27,8 @@
 -----------------------------------------------------------------------------
 module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                         plotPDF, plotPS,
-                                        plotLayout, plotPNG, Layout1DDD,
-                                        layout1DddToRenderable
+                                        plotLayout, plotPNG, LayoutDDD,
+                                        layoutDddToRenderable
                                       , PlotPDFType(..)
                                       , PlotPSType(..)
                                       , PlotPNGType(..)

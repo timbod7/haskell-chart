@@ -13,14 +13,14 @@ import Utils
 
 -- demonstrate AreaSpots
 
-chart :: Double -> Renderable (Layout1Pick LocalTime Double)
-chart lwidth = layout1ToRenderable layout
+chart :: Double -> Renderable (LayoutPick LocalTime Double)
+chart lwidth = layoutToRenderable layout
   where
-    layout = layout1_title .~"Price History"
-           $ layout1_background .~ solidFillStyle (opaque white)
-           $ layout1_left_axis . laxis_override .~ axisTicksHide
- 	   $ layout1_plots .~ [ Left (toPlot price1), Left (toPlot spots) ]
-           $ setLayout1Foreground (opaque black)
+    layout = layout_title .~"Price History"
+           $ layout_background .~ solidFillStyle (opaque white)
+           $ layout_left_axis_visibility . axis_show_ticks .~ False
+ 	   $ layout_plots .~ [ toPlot price1, toPlot spots ]
+           $ setLayoutForeground (opaque black)
            $ def
 
     price1 = plot_lines_style .~ lineStyle

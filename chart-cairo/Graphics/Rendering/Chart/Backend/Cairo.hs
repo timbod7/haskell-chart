@@ -318,17 +318,17 @@ cRenderToFile withSurface cr width height path =
 
 instance PlotPDFType (IO a) where
     pld fn args = do
-        renderableToPDFFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
+        renderableToPDFFile (layoutDddToRenderable $ uplot (reverse args)) 640 480 fn
         return undefined
 
 instance PlotPSType (IO a) where
     pls fn args = do
-        renderableToPSFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
+        renderableToPSFile (layoutDddToRenderable $ uplot (reverse args)) 640 480 fn
         return undefined
 
 instance PlotPNGType (IO a) where
     plp fn args = do
-        renderableToPNGFile (layout1DddToRenderable $ uplot (reverse args)) 640 480 fn
+        renderableToPNGFile (layoutDddToRenderable $ uplot (reverse args)) 640 480 fn
         return undefined
 
 -- -----------------------------------------------------------------------

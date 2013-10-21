@@ -11,7 +11,8 @@ module Graphics.Rendering.Chart.Axis.LocalTime(
     autoTimeAxis,
     days, months, years
 ) where
-
+ 
+import Data.Default.Class
 import Data.Time
 import Data.Fixed
 import System.Locale (defaultTimeLocale)
@@ -87,6 +88,7 @@ timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> TimeLabelAlignment ->
                        TimeSeq -> TimeLabelFn -> TimeLabelAlignment -> 
             AxisFn LocalTime
 timeAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
+    _axis_visibility = def,
     _axis_viewport = vmap(min', max'),
     _axis_tropweiv = invmap(min', max'),
     _axis_ticks    = [ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],

@@ -26,7 +26,7 @@ instance (PlotArg a, PlotWindowType r) => PlotWindowType (a -> r) where
     plw args = \ a -> plw (toUPlot a ++ args)
 instance PlotWindowType (IO a) where
     plw args = do
-        renderableToWindow (layout1DddToRenderable $ uplot (reverse args)) 640 480
+        renderableToWindow (layoutDddToRenderable $ uplot (reverse args)) 640 480
         return undefined
 
 

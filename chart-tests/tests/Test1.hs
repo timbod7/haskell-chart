@@ -9,16 +9,16 @@ import Data.Default.Class
 
 import Utils
 
-chart :: Double -> Renderable (Layout1Pick Double Double)
-chart lwidth = layout1ToRenderable (layout lwidth)
+chart :: Double -> Renderable (LayoutPick Double Double)
+chart lwidth = layoutToRenderable (layout lwidth)
 
-layout :: Double -> Layout1 Double Double
-layout lwidth = layout1
+layout :: Double -> Layout Double Double
+layout lwidth = layout'
   where
-    layout1 = layout1_title .~ "Amplitude Modulation"
-            $ layout1_plots .~ [Left (toPlot sinusoid1),
-			       Left (toPlot sinusoid2)]
-            $ layout1_plot_background .~ Just (solidFillStyle $ opaque white)
+    layout' = layout_title .~ "Amplitude Modulation"
+            $ layout_plots .~ [ toPlot sinusoid1
+                              , toPlot sinusoid2 ]
+            $ layout_plot_background .~ Just (solidFillStyle $ opaque white)
             $ def
 
     am x = (sin (x*pi/45) + 1) / 2 * (sin (x*pi/5))

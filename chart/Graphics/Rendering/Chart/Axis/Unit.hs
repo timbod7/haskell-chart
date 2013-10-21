@@ -10,6 +10,8 @@ module Graphics.Rendering.Chart.Axis.Unit(
     unitAxis,
 ) where
 
+import Data.Default.Class
+
 import Graphics.Rendering.Chart.Axis.Types
 
 instance PlotValue () where
@@ -19,6 +21,10 @@ instance PlotValue () where
 
 unitAxis :: AxisData ()
 unitAxis = AxisData {
+    _axis_visibility = def 
+                     { _axis_show_ticks  = False
+                     , _axis_show_labels = False 
+                     },
     _axis_viewport = \(x0,x1) _ -> (x0+x1)/2,
     _axis_tropweiv = \_       _ -> (),
     _axis_ticks    = [((), 0)],
