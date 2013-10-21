@@ -140,7 +140,7 @@ data InternalPlot x y = IPY [y] [PlotKind] | IPX [x] [PlotKind]
 
 newtype LayoutDDD = LayoutDDD { plotLayout :: Layout Double Double }
 
-layoutDddToRenderable :: LayoutDDD -> Renderable (LayoutPick Double Double)
+layoutDddToRenderable :: LayoutDDD -> Renderable (LayoutPick Double Double Double)
 layoutDddToRenderable = layoutToRenderable . plotLayout
 
 instance ToRenderable LayoutDDD where

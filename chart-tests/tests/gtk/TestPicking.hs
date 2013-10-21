@@ -16,10 +16,10 @@ import Data.IORef
 import System.Environment(getArgs)
 import Prices(prices2)
 
-type PickType = LayoutLRPick LocalTime Double Double
+type PickType = LayoutPick LocalTime Double Double
 
 chart :: [(LocalTime,Double,Double)] 
-      -> Bool -> Double -> Renderable (LayoutLRPick LocalTime Double Double)
+      -> Bool -> Double -> Renderable (LayoutPick LocalTime Double Double)
 chart prices showMinMax lwidth = layoutLRToRenderable layout
   where
 

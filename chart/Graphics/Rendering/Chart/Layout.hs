@@ -35,7 +35,6 @@ module Graphics.Rendering.Chart.Layout
   , LayoutLR(..)
   , LayoutAxis(..)
   , LayoutPick(..)
-  , LayoutLRPick(..)
   , StackedLayouts(..)
   , StackedLayout(..)
   , MAxisFn
@@ -187,17 +186,6 @@ data Layout x y = Layout
 instance (Ord x, Ord y) => ToRenderable (Layout x y) where
   toRenderable = setPickFn nullPickFn . layoutToRenderable
 
--- | Information on what is at a specifc location of a 'Layout'.
---   This is delivered by the 'PickFn' of a 'Renderable'.
-data LayoutPick x y = LayoutPick_Legend String -- ^ A legend entry.
-                    | LayoutPick_Title String  -- ^ The title.
-                    | LayoutPick_XAxisTitle String -- ^ The title of the x axis.
-                    | LayoutPick_YAxisTitle String -- ^ The title of the y axis.
-                    | LayoutPick_PlotArea x y -- ^ The plot area at the given plot coordinates.
-                    | LayoutPick_XAxis x -- ^ The x axis at the given plot coordinate.
-                    | LayoutPick_YAxis y -- ^ The y axis at the given plot coordinate.
-                    deriving (Show)
-
 -- | A LayoutLR value is a single plot area, with an x axis and
 --   independent left and right y axes, with a title at the top;
 --   legend at the bottom. It's parametrized by the types of values
@@ -247,15 +235,17 @@ data LayoutLR x y1 y2 = LayoutLR
 
 -- | Information on what is at a specifc location of a 'LayoutLR'.
 --   This is delivered by the 'PickFn' of a 'Renderable'.
-data LayoutLRPick x y1 y2 = LayoutLRPick_Legend String -- ^ A legend entry.
-                          | LayoutLRPick_Title String  -- ^ The title.
-                          | LayoutLRPick_XAxisTitle String      -- ^ The title of the x axis.
-                          | LayoutLRPick_YLeftAxisTitle String  -- ^ The title of the left y axis.
-                          | LayoutLRPick_YRightAxisTitle String -- ^ The title of the right y axis.
-                          | LayoutLRPick_PlotArea x y1 y2 -- ^ The plot area at the given plot coordinates.
-                          | LayoutLRPick_XAxis x       -- ^ The x axis at the given plot coordinate.
-                          | LayoutLRPick_YLeftAxis y1  -- ^ The left y axis at the given plot coordinate.
-                          | LayoutLRPick_YRightAxis y2 -- ^ The right y axis at the given plot coordinate.
+data LayoutPick x y1 y2 = LayoutPick_Legend String -- ^ A legend entry.
+                          | LayoutPick_Title String  -- ^ The title.
+                          | LayoutPick_XTopAxisTitle String      -- ^ The title of the top x axis.
+                          | LayoutPick_XBottomAxisTitle String   -- ^ The title of the bottom x axis.
+                          | LayoutPick_YLeftAxisTitle String  -- ^ The title of the left y axis.
+                          | LayoutPick_YRightAxisTitle String -- ^ The title of the right y axis.
+                          | LayoutPick_PlotArea x y1 y2 -- ^ The plot area at the given plot coordinates.
+                          | LayoutPick_XTopAxis x       -- ^ The top x axis at the given plot coordinate.
+                          | LayoutPick_XBottomAxis x    -- ^ The bottom x axis at the given plot coordinate.
+                          | LayoutPick_YLeftAxis y1  -- ^ The left y axis at the given plot coordinate.
+                          | LayoutPick_YRightAxis y2 -- ^ The right y axis at the given plot coordinate.
                           deriving (Show)
 
 instance (Ord x, Ord yl, Ord yr) => ToRenderable (LayoutLR x yl yr) where
@@ -382,17 +372,17 @@ addMarginsToGrid (t,b,l,r) g = aboveN [
     rs = tval $ spacer (r,0)
 
 -- | Render the given 'Layout'.
-layoutToRenderable :: (Ord x, Ord y) => Layout x y -> Renderable (LayoutPick x y)
+layoutToRenderable :: (Ord x, Ord y) => Layout x y -> Renderable (LayoutPick x y y)
 layoutToRenderable l = fillBackground (_layout_background l) 
                      $ gridToRenderable (layoutToGrid l)
 
 -- | Render the given 'LayoutLR'.
 layoutLRToRenderable :: (Ord x, Ord yl, Ord yr) 
-                     => LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
+                     => LayoutLR x yl yr -> Renderable (LayoutPick x yl yr)
 layoutLRToRenderable l = fillBackground (_layoutlr_background l) 
                        $ gridToRenderable (layoutLRToGrid l)
 
-layoutToGrid :: (Ord x, Ord y) => Layout x y -> Grid (Renderable (LayoutPick x y))
+layoutToGrid :: (Ord x, Ord y) => Layout x y -> Grid (Renderable (LayoutPick x y y))
 layoutToGrid l = aboveN
        [  tval $ layoutTitleToRenderable l
        ,  weights (1,1) $ tval $ gridToRenderable $
@@ -403,7 +393,7 @@ layoutToGrid l = aboveN
     lm = _layout_margin l
 
 layoutLRToGrid :: (Ord x, Ord yl, Ord yr) 
-               => LayoutLR x yl yr -> Grid (Renderable (LayoutLRPick x yl yr))
+               => LayoutLR x yl yr -> Grid (Renderable (LayoutPick x yl yr))
 layoutLRToGrid l = aboveN
        [  tval $ layoutLRTitleToRenderable l
        ,  weights (1,1) $ tval $ gridToRenderable $
@@ -414,7 +404,7 @@ layoutLRToGrid l = aboveN
     lm = _layoutlr_margin l
 
 layoutTitleToRenderable :: (Ord x, Ord y) => Layout x y
-                                           -> Renderable (LayoutPick x y)
+                                           -> Renderable (LayoutPick x y y)
 layoutTitleToRenderable l | null (_layout_title l) = emptyRenderable
 layoutTitleToRenderable l = addMargins (lm/2,0,0,0)
                                        (mapPickFn LayoutPick_Title title)
@@ -424,10 +414,10 @@ layoutTitleToRenderable l = addMargins (lm/2,0,0,0)
     lm    = _layout_margin l
 
 layoutLRTitleToRenderable :: (Ord x, Ord yl, Ord yr) 
-                          => LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
+                          => LayoutLR x yl yr -> Renderable (LayoutPick x yl yr)
 layoutLRTitleToRenderable l | null (_layoutlr_title l) = emptyRenderable
 layoutLRTitleToRenderable l = addMargins (lm/2,0,0,0)
-                                         (mapPickFn LayoutLRPick_Title title)
+                                         (mapPickFn LayoutPick_Title title)
   where
     title = label (_layoutlr_title_style l) HTA_Centre VTA_Centre
                   (_layoutlr_title l)
@@ -456,7 +446,7 @@ getLegendItemsLR l = (
     )
 
 -- | Render the given 'LegendItem's for a 'Layout'.
-renderLegend :: Layout x y -> [LegendItem] -> Renderable (LayoutPick x y)
+renderLegend :: Layout x y -> [LegendItem] -> Renderable (LayoutPick x y y)
 renderLegend l legItems = gridToRenderable g
   where
     g      = besideN [ tval $ mkLegend legItems
@@ -470,7 +460,7 @@ renderLegend l legItems = gridToRenderable g
                                            $ legendToRenderable (Legend ls lvs)
 
 -- | Render the given 'LegendItem's for a 'LayoutLR'.
-renderLegendLR :: LayoutLR x yl yr -> ([LegendItem],[LegendItem]) -> Renderable (LayoutLRPick x yl yr)
+renderLegendLR :: LayoutLR x yl yr -> ([LegendItem],[LegendItem]) -> Renderable (LayoutPick x yl yr)
 renderLegendLR l (lefts,rights) = gridToRenderable g
   where
     g      = besideN [ tval $ mkLegend lefts
@@ -482,22 +472,22 @@ renderLegendLR l (lefts,rights) = gridToRenderable g
         Just ls ->  case filter ((/="").fst) vals of
             []  -> emptyRenderable ;
             lvs -> addMargins (0,lm,lm,lm) $
-                       mapPickFn LayoutLRPick_Legend $ legendToRenderable (Legend ls lvs)
+                       mapPickFn LayoutPick_Legend $ legendToRenderable (Legend ls lvs)
 
 -- | Render the legend of a 'Layout'.
 layoutLegendsToRenderable :: (Ord x, Ord y) =>
-                              Layout x y -> Renderable (LayoutPick x y)
+                              Layout x y -> Renderable (LayoutPick x y y)
 layoutLegendsToRenderable l = renderLegend l (getLegendItems l)
 
 -- | Render the legend of a 'LayoutLR'.
 layoutLRLegendsToRenderable :: (Ord x, Ord yl, Ord yr) =>
-                              LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
+                              LayoutLR x yl yr -> Renderable (LayoutPick x yl yr)
 layoutLRLegendsToRenderable l = renderLegendLR l (getLegendItemsLR l)
 
 -- | Render the plot area of a 'Layout'. This consists of the 
 --   actual plot area with all plots, the axis and their titles.
 layoutPlotAreaToGrid :: forall x y. (Ord x, Ord y) =>
-                          Layout x y -> Grid (Renderable (LayoutPick x y))
+                          Layout x y -> Grid (Renderable (LayoutPick x y y))
 layoutPlotAreaToGrid l = layer2 `overlay` layer1
   where
     layer1 = aboveN
@@ -512,18 +502,18 @@ layoutPlotAreaToGrid l = layer2 `overlay` layer1
          , besideN [er,     er,  er,    btitle, er    ]
          ]
     
-    (ttitle, _  ) = atitle HTA_Centre VTA_Bottom   0 _layout_x_axis LayoutPick_XAxisTitle   
-    (btitle, _  ) = atitle HTA_Centre VTA_Top      0 _layout_x_axis LayoutPick_XAxisTitle
-    (ltitle, lam) = atitle HTA_Right  VTA_Centre 270 _layout_y_axis LayoutPick_YAxisTitle
-    (rtitle, _  ) = atitle HTA_Left   VTA_Centre 270 _layout_y_axis LayoutPick_YAxisTitle
+    (ttitle, _  ) = atitle HTA_Centre VTA_Bottom   0 _layout_x_axis LayoutPick_XTopAxisTitle
+    (btitle, _  ) = atitle HTA_Centre VTA_Top      0 _layout_x_axis LayoutPick_XBottomAxisTitle
+    (ltitle, lam) = atitle HTA_Right  VTA_Centre 270 _layout_y_axis LayoutPick_YLeftAxisTitle
+    (rtitle, _  ) = atitle HTA_Left   VTA_Centre 270 _layout_y_axis LayoutPick_YRightAxisTitle
 
     er = tval $ emptyRenderable
     
     atitle :: HTextAnchor -> VTextAnchor 
             -> Double 
             -> (Layout x y -> LayoutAxis z) 
-            -> (String -> LayoutPick x y) 
-            -> (Grid (Renderable (LayoutPick x y)), Grid (Renderable (LayoutPick x y)))
+            -> (String -> LayoutPick x y y) 
+            -> (Grid (Renderable (LayoutPick x y y)), Grid (Renderable (LayoutPick x y y)))
     atitle ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
       where
         label = tval $ mapPickFn pf $ rlabel tstyle ha va rot ttext
@@ -538,13 +528,13 @@ layoutPlotAreaToGrid l = layer2 `overlay` layer1
 
     (ba,la,ta,ra) = getAxes l
     baxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutPick_XAxis . axisToRenderable) ba
+                         (mapPickFn LayoutPick_XBottomAxis . axisToRenderable) ba
     taxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutPick_XAxis . axisToRenderable) ta
+                         (mapPickFn LayoutPick_XTopAxis . axisToRenderable) ta
     laxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutPick_YAxis . axisToRenderable) la
+                         (mapPickFn LayoutPick_YLeftAxis . axisToRenderable) la
     raxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutPick_YAxis . axisToRenderable) ra
+                         (mapPickFn LayoutPick_YRightAxis . axisToRenderable) ra
 
     tl = tval $ axesSpacer fst ta fst la
     bl = tval $ axesSpacer fst ba snd la
@@ -555,7 +545,7 @@ layoutPlotAreaToGrid l = layer2 `overlay` layer1
 --   actual plot area with all plots, the axis and their titles.
 layoutLRPlotAreaToGrid :: forall x yl yr. (Ord x, Ord yl, Ord yr) 
                        => LayoutLR x yl yr 
-                       -> Grid (Renderable (LayoutLRPick x yl yr))
+                       -> Grid (Renderable (LayoutPick x yl yr))
 layoutLRPlotAreaToGrid l = layer2 `overlay` layer1
   where
     layer1 = aboveN
@@ -570,19 +560,19 @@ layoutLRPlotAreaToGrid l = layer2 `overlay` layer1
          , besideN [er,     er,  er,    btitle, er,    er,  er       ]
          ]
     
-    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 _layoutlr_x_axis    LayoutLRPick_XAxisTitle   
-    (btitle,_) = atitle HTA_Centre VTA_Top      0 _layoutlr_x_axis LayoutLRPick_XAxisTitle
-    (ltitle,lam) = atitle HTA_Right  VTA_Centre 270 _layoutlr_left_axis   LayoutLRPick_YLeftAxisTitle
-    (rtitle,ram) = atitle HTA_Left   VTA_Centre 270 _layoutlr_right_axis  LayoutLRPick_YRightAxisTitle
+    (ttitle,_) = atitle HTA_Centre VTA_Bottom   0 _layoutlr_x_axis    LayoutPick_XTopAxisTitle
+    (btitle,_) = atitle HTA_Centre VTA_Top      0 _layoutlr_x_axis LayoutPick_XBottomAxisTitle
+    (ltitle,lam) = atitle HTA_Right  VTA_Centre 270 _layoutlr_left_axis   LayoutPick_YLeftAxisTitle
+    (rtitle,ram) = atitle HTA_Left   VTA_Centre 270 _layoutlr_right_axis  LayoutPick_YRightAxisTitle
 
     er = tval $ emptyRenderable
     
     atitle :: HTextAnchor -> VTextAnchor 
             -> Double 
             -> (LayoutLR x yl yr -> LayoutAxis z) 
-            -> (String -> LayoutLRPick x yl yr) 
-            -> ( Grid (Renderable (LayoutLRPick x yl yr))
-               , Grid (Renderable (LayoutLRPick x yl yr)) )
+            -> (String -> LayoutPick x yl yr) 
+            -> ( Grid (Renderable (LayoutPick x yl yr))
+               , Grid (Renderable (LayoutPick x yl yr)) )
     atitle ha va rot af pf = if ttext == "" then (er,er) else (label,gap)
       where
         label = tval $ mapPickFn pf $ rlabel tstyle ha va rot ttext
@@ -597,13 +587,13 @@ layoutLRPlotAreaToGrid l = layer2 `overlay` layer1
 
     (ba,la,ta,ra) = getAxesLR l
     baxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutLRPick_XAxis . axisToRenderable) ba
+                         (mapPickFn LayoutPick_XBottomAxis . axisToRenderable) ba
     taxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutLRPick_XAxis . axisToRenderable) ta
+                         (mapPickFn LayoutPick_XTopAxis . axisToRenderable) ta
     laxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutLRPick_YLeftAxis . axisToRenderable) la
+                         (mapPickFn LayoutPick_YLeftAxis . axisToRenderable) la
     raxis = tval $ maybe emptyRenderable
-                         (mapPickFn LayoutLRPick_YRightAxis . axisToRenderable) ra
+                         (mapPickFn LayoutPick_YRightAxis . axisToRenderable) ra
 
     tl = tval $ axesSpacer fst ta fst la
     bl = tval $ axesSpacer fst ba snd la
@@ -611,21 +601,21 @@ layoutLRPlotAreaToGrid l = layer2 `overlay` layer1
     br = tval $ axesSpacer snd ba snd ra
 
 -- | Render the plots of a 'Layout'.
-plotsToRenderable :: Layout x y -> Renderable (LayoutPick x y)
+plotsToRenderable :: Layout x y -> Renderable (LayoutPick x y y)
 plotsToRenderable l = Renderable {
         minsize = return (0,0),
         render  = renderPlots l
     }
 
 -- | Render the plots of a 'LayoutLR'.
-plotsToRenderableLR :: LayoutLR x yl yr -> Renderable (LayoutLRPick x yl yr)
+plotsToRenderableLR :: LayoutLR x yl yr -> Renderable (LayoutPick x yl yr)
 plotsToRenderableLR l = Renderable {
         minsize = return (0,0),
         render  = renderPlotsLR l
     }
 
 -- | Render the plots of a 'Layout' to a plot area of given size.
-renderPlots :: Layout x y -> RectSize -> ChartBackend (PickFn (LayoutPick x y))
+renderPlots :: forall x y . Layout x y -> RectSize -> ChartBackend (PickFn (LayoutPick x y y))
 renderPlots l sz@(w,h) = do
     when (not (_layout_grid_last l)) (renderGrids sz axes)
     withClipRegion (Rect (Point 0 0) (Point w h)) $ do
@@ -640,11 +630,11 @@ renderPlots l sz@(w,h) = do
     xr = (0, w)
     yr = (h, 0)
     
-    -- pickfn :: PickFn (LayoutPick x y)
+    pickfn :: PickFn (LayoutPick x y y)
     pickfn (Point x y) = do  -- Maybe monad
         xat <- mxat
         yat <- myat
-        return (LayoutPick_PlotArea (mapx xat x) (mapy yat y))
+        return (LayoutPick_PlotArea (mapx xat x) (mapy yat y) (mapy yat y))
       where
         mxat = case (bAxis,tAxis) of
             (Just at,_)       -> Just at
@@ -658,7 +648,7 @@ renderPlots l sz@(w,h) = do
         mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (optPairReverse rev yr) y
 
 -- | Render the plots of a 'LayoutLR' to a plot area of given size.
-renderPlotsLR :: LayoutLR x yl yr -> RectSize -> ChartBackend (PickFn (LayoutLRPick x yl yr))
+renderPlotsLR :: LayoutLR x yl yr -> RectSize -> ChartBackend (PickFn (LayoutPick x yl yr))
 renderPlotsLR l sz@(w,h) = do
     when (not (_layoutlr_grid_last l)) (renderGrids sz axes)
     withClipRegion (Rect (Point 0 0) (Point w h)) $ do
@@ -677,7 +667,7 @@ renderPlotsLR l sz@(w,h) = do
     pickfn (Point x y) = do  -- Maybe monad
         xat <- mxat
         (yatL,yatR) <- myats
-        return (LayoutLRPick_PlotArea (mapx xat x) (mapy yatL y) (mapy yatR y))
+        return (LayoutPick_PlotArea (mapx xat x) (mapy yatL y) (mapy yatR y))
       where
         mxat = case (bAxis,tAxis) of
             (Just at,_)       -> Just at
