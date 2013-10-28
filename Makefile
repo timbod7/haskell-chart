@@ -9,10 +9,7 @@ RUNGHC=GHC_PACKAGE_PATH=$(CURDIR)/cabal-dev/packages-7.6.3.conf: runghc
 GHCPKG=GHC_PACKAGE_PATH=$(CURDIR)/cabal-dev/packages-7.6.3.conf: ghc-pkg
 
 install: unregister
-	cd chart && $(CABAL) install --force-reinstalls
-	cd chart-cairo && $(CABAL) install --force-reinstalls 
-	cd chart-gtk && $(CABAL) install --force-reinstalls 
-	cd chart-diagrams && $(CABAL) install --force-reinstalls 
+	$(CABAL) install chart/ chart-cairo/ chart-gtk/ chart-diagrams/
 
 unregister:
 	-$(GHCPKG) unregister Chart-diagrams
