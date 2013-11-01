@@ -1,7 +1,8 @@
 *~
 *.hi
 *.o
-cabal-dev/
+cabal.sandbox.config
+.cabal-sandbox/
 chart/dist/
 chart-gtk/dist/
 chart-cairo/dist/
