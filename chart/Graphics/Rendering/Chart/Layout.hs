@@ -240,7 +240,7 @@ layoutPlotAreaToGrid l = buildGrid LayoutGridElements{
   lge_taxis = (tAxis,_laxis_title $ _layout_x_axis l, _laxis_title_style $ _layout_x_axis l),
   lge_baxis = (bAxis,_laxis_title $ _layout_x_axis l, _laxis_title_style $ _layout_x_axis l),
   lge_laxis = (lAxis,_laxis_title $ _layout_y_axis l, _laxis_title_style $ _layout_y_axis l),
-  lge_raxis = (rAxis,_laxis_title $ _layout_y_axis l, _laxis_title_style $ _layout_y_axis l),
+  lge_raxis = (rAxis,"", def),
   lge_margin = _layout_margin l
   }
   where
