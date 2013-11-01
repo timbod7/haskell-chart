@@ -11,7 +11,7 @@ import Prices(prices2)
 
 import Utils
 
-chart :: [(LocalTime,Double,Double)] -> Bool -> Double -> Renderable (LayoutLRPick LocalTime Double Double)
+chart :: [(LocalTime,Double,Double)] -> Bool -> Double -> Renderable (LayoutPick LocalTime Double Double)
 chart prices showMinMax lwidth = layoutLRToRenderable layout
   where
 

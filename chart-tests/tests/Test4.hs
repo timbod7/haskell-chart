@@ -8,7 +8,7 @@ import Data.Default.Class
 
 import Utils
 
-chart :: Bool -> Bool -> Renderable (LayoutPick Double Double)
+chart :: Bool -> Bool -> Renderable (LayoutPick Double Double Double)
 chart xrev yrev = layoutToRenderable layout
   where
 

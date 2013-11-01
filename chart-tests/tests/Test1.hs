@@ -9,7 +9,7 @@ import Data.Default.Class
 
 import Utils
 
-chart :: Double -> Renderable (LayoutPick Double Double)
+chart :: Double -> Renderable (LayoutPick Double Double Double)
 chart lwidth = layoutToRenderable (layout lwidth)
 
 layout :: Double -> Layout Double Double

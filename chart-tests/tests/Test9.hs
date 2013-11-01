@@ -8,7 +8,7 @@ import Data.Default.Class
 
 import Utils
 
-chart :: Bool -> Renderable (LayoutPick PlotIndex Double)
+chart :: Bool -> Renderable (LayoutPick PlotIndex Double Double)
 chart borders = layoutToRenderable layout
  where
   layout = 

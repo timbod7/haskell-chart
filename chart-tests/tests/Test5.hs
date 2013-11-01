@@ -12,7 +12,7 @@ import Utils
 ----------------------------------------------------------------------
 -- Example thanks to Russell O'Connor
 
-chart :: Double -> Renderable (LayoutPick Double LogValue)
+chart :: Double -> Renderable (LayoutPick Double LogValue LogValue)
 chart lwidth = layoutToRenderable (layout 1001 (trial bits) :: Layout Double LogValue)
   where
     bits = randoms $ mkStdGen 0

@@ -5,7 +5,7 @@ import Graphics.Rendering.Chart.Simple
 
 import Utils
 
-chart :: Renderable (LayoutPick Double Double)
+chart :: Renderable (LayoutPick Double Double Double)
 chart = layoutToRenderable (plotLayout pp) {_layout_title="Graphics.Rendering.Chart.Simple example"}
   where
     pp = plot xs sin "sin"

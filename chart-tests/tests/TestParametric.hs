@@ -8,7 +8,7 @@ import Data.Default.Class
 
 import Utils
 
-chart :: Double -> Renderable (LayoutPick Double Double)
+chart :: Double -> Renderable (LayoutPick Double Double Double)
 chart lwidth = layoutToRenderable layout
   where
     circle = [ (r a * sin (a*dr),r a * cos (a*dr)) | a <- [0,0.5..360::Double] ]

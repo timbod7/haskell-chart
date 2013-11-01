@@ -14,7 +14,7 @@ import Utils
 green1 = opaque $ sRGB 0.5 1 0.5
 blue1 = opaque $ sRGB 0.5 0.5 1
 
-chart :: Renderable (LayoutPick LocalTime Double)
+chart :: Renderable (LayoutPick LocalTime Double Double)
 chart = layoutToRenderable layout
   where
     price1 = plot_fillbetween_style .~ solidFillStyle green1

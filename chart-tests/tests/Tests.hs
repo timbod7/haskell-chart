@@ -43,7 +43,7 @@ chooseLineWidth SVG = 0.25
 
 fwhite = solidFillStyle $ opaque white
 
-test1a :: Double -> Renderable (LayoutPick Double Double)
+test1a :: Double -> Renderable (LayoutPick Double Double Double)
 test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3],
@@ -99,7 +99,7 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
     rf = tval . layoutToRenderable
 
 ----------------------------------------------------------------------
-test4d :: OutputType -> Renderable (LayoutPick Double Double)
+test4d :: OutputType -> Renderable (LayoutPick Double Double Double)
 test4d otype = layoutToRenderable layout
   where
 
@@ -123,7 +123,7 @@ test4d otype = layoutToRenderable layout
 
 ----------------------------------------------------------------------
 
-test9 :: PlotBarsAlignment -> OutputType -> Renderable (LayoutPick PlotIndex Double)
+test9 :: PlotBarsAlignment -> OutputType -> Renderable (LayoutPick PlotIndex Double Double)
 test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g0, rf g1, rf g2],
@@ -185,7 +185,7 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
 
 -------------------------------------------------------------------------------
 
-test10 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable (LayoutLRPick LocalTime Double Double)
+test10 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable (LayoutPick LocalTime Double Double)
 test10 prices otype = layoutLRToRenderable layout
   where
 
@@ -275,7 +275,7 @@ test11b otype = test11_ f
 -- More of an example that a test:
 -- configuring axes explicitly configured axes
 
-test12 :: OutputType -> Renderable (LayoutPick Int Int)
+test12 :: OutputType -> Renderable (LayoutPick Int Int Int)
 test12 otype = layoutToRenderable layout
   where
     vs1 :: [(Int,Int)]

@@ -14,7 +14,7 @@ import Utils
 
 -- demonstrate AreaSpots4D
 
-chart :: Double -> Renderable (LayoutPick LocalTime Double)
+chart :: Double -> Renderable (LayoutPick LocalTime Double Double)
 chart lwidth = layoutToRenderable layout
   where
     layout = layout_title .~"Price History"
