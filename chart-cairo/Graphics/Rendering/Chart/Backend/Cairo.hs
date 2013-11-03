@@ -1,20 +1,27 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- | The backend to render charts with cairo.
 module Graphics.Rendering.Chart.Backend.Cairo
-  ( CairoBackend(..)
+  ( FileFormat(..)
+  , FileOptions(..)
   , runBackend
   , renderToFile
   , defaultEnv
 
-  , renderableToPNGFile
-  , renderableToPDFFile
-  , renderableToPSFile
-  , renderableToSVGFile
+  , fo_size
+  , fo_format
+
+  , cRenderToFile
+
+  , renderableToPNGFile  -- deprecated
+  , renderableToPDFFile  -- deprecated
+  , renderableToPSFile   -- deprecated
+  , renderableToSVGFile  -- deprecated
   
-  , sparkLineToPDF
-  , sparkLineToPNG
+  , sparkLineToPDF       -- deprecated
+  , sparkLineToPNG       -- deprecated
   ) where
 
 import Data.Default.Class
@@ -24,6 +31,7 @@ import Data.Colour.SRGB
 import Data.List (unfoldr)
 import Data.Monoid
 
+import Control.Lens(makeLenses)
 import Control.Monad.Reader
 import Control.Monad.Operational
 
@@ -162,52 +170,74 @@ cWithClipRegion env r p = preserveCState0 $ do
 -- Output rendering functions
 -- -----------------------------------------------------------------------
 
--- | The cairo backend to use.
-data CairoBackend = CairoPNG -- ^ The PNG backend.
-                  | CairoSVG -- ^ The SVG backend.
-                  | CairoPS  -- ^ The postscript backend.
-                  | CairoPDF -- ^ The PDF backend.
+data FileFormat = PNG
+                | SVG
+                | PS
+                | PDF
 
--- | Render to a file of given width and height (in that order) using
---   the given cairo backend.
-renderToFile :: ChartBackend a -> CairoBackend -> Int -> Int -> FilePath -> IO ()
-renderToFile m b = case b of
-  CairoPNG -> \w h f -> cRenderToPNGFile m w h f >> return ()
-  CairoSVG -> cRenderToSVGFile m
-  CairoPS  -> cRenderToPSFile  m
-  CairoPDF -> cRenderToPDFFile m
+data FileOptions = FileOptions {
+  _fo_size :: (Int,Int),
+  _fo_format :: FileFormat
+}
 
--- | Output the given renderable to a PNG file of the specifed size
---   (in pixels), to the specified file.
-renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
-renderableToPNGFile r width height path =
-    cRenderToPNGFile cr width height path
+instance Default FileOptions where
+  def =  FileOptions (800,600) PNG
+
+-- | Generate an image file for the given renderable, at the specified path. Size and
+-- format are set through the `FileOptions` parameter.
+renderToFile :: FileOptions -> Renderable a -> FilePath -> IO (PickFn a)
+renderToFile fo r path = cRenderToFile fo cr path
   where
     cr = render r (fromIntegral width, fromIntegral height)
+    (width,height) = _fo_size fo
+
+-- | Generate an image file for the given drawing instructions, at the specified path. Size and
+-- format are set through the `FileOptions` parameter.
+cRenderToFile :: FileOptions -> ChartBackend a -> FilePath -> IO a
+cRenderToFile fo cr path = do
+    case (_fo_format fo) of
+      PS -> write C.withPSSurface
+      PDF -> write C.withPDFSurface
+      SVG -> write C.withSVGSurface
+      PNG -> writePNG
+  where
+    write withSurface = do
+      withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
+      pf <- C.renderWith result $ do
+        pf <- runBackend (defaultEnv vectorAlignmentFns) cr
+        C.showPage
+        return pf
+      C.surfaceFinish result
+      return pf
+
+    writePNG = C.withImageSurface C.FormatARGB32 width height $ \result -> do
+      pf <- C.renderWith result $ runBackend (defaultEnv bitmapAlignmentFns) cr
+      C.surfaceWriteToPNG result path
+      return pf
+
+    (width,height) = _fo_size fo
+
+{-# DEPRECATED renderableToPNGFile "use renderToFile" #-}
+renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
+renderableToPNGFile r width height path = renderToFile (FileOptions (width,height) PNG) r path
 
 -- | Output the given renderable to a PDF file of the specifed size
 --   (in points), to the specified file.
+{-# DEPRECATED renderableToPDFFile "use renderToFile" #-}
 renderableToPDFFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToPDFFile r width height path =
-    cRenderToPDFFile cr width height path
-  where
-    cr = render r (fromIntegral width, fromIntegral height)
+renderableToPDFFile r width height path = void $ renderToFile (FileOptions (width,height) PDF) r path
 
 -- | Output the given renderable to a postscript file of the specifed size
 --   (in points), to the specified file.
+{-# DEPRECATED renderableToPSFile "use renderToFile" #-}
 renderableToPSFile  :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToPSFile r width height path  = 
-    cRenderToPSFile cr width height path
-  where
-    cr = render r (fromIntegral width, fromIntegral height)
+renderableToPSFile r width height path  = void $ renderToFile (FileOptions (width,height) PS) r path
 
 -- | Output the given renderable to an SVG file of the specifed size
 --   (in points), to the specified file.
+{-# DEPRECATED renderableToSVGFile "use renderToFile" #-}
 renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToSVGFile r width height path =
-    cRenderToSVGFile cr width height path
-  where
-    cr = render r (fromIntegral width, fromIntegral height)
+renderableToSVGFile r width height path = void $ renderToFile (FileOptions (width,height) SVG) r path
 
 -- -----------------------------------------------------------------------
 -- Type Conversions: Chart -> Cairo
@@ -289,29 +319,6 @@ cArc p r a1 a2 = C.arc (p_x p) (p_y p) r a1 a2
 cArcNegative :: Point -> Double -> Double -> Double -> C.Render ()
 cArcNegative p r a1 a2 = C.arcNegative (p_x p) (p_y p) r a1 a2
 
-cRenderToPNGFile :: ChartBackend a -> Int -> Int -> FilePath -> IO a
-cRenderToPNGFile cr width height path = 
-    C.withImageSurface C.FormatARGB32 width height $ \result -> do
-    a <- C.renderWith result $ runBackend' (defaultEnv bitmapAlignmentFns) cr 
-    C.surfaceWriteToPNG result path
-    return a
-
-cRenderToPDFFile :: ChartBackend a -> Int -> Int -> FilePath -> IO ()
-cRenderToPDFFile = cRenderToFile C.withPDFSurface
-
-cRenderToPSFile  ::  ChartBackend a -> Int -> Int -> FilePath -> IO ()
-cRenderToPSFile  = cRenderToFile C.withPSSurface
-
-cRenderToSVGFile  ::  ChartBackend a -> Int -> Int -> FilePath -> IO ()
-cRenderToSVGFile  = cRenderToFile C.withSVGSurface
-
-cRenderToFile withSurface cr width height path = 
-    withSurface path (fromIntegral width) (fromIntegral height) $ \result -> do
-    C.renderWith result $ do
-      runBackend' (defaultEnv vectorAlignmentFns) cr
-      C.showPage
-    C.surfaceFinish result
-
 -- -----------------------------------------------------------------------
 -- Simple Instances
 -- -----------------------------------------------------------------------
@@ -336,14 +343,13 @@ instance PlotPNGType (IO a) where
 -- -----------------------------------------------------------------------
 
 -- | Generate a PNG for the sparkline, using its natural size.
+{-# DEPRECATED sparkLineToPNG "use renderToFile" #-}
 sparkLineToPNG :: FilePath -> SparkLine -> IO (PickFn ())
-sparkLineToPNG fp sp = renderableToPNGFile (sparkLineToRenderable sp)
-                                           (sparkWidth sp)
-                                           (so_height (sl_options sp))
-                                           fp
+sparkLineToPNG fp sp = renderToFile (FileOptions (sparkSize sp) PNG) (sparkLineToRenderable sp) fp
+
 -- | Generate a PDF for the sparkline, using its natural size.
+{-# DEPRECATED sparkLineToPDF "use renderToFile" #-}
 sparkLineToPDF :: FilePath -> SparkLine -> IO ()
-sparkLineToPDF fp sp = renderableToPDFFile (sparkLineToRenderable sp)
-                                           (sparkWidth sp)
-                                           (so_height (sl_options sp))
-                                           fp
+sparkLineToPDF fp sp = void $ renderToFile (FileOptions (sparkSize sp) PDF) (sparkLineToRenderable sp) fp
+
+$( makeLenses ''FileOptions )

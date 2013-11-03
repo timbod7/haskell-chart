@@ -20,9 +20,9 @@ main1 :: [String] -> IO ()
 main1 args = do
   -- Only load the environment once, to speed things up.
   env <- defaultEnv bitmapAlignmentFns 500 500
-  let renderDiagram :: (String, (Int, Int), T.OutputType -> Renderable ()) -> IO ()
+  let renderDiagram :: (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
       renderDiagram (n,(w,h),ir) = do
-        renderableToEPSFile' (ir T.PDF) (env { envOutputSize = (fromIntegral w, fromIntegral h) }) (n ++ ".eps")
+        renderableToEPSFile' (ir 0.25) (env { envOutputSize = (fromIntegral w, fromIntegral h) }) (n ++ ".eps")
         return ()
   showTests (fmap (\(x,_,_) -> x) allTests) renderDiagram
   

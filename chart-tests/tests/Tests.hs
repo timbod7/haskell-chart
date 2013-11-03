@@ -34,12 +34,7 @@ import qualified Test17
 import qualified TestParametric
 import qualified TestSparkLines
 
-data OutputType = PNG | PS | PDF | SVG
-
-chooseLineWidth PNG = 1.0
-chooseLineWidth PDF = 0.25
-chooseLineWidth PS = 0.25
-chooseLineWidth SVG = 0.25
+type LineWidth = Double
 
 fwhite = solidFillStyle $ opaque white
 
@@ -99,8 +94,8 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
     rf = tval . layoutToRenderable
 
 ----------------------------------------------------------------------
-test4d :: OutputType -> Renderable (LayoutPick Double Double Double)
-test4d otype = layoutToRenderable layout
+test4d :: LineWidth -> Renderable (LayoutPick Double Double Double)
+test4d lw = layoutToRenderable layout
   where
 
     points = plot_points_style .~ filledCircles 3 (opaque red)
@@ -123,8 +118,8 @@ test4d otype = layoutToRenderable layout
 
 ----------------------------------------------------------------------
 
-test9 :: PlotBarsAlignment -> OutputType -> Renderable (LayoutPick PlotIndex Double Double)
-test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
+test9 :: PlotBarsAlignment -> LineWidth -> Renderable (LayoutPick PlotIndex Double Double)
+test9 alignment lw = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [rf g0, rf g1, rf g2],
                                  besideN [rf g3, rf g4, rf g5] ]
@@ -185,11 +180,11 @@ test9 alignment otype = fillBackground fwhite $ (gridToRenderable t)
 
 -------------------------------------------------------------------------------
 
-test10 :: [(LocalTime,Double,Double)] -> OutputType -> Renderable (LayoutPick LocalTime Double Double)
-test10 prices otype = layoutLRToRenderable layout
+test10 :: [(LocalTime,Double,Double)] -> LineWidth -> Renderable (LayoutPick LocalTime Double Double)
+test10 prices lw = layoutLRToRenderable layout
   where
 
-    lineStyle c = line_width .~ 3 * chooseLineWidth otype
+    lineStyle c = line_width .~ 3 * lw
                 $ line_color .~ c
                 $ def ^. plot_lines_style
 
@@ -252,16 +247,16 @@ test11_ f = f layout1 layout2
             $ layout_y_axis . laxis_title .~ "double values"
             $ def
 
-test11a :: OutputType -> Renderable ()
-test11a otype = test11_ f
+test11a :: LineWidth -> Renderable ()
+test11a lw = test11_ f
    where
      f l1 l2 = renderStackedLayouts 
              $ slayouts_layouts .~ [StackedLayout l1, StackedLayout l2]
              $ slayouts_compress_legend .~ False
              $ def
  
-test11b :: OutputType -> Renderable ()
-test11b otype = test11_ f
+test11b :: LineWidth -> Renderable ()
+test11b lw = test11_ f
   where
     f l1 l2 = renderStackedLayouts 
             $ slayouts_layouts .~ [StackedLayout l1', StackedLayout l2]
@@ -275,8 +270,8 @@ test11b otype = test11_ f
 -- More of an example that a test:
 -- configuring axes explicitly configured axes
 
-test12 :: OutputType -> Renderable (LayoutPick Int Int Int)
-test12 otype = layoutToRenderable layout
+test12 :: LineWidth -> Renderable (LayoutPick Int Int Int)
+test12 lw = layoutToRenderable layout
   where
     vs1 :: [(Int,Int)]
     vs1 = [ (2,10), (3,40), (8,400), (12,60) ]
@@ -312,7 +307,7 @@ test12 otype = layoutToRenderable layout
 -------------------------------------------------------------------------------
 -- Plot annotations test
 
-test13 otype = fillBackground fwhite $ (gridToRenderable t)
+test13 lw = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [tval (annotated h v) | h <- hs] | v <- vs ]
     hs = [HTA_Left, HTA_Centre, HTA_Right]
@@ -337,7 +332,7 @@ test13 otype = fillBackground fwhite $ (gridToRenderable t)
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
-misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
+misc1 rot lw = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [tval (lb h v) | h <- hs] | v <- vs ]
     lb h v = addMargins (20,20,20,20) $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s
@@ -360,59 +355,59 @@ misc1 rot otype = fillBackground fwhite $ (gridToRenderable t)
 ----------------------------------------------------------------------
 stdSize = (640,480)
 
-allTests :: [ (String, (Int,Int), OutputType -> Renderable ()) ]
+allTests :: [ (String, (Int,Int), LineWidth -> Renderable ()) ]
 allTests =
-     [ ("test1",  stdSize, \o -> simple $ Test1.chart (chooseLineWidth o) )
-     , ("test1a", stdSize, \o -> simple $ test1a (chooseLineWidth o) )
-     , ("test2a", stdSize, \o -> simple $ Test2.chart prices    False (chooseLineWidth o))
-     , ("test2b", stdSize, \o -> simple $ Test2.chart prices1   False (chooseLineWidth o))
-     , ("test2c", stdSize, \o -> simple $ Test2.chart prices2   False (chooseLineWidth o))
-     , ("test2d", stdSize, \o -> simple $ Test2.chart prices5   True  (chooseLineWidth o))
-     , ("test2e", stdSize, \o -> simple $ Test2.chart prices6   True  (chooseLineWidth o))
-     , ("test2f", stdSize, \o -> simple $ Test2.chart prices7   True  (chooseLineWidth o))
-     , ("test2g", stdSize, \o -> simple $ Test2.chart prices3   False (chooseLineWidth o))
-     , ("test2h", stdSize, \o -> simple $ Test2.chart prices8   True  (chooseLineWidth o))
-     , ("test2i", stdSize, \o -> simple $ Test2.chart prices9   True  (chooseLineWidth o))
-     , ("test2j", stdSize, \o -> simple $ Test2.chart prices10  True  (chooseLineWidth o))
-     , ("test2k", stdSize, \o -> simple $ Test2.chart prices10a True  (chooseLineWidth o))
-     , ("test2m", stdSize, \o -> simple $ Test2.chart prices11  True  (chooseLineWidth o))
-     , ("test2n", stdSize, \o -> simple $ Test2.chart prices10b True  (chooseLineWidth o))
-     , ("test2o", stdSize, \o -> simple $ Test2.chart prices12  True  (chooseLineWidth o))
-     , ("test2p", stdSize, \o -> simple $ Test2.chart prices13  True  (chooseLineWidth o))
-     , ("test2q", stdSize, \o -> simple $ Test2.chart prices13a True  (chooseLineWidth o))
-     , ("test2r", stdSize, \o -> simple $ Test2.chart prices13b True  (chooseLineWidth o))
-     , ("test2s", stdSize, \o -> simple $ Test2.chart prices14  True  (chooseLineWidth o))
-     , ("test2t", stdSize, \o -> simple $ Test2.chart prices14a True  (chooseLineWidth o))
-     , ("test2u", stdSize, \o -> simple $ Test2.chart prices14b True  (chooseLineWidth o))
-     , ("test2v", stdSize, \o -> simple $ Test2.chart prices14c True  (chooseLineWidth o))
-     , ("test2w", stdSize, \o -> simple $ Test2.chart prices14d True  (chooseLineWidth o))
+     [ ("test1",  stdSize, \lw -> simple $ Test1.chart lw )
+     , ("test1a", stdSize, \lw -> simple $ test1a lw )
+     , ("test2a", stdSize, \lw -> simple $ Test2.chart prices    False lw)
+     , ("test2b", stdSize, \lw -> simple $ Test2.chart prices1   False lw)
+     , ("test2c", stdSize, \lw -> simple $ Test2.chart prices2   False lw)
+     , ("test2d", stdSize, \lw -> simple $ Test2.chart prices5   True  lw)
+     , ("test2e", stdSize, \lw -> simple $ Test2.chart prices6   True  lw)
+     , ("test2f", stdSize, \lw -> simple $ Test2.chart prices7   True  lw)
+     , ("test2g", stdSize, \lw -> simple $ Test2.chart prices3   False lw)
+     , ("test2h", stdSize, \lw -> simple $ Test2.chart prices8   True  lw)
+     , ("test2i", stdSize, \lw -> simple $ Test2.chart prices9   True  lw)
+     , ("test2j", stdSize, \lw -> simple $ Test2.chart prices10  True  lw)
+     , ("test2k", stdSize, \lw -> simple $ Test2.chart prices10a True  lw)
+     , ("test2m", stdSize, \lw -> simple $ Test2.chart prices11  True  lw)
+     , ("test2n", stdSize, \lw -> simple $ Test2.chart prices10b True  lw)
+     , ("test2o", stdSize, \lw -> simple $ Test2.chart prices12  True  lw)
+     , ("test2p", stdSize, \lw -> simple $ Test2.chart prices13  True  lw)
+     , ("test2q", stdSize, \lw -> simple $ Test2.chart prices13a True  lw)
+     , ("test2r", stdSize, \lw -> simple $ Test2.chart prices13b True  lw)
+     , ("test2s", stdSize, \lw -> simple $ Test2.chart prices14  True  lw)
+     , ("test2t", stdSize, \lw -> simple $ Test2.chart prices14a True  lw)
+     , ("test2u", stdSize, \lw -> simple $ Test2.chart prices14b True  lw)
+     , ("test2v", stdSize, \lw -> simple $ Test2.chart prices14c True  lw)
+     , ("test2w", stdSize, \lw -> simple $ Test2.chart prices14d True  lw)
      , ("test3",  stdSize, const $ simple Test3.chart)
      , ("test4a", stdSize, const $ simple (Test4.chart False False))
      , ("test4b", stdSize, const $ simple (Test4.chart True False))
      , ("test4c", stdSize, const $ simple (Test4.chart False True))
-     , ("test4d", stdSize, \o -> simple $ test4d o)
-     , ("test5",  stdSize, \o -> simple $ Test5.chart (chooseLineWidth o))
+     , ("test4d", stdSize, \lw -> simple $ test4d lw)
+     , ("test5",  stdSize, \lw -> simple $ Test5.chart lw)
      , ("test6",  stdSize, const $ simple Test6.chart)
      , ("test7",  stdSize, const $ simple Test7.chart)
      , ("test8",  stdSize, const $ simple Test8.chart)
      , ("test9",  stdSize, const $ simple (Test9.chart True))
      , ("test9b", stdSize, const $ simple (Test9.chart False))
-     , ("test9c", stdSize, \o -> simple $ test9 BarsCentered o)
-     , ("test9l", stdSize, \o -> simple $ test9 BarsLeft o)
-     , ("test9r", stdSize, \o -> simple $ test9 BarsRight o)
-     , ("test10", stdSize, \o -> simple $ test10 prices1 o)
-     , ("test11a", stdSize, \o -> simple $ test11a o)
-     , ("test11b", stdSize, \o -> simple $ test11b o)
-     , ("test12", stdSize, \o -> simple $ test12 o)
-     , ("test13", stdSize, \o -> simple $ test13 o)
-     , ("test14", stdSize, \o -> simple $ Test14.chart (chooseLineWidth o) )
-     , ("test14a", stdSize, \o -> simple $ Test14a.chart (chooseLineWidth o) )
+     , ("test9c", stdSize, \lw -> simple $ test9 BarsCentered lw)
+     , ("test9l", stdSize, \lw -> simple $ test9 BarsLeft lw)
+     , ("test9r", stdSize, \lw -> simple $ test9 BarsRight lw)
+     , ("test10", stdSize, \lw -> simple $ test10 prices1 lw)
+     , ("test11a", stdSize, \lw -> simple $ test11a lw)
+     , ("test11b", stdSize, \lw -> simple $ test11b lw)
+     , ("test12", stdSize, \lw -> simple $ test12 lw)
+     , ("test13", stdSize, \lw -> simple $ test13 lw)
+     , ("test14", stdSize, \lw -> simple $ Test14.chart lw )
+     , ("test14a", stdSize, \lw -> simple $ Test14a.chart lw )
      , ("test15a", stdSize, const $ simple (Test15.chart (LORows 2)))
      , ("test15b", stdSize, const $ simple (Test15.chart (LOCols 2)))
-     , ("test17", stdSize,  \o -> simple $ Test17.chart (chooseLineWidth o))
+     , ("test17", stdSize,  \lw -> simple $ Test17.chart lw)
      , ("misc1",  stdSize, setPickFn nullPickFn . misc1 0)
      , ("misc1a", stdSize, setPickFn nullPickFn . misc1 45)
-     , ("parametric", stdSize, \o -> simple $ TestParametric.chart (chooseLineWidth o) )
+     , ("parametric", stdSize, \lw -> simple $ TestParametric.chart lw )
      , ("sparklines", TestSparkLines.chartSize, const $ simple TestSparkLines.chart )
      ]
   where simple :: Renderable a -> Renderable ()
@@ -420,13 +415,16 @@ allTests =
 
 
 
-showTests :: [String] -> ((String,(Int,Int),OutputType -> Renderable ()) -> IO()) -> IO ()
+showTests :: [String] -> ((String,(Int,Int),LineWidth -> Renderable ()) -> IO()) -> IO ()
 showTests tests ofn = mapM_ doTest (filter (match tests) allTests)
    where
      doTest (s,size,f) = do
        putStrLn (s ++ "... ")
        ofn (s,size,f)
      
+
+getTests :: [String] -> [(String,(Int,Int),LineWidth -> Renderable ())]
+getTests names = filter (match names) allTests
 
 match :: [String] -> (String,s,a) -> Bool
 match [] t = True

@@ -20,6 +20,7 @@ library
                , colour >= 2.2.1
                , data-default-class < 0.1
                , operational >= 0.2.2
+               , lens >= 3.9
                , Chart >= 1.0
 
   Exposed-modules:
