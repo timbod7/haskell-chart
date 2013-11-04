@@ -16,7 +16,7 @@ library
   Build-depends: base >= 3 && < 5
                , old-locale
                , time, mtl, array
-               , lens >= 3.9
+               , lens >= 3.9 && < 3.11
                , colour >= 2.2.1 && < 2.4
                , data-default-class < 0.1
                , operational >= 0.2.2 && < 0.3
