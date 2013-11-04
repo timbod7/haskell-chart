@@ -1,5 +1,5 @@
 Name: Chart-gtk
-Version: 1.0
+Version: 1.1
 License: BSD3
 License-file: LICENSE
 Copyright: Tim Docker, 2006-2010
@@ -20,8 +20,8 @@ library
                , colour >= 2.2.1 && < 2.4
                , colour >= 2.2.1
                , gtk >= 0.9.11
-               , Chart >= 1.0
-               , Chart-cairo >= 1.0
+               , Chart >= 1.1 && < 1.2
+               , Chart-cairo >= 1.1 && < 1.2
 
   Exposed-modules:
         Graphics.Rendering.Chart.Gtk

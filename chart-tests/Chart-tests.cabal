@@ -1,5 +1,5 @@
 Name: Chart-tests
-Version: 1.0
+Version: 1.1
 License: BSD3
 License-file: LICENSE
 Copyright: Tim Docker, 2006-2010
@@ -70,8 +70,8 @@ Executable ChartsTestCairo
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
-      Chart           >= 1.0,
-      Chart-cairo     >= 1.0
+      Chart           >= 1.1 && < 1.2,
+      Chart-cairo     >= 1.1 && < 1.2
   if !flag(cairo)
     Buildable: False
   Main-is: Cairo.hs
@@ -95,9 +95,9 @@ Executable ChartsTestGtk
       old-time        >= 1.0,
       gtk             >= 0.9.11,
       cairo           >= 0.9.11,
-      Chart           >= 1.0,
-      Chart-gtk       >= 1.0,
-      Chart-cairo      >= 1.0
+      Chart           >= 1.1 && < 1.2,
+      Chart-gtk       >= 1.1 && < 1.2,
+      Chart-cairo     >= 1.1 && < 1.2
   if !flag(gtk)
     Buildable: False
   Main-is: TestPicking.hs
@@ -119,8 +119,8 @@ Executable ChartsTestDiagramsCairo
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
-      Chart           >= 1.0,
-      Chart-diagrams  >= 1.0,
+      Chart           >= 1.1 && < 1.2,
+      Chart-diagrams  >= 1.1 && < 1.2,
       diagrams-cairo  >= 0.7 && < 0.8,
       diagrams-lib    >= 0.7 && < 0.8,
       diagrams-core   >= 0.7 && < 0.8
@@ -147,8 +147,8 @@ Executable ChartsTestDiagramsSVG
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
-      Chart           >= 1.0,
-      Chart-diagrams  >= 1.0,
+      Chart           >= 1.1 && < 1.2,
+      Chart-diagrams  >= 1.1 && < 1.2,
       diagrams-svg    >= 0.8 && < 0.9,
       diagrams-lib    >= 0.7 && < 0.8,
       diagrams-core   >= 0.7 && < 0.8
@@ -173,8 +173,8 @@ Executable ChartsTestDiagramsEPS
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
-      Chart           >= 1.0,
-      Chart-diagrams  >= 1.0,
+      Chart           >= 1.1 && < 1.2,
+      Chart-diagrams  >= 1.1 && < 1.2,
       diagrams-postscript    >= 0.7 && < 0.8,
       diagrams-lib    >= 0.7 && < 0.8,
       diagrams-core   >= 0.7 && < 0.8
@@ -200,8 +200,8 @@ Executable ChartsTestDrawingCairo
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
       cairo           >= 0.9.11,
-      Chart           >= 1.0,
-      Chart-cairo     >= 1.0
+      Chart           >= 1.1 && < 1.2,
+      Chart-cairo     >= 1.1 && < 1.2
   if !flag(cairo)
     Buildable: False
   Main-is: Cairo.hs
@@ -223,8 +223,8 @@ Executable ChartsTestDrawingDiagramsCairo
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
-      Chart           >= 1.0,
-      Chart-diagrams  >= 1.0,
+      Chart           >= 1.1 && < 1.2,
+      Chart-diagrams  >= 1.1 && < 1.2,
       diagrams-cairo  >= 0.7 && < 0.8,
       diagrams-lib    >= 0.7 && < 0.8,
       diagrams-core   >= 0.7 && < 0.8
@@ -250,9 +250,9 @@ Executable ChartsTestCompareFonts
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
       cairo           >= 0.9.11,
-      Chart           >= 1.0,
-      Chart-diagrams  >= 1.0,
-      Chart-cairo     >= 1.0,
+      Chart           >= 1.1 && < 1.2,
+      Chart-diagrams  >= 1.1 && < 1.2,
+      Chart-cairo     >= 1.1 && < 1.2,
       diagrams-cairo  >= 0.7 && < 0.8,
       diagrams-lib    >= 0.7 && < 0.8,
       diagrams-core   >= 0.7 && < 0.8
