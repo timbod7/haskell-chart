@@ -142,6 +142,8 @@ Executable ChartsTestDiagramsSVG
       colour          >= 2.2.1,
       lens            >= 3.9,
       data-default-class < 0.1,
+      bytestring >= 0.9 && < 1.0,
+      blaze-svg >= 0.3.3,
       random          >= 1.0,
       containers      >= 0.5,
       old-time        >= 1.0,

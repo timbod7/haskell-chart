@@ -18,11 +18,15 @@ main = do
 
 main1 :: [String] -> IO ()
 main1 args = do
-  -- Only load the environment once, to speed things up.
-  env <- defaultEnv bitmapAlignmentFns 500 500
-  let renderDiagram :: (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
-      renderDiagram (n,(w,h),ir) = do
-        renderableToEPSFile' (ir 0.25) (env { envOutputSize = (fromIntegral w, fromIntegral h) }) (n ++ ".eps")
-        return ()
-  showTests (fmap (\(x,_,_) -> x) allTests) renderDiagram
-  
+    -- We don't use the renderableToFile function as we want to construct the
+    -- environment once for speed
+    env0 <- defaultEnv bitmapAlignmentFns 0 0
+    showTests (fmap (\(x,_,_) -> x) allTests) (renderDiagram env0)
+  where
+    renderDiagram :: DEnv -> (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
+    renderDiagram env0 (n,(w,h),ir) = do
+      let cr = render (ir 0.25) (fromIntegral w, fromIntegral h)
+          env = env0{ envOutputSize = (fromIntegral w, fromIntegral h) }
+          path = n ++ ".eps"
+      cBackendToEPSFile cr env path
+      putStrLn (path ++ "...")              

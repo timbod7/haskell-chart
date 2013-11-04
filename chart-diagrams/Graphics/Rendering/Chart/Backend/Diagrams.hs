@@ -1,6 +1,6 @@
-
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- | The backend to render charts with the diagrams library.
 module Graphics.Rendering.Chart.Backend.Diagrams
@@ -9,24 +9,36 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , defaultEnv
   , customFontEnv
   , DEnv(..), DFont
-  
-  -- * EPS Utility Functions.
-  , renderableToEPSFile
-  , renderableToEPSFile'
+
+  -- * File Output Functons
+  , FileFormat(..)
+  , FileOptions(..)
+  , fo_size
+  , fo_format
+  , fo_customFonts
+  , renderableToFile
+  , cBackendToFile
+
+  -- * EPS Utility Functions
+  , cBackendToEPSFile
+  , renderableToEPSFile            -- deprecated
+  , renderableToEPSFile'           -- deprecated
   
   -- * SVG Utility Functions
+  , cBackendToSVG
+  , cBackendToEmbeddedFontSVG  
   , renderableToSVG
   , renderableToSVG'
-  , renderableToSVGFile
-  , renderableToSVGFile'
+  , renderableToSVGFile            -- deprecated
+  , renderableToSVGFile'           -- deprecated
   , renderableToSVGString
   , renderableToSVGString'
   
   -- * SVG Embedded Font Utility Functions
   , renderableToEmbeddedFontSVG
   , renderableToEmbeddedFontSVG'
-  , renderableToEmbeddedFontSVGFile
-  , renderableToEmbeddedFontSVGFile'
+  , renderableToEmbeddedFontSVGFile  -- deprecated
+  , renderableToEmbeddedFontSVGFile' -- deprecated
   ) where
 
 import Data.Default.Class
@@ -40,6 +52,7 @@ import qualified Data.Set as S
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.Text as T
 
+import Control.Lens(makeLenses)
 import Control.Monad.Operational
 import Control.Monad.State.Lazy
 
@@ -76,11 +89,57 @@ import Graphics.Rendering.Chart.Renderable
 import Paths_Chart_diagrams ( getDataFileName )
 
 -- -----------------------------------------------------------------------
+-- General purpose file output function
+-- -----------------------------------------------------------------------
+
+
+-- | The file output format:
+--     EPS -> Embedded Postscript
+--     SVG -> SVG with text rendered as stroked paths
+--     SVG -> SVG with embedded font information and text rendered as text operations
+data FileFormat = EPS
+                | SVG
+                | SVG_EMBEDDED
+
+data FileOptions = FileOptions {
+  _fo_size :: (Double,Double),
+  _fo_format :: FileFormat,
+  _fo_customFonts :: M.Map (String, FontSlant, FontWeight) FilePath
+}
+
+-- | Generate an image file for the given renderable, at the specified path. Size, format,
+-- and text rendering mode are all set through the `FileOptions` parameter.
+renderableToFile :: FileOptions -> Renderable a -> FilePath -> IO (PickFn a)
+renderableToFile fo r path = cBackendToFile fo cb path
+  where
+    cb = render r (_fo_size fo)
+
+-- | Generate an image file for the given drawing instructions, at the specified path. Size and
+-- format are set through the `FileOptions` parameter.
+cBackendToFile :: FileOptions -> ChartBackend a -> FilePath -> IO a
+cBackendToFile fo cb path = do
+    env <- customFontEnv vectorAlignmentFns w h (_fo_customFonts fo)
+    case _fo_format fo of
+      EPS -> do
+        cBackendToEPSFile cb env path
+      SVG -> do
+        let (svg, a) = cBackendToSVG cb env
+        BS.writeFile path (renderSvg svg)
+        return a
+      SVG_EMBEDDED -> do
+        let (svg,a) = cBackendToEmbeddedFontSVG cb env
+        BS.writeFile path (renderSvg svg)
+        return a
+  where
+    (w,h) = _fo_size fo
+
+-- -----------------------------------------------------------------------
 -- SVG Utility Functions
 -- -----------------------------------------------------------------------
 
 -- | Output the given renderable to a SVG file of the specifed size
 --   (in points), to the specified file using the default environment.
+{-# DEPRECATED renderableToSVGFile "use renderToFile" #-}
 renderableToSVGFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
 renderableToSVGFile r w h file = do
   (svg, x) <- renderableToSVGString r w h
@@ -88,6 +147,7 @@ renderableToSVGFile r w h file = do
   return x
 
 -- | Output the given renderable to a SVG file using the given environment.
+{-# DEPRECATED renderableToSVGFile' "use renderToFile" #-}
 renderableToSVGFile' :: Renderable a -> DEnv -> FilePath -> IO (PickFn a)
 renderableToSVGFile' r env file = do
   let (svg, x) = renderableToSVGString' r env
@@ -109,10 +169,11 @@ renderableToSVGString'  r env =
 
 -- | Output the given renderable as a SVG of the specifed size
 --   (in points) using the default environment.
+
 renderableToSVG :: Renderable a -> Double -> Double -> IO (Svg.Svg, PickFn a)
 renderableToSVG r w h = do
-  env <- defaultEnv vectorAlignmentFns w h
-  return $ renderableToSVG' r env
+   env <- defaultEnv vectorAlignmentFns w h
+   return $ renderableToSVG' r env
 
 -- | Output the given renderable as a SVG using the given environment.
 renderableToSVG' :: Renderable a -> DEnv -> (Svg.Svg, PickFn a)
@@ -129,6 +190,7 @@ renderableToSVG' r env =
 -- | Output the given renderable to a SVG file of the specifed size
 --   (in points), to the specified file using the default environment.
 --   Font are embedded to save space.
+{-# DEPRECATED renderableToEmbeddedFontSVGFile "use renderToFile" #-}
 renderableToEmbeddedFontSVGFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
 renderableToEmbeddedFontSVGFile r w h file = do
   (svg, x) <- renderableToEmbeddedFontSVG r w h
@@ -137,6 +199,7 @@ renderableToEmbeddedFontSVGFile r w h file = do
 
 -- | Output the given renderable to a SVG file using the given environment.
 --   Font are embedded to save space.
+{-# DEPRECATED renderableToEmbeddedFontSVGFile' "use renderToFile" #-}
 renderableToEmbeddedFontSVGFile' :: Renderable a -> DEnv -> FilePath -> IO (PickFn a)
 renderableToEmbeddedFontSVGFile' r env file = do
   let (svg, x) = renderableToEmbeddedFontSVG' r env
@@ -153,12 +216,32 @@ renderableToEmbeddedFontSVG r w h = do
 
 -- | Output the given renderable as a SVG using the given environment.
 --   Font are embedded to save space.
-renderableToEmbeddedFontSVG' :: Renderable a -> DEnv -> (Svg.Svg, PickFn a)
-renderableToEmbeddedFontSVG' r env =
-  let size@(w, h) = envOutputSize env
-      cr = render r size
-      (d, x, gs) = runBackendWithGlyphs env cr
-      fontDefs = Just $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
+renderableToEmbeddedFontSVG' :: Renderable a -> DEnv -> (Svg.Svg,PickFn a)
+renderableToEmbeddedFontSVG' r env = cBackendToEmbeddedFontSVG (render r size) env
+  where
+    size = envOutputSize env
+
+cBackendToEPSFile :: ChartBackend a -> DEnv -> FilePath -> IO a
+cBackendToEPSFile cb env path = do
+    let (w, h) = envOutputSize env
+        (d, a) = runBackend env cb
+        psOpts = DEPS.PostscriptOptions path (D2.Dims w h) DEPS.EPS
+    D.renderDia DEPS.Postscript psOpts d
+    return a
+  
+cBackendToSVG :: ChartBackend a -> DEnv -> (Svg.Svg,a)
+cBackendToSVG cb env = (svg,a)
+  where
+    (w, h) = envOutputSize env
+    (d, a) = runBackend env cb
+    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) Nothing) d
+
+cBackendToEmbeddedFontSVG :: ChartBackend a -> DEnv -> (Svg.Svg,a)
+cBackendToEmbeddedFontSVG cb env = (svg, x)
+  where
+    (w, h) = envOutputSize env
+    (d, x, gs) = runBackendWithGlyphs env cb
+    fontDefs = Just $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
         let fs = envFontStyle env
         let font = envSelectFont env $ fs { _font_name = fFam
                                           , _font_slant = fSlant
@@ -167,20 +250,21 @@ renderableToEmbeddedFontSVG' r env =
         makeSvgFont font usedGs
         -- M.Map (String, FontSlant, FontWeight) (S.Set String)
         -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
-      svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) fontDefs) d
-  in (svg, x)
+    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) fontDefs) d
 
 -- -----------------------------------------------------------------------
 -- EPS Utility Functions
 -- -----------------------------------------------------------------------
 
 -- | Output the given renderable to a EPS file using the default environment.
+{-# DEPRECATED renderableToEPSFile "use renderToFile" #-}
 renderableToEPSFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
 renderableToEPSFile r w h file = do
   env <- defaultEnv vectorAlignmentFns w h
   renderableToEPSFile' r env file
 
 -- | Output the given renderable to a EPS file using the given environment.
+{-# DEPRECATED renderableToEPSFile' "use renderToFile" #-}
 renderableToEPSFile' :: Renderable a -> DEnv -> FilePath -> IO (PickFn a)
 renderableToEPSFile' r env file = do
   let (w, h) = envOutputSize env
@@ -310,8 +394,8 @@ runBackendR :: (D.Backend b R2, D.Renderable (D.Path R2) b)
            -> Renderable a -- ^ Chart render code.
            -> (Diagram b R2, PickFn a) -- ^ The diagram.
 runBackendR env r = 
-  let cr = render r (envOutputSize env)
-  in runBackend env cr
+  let cb = render r (envOutputSize env)
+  in runBackend env cb
 
 -- | Run this backends renderer.
 runBackend :: (D.Backend b R2, D.Renderable (D.Path R2) b)
@@ -661,16 +745,6 @@ pathToTrail' closeAll (ArcNeg p0 r s e path) _ =
 pathToTrail' closeAll End _ = (mempty, False || closeAll, Nothing)
 pathToTrail' closeAll Close _ = (mempty, True || closeAll, Nothing)
 
+----------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
+$( makeLenses ''FileOptions )
