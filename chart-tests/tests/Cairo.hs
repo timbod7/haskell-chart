@@ -29,4 +29,4 @@ renderTestsToFiles fmt suffix tests = mapM_ doTest (getTests tests)
     doTest (n,sz,rf) = do
       let f = n++suffix
       putStrLn (f ++ "...")              
-      void $ renderToFile (FileOptions sz fmt) (rf (chooseLineWidth fmt)) f
+      void $ renderableToFile (FileOptions sz fmt) (rf (chooseLineWidth fmt)) f
