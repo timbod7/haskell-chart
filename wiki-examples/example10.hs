@@ -19,13 +19,8 @@ chart = toRenderable layout
            $ plot_points_title .~ "test data"
            $ def
 
-    layout = layout1_title .~ "Error Bars"
-           $ layout1_plots .~ [Left (toPlot bars),
-                               Left (toPlot points)]
+    layout = layout_title .~ "Error Bars"
+           $ layout_plots .~ [toPlot bars, toPlot points]
            $ def
 
-
-main1 ["small"]  = renderableToPNGFile chart 320 240 "test10_small.png"
-main1 ["big"]    = renderableToPNGFile chart 800 600 "test10_big.png"
-
-main = getArgs >>= main1
+main = renderableToFile def chart "test10_big.png"

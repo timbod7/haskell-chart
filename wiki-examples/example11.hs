@@ -9,12 +9,13 @@ import System.Environment(getArgs)
 chart borders = toRenderable layout
  where
   layout = 
-        layout1_title .~ "Sample Bars" ++ btitle
-      $ layout1_title_style . font_size .~ 10
-      $ layout1_bottom_axis . laxis_generate .~ autoIndexAxis alabels
-      $ layout1_left_axis . laxis_override .~ (axisGridHide.axisTicksHide)
-      $ layout1_plots .~ [ Left (plotBars bars2) ]
-      $ def :: Layout1 PlotIndex Double
+        layout_title .~ "Sample Bars" ++ btitle
+      $ layout_title_style . font_size .~ 10
+      $ layout_x_axis . laxis_generate .~ autoIndexAxis alabels
+      $ layout_y_axis . laxis_override .~ axisGridHide
+      $ layout_left_axis_visibility . axis_show_ticks .~ False
+      $ layout_plots .~ [ plotBars bars2 ]
+      $ def :: Layout PlotIndex Double
 
   bars2 = plot_bars_titles .~ ["Cash","Equity"]
       $ plot_bars_values .~ addIndexes [[20,45],[45,30],[30,20],[70,25]]
@@ -29,7 +30,4 @@ chart borders = toRenderable layout
   bstyle = if borders then Just (solidLine 1.0 $ opaque black) else Nothing
   mkstyle c = (solidFillStyle c, bstyle)
 
-main1 ["small"]  = renderableToPNGFile (chart True) 320 240 "example11_small.png"
-main1 ["big"]    = renderableToPNGFile (chart True) 800 600 "example11_big.png"
-
-main = getArgs >>= main1
+main = renderableToFile def (chart True) "example11_big.png"

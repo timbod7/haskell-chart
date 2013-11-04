@@ -25,16 +25,13 @@ chart = toRenderable layout
            $ plot_lines_title .~ "price 2"
            $ def
 
-    layout = layout1_title .~"Price History"
-           $ layout1_left_axis . laxis_override .~ axisGridHide
-           $ layout1_right_axis . laxis_override .~ axisGridHide
-           $ layout1_bottom_axis . laxis_override .~ axisGridHide
-           $ layout1_plots .~ [Left (toPlot price1),
-                               Right (toPlot price2)]
-           $ layout1_grid_last .~ False
+    layout = layoutlr_title .~"Price History"
+           $ layoutlr_left_axis . laxis_override .~ axisGridHide
+           $ layoutlr_right_axis . laxis_override .~ axisGridHide
+           $ layoutlr_x_axis . laxis_override .~ axisGridHide
+           $ layoutlr_plots .~ [Left (toPlot price1),
+                                Right (toPlot price2)]
+           $ layoutlr_grid_last .~ False
            $ def
 
-main1 ["small"]  = renderableToPNGFile chart 320 240 "example2_small.png"
-main1 ["big"]    = renderableToPNGFile chart 800 600 "example2_big.png"
-
-main = getArgs >>= main1
+main = renderableToFile def chart "example2_big.png"

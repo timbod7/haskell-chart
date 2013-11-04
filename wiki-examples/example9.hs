@@ -12,16 +12,16 @@ import ExampleStocks
 
 chart = toRenderable layout
   where
-    layout = layout1_title .~"Stock Prices"
-           $ layout1_background .~ solidFillStyle (opaque white)
-           $ layout1_left_axis . laxis_override .~ axisTicksHide
-           $ layout1_plots .~ [ Right (toPlot msftArea)
+    layout = layoutlr_title .~"Stock Prices"
+           $ layoutlr_background .~ solidFillStyle (opaque white)
+           $ layoutlr_left_axis_visibility . axis_show_ticks .~ False
+           $ layoutlr_plots .~ [ Right (toPlot msftArea)
                               , Right (toPlot msftLine)
                               , Right (toPlot msftCandle)
                               , Left  (toPlot aaplArea)
                               , Left  (toPlot aaplLine)
                               , Left  (toPlot aaplCandle) ]
-           $ setLayout1Foreground (opaque black)
+           $ setLayoutLRForeground (opaque black)
            $ def
 
     aaplLine = plot_lines_style  .~ lineStyle 2 green
@@ -72,7 +72,4 @@ chart = toRenderable layout
                        $ line_color .~ opaque colour
                        $ def
 
-main1 ["small"]  = renderableToPNGFile chart 320 240 "example9_small.png"
-main1 ["big"]    = renderableToPNGFile chart 800 600 "example9_big.png"
-
-main = getArgs >>= main1
+main = renderableToFile def chart "example9_big.png"

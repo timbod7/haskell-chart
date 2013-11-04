@@ -17,11 +17,8 @@ chart = toRenderable layout
             $ plot_lines_style .~ solidLine 1.0 (opaque blue) 
             $ def
 
-    layout = layout1_title .~ "Parametric Plot"
-           $ layout1_plots .~ [Left (toPlot circleP)]
+    layout = layout_title .~ "Parametric Plot"
+           $ layout_plots .~ [toPlot circleP]
            $ def
 
-main1 ["small"]  = renderableToPNGFile chart 320 240 "example7_small.png"
-main1 ["big"]    = renderableToPNGFile chart 800 600 "example7_big.png"
-
-main = getArgs >>= main1
+main = renderableToFile def chart "example7_big.png"

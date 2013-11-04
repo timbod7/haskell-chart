@@ -13,11 +13,11 @@ import Prices(prices1)
 chart :: Double -> Renderable ()
 chart lwidth = toRenderable layout
   where
-    layout = layout1_title .~"Price History"
-           $ layout1_background .~ solidFillStyle (opaque white)
-           $ layout1_left_axis . laxis_override .~ axisTicksHide
-           $ layout1_plots .~ [ Left (toPlot price1), Left (toPlot spots) ]
-           $ setLayout1Foreground (opaque black)
+    layout = layout_title .~"Price History"
+           $ layout_background .~ solidFillStyle (opaque white)
+           $ layout_left_axis_visibility . axis_show_ticks .~ False
+           $ layout_plots .~ [ toPlot price1, toPlot spots ]
+           $ setLayoutForeground (opaque black)
            $ def
 
     price1 = plot_lines_style .~ lineStyle
@@ -40,7 +40,4 @@ chart lwidth = toRenderable layout
               $ line_color .~ opaque blue
               $ def
 
-main1 ["small"]  = renderableToPNGFile (chart 0.25) 320 240 "example8_small.png"
-main1 ["big"]    = renderableToPNGFile (chart 0.25) 800 600 "example8_big.png"
-
-main = getArgs >>= main1
+main = renderableToFile def (chart 0.25) "example8_big.png"

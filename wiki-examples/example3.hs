@@ -26,14 +26,10 @@ chart = toRenderable layout
            $ plot_fillbetween_title .~ "price 2"
            $ def
 
-    layout = layout1_title .~ "Price History"
-           $ layout1_grid_last .~ True
- 	   $ layout1_plots .~ [Left (toPlot price1),
-                               Left (toPlot price2)]
+    layout = layout_title .~ "Price History"
+           $ layout_grid_last .~ True
+ 	   $ layout_plots .~ [toPlot price1, toPlot price2]
            $ def
 
 
-main1 ["small"]  = renderableToPNGFile chart 320 240 "example4_small.png"
-main1 ["big"]    = renderableToPNGFile chart 800 600 "example4_big.png"
-
-main = getArgs >>= main1
+main = renderableToFile def chart "example4_big.png"

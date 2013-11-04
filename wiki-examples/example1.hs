@@ -24,12 +24,10 @@ chart = toRenderable layout
               $ plot_points_title .~ "am points"
               $ def
 
-    layout = layout1_title .~ "Amplitude Modulation"
-           $ layout1_plots .~ [Left (toPlot sinusoid1),
-                               Left (toPlot sinusoid2)]
+    layout = layout_title .~ "Amplitude Modulation"
+           $ layout_plots .~ [toPlot sinusoid1,
+                              toPlot sinusoid2]
            $ def
 
-main1 ["small"]  = renderableToPNGFile chart 320 240 "example1_small.png"
-main1 ["big"]    = renderableToPNGFile chart 800 600 "example1_big.png"
+main = renderableToFile def chart "example1_big.png"
 
-main = getArgs >>= main1
