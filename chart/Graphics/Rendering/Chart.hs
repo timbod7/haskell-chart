@@ -1,32 +1,36 @@
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006-2013
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- A framework for creating 2D charts in Haskell.
 --
--- The basic model is that you define a value of type 'Renderable',
--- typically by applying 'toRenderable' to some other value. This
--- 'Renderable' is then actually displayed or output by calling either
--- 'renderableToPNGFile', or 'renderableToWindow'.
+-- The basic model is that you define a value representing a chart to
+-- be displayed, and then convert it to a 'Renderable' by applying
+-- 'toRenderable'. This 'Renderable' is then actually output by
+-- calling a function in an appropriate graphics backend, eg
+-- 'renderableToFile'.
 --
--- Currently, there are two kinds of 'Renderable' for displaying charts:
+-- Currently, there are three types of charts:
 --
---     * a standard two axes chart can be is created by applying
---      'toRenderable' to a value of type 'Layout1'
+--     * 'Layout' is a standard XY chart
+-- 
+--     * 'LayoutLR' is an XY chart with independent left
+--       and right axes
 --
---     *  a pie chart can be is created by applying
---      'toRenderable' to a value of type 'PieLayout'
+--     *  'PieLayout' is a pie chart
 --
--- Multiple Renderables can be composed using the "Graphics.Rendering.Chart.Grid" module.
+-- 'Layout' and 'LayoutLR' charts can be stacked vertically using
+-- the 'StackedLayouts' type.
+-- 
+-- 'Renderable's can be composed in arbitrary ways using the
+-- "Graphics.Rendering.Chart.Grid" module.
 --
 -- Many of the record structure involved in the API have a large
--- number of fields.  For each record type X, there is generally a
--- default value called defaultX with sensibly initialised fields.
--- For example, 'Layout1' has 'defaultLayout1', etc.
---
--- For a simpler though less flexible API, see "Graphics.Rendering.Chart.Simple".
+-- number of fields. 'Lens'es are provided to access each field. Also,
+-- for each record type, there is generally a default value, which can
+-- be accessed through the 'def' value of the 'Default' typeclass.
 --
 -----------------------------------------------------------------------------
 
