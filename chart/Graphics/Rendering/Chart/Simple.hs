@@ -21,9 +21,15 @@
 --
 -- Examples:
 --
--- > plotPDF "foo.pdf" [0,0.1..10] sin "- " cos ". " cos "o"
+-- > -- this plotters
+-- > import Graphics.Rendering.Chart.Simple
+-- > -- rendering instances from 'chart-cairo' package
+-- > import Graphics.Rendering.Chart.Backend.Cairo
 --
--- > plotPS "foo.ps" [0,0.1..10] (sin . exp) "- " (sin . exp) "o-"
+-- > main = do
+-- >     plotPDF "foo.pdf" [0 :: Double, 0.1..10] sin "- " cos ". " cos "o"
+--
+-- >     plotPS "foo.ps" [0 :: Double, 0.1..10] (sin . exp) "- " (sin . exp) "o-"
 -----------------------------------------------------------------------------
 module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                         plotPDF, plotPS,
