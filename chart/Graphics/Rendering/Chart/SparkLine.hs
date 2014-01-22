@@ -92,7 +92,7 @@ barSpark  = smoothSpark { so_smooth=False }
 
 sparkLineToRenderable :: SparkLine -> Renderable ()
 sparkLineToRenderable sp = Renderable
-            { minsize = return (0, fromIntegral (so_height (sl_options sp)))
+            { minsize = let (w,h) = sparkSize sp in return (fromIntegral w , fromIntegral h)
             , render  = \_rect-> renderSparkLine sp
             }
 
