@@ -6,8 +6,8 @@ Copyright: Tim Docker, 2006-2010
 Author: Tim Docker <tim@dockerz.net>
 Maintainer: Tim Docker <tim@dockerz.net>
 Homepage: https://github.com/timbod7/haskell-chart/wiki
-Synopsis: Utility functions for using the chart library with GTK
-Description: Utility functions for using the chart library with GTK
+Synopsis: A wrapper for the chart library to assist with basic plots
+Description: A wrapper for the chart library to assist with basic plots
 Category: Graphics
 Cabal-Version: >= 1.6
 Build-Type: Simple
