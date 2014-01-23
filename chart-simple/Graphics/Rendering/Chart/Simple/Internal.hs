@@ -8,7 +8,8 @@ import Data.Default.Class
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Utils
-
+import Graphics.Rendering.Chart.Backend.Cairo
+import Graphics.Rendering.Chart.Gtk
 
 styleColor :: Int -> AlphaColour Double
 styleColor ind = colorSequence !! ind
@@ -267,3 +268,31 @@ instance (IsPlot p, IsPlot q, IsPlot r) => IsPlot (p,q,r) where
 instance (IsPlot p, IsPlot q) => IsPlot (p,q) where
     toUPlot' = reverse . concatMap f
         where f (p,q) = toUPlot' [p] ++ toUPlot' [q]
+
+instance PlotPDFType (IO a) where
+    pld fn args = do
+        renderableToFile def{_fo_format=PDF,_fo_size=(640,480)} (layoutDddToRenderable $ uplot (reverse args)) fn
+        return undefined
+
+instance PlotPSType (IO a) where
+    pls fn args = do
+        renderableToFile  def{_fo_format=PS,_fo_size=(640,480)} (layoutDddToRenderable $ uplot (reverse args)) fn
+        return undefined
+
+instance PlotPNGType (IO a) where
+    plp fn args = do
+        renderableToFile def{_fo_format=PNG,_fo_size=(640,480)} (layoutDddToRenderable $ uplot (reverse args)) fn
+        return undefined
+
+-- | Display a plot on the screen.
+
+plotWindow :: PlotWindowType a => a
+plotWindow = plw []
+class PlotWindowType t where
+    plw     :: [UPlot] -> t
+instance (PlotArg a, PlotWindowType r) => PlotWindowType (a -> r) where
+    plw args = \ a -> plw (toUPlot a ++ args)
+instance PlotWindowType (IO a) where
+    plw args = do
+        renderableToWindow (layoutDddToRenderable $ uplot (reverse args)) 640 480
+        return undefined

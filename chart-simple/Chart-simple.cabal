@@ -1,4 +1,4 @@
-Name: Chart-gtk
+Name: Chart-simple
 Version: 1.1
 License: BSD3
 License-file: LICENSE
@@ -16,15 +16,18 @@ library
   Build-depends: base >= 3 && < 5
                , old-locale
                , time, mtl, array
+               , data-default-class < 0.1
                , cairo >= 0.9.11
                , colour >= 2.2.1 && < 2.4
                , colour >= 2.2.1
                , gtk >= 0.9.11
                , Chart >= 1.1 && < 1.2
                , Chart-cairo >= 1.1 && < 1.2
+               , Chart-gtk >= 1.1 && < 1.2
 
   Exposed-modules:
-        Graphics.Rendering.Chart.Gtk
+        Graphics.Rendering.Chart.Simple,
+        Graphics.Rendering.Chart.Simple.Internal
 
 source-repository head
   type:     git

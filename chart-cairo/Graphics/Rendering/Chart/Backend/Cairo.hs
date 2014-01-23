@@ -44,7 +44,6 @@ import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.Simple
 import Graphics.Rendering.Chart.SparkLine
 
 -----------------------------------------------------------------------
@@ -318,25 +317,6 @@ cArc p r a1 a2 = C.arc (p_x p) (p_y p) r a1 a2
 
 cArcNegative :: Point -> Double -> Double -> Double -> C.Render ()
 cArcNegative p r a1 a2 = C.arcNegative (p_x p) (p_y p) r a1 a2
-
--- -----------------------------------------------------------------------
--- Simple Instances
--- -----------------------------------------------------------------------
-
-instance PlotPDFType (IO a) where
-    pld fn args = do
-        renderableToPDFFile (layoutDddToRenderable $ uplot (reverse args)) 640 480 fn
-        return undefined
-
-instance PlotPSType (IO a) where
-    pls fn args = do
-        renderableToPSFile (layoutDddToRenderable $ uplot (reverse args)) 640 480 fn
-        return undefined
-
-instance PlotPNGType (IO a) where
-    plp fn args = do
-        renderableToPNGFile (layoutDddToRenderable $ uplot (reverse args)) 640 480 fn
-        return undefined
 
 -- -----------------------------------------------------------------------
 -- SparkLine Functions

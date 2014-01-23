@@ -36,8 +36,6 @@ library
         Graphics.Rendering.Chart.Axis.Unit,
         Graphics.Rendering.Chart.Layout,
         Graphics.Rendering.Chart.Legend,
-        Graphics.Rendering.Chart.Simple,
-        Graphics.Rendering.Chart.Simple.Internal,
         Graphics.Rendering.Chart.Grid,
         Graphics.Rendering.Chart.Plot,
         Graphics.Rendering.Chart.Plot.Types,

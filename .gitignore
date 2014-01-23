@@ -7,6 +7,7 @@ chart/dist/
 chart-gtk/dist/
 chart-cairo/dist/
 chart-diagrams/dist/
+chart-simple/dist/
 chart-tests/dist/
 chart-tests/tests/*.png
 chart-tests/tests/*.pdf

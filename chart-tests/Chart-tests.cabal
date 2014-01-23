@@ -71,7 +71,8 @@ Executable ChartsTestCairo
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
       Chart           >= 1.1 && < 1.2,
-      Chart-cairo     >= 1.1 && < 1.2
+      Chart-cairo     >= 1.1 && < 1.2,
+      Chart-simple     >= 1.1 && < 1.2
   if !flag(cairo)
     Buildable: False
   Main-is: Cairo.hs
@@ -97,7 +98,8 @@ Executable ChartsTestGtk
       cairo           >= 0.9.11,
       Chart           >= 1.1 && < 1.2,
       Chart-gtk       >= 1.1 && < 1.2,
-      Chart-cairo     >= 1.1 && < 1.2
+      Chart-cairo     >= 1.1 && < 1.2,
+      Chart-simple     >= 1.1 && < 1.2
   if !flag(gtk)
     Buildable: False
   Main-is: TestPicking.hs
@@ -121,6 +123,7 @@ Executable ChartsTestDiagramsCairo
       old-time        >= 1.0,
       Chart           >= 1.1 && < 1.2,
       Chart-diagrams  >= 1.1 && < 1.2,
+      Chart-simple     >= 1.1 && < 1.2,
       diagrams-cairo  >= 0.7 && < 0.8,
       diagrams-lib    >= 0.7 && < 0.8,
       diagrams-core   >= 0.7 && < 0.8
@@ -149,6 +152,7 @@ Executable ChartsTestDiagramsSVG
       old-time        >= 1.0,
       Chart           >= 1.1 && < 1.2,
       Chart-diagrams  >= 1.1 && < 1.2,
+      Chart-simple     >= 1.1 && < 1.2,
       diagrams-svg    >= 0.8 && < 0.9,
       diagrams-lib    >= 0.7 && < 0.8,
       diagrams-core   >= 0.7 && < 0.8
@@ -175,6 +179,7 @@ Executable ChartsTestDiagramsEPS
       old-time        >= 1.0,
       Chart           >= 1.1 && < 1.2,
       Chart-diagrams  >= 1.1 && < 1.2,
+      Chart-simple     >= 1.1 && < 1.2,
       diagrams-postscript    >= 0.7 && < 0.8,
       diagrams-lib    >= 0.7 && < 0.8,
       diagrams-core   >= 0.7 && < 0.8
@@ -227,7 +232,8 @@ Executable ChartsTestDrawingDiagramsCairo
       Chart-diagrams  >= 1.1 && < 1.2,
       diagrams-cairo  >= 0.7 && < 0.8,
       diagrams-lib    >= 0.7 && < 0.8,
-      diagrams-core   >= 0.7 && < 0.8
+      diagrams-core   >= 0.7 && < 0.8,
+      Chart-simple     >= 1.1 && < 1.2
   if !flag(cairo) || !flag(diagrams)
     Buildable: False
   Main-is: DiagramsCairo.hs
