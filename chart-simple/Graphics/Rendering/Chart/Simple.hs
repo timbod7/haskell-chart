@@ -34,10 +34,11 @@
 module Graphics.Rendering.Chart.Simple( plot, PlotKind(..), xcoords,
                                         plotPDF, plotPS,
                                         plotLayout, plotPNG, LayoutDDD,
+                                        plotWindow,
                                         layoutDddToRenderable
                                       , PlotPDFType(..)
                                       , PlotPSType(..)
-                                      , PlotPNGType(..)
+                                      , PlotWindowType(..)
                                       , uplot
                                       ) where
 
