@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Layout
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- This module glues together axes and plots to actually create a renderable
@@ -567,7 +567,7 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
     
     legendItems :: StackedLayout x -> ([LegendItem], [LegendItem])
     legendItems (StackedLayout l)   = (getLegendItems l, [])
-    lebendItems (StackedLayoutLR l) = getLegendItemsLR l
+    legendItems (StackedLayoutLR l) = getLegendItemsLR l
     
     noPickFn :: Renderable a -> Renderable ()
     noPickFn = mapPickFn (const ())
