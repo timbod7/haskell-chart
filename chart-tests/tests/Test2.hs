@@ -12,7 +12,10 @@ import Prices(prices2)
 import Utils
 
 chart :: [(LocalTime,Double,Double)] -> Bool -> Double -> Renderable (LayoutPick LocalTime Double Double)
-chart prices showMinMax lwidth = layoutLRToRenderable layout
+chart prices showMinMax lwidth = layoutLRToRenderable $ chartLR prices showMinMax lwidth
+  
+chartLR :: [(LocalTime,Double,Double)] -> Bool -> Double -> LayoutLR LocalTime Double Double
+chartLR prices showMinMax lwidth = layout
   where
 
     lineStyle c = line_width .~ 3 * lwidth
