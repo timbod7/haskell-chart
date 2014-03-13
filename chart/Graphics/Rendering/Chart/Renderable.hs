@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Renderable
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- This module contains the definition of the 'Renderable' type, which
@@ -148,33 +148,43 @@ label :: FontStyle -> HTextAnchor -> VTextAnchor -> String -> Renderable String
 label fs hta vta = rlabel fs hta vta 0
 
 -- | Construct a renderable from a text string, rotated wrt to axes. The angle
---   of rotation is in degrees.
+--   of rotation is in degrees, measured clockwise from the horizontal.
 rlabel :: FontStyle -> HTextAnchor -> VTextAnchor -> Double -> String -> Renderable String
 rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
   where
     mf = withFontStyle fs $ do
        ts <- textSize s
-       let (w,h) = (textSizeWidth ts, textSizeHeight ts)
-       return (w*acr+h*asr,w*asr+h*acr)
+       let sz = (textSizeWidth ts, textSizeHeight ts)
+       return (xwid sz, ywid sz)
+       
     rf (w0,h0) = withFontStyle fs $ do
       ts <- textSize s
       let sz@(w,h) = (textSizeWidth ts, textSizeHeight ts)
-      let descent = textSizeDescent ts
-      withTranslation (Point 0 (-descent)) $ do
-        withTranslation (Point (xadj sz hta 0 w0) (yadj sz vta 0 h0)) $ do
+          descent = textSizeDescent ts
+          
+          -- TODO: rotation is not handled correctly, in particular
+          --       for VTA_BaseLine
+          xadj HTA_Left   = xwid sz/2
+          xadj HTA_Centre = w0/2
+          xadj HTA_Right  = w0 - xwid sz/2
+    
+          yadj VTA_Top      = ywid sz/2
+          yadj VTA_Centre   = h0/2
+          yadj VTA_Bottom   = h0 - ywid sz/2
+          yadj VTA_BaseLine = h0 - descent
+
+      withTranslation (Point 0 (-descent)) $ 
+        withTranslation (Point (xadj hta) (yadj vta)) $ 
           withRotation rot' $ do
             drawText (Point (-w/2) (h/2)) s
             return (\_-> Just s)  -- PickFn String
-    xadj (w,h) HTA_Left   x1 x2 =  x1 +(w*acr+h*asr)/2
-    xadj (w,h) HTA_Centre x1 x2 = (x1 + x2)/2
-    xadj (w,h) HTA_Right  x1 x2 =  x2 -(w*acr+h*asr)/2
-    yadj (w,h) VTA_Top    y1 y2 =  y1 +(w*asr+h*acr)/2
-    yadj (w,h) VTA_Centre y1 y2 = (y1+y2)/2
-    yadj (w,h) VTA_Bottom y1 y2 =  y2 - (w*asr+h*acr)/2
-
+            
     rot'      = rot / 180 * pi
     (cr,sr)   = (cos rot', sin rot')
     (acr,asr) = (abs cr, abs sr)
+
+    xwid (w,h) = w*acr + h*asr
+    ywid (w,h) = w*asr + h*acr
 
 ----------------------------------------------------------------------
 -- Rectangles

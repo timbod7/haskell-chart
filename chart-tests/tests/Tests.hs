@@ -10,6 +10,7 @@ import System.Time
 import System.Random
 import Data.Time.LocalTime
 import Control.Lens
+import Data.Char (chr)
 import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
@@ -181,7 +182,10 @@ test9 alignment lw = fillBackground fwhite $ (gridToRenderable t)
 -------------------------------------------------------------------------------
 
 test10 :: [(LocalTime,Double,Double)] -> LineWidth -> Renderable (LayoutPick LocalTime Double Double)
-test10 prices lw = layoutLRToRenderable layout
+test10 prices lw = layoutLRToRenderable $ test10LR prices lw
+
+test10LR :: [(LocalTime,Double,Double)] -> LineWidth -> LayoutLR LocalTime Double Double
+test10LR prices lw = layout
   where
 
     lineStyle c = line_width .~ 3 * lw
@@ -247,24 +251,50 @@ test11_ f = f layout1 layout2
             $ layout_y_axis . laxis_title .~ "double values"
             $ def
 
+mkStack ls f = 
+  renderStackedLayouts 
+  $ slayouts_layouts .~ ls
+  $ slayouts_compress_legend .~ f
+  $ def
+
 test11a :: LineWidth -> Renderable ()
 test11a lw = test11_ f
    where
-     f l1 l2 = renderStackedLayouts 
-             $ slayouts_layouts .~ [StackedLayout l1, StackedLayout l2]
-             $ slayouts_compress_legend .~ False
-             $ def
+     f l1 l2 = mkStack [StackedLayout l1, StackedLayout l2] False
  
 test11b :: LineWidth -> Renderable ()
 test11b lw = test11_ f
   where
-    f l1 l2 = renderStackedLayouts 
-            $ slayouts_layouts .~ [StackedLayout l1', StackedLayout l2]
-            $ slayouts_compress_legend .~ True
-            $ def
+    f l1 l2 = mkStack [StackedLayout l1', StackedLayout l2] True
       where
         l1' = layout_bottom_axis_visibility . axis_show_labels .~ False
             $ l1
+
+-- should produce the same output as test10
+test11c :: LineWidth -> Renderable ()
+test11c lw =   
+  mkStack [ StackedLayoutLR (test10LR prices1 lw)] True
+
+test11d :: LineWidth -> Renderable ()
+test11d lw =   
+  mkStack [ StackedLayoutLR (Test2.chartLR prices1 False lw)
+          , StackedLayoutLR (test10LR prices1 lw)
+          ] False
+
+test11e :: LineWidth -> Renderable ()
+test11e lw =   
+  let l2 = Test2.chartLR prices1 False lw
+      b = opaque black
+      -- how to use lens to get inside the maybe?
+      l2' = -- layoutlr_legend . Just . legend_label_style . font_color .~ b
+            layoutlr_legend .~ Just ((legend_label_style . font_color .~ b) $ def)
+            $ updateAllAxesStylesLR c l2
+      c as = axis_line_style .~ solidLine 1 b
+             $ axis_label_style . font_color .~ b
+             $ as
+  in mkStack [ StackedLayoutLR (test10LR prices1 lw)
+             , StackedLayoutLR l2'
+             ] True
 
 -------------------------------------------------------------------------------
 -- More of an example that a test:
@@ -332,16 +362,18 @@ test13 lw = fillBackground fwhite $ (gridToRenderable t)
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
-misc1 rot lw = fillBackground fwhite $ (gridToRenderable t)
+misc1 fsz rot lw = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [tval (lb h v) | h <- hs] | v <- vs ]
     lb h v = addMargins (20,20,20,20) $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s
-    s = "Labelling"
+    s = if rot == 0
+        then "Labelling"
+        else "Angle " ++ show (floor rot :: Int) ++ [chr 176]
     hs = [HTA_Left, HTA_Centre, HTA_Right]
-    vs = [VTA_Top, VTA_Centre, VTA_Bottom]
+    vs = [VTA_Top, VTA_Centre, VTA_Bottom, VTA_BaseLine]
     fwhite = solidFillStyle $ opaque white
     fblue = solidFillStyle $ opaque $ sRGB 0.8 0.8 1
-    fs = def {_font_size=20,_font_weight=FontWeightBold}
+    fs = def {_font_size=fsz,_font_weight=FontWeightBold}
     crossHairs r =Renderable {
       minsize = minsize r,
       render = \sz@(w,h) -> do
@@ -398,6 +430,9 @@ allTests =
      , ("test10", stdSize, \lw -> simple $ test10 prices1 lw)
      , ("test11a", stdSize, \lw -> simple $ test11a lw)
      , ("test11b", stdSize, \lw -> simple $ test11b lw)
+     , ("test11c", stdSize, \lw -> simple $ test11c lw)
+     , ("test11d", stdSize, \lw -> simple $ test11d lw)
+     , ("test11e", stdSize, \lw -> simple $ test11e lw)
      , ("test12", stdSize, \lw -> simple $ test12 lw)
      , ("test13", stdSize, \lw -> simple $ test13 lw)
      , ("test14", stdSize, \lw -> simple $ Test14.chart lw )
@@ -405,8 +440,15 @@ allTests =
      , ("test15a", stdSize, const $ simple (Test15.chart (LORows 2)))
      , ("test15b", stdSize, const $ simple (Test15.chart (LOCols 2)))
      , ("test17", stdSize,  \lw -> simple $ Test17.chart lw)
-     , ("misc1",  stdSize, setPickFn nullPickFn . misc1 0)
-     , ("misc1a", stdSize, setPickFn nullPickFn . misc1 45)
+     , ("misc1",  stdSize, setPickFn nullPickFn . misc1 20 0)
+       -- perhaps a bit excessive
+     , ("misc1a", stdSize, setPickFn nullPickFn . misc1 12 45)
+     , ("misc1b", stdSize, setPickFn nullPickFn . misc1 12 90)
+     , ("misc1c", stdSize, setPickFn nullPickFn . misc1 12 135)
+     , ("misc1d", stdSize, setPickFn nullPickFn . misc1 12 180)
+     , ("misc1e", stdSize, setPickFn nullPickFn . misc1 12 205)
+     , ("misc1f", stdSize, setPickFn nullPickFn . misc1 12 270)
+     , ("misc1g", stdSize, setPickFn nullPickFn . misc1 12 315)
      , ("parametric", stdSize, \lw -> simple $ TestParametric.chart lw )
      , ("sparklines", TestSparkLines.chartSize, const $ simple TestSparkLines.chart )
      ]
