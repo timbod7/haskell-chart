@@ -10,6 +10,7 @@ import System.Time
 import System.Random
 import Data.Time.LocalTime
 import Control.Lens
+import Data.Char (chr)
 import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
@@ -361,16 +362,18 @@ test13 lw = fillBackground fwhite $ (gridToRenderable t)
 ----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
-misc1 rot lw = fillBackground fwhite $ (gridToRenderable t)
+misc1 fsz rot lw = fillBackground fwhite $ (gridToRenderable t)
   where
     t = weights (1,1) $ aboveN [ besideN [tval (lb h v) | h <- hs] | v <- vs ]
     lb h v = addMargins (20,20,20,20) $ fillBackground fblue $ crossHairs $ rlabel fs h v rot s
-    s = "Labelling"
+    s = if rot == 0
+        then "Labelling"
+        else "Angle " ++ show (floor rot :: Int) ++ [chr 176]
     hs = [HTA_Left, HTA_Centre, HTA_Right]
-    vs = [VTA_Top, VTA_Centre, VTA_Bottom]
+    vs = [VTA_Top, VTA_Centre, VTA_Bottom, VTA_BaseLine]
     fwhite = solidFillStyle $ opaque white
     fblue = solidFillStyle $ opaque $ sRGB 0.8 0.8 1
-    fs = def {_font_size=20,_font_weight=FontWeightBold}
+    fs = def {_font_size=fsz,_font_weight=FontWeightBold}
     crossHairs r =Renderable {
       minsize = minsize r,
       render = \sz@(w,h) -> do
@@ -437,8 +440,15 @@ allTests =
      , ("test15a", stdSize, const $ simple (Test15.chart (LORows 2)))
      , ("test15b", stdSize, const $ simple (Test15.chart (LOCols 2)))
      , ("test17", stdSize,  \lw -> simple $ Test17.chart lw)
-     , ("misc1",  stdSize, setPickFn nullPickFn . misc1 0)
-     , ("misc1a", stdSize, setPickFn nullPickFn . misc1 45)
+     , ("misc1",  stdSize, setPickFn nullPickFn . misc1 20 0)
+       -- perhaps a bit excessive
+     , ("misc1a", stdSize, setPickFn nullPickFn . misc1 12 45)
+     , ("misc1b", stdSize, setPickFn nullPickFn . misc1 12 90)
+     , ("misc1c", stdSize, setPickFn nullPickFn . misc1 12 135)
+     , ("misc1d", stdSize, setPickFn nullPickFn . misc1 12 180)
+     , ("misc1e", stdSize, setPickFn nullPickFn . misc1 12 205)
+     , ("misc1f", stdSize, setPickFn nullPickFn . misc1 12 270)
+     , ("misc1g", stdSize, setPickFn nullPickFn . misc1 12 315)
      , ("parametric", stdSize, \lw -> simple $ TestParametric.chart lw )
      , ("sparklines", TestSparkLines.chartSize, const $ simple TestSparkLines.chart )
      ]
