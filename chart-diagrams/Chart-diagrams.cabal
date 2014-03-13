@@ -28,7 +28,7 @@ library
   Build-depends: base >= 3 && < 5
                , old-locale
                , time, mtl
-               , diagrams-core >= 0.7 && < 1.2
+               , diagrams-core >= 1.1 && < 1.2
                , diagrams-lib >= 1.1 && < 1.2
                , diagrams-svg >= 0.8 && < 1.2
                , diagrams-postscript >= 0.7 && < 1.2
