@@ -162,8 +162,6 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
       let sz@(w,h) = (textSizeWidth ts, textSizeHeight ts)
           descent = textSizeDescent ts
           
-          -- TODO: rotation is not handled correctly, in particular
-          --       for VTA_BaseLine
           xadj HTA_Left   = xwid sz/2
           xadj HTA_Centre = w0/2
           xadj HTA_Right  = w0 - xwid sz/2
@@ -171,7 +169,7 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
           yadj VTA_Top      = ywid sz/2
           yadj VTA_Centre   = h0/2
           yadj VTA_Bottom   = h0 - ywid sz/2
-          yadj VTA_BaseLine = h0 - descent
+          yadj VTA_BaseLine = h0 - ywid sz/2 + descent*acr
 
       withTranslation (Point 0 (-descent)) $ 
         withTranslation (Point (xadj hta) (yadj vta)) $ 
