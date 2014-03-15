@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.Points
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Functions to plot sets of points, marked in various styles.
@@ -23,10 +23,7 @@ module Graphics.Rendering.Chart.Plot.Points(
 import Control.Lens
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
-import Data.Colour (opaque)
-import Data.Colour.Names (black, blue)
 import Data.Default.Class
 
 -- | Value defining a series of datapoints, and a style in

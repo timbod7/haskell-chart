@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Legend
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 -- 
 -- Types and functions for handling the legend(s) on a chart. A legend
@@ -20,14 +20,12 @@ module Graphics.Rendering.Chart.Legend(
     legend_orientation
 ) where
 
-import Control.Monad
-import Data.List (nub, partition,intersperse)
+import Data.List (partition,intersperse)
 import Control.Lens
 import Data.Default.Class
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
 

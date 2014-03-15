@@ -17,6 +17,7 @@ module Graphics.Rendering.Chart.Plot.AreaSpots
   , area_spots_linethick
   , area_spots_linecolour
   , area_spots_fillcolour
+  , area_spots_opacity
   , area_spots_max_radius
   , area_spots_values
 
@@ -26,16 +27,17 @@ module Graphics.Rendering.Chart.Plot.AreaSpots
   , area_spots_4d_title
   , area_spots_4d_linethick
   , area_spots_4d_palette
+  , area_spots_4d_opacity
   , area_spots_4d_max_radius
   , area_spots_4d_values
   ) where
 
-import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Geometry hiding (scale, x0, y0)
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Axis
 import Control.Lens
-import Data.Colour
+import Data.Colour hiding (over)
 import Data.Colour.Names
 import Data.Default.Class
 

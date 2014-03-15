@@ -1,5 +1,12 @@
 {-# LANGUAGE TemplateHaskell #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.Chart.Backend.Types
+-- Copyright   :  (c) Tim Docker 2014
+-- License     :  BSD-style (see chart/COPYRIGHT)
+--
+
 module Graphics.Rendering.Chart.Backend.Types where
 
 import Data.Default.Class

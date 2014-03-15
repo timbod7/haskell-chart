@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.Lines
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Line plots
@@ -24,10 +24,9 @@ module Graphics.Rendering.Chart.Plot.Lines(
 import Control.Lens
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
-import Data.Colour.Names (black, blue)
+import Data.Colour.Names (blue)
 import Data.Default.Class
 
 -- | Value defining a series of (possibly disjointed) lines,

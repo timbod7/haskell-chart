@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Axis.Int
--- Copyright   :  (c) Tim Docker 2010
+-- Copyright   :  (c) Tim Docker 2010, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Calculate and render integer indexed axes
@@ -14,7 +14,6 @@ module Graphics.Rendering.Chart.Axis.Int(
 
 import Data.List(genericLength)
 import Graphics.Rendering.Chart.Geometry
-import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Axis.Types
 import Graphics.Rendering.Chart.Axis.Floating
 
@@ -62,6 +61,7 @@ stepsInt nSteps range = bestSize (goodness alt0) alt0 alts
   where
     bestSize n a (a':as) = let n' = goodness a' in
                            if n' < n then bestSize n' a' as else a
+    bestSize _ _ []      = []
 
     goodness vs          = abs (genericLength vs - nSteps)
 

@@ -102,8 +102,7 @@ import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
 import Control.Monad
-import Control.Monad.Reader (local)
-import Control.Lens
+import Control.Lens hiding (at)
 import Data.Colour
 import Data.Colour.Names (white)
 import Data.Default.Class

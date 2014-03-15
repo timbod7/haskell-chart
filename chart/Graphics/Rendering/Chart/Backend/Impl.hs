@@ -1,17 +1,17 @@
 {-# LANGUAGE GADTs #-}
 
--- | This module provides the implementation details common to all 'ChartBackend's.
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.Chart.Backend.Impl
+-- Copyright   :  (c) Tim Docker 2014
+-- License     :  BSD-style (see chart/COPYRIGHT)
+--
+-- This module provides the implementation details common to all 'ChartBackend's.
+
 module Graphics.Rendering.Chart.Backend.Impl where
 
-import Data.Monoid
-import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.Operational
-
-import Data.Default.Class
-
-import Data.Colour
-import Data.Colour.Names
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Backend.Types

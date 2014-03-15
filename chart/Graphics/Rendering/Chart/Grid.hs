@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Grid
--- Copyright   :  (c) Tim Docker 2010
+-- Copyright   :  (c) Tim Docker 2010, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- A container type for values that can be composed by horizonal
@@ -26,17 +26,11 @@ module Graphics.Rendering.Chart.Grid (
     fullOverlayOver
 ) where
 
-import Data.List
 import Data.Array
 import Control.Monad
-import Control.Monad.Trans
-import Numeric
 import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Geometry hiding (x0, y0)
 import Graphics.Rendering.Chart.Drawing
-
-import Data.Colour
-import Data.Colour.Names
 
 type Span        = (Int,Int)
 type Size        = (Int,Int)

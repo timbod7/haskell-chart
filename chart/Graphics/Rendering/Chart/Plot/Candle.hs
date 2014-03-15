@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.Candle
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Candlestick charts for financial plotting
@@ -24,17 +24,15 @@ module Graphics.Rendering.Chart.Plot.Candle(
     plot_candle_values,
 ) where
 
-import Control.Lens
+import Control.Lens hiding (op)
 import Data.Monoid
 
-import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Geometry hiding (close)
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Control.Monad
 import Data.Colour (opaque)
-import Data.Colour.Names (black, white, blue)
-import Data.Colour.SRGB (sRGB)
+import Data.Colour.Names (white, blue)
 import Data.Default.Class
 
 -- | Value defining a financial interval: opening and closing prices, with

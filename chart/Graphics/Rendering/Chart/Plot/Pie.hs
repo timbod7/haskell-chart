@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.Pie
--- Copyright   :  (c) Tim Docker 2008
+-- Copyright   :  (c) Tim Docker 2008, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- A  basic pie chart.
@@ -15,7 +15,7 @@
 -- values = [...]
 -- layout :: PieLayout
 -- layout = pie_plot ^: pie_data ^= values
---        $ defaultPieLayout
+--        $ def
 -- renderable = toRenderable layout
 -- @
 {-# LANGUAGE TemplateHaskell #-}
@@ -48,21 +48,17 @@ module Graphics.Rendering.Chart.Plot.Pie(
 ) where
 -- original code thanks to Neal Alexander
 
-import Data.List
-import Data.Bits
 import Control.Lens hiding (moveTo)
 import Data.Colour
-import Data.Colour.Names (black, white)
+import Data.Colour.Names (white)
 import Data.Monoid
 import Data.Default.Class
 import Control.Monad
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Legend
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
-import Graphics.Rendering.Chart.Plot.Types
 
 data PieLayout = PieLayout {
    _pie_title       :: String,
@@ -117,7 +113,7 @@ instance Default PieLayout where
     , _pie_title       = ""
     , _pie_title_style = def { _font_size   = 15
                              , _font_weight = FontWeightBold }
-    , _pie_plot        = defaultPieChart
+    , _pie_plot        = def
     , _pie_margin      = 10
     }
 

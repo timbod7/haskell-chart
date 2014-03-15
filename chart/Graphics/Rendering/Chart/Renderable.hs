@@ -14,6 +14,8 @@ module Graphics.Rendering.Chart.Renderable(
     Renderable(..),
     ToRenderable(..),
     PickFn,
+    Rectangle(..),
+    RectCornerStyle(..),
     
     rectangleToRenderable,
 
@@ -38,7 +40,6 @@ module Graphics.Rendering.Chart.Renderable(
 
 import Control.Monad
 import Control.Lens
-import Data.List ( nub, transpose, sort )
 import Data.Monoid
 import Data.Default.Class
 
@@ -197,10 +198,6 @@ data Rectangle = Rectangle {
   _rect_lineStyle   :: Maybe LineStyle,
   _rect_cornerStyle :: RectCornerStyle
 }
-
-{-# DEPRECATED defaultRectangle "Use the according Data.Default instance!" #-}
-defaultRectangle :: Rectangle
-defaultRectangle = def
 
 instance Default Rectangle where
   def = Rectangle

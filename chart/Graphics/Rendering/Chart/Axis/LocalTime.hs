@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Axis.LocalTime
--- Copyright   :  (c) Tim Docker 2010
+-- Copyright   :  (c) Tim Docker 2010, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Calculate and render time axes
@@ -16,16 +16,8 @@ import Data.Default.Class
 import Data.Time
 import Data.Fixed
 import System.Locale (defaultTimeLocale)
-import Control.Monad
-import Data.List
-import Control.Lens
-import Data.Colour (opaque)
-import Data.Colour.Names (black, lightgrey)
-import Data.Ord (comparing)
+-- import Control.Lens
 
-import Graphics.Rendering.Chart.Geometry
-import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Axis.Types
 
 instance PlotValue LocalTime where

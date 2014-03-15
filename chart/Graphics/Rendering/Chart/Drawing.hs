@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Drawing
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- This module contains basic types and functions used for drawing.
@@ -13,7 +13,7 @@
 --
 -- These accessors are not shown in this API documentation.  They have
 -- the same name as the field, but with the trailing underscore
--- dropped. Hence for data field f_::F in type D, they have type
+-- dropped. Hence for data field @f_::F@ in type @D@, they have type
 --
 -- @
 --   f :: Control.Lens.Lens' D F
@@ -87,12 +87,9 @@ module Graphics.Rendering.Chart.Drawing
 import Data.Default.Class
 import Control.Lens hiding (moveTo)
 import Data.Colour
-import Data.Colour.SRGB
 import Data.Colour.Names
 import Data.List (unfoldr)
 import Data.Monoid
-
-import Control.Monad.Reader
 
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Geometry

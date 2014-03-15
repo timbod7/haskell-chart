@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Axis.Types
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Type definitions for Axes
@@ -57,13 +57,9 @@ module Graphics.Rendering.Chart.Axis.Types(
 
 ) where
 
-import Data.Time
-import Data.Fixed
-import Data.Maybe
-import System.Locale (defaultTimeLocale)
 import Control.Monad
 import Data.List(sort,intersperse)
-import Control.Lens
+import Control.Lens hiding (at)
 import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
 import Data.Default.Class

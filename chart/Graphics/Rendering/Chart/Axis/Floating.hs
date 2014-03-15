@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Axis.Floating
--- Copyright   :  (c) Tim Docker 2010
+-- Copyright   :  (c) Tim Docker 2010, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Calculate and render floating value axes
@@ -37,7 +37,6 @@ import Numeric (showFFloat)
 
 import Control.Lens
 import Graphics.Rendering.Chart.Geometry
-import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Utils
 import Graphics.Rendering.Chart.Axis.Types
 

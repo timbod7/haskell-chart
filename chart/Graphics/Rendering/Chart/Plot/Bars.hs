@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.Bars
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Bar Charts
@@ -31,14 +31,12 @@ module Graphics.Rendering.Chart.Plot.Bars(
 import Control.Lens
 import Control.Monad
 import Data.List(nub,sort)
-import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Geometry hiding (x0, y0)
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Axis
 import Data.Colour (opaque)
-import Data.Colour.Names (black, blue)
-import Data.Colour.SRGB (sRGB)
+import Data.Colour.Names (black)
 import Data.Default.Class
 
 class PlotValue a => BarsPlotValue a where

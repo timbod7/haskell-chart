@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.Types
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Datatypes and functions common to the implementation of the various
@@ -24,11 +24,7 @@ module Graphics.Rendering.Chart.Plot.Types(
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
-import Control.Monad
 import Control.Lens
-import Data.Colour
-import Data.Colour.Names
 
 -- | Interface to control plotting on a 2D area.
 data Plot x y = Plot {
