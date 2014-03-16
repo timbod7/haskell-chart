@@ -85,7 +85,12 @@ module Graphics.Rendering.Chart.Drawing
 ) where
 
 import Data.Default.Class
-import Control.Lens hiding (moveTo)
+-- lens < 4 includes Control.Lens.Zipper.moveTo which clashes
+-- with Graphics.Rendering.Chart.Geometry.moveTo (so you get
+-- -Wall notices). This would suggest a 'hiding (moveTo)' in
+-- the import, but it's been removed in lens-4.0 and I don't
+-- feel it's worth the use of conditional compilation
+import Control.Lens
 import Data.Colour
 import Data.Colour.Names
 import Data.List (unfoldr)

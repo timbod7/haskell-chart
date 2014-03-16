@@ -48,7 +48,9 @@ module Graphics.Rendering.Chart.Plot.Pie(
 ) where
 -- original code thanks to Neal Alexander
 
-import Control.Lens hiding (moveTo)
+-- see ../Drawing.hs for why we do not use hiding (moveTo) for
+-- lens < 4
+import Control.Lens
 import Data.Colour
 import Data.Colour.Names (white)
 import Data.Monoid
