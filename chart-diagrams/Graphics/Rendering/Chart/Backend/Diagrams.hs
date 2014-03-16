@@ -61,8 +61,8 @@ import Diagrams.Prelude
   ( Diagram
   , R2, P2, T2
   , r2, p2, unr2, unp2
+  , rad, (@@)
   , Trail(..), Segment
-  , Rad(..), CircleFrac(..)
   , (.+^), (<->), (~~)
   )
 import qualified Diagrams.Prelude as D
@@ -735,12 +735,12 @@ pathToTrail' closeAll (LineTo p1 path) p0 =
 pathToTrail' closeAll (Arc p0 r s e path) _ = 
   let endP = translateP (pointToVec p0) $ rotateP e $ Point r 0
       (t, c, rest) = pathToTrail' closeAll path endP
-      arcTrail = D2.scale r $ D2.arc (Rad s) (Rad e)
+      arcTrail = D2.scale r $ D2.arc (s @@ rad) (e @@ rad)
   in ( arcTrail <> t, c || closeAll, rest )
 pathToTrail' closeAll (ArcNeg p0 r s e path) _ = 
   let endP = translateP (pointToVec p0) $ rotateP e $ Point r 0
       (t, c, rest) = pathToTrail' closeAll path endP
-      arcTrail = D2.scale r $ D2.arcCW (Rad s) (Rad e)
+      arcTrail = D2.scale r $ D2.arcCW (s @@ rad) (e @@ rad)
   in ( arcTrail <> t, c || closeAll, rest )
 pathToTrail' closeAll End _ = (mempty, False || closeAll, Nothing)
 pathToTrail' closeAll Close _ = (mempty, True || closeAll, Nothing)
