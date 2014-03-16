@@ -76,7 +76,7 @@ instance ToPlot PlotCandle where
         pts = _plot_candle_values p
 
 renderPlotCandle :: PlotCandle x y -> PointMapFn x y -> ChartBackend ()
-renderPlotCandle p pmap = do
+renderPlotCandle p pmap = 
     mapM_ (drawCandle p . candlemap) (_plot_candle_values p)
   where
     candlemap (Candle x lo op mid cl hi) =
@@ -88,6 +88,7 @@ renderPlotCandle p pmap = do
               (Point _  hi')   = pmap' (x,hi)
     pmap' = mapXY pmap
 
+drawCandle :: PlotCandle x y -> Candle Double Double -> ChartBackend ()
 drawCandle ps (Candle x lo open mid close hi) = do
         let tl = _plot_candle_tick_length ps
         let wd = _plot_candle_width ps
@@ -96,7 +97,7 @@ drawCandle ps (Candle x lo open mid close hi) = do
         -- the pixel coordinate system is inverted wrt the value coords.
         when f $ withFillStyle (if open >= close
                                    then _plot_candle_rise_fill_style ps
-                                   else _plot_candle_fall_fill_style ps) $ do
+                                   else _plot_candle_fall_fill_style ps) $ 
                     fillPath $ moveTo' (x-wd) open
                             <> lineTo' (x-wd) close
                             <> lineTo' (x+wd) close
@@ -120,16 +121,16 @@ drawCandle ps (Candle x lo open mid close hi) = do
                                     <> moveTo' (x-tl) hi
                                     <> lineTo' (x+tl) hi
           
-          when (ct > 0) $ do strokePath $ moveTo' (x-ct) mid
-                                       <> lineTo' (x+ct) mid
+          when (ct > 0) $ strokePath $ moveTo' (x-ct) mid
+                                    <> lineTo' (x+ct) mid
 
 renderPlotLegendCandle :: PlotCandle x y -> Rect -> ChartBackend ()
-renderPlotLegendCandle p r@(Rect p1 p2) = do
-    drawCandle p{ _plot_candle_width = 2}
-                      (Candle ((p_x p1 + p_x p2)*1/4) lo open mid close hi)
-    drawCandle p{ _plot_candle_width = 2}
-                      (Candle ((p_x p1 + p_x p2)*2/3) lo close mid open hi)
+renderPlotLegendCandle pc (Rect p1 p2) = do
+    drawCandle pc2 (Candle (xwid*1/4) lo open mid close hi)
+    drawCandle pc2 (Candle (xwid*2/3) lo close mid open hi)
   where
+    pc2   = pc { _plot_candle_width = 2 }
+    xwid  = p_x p1 + p_x p2
     lo    = max (p_y p1) (p_y p2)
     mid   = (p_y p1 + p_y p2)/2
     hi    = min (p_y p1) (p_y p2)

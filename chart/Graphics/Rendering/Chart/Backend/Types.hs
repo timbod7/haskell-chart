@@ -166,22 +166,25 @@ data AlignmentFns = AlignmentFns {
   --   
   --   This is usually used to align prior to stroking.
 
-  -- | A adjustment applied immediately prior to coordinates
+  -- | The adjustment applied immediately prior to coordinates
   --   being transformed.
   --   
   --   This is usually used to align prior to filling.
   afCoordAlignFn :: AlignmentFn
   }
 
--- | Alignment to render good on raster based graphics.
+-- | Alignment to render on raster based graphics.
 bitmapAlignmentFns :: AlignmentFns
 bitmapAlignmentFns = AlignmentFns (adjfn 0.5) (adjfn 0.0) 
   where
     adjfn offset (Point x y) = Point (adj x) (adj y)
       where
-        adj v = (fromIntegral.round) v +offset
+        -- avoid messages about Integer default
+        rnd :: Double -> Integer
+        rnd = round
+        adj v = (fromIntegral.rnd) v +offset
 
--- | Alignment to render good on vector based graphics.
+-- | Alignment to render on vector based graphics.
 vectorAlignmentFns :: AlignmentFns
 vectorAlignmentFns = AlignmentFns id id
 

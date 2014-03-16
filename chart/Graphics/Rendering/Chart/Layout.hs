@@ -20,10 +20,10 @@
 --
 -- These accessors are not shown in this API documentation.  They have
 -- the same name as the field, but with the leading underscore
--- dropped. Hence for data field _f::F in type D, they have type
+-- dropped. Hence for data field @_f::F@ in type @D@, they have type
 --
 -- @
---   f :: Control.Lens.Lens' D F
+--   f :: `Control.Lens.Lens'` D F
 -- @
 --
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -37,6 +37,7 @@ module Graphics.Rendering.Chart.Layout
   , LayoutPick(..)
   , StackedLayouts(..)
   , StackedLayout(..)
+  -- , LegendItem  haddock complains about this being missing, but from what?
   , MAxisFn
   
   , layoutToRenderable
@@ -204,8 +205,8 @@ instance (Ord x, Ord y) => ToRenderable (Layout x y) where
 
 -- | Render the given 'Layout'.
 layoutToRenderable :: forall x y . (Ord x, Ord y) => Layout x y -> Renderable (LayoutPick x y y)
-layoutToRenderable l = fillBackground (_layout_background l) 
-                     $ gridToRenderable (layoutToGrid l)
+layoutToRenderable lxy = fillBackground (_layout_background lxy) 
+                     $ gridToRenderable (layoutToGrid lxy)
   where
     layoutToGrid l = aboveN
            [  tval $ titleToRenderable (_layout_margin l) (_layout_title_style l) (_layout_title l)
@@ -214,7 +215,7 @@ layoutToRenderable l = fillBackground (_layout_background l)
            ,  tval $ renderLegend l (getLegendItems l)
            ]
 
-    lm = _layout_margin l
+    lm = _layout_margin lxy
   
 getLayoutXVals :: Layout x y -> [x]
 getLayoutXVals l = concatMap (fst . _plot_all_points) (_layout_plots l)
@@ -228,7 +229,7 @@ renderLegend :: Layout x y -> [LegendItem] -> Renderable (LayoutPick x y y)
 renderLegend l legItems = gridToRenderable g
   where
     g      = besideN [ tval $ mkLegend (_layout_legend l) (_layout_margin l) legItems
-                     , weights (1,1) $ tval $ emptyRenderable ]
+                     , weights (1,1) $ tval emptyRenderable ]
 
 -- | Render the plot area of a 'Layout'. This consists of the 
 --   actual plot area with all plots, the axis and their titles.
@@ -243,8 +244,8 @@ layoutPlotAreaToGrid l = buildGrid LayoutGridElements{
   lge_margin = _layout_margin l
   }
   where
-    xvals = [ x | p <- (_layout_plots l), x <- fst $ _plot_all_points p]
-    yvals = [ y | p <- (_layout_plots l), y <- snd $ _plot_all_points p]
+    xvals = [ x | p <- _layout_plots l, x <- fst $ _plot_all_points p]
+    yvals = [ y | p <- _layout_plots l, y <- snd $ _plot_all_points p]
 
     bAxis = mkAxis E_Bottom (overrideAxisVisibility l _layout_x_axis _layout_bottom_axis_visibility) xvals
     tAxis = mkAxis E_Top    (overrideAxisVisibility l _layout_x_axis _layout_top_axis_visibility   ) xvals
@@ -252,21 +253,21 @@ layoutPlotAreaToGrid l = buildGrid LayoutGridElements{
     rAxis = mkAxis E_Right  (overrideAxisVisibility l _layout_y_axis _layout_right_axis_visibility ) yvals
     axes = (bAxis,lAxis,tAxis,rAxis)
 
-    plotsToRenderable l = Renderable {
+    plotsToRenderable lxy = Renderable {
         minsize = return (0,0),
-        render  = renderPlots l
+        render  = renderPlots lxy
     }
 
     -- | Render the plots of a 'Layout' to a plot area of given size.
     renderPlots :: Layout x y -> RectSize -> ChartBackend (PickFn (LayoutPick x y y))
-    renderPlots l sz@(w,h) = do
-        when (not (_layout_grid_last l)) (renderGrids sz axes)
-        withClipRegion (Rect (Point 0 0) (Point w h)) $ do
-          mapM_ rPlot (_layout_plots l)
-        when (_layout_grid_last l) (renderGrids sz axes)
+    renderPlots lxy sz@(w,h) = do
+        unless (_layout_grid_last lxy) (renderGrids sz axes)
+        withClipRegion (Rect (Point 0 0) (Point w h)) $
+          mapM_ rPlot (_layout_plots lxy)
+        when (_layout_grid_last lxy) (renderGrids sz axes)
         return pickfn
       where
-        rPlot p = renderSinglePlot sz bAxis lAxis p
+        rPlot = renderSinglePlot sz bAxis lAxis
 
         xr = (0, w)
         yr = (h, 0)
@@ -285,8 +286,8 @@ layoutPlotAreaToGrid l = buildGrid LayoutGridElements{
                 (Just at,_)   -> Just at
                 (_,Just at)   -> Just at
                 (Nothing,Nothing)   -> Nothing
-            mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (optPairReverse rev xr) x
-            mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (optPairReverse rev yr) y
+            mapx (AxisT _ _ rev ad) = _axis_tropweiv ad (optPairReverse rev xr)
+            mapy (AxisT _ _ rev ad) = _axis_tropweiv ad (optPairReverse rev yr)
 
 -- | Empty 'Layout' without title and plots. The background is white and 
 --   the grid is drawn beneath all plots. There will be a legend. The top
@@ -372,8 +373,8 @@ instance (Ord x, Ord yl, Ord yr) => ToRenderable (LayoutLR x yl yr) where
 -- | Render the given 'LayoutLR'.
 layoutLRToRenderable :: forall x yl yr . (Ord x, Ord yl, Ord yr) 
                      => LayoutLR x yl yr -> Renderable (LayoutPick x yl yr)
-layoutLRToRenderable l = fillBackground (_layoutlr_background l) 
-                       $ gridToRenderable (layoutLRToGrid l)
+layoutLRToRenderable llr = fillBackground (_layoutlr_background llr) 
+                       $ gridToRenderable (layoutLRToGrid llr)
   where
     layoutLRToGrid l = aboveN
            [  tval $ titleToRenderable (_layoutlr_margin l) (_layoutlr_title_style l) (_layoutlr_title l)
@@ -382,7 +383,7 @@ layoutLRToRenderable l = fillBackground (_layoutlr_background l)
            ,  tval $ renderLegendLR l (getLegendItemsLR l)
            ]
 
-    lm = _layoutlr_margin l
+    lm = _layoutlr_margin llr
 
 getLayoutLRXVals :: LayoutLR x yl yr -> [x]
 getLayoutLRXVals l = concatMap deEither $ _layoutlr_plots l
@@ -395,8 +396,8 @@ getLayoutLRXVals l = concatMap deEither $ _layoutlr_plots l
 --   Left and right plot legend items are still separated.
 getLegendItemsLR :: LayoutLR x yl yr -> ([LegendItem],[LegendItem])
 getLegendItemsLR l = (
-    concat [ _plot_legend p | (Left p ) <- (_layoutlr_plots l) ],
-    concat [ _plot_legend p | (Right p) <- (_layoutlr_plots l) ]
+    concat [ _plot_legend p | (Left p ) <- _layoutlr_plots l ],
+    concat [ _plot_legend p | (Right p) <- _layoutlr_plots l ]
     )
 
 -- | Render the given 'LegendItem's for a 'LayoutLR'.
@@ -404,9 +405,9 @@ renderLegendLR :: LayoutLR x yl yr -> ([LegendItem],[LegendItem]) -> Renderable 
 renderLegendLR l (lefts,rights) = gridToRenderable g
   where
     g      = besideN [ tval $ mkLegend (_layoutlr_legend l) (_layoutlr_margin l) lefts
-                     , weights (1,1) $ tval $ emptyRenderable
+                     , weights (1,1) $ tval emptyRenderable
                      , tval $ mkLegend (_layoutlr_legend l) (_layoutlr_margin l) rights ]
-    lm     = _layoutlr_margin l
+    -- lm     = _layoutlr_margin l
 
 layoutLRPlotAreaToGrid :: forall x yl yr. (Ord x, Ord yl, Ord yr) 
                        => LayoutLR x yl yr 
@@ -431,17 +432,17 @@ layoutLRPlotAreaToGrid l = buildGrid LayoutGridElements{
     rAxis = mkAxis E_Right  (overrideAxisVisibility l _layoutlr_right_axis _layoutlr_right_axis_visibility) yvalsR
     axes = (bAxis,lAxis,tAxis,rAxis)
 
-    plotsToRenderable l = Renderable {
+    plotsToRenderable llr = Renderable {
         minsize = return (0,0),
-        render  = renderPlots l
+        render  = renderPlots llr
     }
 
     renderPlots :: LayoutLR x yl yr -> RectSize -> ChartBackend (PickFn (LayoutPick x yl yr))
-    renderPlots l sz@(w,h) = do
-        when (not (_layoutlr_grid_last l)) (renderGrids sz axes)
-        withClipRegion (Rect (Point 0 0) (Point w h)) $ do
-          mapM_ rPlot (_layoutlr_plots l)
-        when (_layoutlr_grid_last l) (renderGrids sz axes)
+    renderPlots llr sz@(w,h) = do
+        unless (_layoutlr_grid_last llr) (renderGrids sz axes)
+        withClipRegion (Rect (Point 0 0) (Point w h)) $
+          mapM_ rPlot (_layoutlr_plots llr)
+        when (_layoutlr_grid_last llr) (renderGrids sz axes)
         return pickfn
       where
         rPlot (Left  p) = renderSinglePlot sz bAxis lAxis p
@@ -462,8 +463,8 @@ layoutLRPlotAreaToGrid l = buildGrid LayoutGridElements{
             myats = case (lAxis,rAxis) of
                 (Just at1,Just at2) -> Just (at1,at2)
                 (_,_)   -> Nothing
-            mapx (AxisT _ _ rev ad) x = _axis_tropweiv ad (optPairReverse rev xr) x
-            mapy (AxisT _ _ rev ad) y = _axis_tropweiv ad (optPairReverse rev yr) y
+            mapx (AxisT _ _ rev ad) = _axis_tropweiv ad (optPairReverse rev xr)
+            mapy (AxisT _ _ rev ad) = _axis_tropweiv ad (optPairReverse rev yr)
 
 ----------------------------------------------------------------------
 
@@ -508,7 +509,7 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
     mkGrid (sl, i)
         = titleR
           `wideAbove`
-          (addMarginsToGrid (lm,lm,lm,lm) $ mkPlotArea usedAxis)
+          addMarginsToGrid (lm,lm,lm,lm) (mkPlotArea usedAxis)
           `aboveWide`
           (if showLegend then legendR else emptyRenderable)
       where
@@ -588,13 +589,13 @@ addMarginsToGrid (t,b,l,r) g = aboveN [
     rs = tval $ spacer (r,0)
 
 titleToRenderable :: Double -> FontStyle -> String -> Renderable (LayoutPick x yl yr)
-titleToRenderable lm fs "" = emptyRenderable
+titleToRenderable _  _  "" = emptyRenderable
 titleToRenderable lm fs s = addMargins (lm/2,0,0,0) (mapPickFn LayoutPick_Title title)
   where
     title = label fs HTA_Centre VTA_Centre s
 
 mkLegend :: Maybe LegendStyle -> Double -> [LegendItem] -> Renderable (LayoutPick x yl yr)
-mkLegend ls lm vals = case ls of
+mkLegend mls lm vals = case mls of
     Nothing -> emptyRenderable
     Just ls ->  case filter ((/="").fst) vals of
         []  -> emptyRenderable ;
@@ -628,16 +629,16 @@ buildGrid lge = layer2 `overlay` layer1
          , besideN [er,     er,  er,    btitle, er,    er,  er       ]
          ]
 
-    er = tval $ emptyRenderable
+    er = tval emptyRenderable
 
     plots = tval $ lge_plots lge
 
-    (tdata,tlbl,tstyle) = lge_taxis lge
+    (tdata,_,_)         = lge_taxis lge
     (bdata,blbl,bstyle) = lge_baxis lge
     (ldata,llbl,lstyle) = lge_laxis lge
     (rdata,rlbl,rstyle) = lge_raxis lge
 
-    (ttitle,_) = mktitle HTA_Centre VTA_Bottom   0 tlbl tstyle LayoutPick_XTopAxisTitle
+    -- (ttitle,_) = mktitle HTA_Centre VTA_Bottom   0 tlbl tstyle LayoutPick_XTopAxisTitle
     (btitle,_) = mktitle HTA_Centre VTA_Top      0 blbl bstyle LayoutPick_XBottomAxisTitle
     (ltitle,lam) = mktitle HTA_Right  VTA_Centre 270 llbl lstyle LayoutPick_YLeftAxisTitle
     (rtitle,ram) = mktitle HTA_Left   VTA_Centre 270 rlbl rstyle LayoutPick_YRightAxisTitle
@@ -662,10 +663,10 @@ buildGrid lge = layer2 `overlay` layer1
             -> (String -> LayoutPick x yl yr) 
             -> ( Grid (Renderable (LayoutPick x yl yr))
                , Grid (Renderable (LayoutPick x yl yr)) )
-    mktitle ha va rot lbl style pf = if lbl == "" then (er,er) else (label,gap)
+    mktitle ha va rot lbl style pf = if lbl == "" then (er,er) else (labelG,gapG)
       where
-        label = tval $ mapPickFn pf $ rlabel style ha va rot lbl
-        gap = tval $ spacer (lge_margin lge,0)
+        labelG = tval $ mapPickFn pf $ rlabel style ha va rot lbl
+        gapG = tval $ spacer (lge_margin lge,0)
 
 -- | Render the grids of the given axis to a plot area of given size.
 renderGrids :: RectSize -> (Maybe (AxisT x), Maybe (AxisT yl), Maybe (AxisT x), Maybe (AxisT yr)) -> ChartBackend ()
@@ -682,15 +683,15 @@ optPairReverse rev (a,b) = if rev then (b,a) else (a,b)
 -- | Render a single set of plot data onto a plot area of given size using
 --   the given x and y axis.
 renderSinglePlot :: RectSize -> Maybe (AxisT x) -> Maybe (AxisT y) -> Plot x y -> ChartBackend ()
-renderSinglePlot (w, h) (Just (AxisT _ xs xrev xaxis)) (Just (AxisT _ ys yrev yaxis)) p =
+renderSinglePlot (w, h) (Just (AxisT _ _ xrev xaxis)) (Just (AxisT _ _ yrev yaxis)) p =
   let xr = optPairReverse xrev (0, w)
       yr = optPairReverse yrev (h, 0)
-      yrange = if yrev then (0, h) else (h, 0)
+      -- yrange = if yrev then (0, h) else (h, 0)
       pmfn (x,y) = Point (mapv xr (_axis_viewport xaxis xr) x)
                          (mapv yr (_axis_viewport yaxis yr) y)
-      mapv (min,max) _ LMin       = min
-      mapv (min,max) _ LMax       = max
-      mapv _         f (LValue v) = f v
+      mapv lims _ LMin       = fst lims
+      mapv lims _ LMax       = snd lims
+      mapv _    f (LValue v) = f v
   in _plot_render p pmfn
 renderSinglePlot _ _ _ _ = return ()
 
@@ -712,7 +713,7 @@ mkAxis edge laxis vals = case axisVisible of
   where
     style = _laxis_style laxis
     rev   = _laxis_reverse laxis
-    adata = (_laxis_override laxis) (_laxis_generate laxis vals)
+    adata = _laxis_override laxis (_laxis_generate laxis vals)
     vis   = _axis_visibility adata
     axisVisible = _axis_show_labels vis || _axis_show_line vis || _axis_show_ticks vis
 
@@ -723,7 +724,7 @@ overrideAxisVisibility :: layout
                        -> LayoutAxis z 
 overrideAxisVisibility ly selAxis selVis = 
   let vis = selVis ly
-  in (selAxis ly) { _laxis_override = (\ad -> ad { _axis_visibility = selVis ly }) 
+  in (selAxis ly) { _laxis_override = (\ad -> ad { _axis_visibility = vis }) 
                                     . _laxis_override (selAxis ly)
                   }
 

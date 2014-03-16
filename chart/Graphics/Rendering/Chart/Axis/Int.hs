@@ -36,18 +36,18 @@ defaultIntAxis  = LinearAxisParams {
 
 autoScaledIntAxis :: (Integral i, PlotValue i) =>
                      LinearAxisParams i -> AxisFn i
-autoScaledIntAxis lap ps = scaledIntAxis lap (min,max) ps
+autoScaledIntAxis lap ps = scaledIntAxis lap rs ps
   where
-    (min,max) = (minimum ps,maximum ps)
+    rs = (minimum ps,maximum ps)
 
 scaledIntAxis :: (Integral i, PlotValue i) =>
                  LinearAxisParams i -> (i,i) -> AxisFn i
-scaledIntAxis lap (min,max) ps =
+scaledIntAxis lap (minI,maxI) ps =
     makeAxis (_la_labelf lap) (labelvs,tickvs,gridvs)
   where
     range []  = (0,1)
-    range _   | min == max = (fromIntegral $ min-1, fromIntegral $ min+1)
-              | otherwise  = (fromIntegral $ min,   fromIntegral $ max)
+    range _   | minI == maxI = (fromIntegral $ minI-1, fromIntegral $ minI+1)
+              | otherwise    = (fromIntegral   minI,   fromIntegral   maxI)
 --  labelvs  :: [i]
     labelvs   = stepsInt (fromIntegral $ _la_nLabels lap) r
     tickvs    = stepsInt (fromIntegral $ _la_nTicks lap)
@@ -70,8 +70,8 @@ stepsInt nSteps range = bestSize (goodness alt0) alt0 alts
     sampleSteps          = [1,2,5] ++ sampleSteps1
     sampleSteps1         = [10,20,25,50] ++ map (*10) sampleSteps1
 
-    steps size (min,max) = takeWhile (<b) [a,a+size..] ++ [b]
+    steps size (minV,maxV) = takeWhile (<b) [a,a+size..] ++ [b]
       where
-        a = (floor   (min / fromIntegral size)) * size
-        b = (ceiling (max / fromIntegral size)) * size
+        a = (floor   (minV / fromIntegral size)) * size
+        b = (ceiling (maxV / fromIntegral size)) * size
 

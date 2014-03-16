@@ -51,7 +51,7 @@ import Graphics.Rendering.Chart.Utils
 --
 --   Perhaps it might be generalised from Maybe a to
 --   (MonadPlus m ) => m a in the future.
-type PickFn a = Point -> (Maybe a)
+type PickFn a = Point -> Maybe a
 
 nullPickFn :: PickFn a
 nullPickFn = const Nothing
@@ -92,7 +92,7 @@ spacer1 r  = r{ render  = \_ -> return nullPickFn }
 
 -- | Replace the pick function of a renderable with another.
 setPickFn :: PickFn b -> Renderable a -> Renderable b
-setPickFn pickfn r = r{ render  = \sz -> do { render r sz; return pickfn; } }
+setPickFn pickfn r = r{ render  = \sz -> render r sz >> return pickfn }
 
 -- | Map a function over the result of a renderable's pickfunction, keeping only 'Just' results.
 mapMaybePickFn :: (a -> Maybe b) -> Renderable a -> Renderable b
@@ -113,14 +113,14 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         (w,h) <- minsize rd
         return (w+l+r,h+t+b)
 
-    rf (w,h) = do
+    rf (w,h) = 
         withTranslation (Point l t) $ do
           pickf <- render rd (w-l-r,h-t-b)
           return (mkpickf pickf (t,b,l,r) (w,h))
 
-    mkpickf pickf (t,b,l,r) (w,h) (Point x y)
-        | x >= l && x <= w-r && y >= t && t <= h-b = pickf (Point (x-l) (y-t))
-        | otherwise                                = Nothing
+    mkpickf pickf (t',b',l',r') (w,h) (Point x y)
+        | x >= l' && x <= w-r' && y >= t' && t' <= h-b' = pickf (Point (x-l') (y-t'))
+        | otherwise                                     = Nothing
 
 -- | Overlay a renderable over a solid background fill.
 fillBackground :: FillStyle -> Renderable a -> Renderable a
@@ -219,12 +219,12 @@ rectangleToRenderable rectangle = Renderable mf rf
       maybeM () (stroke sz) (_rect_lineStyle rectangle)
       return nullPickFn
 
-    fill sz fs = do
-        withFillStyle fs $ do
+    fill sz fs = 
+        withFillStyle fs $ 
           fillPath $ strokeRectangleP sz (_rect_cornerStyle rectangle)
 
-    stroke sz ls = do
-        withLineStyle ls $ do
+    stroke sz ls = 
+        withLineStyle ls $ 
           strokePath $ strokeRectangleP sz (_rect_cornerStyle rectangle)
 
     strokeRectangleP (x2,y2) RCornerSquare =

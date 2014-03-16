@@ -64,7 +64,7 @@ joinPlot Plot{ _plot_render     = renderP
 
 ----------------------------------------------------------------------
 
-mapXY :: PointMapFn x y -> ((x,y) -> Point)
+mapXY :: PointMapFn x y -> (x,y) -> Point
 mapXY f (x,y) = f (LValue x, LValue y)
 
 ----------------------------------------------------------------------

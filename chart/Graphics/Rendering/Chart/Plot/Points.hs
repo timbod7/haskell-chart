@@ -44,20 +44,21 @@ instance ToPlot PlotPoints where
         pts = _plot_points_values p
 
 renderPlotPoints :: PlotPoints x y -> PointMapFn x y -> ChartBackend ()
-renderPlotPoints p pmap = do
+renderPlotPoints p pmap = 
     mapM_ (drawPoint ps . pmap') (_plot_points_values p)
   where
     pmap' = mapXY pmap
-    ps = (_plot_points_style p)
+    ps = _plot_points_style p
 
 renderPlotLegendPoints :: PlotPoints x y -> Rect -> ChartBackend ()
-renderPlotLegendPoints p r@(Rect p1 p2) = do
-    drawPoint ps (Point (p_x p1)              ((p_y p1 + p_y p2)/2))
-    drawPoint ps (Point ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2))
-    drawPoint ps (Point (p_x p2)              ((p_y p1 + p_y p2)/2))
+renderPlotLegendPoints p (Rect p1 p2) = do
+    drawPoint ps (Point (p_x p1)              y)
+    drawPoint ps (Point ((p_x p1 + p_x p2)/2) y)
+    drawPoint ps (Point (p_x p2)              y)
 
   where
-    ps = (_plot_points_style p)
+    ps = _plot_points_style p
+    y = (p_y p1 + p_y p2)/2
 
 {-# DEPRECATED defaultPlotPoints  "Use the according Data.Default instance!" #-}
 defaultPlotPoints :: PlotPoints x y

@@ -21,6 +21,8 @@ library
                , data-default-class < 0.1
                , operational >= 0.2.2 && < 0.3
 
+  Ghc-options: -Wall -fno-warn-orphans
+
   Exposed-modules:
         Graphics.Rendering.Chart,
         Graphics.Rendering.Chart.Drawing,

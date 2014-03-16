@@ -43,14 +43,14 @@ instance ToPlot PlotAnnotation where
     toPlot p = Plot {
         _plot_render = renderAnnotation p,
 	_plot_legend = [],
-	_plot_all_points = (map (\(x,_,_)->x)  vs , map (\(_,y,_)->y) vs)
+	_plot_all_points = (map (^._1) vs , map (^._2) vs)
     }
       where
         vs = _plot_annotation_values p
 
 
 renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> ChartBackend ()
-renderAnnotation p pMap = withFontStyle style $ do                           
+renderAnnotation p pMap = withFontStyle style $
                             mapM_ drawOne values
     where hta = _plot_annotation_hanchor p
           vta = _plot_annotation_vanchor p

@@ -64,7 +64,7 @@ renderPlotLines p pmap =
     drawLines mapfn pts = alignStrokePoints (map mapfn pts) >>= strokePointPath 
 
 renderPlotLegendLines :: PlotLines x y -> Rect -> ChartBackend ()
-renderPlotLegendLines p r@(Rect p1 p2) = 
+renderPlotLegendLines p (Rect p1 p2) = 
   withLineStyle (_plot_lines_style p) $ do
     let y = (p_y p1 + p_y p2) / 2
     ps <- alignStrokePoints [Point (p_x p1) y, Point (p_x p2) y]

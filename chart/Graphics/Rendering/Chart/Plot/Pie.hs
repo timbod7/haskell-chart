@@ -141,7 +141,7 @@ pieToRenderable p = fillBackground (_pie_background p) (
 
 extraSpace :: PieChart -> ChartBackend (Double, Double)
 extraSpace p = do
-    textSizes <- mapM textDimension (map _pitem_label (_pie_data p))
+    textSizes <- mapM (textDimension . _pitem_label) (_pie_data p)
     let maxw  = foldr (max.fst) 0 textSizes
     let maxh  = foldr (max.snd) 0 textSizes
     let maxo  = foldr (max._pitem_offset) 0 (_pie_data p)
@@ -156,25 +156,27 @@ minsizePie p = do
 renderPie :: PieChart -> (Double, Double) -> ChartBackend (PickFn a)
 renderPie p (w,h) = do
     (extraw,extrah) <- extraSpace p
-    let (w,h)  = (p_x p2 - p_x p1, p_y p2 - p_y p1)
-    let center = Point (p_x p1 + w/2)  (p_y p1 + h/2)
-    let radius = (min (w - 2*extraw) (h - 2*extrah)) / 2
+    -- let (w,h)  = (p_x p2 - p_x p1, p_y p2 - p_y p1)
+    -- let center = Point (p_x p1 + w/2)  (p_y p1 + h/2)
+    --
+    let center = Point (w/2) (h/2)
+    let radius = min (w - 2*extraw) (h - 2*extrah) / 2
 
     foldM_ (paint center radius) (_pie_start_angle p)
            (zip (_pie_colors p) content)
     return nullPickFn
  
     where
-        p1 = Point 0 0 
-        p2 = Point w h 
+        -- p1 = Point 0 0 
+        -- p2 = Point w h 
         content = let total = sum (map _pitem_value (_pie_data p))
-                  in [ pi{_pitem_value=_pitem_value pi/total}
-                     | pi <- _pie_data p ]
+                  in [ pitem{_pitem_value=_pitem_value pitem/total}
+                     | pitem <- _pie_data p ]
 
         paint :: Point -> Double -> Double -> (AlphaColour Double, PieItem)
               -> ChartBackend Double
         paint center radius a1 (color,pitem) = do
-            let ax     = 360.0 * (_pitem_value pitem)
+            let ax     = 360.0 * _pitem_value pitem
             let a2     = a1 + (ax / 2)
             let a3     = a1 + ax
             let offset = _pitem_offset pitem
@@ -186,33 +188,33 @@ renderPie p (w,h) = do
 
             where
                 pieLabel :: String -> Double -> Double -> ChartBackend ()
-                pieLabel name angle offset = do
-                    withFontStyle (_pie_label_style p) $ do
+                pieLabel name angle offset = 
+                    withFontStyle (_pie_label_style p) $ 
                       withLineStyle (_pie_label_line_style p) $ do
                         let p1 = ray angle (radius+label_rgap+label_rlength+offset)
-                        p1a <- alignStrokePoint $ p1
-                        (tw,th) <- textDimension name
+                        p1a <- alignStrokePoint p1
+                        (tw,_) <- textDimension name
                         let (offset',anchor) = if angle < 90 || angle > 270 
                                               then ((0+),HTA_Left)
                                               else ((0-),HTA_Right)
                         p0 <- alignStrokePoint $ ray angle (radius + label_rgap+offset)
                         strokePath $ moveTo p0
                                   <> lineTo p1a
-                                  <> lineTo' (p_x p1a + (offset' (tw + label_rgap))) (p_y p1a)
+                                  <> lineTo' (p_x p1a + offset' (tw + label_rgap)) (p_y p1a)
 
-                        let p2 = p1 `pvadd` (Vector (offset' label_rgap) 0)
+                        let p2 = p1 `pvadd` Vector (offset' label_rgap) 0
                         drawTextA anchor VTA_Bottom p2 name
 
                 pieSlice :: Point -> Double -> Double -> AlphaColour Double -> ChartBackend ()
-                pieSlice (Point x y) a1 a2 color = do
-                    let path = arc' x y radius (radian a1) (radian a2)
+                pieSlice (Point x y) arc1 arc2 pColor = do
+                    let path = arc' x y radius (radian arc1) (radian arc2)
                             <> lineTo' x y
                             <> lineTo' x y
                             <> close
 
-                    withFillStyle (FillStyleSolid color) $ do
+                    withFillStyle (FillStyleSolid pColor) $ 
                       fillPath path
-                    withLineStyle (def { _line_color = withOpacity white 0.1 }) $ do
+                    withLineStyle (def { _line_color = withOpacity white 0.1 }) $ 
                       strokePath path
 
                 ray :: Double -> Double -> Point
@@ -222,13 +224,15 @@ renderPie p (w,h) = do
                     y'   = y + (sin' * x'')
                     cos' = (cos . radian) angle
                     sin' = (sin . radian) angle
-                    x''  = ((x + r) - x)
+                    -- TODO: is x'' defined in this way to try and avoid
+                    --       numerical rounding?
+                    x''  = (x + r) - x
                     x    = p_x center
                     y    = p_y center
 
                 radian = (*(pi / 180.0))
 
-
+label_rgap, label_rlength :: Double
 label_rgap = 5
 label_rlength = 15
 
