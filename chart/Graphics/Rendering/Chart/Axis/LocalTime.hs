@@ -7,16 +7,25 @@
 -- Calculate and render time axes
 
 module Graphics.Rendering.Chart.Axis.LocalTime(
+    TimeSeq,
+    TimeLabelFn,
+    TimeLabelAlignment(..),
+    
     timeAxis,
     autoTimeAxis,
-    days, months, years
-) where
+    
+    days, months, years,
+                  
+    -- * Utilities
+    doubleFromLocalTime
+    
+    ) where
  
 import Data.Default.Class
 import Data.Time
 import Data.Fixed
 import System.Locale (defaultTimeLocale)
--- import Control.Lens
+import Control.Lens
 
 import Graphics.Rendering.Chart.Axis.Types
 
@@ -70,15 +79,24 @@ data TimeLabelAlignment = UnderTicks
                         | BetweenTicks
                         deriving (Show)
 
--- | Create an 'AxisFn' to for a time axis.  The first 'TimeSeq' sets the
---   minor ticks, and the ultimate range will be aligned to its elements.
---   The second 'TimeSeq' sets the labels and grid.  The third 'TimeSeq'
---   sets the second line of labels.  The 'TimeLabelFn' is
---   used to format LocalTimes for labels.  The values to be plotted
---   against this axis can be created with 'doubleFromLocalTime'.
-timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> TimeLabelAlignment -> 
-                       TimeSeq -> TimeLabelFn -> TimeLabelAlignment -> 
-            AxisFn LocalTime
+-- | Create an 'AxisFn' to for a time axis.
+--
+--   The values to be plotted against this axis can be created with
+--   'doubleFromLocalTime'.
+timeAxis :: 
+  TimeSeq 
+  -- ^ Set the minor ticks, and the final range will be aligned to its
+  --   elements.
+  -> TimeSeq 
+  -- ^ Set the labels and grid.
+  -> TimeLabelFn 
+  -> TimeLabelAlignment 
+  -> TimeSeq 
+  -- ^ Set the second line of labels.
+  -> TimeLabelFn 
+  -- ^ Format `LocalTime` for labels.
+  -> TimeLabelAlignment 
+  -> AxisFn LocalTime
 timeAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
     _axis_visibility = def,
     _axis_viewport = vmap(min', max'),
