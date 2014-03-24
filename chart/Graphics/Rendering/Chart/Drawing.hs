@@ -89,7 +89,8 @@ import Data.Default.Class
 -- with Graphics.Rendering.Chart.Geometry.moveTo (so you get
 -- -Wall notices). This would suggest a 'hiding (moveTo)' in
 -- the import, but it's been removed in lens-4.0 and I don't
--- feel it's worth the use of conditional compilation
+-- feel it's worth the use of conditional compilation. This does
+-- lead to the qualified Geometry import below.
 import Control.Lens
 import Data.Colour
 import Data.Colour.Names
@@ -97,7 +98,8 @@ import Data.List (unfoldr)
 import Data.Monoid
 
 import Graphics.Rendering.Chart.Backend
-import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Geometry hiding (moveTo)
+import qualified Graphics.Rendering.Chart.Geometry as G
 
 -- -----------------------------------------------------------------------
 -- Transformation helpers
@@ -139,7 +141,7 @@ withDefaultStyle = withLineStyle def . withFillStyle def . withFontStyle def
 
 -- | Align the path by applying the given function on all points.
 alignPath :: (Point -> Point) -> Path -> Path
-alignPath f = foldPath (moveTo . f)
+alignPath f = foldPath (G.moveTo . f)
                        (lineTo . f)
                        (arc . f)
                        (arcNeg . f)
@@ -194,7 +196,7 @@ alignFillPoint p = do
 -- | Create a path by connecting all points with a line.
 --   The path is not closed.
 stepPath :: [Point] -> Path
-stepPath (p:ps) = moveTo p
+stepPath (p:ps) = G.moveTo p
                <> mconcat (map lineTo ps)
 stepPath [] = mempty
 
@@ -360,7 +362,7 @@ drawPoint ps@(PointStyle _ _ _ r shape) p = withPointStyle ps $ do
           angles = map intToAngle [0 .. sides-1]
           (p1:p1s) = map (\a -> Point (x + r * sin a)
                                       (y + r * cos a)) angles
-      let path = moveTo p1 <> mconcat (map lineTo p1s) <> lineTo p1
+      let path = G.moveTo p1 <> mconcat (map lineTo p1s) <> lineTo p1
       fillPath path
       strokePath path
     PointShapePlus -> 

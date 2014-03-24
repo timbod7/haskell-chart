@@ -57,7 +57,8 @@ import Data.Monoid
 import Data.Default.Class
 import Control.Monad
 
-import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Geometry hiding (moveTo)
+import qualified Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
@@ -200,7 +201,7 @@ renderPie p (w,h) = do
                                               then ((0+),HTA_Left)
                                               else ((0-),HTA_Right)
                         p0 <- alignStrokePoint $ ray angle (radius + label_rgap+offset)
-                        strokePath $ moveTo p0
+                        strokePath $ G.moveTo p0
                                   <> lineTo p1a
                                   <> lineTo' (p_x p1a + offset' (tw + label_rgap)) (p_y p1a)
 
