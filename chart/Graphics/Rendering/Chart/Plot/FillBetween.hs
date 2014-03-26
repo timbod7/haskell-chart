@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.FillBetween
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Plots that fill the area between two lines.
@@ -22,10 +22,8 @@ module Graphics.Rendering.Chart.Plot.FillBetween(
 import Control.Lens
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
-import Data.Colour.Names (black, blue)
 import Data.Colour.SRGB (sRGB)
 import Data.Default.Class
 
@@ -47,22 +45,27 @@ instance ToPlot PlotFillBetween where
     }
 
 renderPlotFillBetween :: PlotFillBetween x y -> PointMapFn x y -> ChartBackend ()
-renderPlotFillBetween p pmap =
-    renderPlotFillBetween' p (_plot_fillbetween_values p) pmap
+renderPlotFillBetween p =
+    renderPlotFillBetween' p (_plot_fillbetween_values p)
 
-renderPlotFillBetween' p [] _     = return ()
+renderPlotFillBetween' :: 
+  PlotFillBetween x y 
+  -> [(a, (b, b))]
+  -> ((Limit a, Limit b) -> Point)
+  -> ChartBackend ()
+renderPlotFillBetween' _ [] _     = return ()
 renderPlotFillBetween' p vs pmap  = 
   withFillStyle (_plot_fillbetween_style p) $ do
     ps <- alignFillPoints $ [p0] ++ p1s ++ reverse p2s ++ [p0]
     fillPointPath ps
   where
     pmap'    = mapXY pmap
-    (p0:p1s) = map pmap' [ (x,y1) | (x,(y1,y2)) <- vs ]
-    p2s      = map pmap' [ (x,y2) | (x,(y1,y2)) <- vs ]
+    (p0:p1s) = map pmap' [ (x,y1) | (x,(y1,_)) <- vs ]
+    p2s      = map pmap' [ (x,y2) | (x,(_,y2)) <- vs ]
 
 renderPlotLegendFill :: PlotFillBetween x y -> Rect -> ChartBackend ()
 renderPlotLegendFill p r = 
-  withFillStyle (_plot_fillbetween_style p) $ do
+  withFillStyle (_plot_fillbetween_style p) $ 
     fillPath (rectPath r)
 
 plotAllPointsFillBetween :: PlotFillBetween x y -> ([x],[y])

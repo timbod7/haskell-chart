@@ -14,6 +14,8 @@ module Graphics.Rendering.Chart.Renderable(
     Renderable(..),
     ToRenderable(..),
     PickFn,
+    Rectangle(..),
+    RectCornerStyle(..),
     
     rectangleToRenderable,
 
@@ -38,7 +40,6 @@ module Graphics.Rendering.Chart.Renderable(
 
 import Control.Monad
 import Control.Lens
-import Data.List ( nub, transpose, sort )
 import Data.Monoid
 import Data.Default.Class
 
@@ -50,7 +51,7 @@ import Graphics.Rendering.Chart.Utils
 --
 --   Perhaps it might be generalised from Maybe a to
 --   (MonadPlus m ) => m a in the future.
-type PickFn a = Point -> (Maybe a)
+type PickFn a = Point -> Maybe a
 
 nullPickFn :: PickFn a
 nullPickFn = const Nothing
@@ -91,7 +92,7 @@ spacer1 r  = r{ render  = \_ -> return nullPickFn }
 
 -- | Replace the pick function of a renderable with another.
 setPickFn :: PickFn b -> Renderable a -> Renderable b
-setPickFn pickfn r = r{ render  = \sz -> do { render r sz; return pickfn; } }
+setPickFn pickfn r = r{ render  = \sz -> render r sz >> return pickfn }
 
 -- | Map a function over the result of a renderable's pickfunction, keeping only 'Just' results.
 mapMaybePickFn :: (a -> Maybe b) -> Renderable a -> Renderable b
@@ -112,14 +113,14 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         (w,h) <- minsize rd
         return (w+l+r,h+t+b)
 
-    rf (w,h) = do
+    rf (w,h) = 
         withTranslation (Point l t) $ do
           pickf <- render rd (w-l-r,h-t-b)
           return (mkpickf pickf (t,b,l,r) (w,h))
 
-    mkpickf pickf (t,b,l,r) (w,h) (Point x y)
-        | x >= l && x <= w-r && y >= t && t <= h-b = pickf (Point (x-l) (y-t))
-        | otherwise                                = Nothing
+    mkpickf pickf (t',b',l',r') (w,h) (Point x y)
+        | x >= l' && x <= w-r' && y >= t' && t' <= h-b' = pickf (Point (x-l') (y-t'))
+        | otherwise                                     = Nothing
 
 -- | Overlay a renderable over a solid background fill.
 fillBackground :: FillStyle -> Renderable a -> Renderable a
@@ -162,8 +163,6 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
       let sz@(w,h) = (textSizeWidth ts, textSizeHeight ts)
           descent = textSizeDescent ts
           
-          -- TODO: rotation is not handled correctly, in particular
-          --       for VTA_BaseLine
           xadj HTA_Left   = xwid sz/2
           xadj HTA_Centre = w0/2
           xadj HTA_Right  = w0 - xwid sz/2
@@ -171,7 +170,7 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
           yadj VTA_Top      = ywid sz/2
           yadj VTA_Centre   = h0/2
           yadj VTA_Bottom   = h0 - ywid sz/2
-          yadj VTA_BaseLine = h0 - descent
+          yadj VTA_BaseLine = h0 - ywid sz/2 + descent*acr
 
       withTranslation (Point 0 (-descent)) $ 
         withTranslation (Point (xadj hta) (yadj vta)) $ 
@@ -200,10 +199,6 @@ data Rectangle = Rectangle {
   _rect_cornerStyle :: RectCornerStyle
 }
 
-{-# DEPRECATED defaultRectangle "Use the according Data.Default instance!" #-}
-defaultRectangle :: Rectangle
-defaultRectangle = def
-
 instance Default Rectangle where
   def = Rectangle
     { _rect_minsize     = (0,0)
@@ -224,12 +219,12 @@ rectangleToRenderable rectangle = Renderable mf rf
       maybeM () (stroke sz) (_rect_lineStyle rectangle)
       return nullPickFn
 
-    fill sz fs = do
-        withFillStyle fs $ do
+    fill sz fs = 
+        withFillStyle fs $ 
           fillPath $ strokeRectangleP sz (_rect_cornerStyle rectangle)
 
-    stroke sz ls = do
-        withLineStyle ls $ do
+    stroke sz ls = 
+        withLineStyle ls $ 
           strokePath $ strokeRectangleP sz (_rect_cornerStyle rectangle)
 
     strokeRectangleP (x2,y2) RCornerSquare =

@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Legend
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 -- 
 -- Types and functions for handling the legend(s) on a chart. A legend
@@ -20,14 +20,12 @@ module Graphics.Rendering.Chart.Legend(
     legend_orientation
 ) where
 
-import Control.Monad
-import Data.List (nub, partition,intersperse)
+import Data.List (partition,intersperse)
 import Control.Lens
 import Data.Default.Class
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Grid
 
@@ -60,8 +58,8 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
         LORows n -> mkGrid n aboveG besideG
         LOCols n -> mkGrid n besideG aboveG 
 
-    aboveG = aboveN.(intersperse ggap1)
-    besideG = besideN.(intersperse ggap1)
+    aboveG = aboveN.intersperse ggap1
+    besideG = besideN.intersperse ggap1
 
     mkGrid n join1 join2 = join1 [ join2 (map rf ps1) | ps1 <- groups n ps ]
 
@@ -72,20 +70,20 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
       where
         gpic = besideN $ intersperse ggap2 (map rp rfs)
         gtitle = tval $ lbl title
-        rp rfn = tval $ Renderable {
+        rp rfn = tval Renderable {
                      minsize = return (_legend_plot_size ls, 0),
                      render  = \(w,h) -> do 
-                         rfn (Rect (Point 0 0) (Point w h))
+                         _ <- rfn (Rect (Point 0 0) (Point w h))
                          return (\_-> Just title)
                  }
 
     ggap1 = tval $ spacer (_legend_margin ls,_legend_margin ls / 2)
     ggap2 = tval $ spacer1 (lbl "X")
-    lbl s = label (_legend_label_style ls) HTA_Left VTA_Centre s
+    lbl = label (_legend_label_style ls) HTA_Left VTA_Centre 
 
 groups :: Int -> [a] -> [[a]]
-groups  n [] = []
-groups  n vs = let (vs1,vs2) = splitAt n vs in vs1:groups n vs2
+groups _ [] = []
+groups n vs = let (vs1,vs2) = splitAt n vs in vs1:groups n vs2
 
 join_nub :: [(String, a)] -> [(String, [a])]
 join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of

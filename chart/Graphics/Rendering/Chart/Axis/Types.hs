@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Axis.Types
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Type definitions for Axes
@@ -57,13 +57,9 @@ module Graphics.Rendering.Chart.Axis.Types(
 
 ) where
 
-import Data.Time
-import Data.Fixed
-import Data.Maybe
-import System.Locale (defaultTimeLocale)
 import Control.Monad
 import Data.List(sort,intersperse)
-import Control.Lens
+import Control.Lens hiding (at, re)
 import Data.Colour (opaque)
 import Data.Colour.Names (black, lightgrey)
 import Data.Default.Class
@@ -183,16 +179,16 @@ axisLabelsOverride  :: [(x,String)] -> AxisData x -> AxisData x
 axisLabelsOverride o ad = ad{ _axis_labels = [o] }
 
 minsizeAxis :: AxisT x -> ChartBackend RectSize
-minsizeAxis (AxisT at as rev ad) = do
-    let labelVis = _axis_show_labels $ _axis_visibility $ ad
-        tickVis  = _axis_show_ticks  $ _axis_visibility $ ad
+minsizeAxis (AxisT at as _ ad) = do
+    let labelVis = _axis_show_labels $ _axis_visibility ad
+        tickVis  = _axis_show_ticks  $ _axis_visibility ad
         labels = if labelVis then labelTexts ad else []
         ticks = if tickVis then _axis_ticks ad else []
-    labelSizes <- withFontStyle (_axis_label_style as) $ do
+    labelSizes <- withFontStyle (_axis_label_style as) $
                     mapM (mapM textDimension) labels
 
     let ag      = _axis_label_gap as
-    let tsize   = maximum ([0] ++ [ max 0 (-l) | (v,l) <- ticks ])
+    let tsize   = maximum (0 : [ max 0 (-l) | (_,l) <- ticks ])
 
     let hw = maximum0 (map (maximum0.map fst) labelSizes)
     let hh = ag + tsize + (sum . intersperse ag . map (maximum0.map snd) $ labelSizes)
@@ -210,15 +206,16 @@ minsizeAxis (AxisT at as rev ad) = do
 labelTexts :: AxisData a -> [[String]]
 labelTexts ad = map (map snd) (_axis_labels ad)
 
+maximum0 :: (Num a, Ord a) => [a] -> a
 maximum0 [] = 0
 maximum0 vs = maximum vs
 
 -- | Calculate the amount by which the labels extend beyond
 --   the ends of the axis.
 axisOverhang :: (Ord x) => AxisT x -> ChartBackend (Double,Double)
-axisOverhang (AxisT at as rev ad) = do
+axisOverhang (AxisT at as _ ad) = do
     let labels = map snd . sort . concat . _axis_labels $ ad
-    labelSizes <- withFontStyle (_axis_label_style as) $ do
+    labelSizes <- withFontStyle (_axis_label_style as) $
       mapM textDimension labels
     case labelSizes of
       []  -> return (0,0)
@@ -233,17 +230,17 @@ axisOverhang (AxisT at as rev ad) = do
                  E_Right  -> ohangh
 
 renderAxis :: AxisT x -> RectSize -> ChartBackend (PickFn x)
-renderAxis at@(AxisT et as rev ad) sz = do
+renderAxis at@(AxisT et as _ ad) sz = do
   let ls = _axis_line_style as
       vis = _axis_visibility ad
-  when (_axis_show_line vis) $ do 
+  when (_axis_show_line vis) $ 
     withLineStyle (ls {_line_cap = LineCapSquare}) $ do
       p <- alignStrokePoints [Point sx sy,Point ex ey]
       strokePointPath p
-  when (_axis_show_ticks vis) $ do
-    withLineStyle (ls {_line_cap = LineCapButt}) $ do
+  when (_axis_show_ticks vis) $ 
+    withLineStyle (ls {_line_cap = LineCapButt}) $ 
       mapM_ drawTick (_axis_ticks ad)
-  when (_axis_show_labels vis) $ do
+  when (_axis_show_labels vis) $ 
     withFontStyle (_axis_label_style as) $ do
       labelSizes <- mapM (mapM textDimension) (labelTexts ad)
       let sizes = map ((+ag).maximum0.map coord) labelSizes
@@ -253,24 +250,24 @@ renderAxis at@(AxisT et as rev ad) sz = do
  where
    (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
 
-   drawTick (value,length) =
+   drawTick (value,len) =
        let t1 = axisPoint value
-           t2 = t1 `pvadd` (vscale length tp)
+           t2 = t1 `pvadd` vscale len tp
        in alignStrokePoints [t1,t2] >>= strokePointPath
 
    (hta,vta,coord,awayFromAxis) = case et of
-       E_Top    -> (HTA_Centre, VTA_Bottom, snd, \v -> (Vector 0 (-v)))
-       E_Bottom -> (HTA_Centre, VTA_Top,    snd, \v -> (Vector 0 v))
-       E_Left   -> (HTA_Right,  VTA_Centre, fst, \v -> (Vector (-v) 0))
-       E_Right  -> (HTA_Left,   VTA_Centre, fst, \v -> (Vector v 0))
+       E_Top    -> (HTA_Centre, VTA_Bottom, snd, \v -> Vector 0 (-v))
+       E_Bottom -> (HTA_Centre, VTA_Top,    snd, \v -> Vector 0 v)
+       E_Left   -> (HTA_Right,  VTA_Centre, fst, \v -> Vector (-v) 0)
+       E_Right  -> (HTA_Left,   VTA_Centre, fst, \v -> Vector v 0)
 
    avoidOverlaps labels = do
        rects <- mapM labelDrawRect labels
        return $ map snd . head . filter (noOverlaps . map fst)
-              $ map (\n -> eachNth n rects) [0 .. length rects]
+              $ map (`eachNth` rects) [0 .. length rects]
 
    labelDrawRect (value,s) = do
-       let pt = axisPoint value `pvadd` (awayFromAxis ag)
+       let pt = axisPoint value `pvadd` awayFromAxis ag
        r <- textDrawRect hta vta pt s
        return (hBufferRect r,(value,s))
 
@@ -279,7 +276,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
         mapM_ drawLabel labels'
      where
        drawLabel (value,s) = do
-           drawTextA hta vta (axisPoint value `pvadd` (awayFromAxis offset)) s
+           drawTextA hta vta (axisPoint value `pvadd` awayFromAxis offset) s
            textDimension s
 
    ag = _axis_label_gap as
@@ -288,7 +285,7 @@ renderAxis at@(AxisT et as rev ad) sz = do
 hBufferRect :: Rect -> Rect
 hBufferRect (Rect p (Point x y)) = Rect p $ Point x' y
   where x' = x + w/2
-        w = x - (p_x p)
+        w = x - p_x p
 
 noOverlaps :: [Rect] -> Bool
 noOverlaps [] = True
@@ -304,6 +301,7 @@ rectsOverlap (Rect p1 p2) r = any (withinRect r) ps
         p4 = Point x2 y1
         ps = [p1,p2,p3,p4]
 
+eachNth :: Int -> [a] -> [a]
 eachNth n = skipN
   where
     n' = n - 1
@@ -317,15 +315,15 @@ withinRect (Rect (Point x1 y1) (Point x2 y2)) (Point x y)
 
 axisMapping :: AxisT z -> RectSize
                -> (Double,Double,Double,Double,Vector,z->Point,Point->z)
-axisMapping (AxisT et as rev ad) (x2,y2) = case et of
-    E_Top    -> (x1,y2,x2,y2, (Vector 0 1),    mapx y2, imapx)
-    E_Bottom -> (x1,y1,x2,y1, (Vector 0 (-1)), mapx y1, imapx)
-    E_Left   -> (x2,y2,x2,y1, (Vector (1) 0),  mapy x2, imapy) 
-    E_Right  -> (x1,y2,x1,y1, (Vector (-1) 0), mapy x1, imapy)
+axisMapping (AxisT et _ rev ad) (x2,y2) = case et of
+    E_Top    -> (x1,y2,x2,y2, Vector 0 1,    mapx y2, imapx)
+    E_Bottom -> (x1,y1,x2,y1, Vector 0 (-1), mapx y1, imapx)
+    E_Left   -> (x2,y2,x2,y1, Vector 1 0,    mapy x2, imapy) 
+    E_Right  -> (x1,y2,x1,y1, Vector (-1) 0, mapy x1, imapy)
   where
     (x1,y1) = (0,0)
-    xr = reverse (x1,x2)
-    yr = reverse (y2,y1)
+    xr = reverseR (x1,x2)
+    yr = reverseR (y2,y1)
 
     mapx y x = Point (_axis_viewport ad xr x) y
     mapy x y = Point x (_axis_viewport ad yr y)
@@ -333,15 +331,15 @@ axisMapping (AxisT et as rev ad) (x2,y2) = case et of
     imapx (Point x _) = _axis_tropweiv ad xr x
     imapy (Point _ y) = _axis_tropweiv ad yr y
 
-    reverse r@(r0,r1)  = if rev then (r1,r0) else r
+    reverseR r@(r0,r1)  = if rev then (r1,r0) else r
 
 -- 
 renderAxisGrid :: RectSize -> AxisT z -> ChartBackend ()
-renderAxisGrid sz@(w,h) at@(AxisT re as rev ad) = do
-    withLineStyle (_axis_grid_style as) $ do
+renderAxisGrid sz@(w,h) at@(AxisT re as _ ad) = 
+    withLineStyle (_axis_grid_style as) $ 
       mapM_ (drawGridLine re) (_axis_grid ad)
   where
-    (sx,sy,ex,ey,tp,axisPoint,invAxisPoint) = axisMapping at sz
+    (_,_,_,_,_,axisPoint,_) = axisMapping at sz
 
     drawGridLine E_Top    = vline
     drawGridLine E_Bottom = vline

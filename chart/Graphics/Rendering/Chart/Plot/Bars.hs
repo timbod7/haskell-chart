@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.Bars
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Bar Charts
@@ -31,14 +31,12 @@ module Graphics.Rendering.Chart.Plot.Bars(
 import Control.Lens
 import Control.Monad
 import Data.List(nub,sort)
-import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Geometry hiding (x0, y0)
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Axis
 import Data.Colour (opaque)
-import Data.Colour.Names (black, blue)
-import Data.Colour.SRGB (sRGB)
+import Data.Colour.Names (black)
 import Data.Default.Class
 
 class PlotValue a => BarsPlotValue a where
@@ -137,42 +135,41 @@ plotBars p = Plot {
     }
 
 renderPlotBars :: (BarsPlotValue y) => PlotBars x y -> PointMapFn x y -> ChartBackend ()
-renderPlotBars p pmap = case (_plot_bars_style p) of
+renderPlotBars p pmap = case _plot_bars_style p of
       BarsClustered -> forM_ vals clusteredBars
       BarsStacked   -> forM_ vals stackedBars
   where
     clusteredBars (x,ys) = do
-       forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> do
-           withFillStyle fstyle $ do
-             p <- alignFillPath (barPath (offset i) x yref0 y)
-             fillPath p
-       forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> do
-           whenJust mlstyle $ \lstyle -> do
-             withLineStyle lstyle $ do
-               p <- alignStrokePath (barPath (offset i) x yref0 y)
-               strokePath p
+       forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> 
+           withFillStyle fstyle $ 
+             alignFillPath (barPath (offset i) x yref0 y)
+             >>= fillPath
+       forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> 
+           whenJust mlstyle $ \lstyle -> 
+             withLineStyle lstyle $ 
+               alignStrokePath (barPath (offset i) x yref0 y)
+               >>= strokePath
 
-    offset = case (_plot_bars_alignment p) of
+    offset = case _plot_bars_alignment p of
       BarsLeft     -> \i -> fromIntegral i * width
       BarsRight    -> \i -> fromIntegral (i-nys) * width
       BarsCentered -> \i -> fromIntegral (2*i-nys) * width/2
 
     stackedBars (x,ys) = do
        let y2s = zip (yref0:stack ys) (stack ys)
-       let ofs = case (_plot_bars_alignment p) of {
-         BarsLeft     -> 0          ;
-         BarsRight    -> (-width)   ;
-         BarsCentered -> (-width/2)
-         }
-       forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> do
-           withFillStyle fstyle $ do
-             p <- alignFillPath (barPath ofs x y0 y1)
-             fillPath p
-       forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> do
-           whenJust mlstyle $ \lstyle -> do
-              withLineStyle lstyle $ do
-                p <- alignStrokePath (barPath ofs x y0 y1)
-                strokePath p
+       let ofs = case _plot_bars_alignment p of
+             BarsLeft     -> 0
+             BarsRight    -> -width
+             BarsCentered -> -(width/2)
+       forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> 
+           withFillStyle fstyle $ 
+             alignFillPath (barPath ofs x y0 y1)
+             >>= fillPath
+       forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> 
+           whenJust mlstyle $ \lstyle -> 
+              withLineStyle lstyle $ 
+                alignStrokePath (barPath ofs x y0 y1)
+                >>= strokePath
 
     barPath xos x y0 y1 = do
       let (Point x' y') = pmap' (x,y1)
@@ -183,10 +180,10 @@ renderPlotBars p pmap = case (_plot_bars_style p) of
     vals  = _plot_bars_values p
     width = case _plot_bars_spacing p of
         BarsFixGap gap minw -> let w = max (minXInterval - gap) minw in
-            case (_plot_bars_style p) of
+            case _plot_bars_style p of
                 BarsClustered -> w / fromIntegral nys
                 BarsStacked -> w
-        BarsFixWidth width -> width
+        BarsFixWidth width' -> width'
     styles = _plot_bars_item_styles p
 
     minXInterval = let diffs = zipWith (-) (tail mxs) mxs
@@ -197,7 +194,7 @@ renderPlotBars p pmap = case (_plot_bars_style p) of
         xs  = fst (allBarPoints p)
         mxs = nub $ sort $ map mapX xs
 
-    nys    = maximum [ length ys | (x,ys) <- vals ]
+    nys    = maximum [ length ys | (_,ys) <- vals ]
 
     pmap'  = mapXY pmap
     mapX x = p_x (pmap' (x,barsReference))
@@ -207,7 +204,7 @@ whenJust (Just a) f = f a
 whenJust _        _ = return ()
 
 allBarPoints :: (BarsPlotValue y) => PlotBars x y -> ([x],[y])
-allBarPoints p = case (_plot_bars_style p) of
+allBarPoints p = case _plot_bars_style p of
     BarsClustered -> ( [x| (x,_) <- pts], y0:concat [ys| (_,ys) <- pts] )
     BarsStacked   -> ( [x| (x,_) <- pts], y0:concat [stack ys | (_,ys) <- pts] )
   where
@@ -215,12 +212,11 @@ allBarPoints p = case (_plot_bars_style p) of
     y0  = _plot_bars_reference p
 
 stack :: (BarsPlotValue y) => [y] -> [y]
-stack ys = scanl1 barsAdd ys
-
+stack = scanl1 barsAdd
 
 renderPlotLegendBars :: (FillStyle,Maybe LineStyle) -> Rect -> ChartBackend ()
-renderPlotLegendBars (fstyle,mlstyle) r@(Rect p1 p2) = do
-  withFillStyle fstyle $ do
+renderPlotLegendBars (fstyle,_) r = 
+  withFillStyle fstyle $ 
     fillPath (rectPath r)
 
 $( makeLenses ''PlotBars )

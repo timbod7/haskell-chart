@@ -1,9 +1,16 @@
--- | This module provides the API for drawing operations abstracted
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.Chart.Axis.Unit
+-- Copyright   :  (c) Tim Docker 2014
+-- License     :  BSD-style (see chart/COPYRIGHT)
+--
+-- This module provides the API for drawing operations abstracted
 -- to arbitrary 'ChartBackend's.
+
 module Graphics.Rendering.Chart.Backend
   (
   -- * The backend Monad
-    ChartBackend(..)
+    ChartBackend
   , CRender
   
   -- * Backend Operations

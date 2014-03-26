@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.Lines
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Line plots
@@ -24,10 +24,9 @@ module Graphics.Rendering.Chart.Plot.Lines(
 import Control.Lens
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
-import Data.Colour.Names (black, blue)
+import Data.Colour.Names (blue)
 import Data.Default.Class
 
 -- | Value defining a series of (possibly disjointed) lines,
@@ -65,7 +64,7 @@ renderPlotLines p pmap =
     drawLines mapfn pts = alignStrokePoints (map mapfn pts) >>= strokePointPath 
 
 renderPlotLegendLines :: PlotLines x y -> Rect -> ChartBackend ()
-renderPlotLegendLines p r@(Rect p1 p2) = 
+renderPlotLegendLines p (Rect p1 p2) = 
   withLineStyle (_plot_lines_style p) $ do
     let y = (p_y p1 + p_y p2) / 2
     ps <- alignStrokePoints [Point (p_x p1) y, Point (p_x p2) y]

@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Axis.Unit
--- Copyright   :  (c) Tim Docker 2010
+-- Copyright   :  (c) Tim Docker 2010, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Calculate and render indexed axes
@@ -13,7 +13,8 @@ module Graphics.Rendering.Chart.Axis.Indexed(
     autoIndexAxis,
     addIndexes,
 ) where
- 
+
+import Control.Arrow (first) 
 import Data.Default.Class
 
 import Graphics.Rendering.Chart.Axis.Types
@@ -30,7 +31,7 @@ instance PlotValue PlotIndex where
 
 -- | Augment a list of values with index numbers for plotting.
 addIndexes :: [a] -> [(PlotIndex,a)]
-addIndexes as = map (\(i,a) -> (PlotIndex i,a))  (zip [0..] as)
+addIndexes as = map (first PlotIndex) (zip [0..] as)
 
 -- | Create an axis for values indexed by position. The
 --   list of strings are the labels to be used.
@@ -40,13 +41,13 @@ autoIndexAxis labels vs = AxisData {
     _axis_viewport = vport,
     _axis_tropweiv = invport,
     _axis_ticks    = [],
-    _axis_labels   = [filter (\(i,l) -> i >= imin && i <= imax)
+    _axis_labels   = [filter (\(i,_) -> i >= imin && i <= imax)
                             (zip [0..] labels)],
     _axis_grid     = []
     }
   where
     vport r i = linMap id ( fromIntegral imin - 0.5
                           , fromIntegral imax + 0.5) r (fromIntegral i)
-    invport r z = invLinMap round fromIntegral (imin, imax) r z
+    invport = invLinMap round fromIntegral (imin, imax)
     imin = minimum vs
     imax = maximum vs

@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.Annotation
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Show textual annotations on a chart.
@@ -22,22 +22,18 @@ module Graphics.Rendering.Chart.Plot.Annotation(
 import Control.Lens
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
-import Data.Colour (opaque)
-import Data.Colour.Names (black, blue)
-import Data.Colour.SRGB (sRGB)
 import Data.Default.Class
 
 -- | Value for describing a series of text annotations
 --   to be placed at arbitrary points on the graph. Annotations
---   can be rotated and styled. Rotation angle is given in degrees,
---   rotation is performend around the anchor point.
+--   can be rotated and styled.
 
 data PlotAnnotation  x y = PlotAnnotation {
       _plot_annotation_hanchor :: HTextAnchor,
       _plot_annotation_vanchor :: VTextAnchor,
       _plot_annotation_angle   :: Double,
+      -- ^ Angle, in degrees, to rotate the annotation about the anchor point.
       _plot_annotation_style   :: FontStyle,
       _plot_annotation_values  :: [(x,y,String)]
 }
@@ -47,14 +43,14 @@ instance ToPlot PlotAnnotation where
     toPlot p = Plot {
         _plot_render = renderAnnotation p,
 	_plot_legend = [],
-	_plot_all_points = (map (\(x,_,_)->x)  vs , map (\(_,y,_)->y) vs)
+	_plot_all_points = (map (^._1) vs , map (^._2) vs)
     }
       where
         vs = _plot_annotation_values p
 
 
 renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> ChartBackend ()
-renderAnnotation p pMap = withFontStyle style $ do                           
+renderAnnotation p pMap = withFontStyle style $
                             mapM_ drawOne values
     where hta = _plot_annotation_hanchor p
           vta = _plot_annotation_vanchor p

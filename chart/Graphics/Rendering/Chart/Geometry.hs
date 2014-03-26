@@ -1,3 +1,9 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.Chart.Geometry
+-- Copyright   :  (c) Tim Docker 2006, 2014
+-- License     :  BSD-style (see chart/COPYRIGHT)
+-- 
 module Graphics.Rendering.Chart.Geometry
   ( -- * Points and Vectors
     Rect(..)
@@ -63,19 +69,19 @@ pointToVec (Point x y) = Vector x y
 
 -- | Scale a vector by a constant.
 vscale :: Double -> Vector -> Vector
-vscale c (Vector x y) = (Vector (x*c) (y*c))
+vscale c (Vector x y) = Vector (x*c) (y*c)
 
 -- | Add a point and a vector.
 pvadd :: Point -> Vector -> Point
-pvadd (Point x1 y1) (Vector x2 y2) = (Point (x1+x2) (y1+y2))
+pvadd (Point x1 y1) (Vector x2 y2) = Point (x1+x2) (y1+y2)
 
 -- | Subtract a vector from a point.
 pvsub :: Point -> Vector -> Point
-pvsub (Point x1 y1) (Vector x2 y2) = (Point (x1-x2) (y1-y2))
+pvsub (Point x1 y1) (Vector x2 y2) = Point (x1-x2) (y1-y2)
 
 -- | Subtract two points.
 psub :: Point -> Point -> Vector
-psub (Point x1 y1) (Point x2 y2) = (Vector (x1-x2) (y1-y2))
+psub (Point x1 y1) (Point x2 y2) = Vector (x1-x2) (y1-y2)
 
 data Limit a = LMin | LValue a | LMax
    deriving Show
@@ -132,8 +138,8 @@ rectPointPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = [p1,p2,p3,p4,p1]
 -- | Make a path from a rectangle.
 rectPath :: Rect -> Path
 rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = 
-  let p2 = (Point x1 y2)
-      p4 = (Point x2 y1)
+  let p2 = Point x1 y2
+      p4 = Point x2 y1
   in moveTo p1 <> lineTo p2 <> lineTo p3 <> lineTo p4 <> close
 
 -- -----------------------------------------------------------------------
@@ -237,15 +243,15 @@ foldPath :: (Monoid m)
          -> m    -- ^ Close
          -> Path -- ^ Path to fold
          -> m
-foldPath moveTo lineTo arc arcNeg close path = 
-  let restF = foldPath moveTo lineTo arc arcNeg close
+foldPath moveTo_ lineTo_ arc_ arcNeg_ close_ path = 
+  let restF = foldPath moveTo_ lineTo_ arc_ arcNeg_ close_
   in case path of 
-    MoveTo p rest -> moveTo p <> restF rest
-    LineTo p rest -> lineTo p <> restF rest
-    Arc    p r a1 a2 rest -> arc    p r a1 a2 <> restF rest
-    ArcNeg p r a1 a2 rest -> arcNeg p r a1 a2 <> restF rest
+    MoveTo p rest -> moveTo_ p <> restF rest
+    LineTo p rest -> lineTo_ p <> restF rest
+    Arc    p r a1 a2 rest -> arc_    p r a1 a2 <> restF rest
+    ArcNeg p r a1 a2 rest -> arcNeg_ p r a1 a2 <> restF rest
     End   -> mempty
-    Close -> close
+    Close -> close_
 
 -- | Enriches the path with explicit instructions to draw lines,
 --   that otherwise would be implicit. See 'Path' for details
@@ -303,13 +309,16 @@ data Matrix = Matrix { xx :: !Double, yx :: !Double,
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
 instance Num Matrix where
-  (*) (Matrix xx yx xy yy x0 y0) (Matrix xx' yx' xy' yy' x0' y0') =
-    Matrix (xx * xx' + yx * xy')
-           (xx * yx' + yx * yy')
-           (xy * xx' + yy * xy')
-           (xy * yx' + yy * yy')
-           (x0 * xx' + y0 * xy' + x0')
-           (x0 * yx' + y0 * yy' + y0')
+  -- use underscore to avoid ghc complaints about shadowing the Matrix
+  -- field names
+  (*) (Matrix xx_ yx_ xy_ yy_ x0_ y0_)
+      (Matrix xx'_ yx'_ xy'_ yy'_ x0'_ y0'_) =
+    Matrix (xx_ * xx'_ + yx_ * xy'_)
+           (xx_ * yx'_ + yx_ * yy'_)
+           (xy_ * xx'_ + yy_ * xy'_)
+           (xy_ * yx'_ + yy_ * yy'_)
+           (x0_ * xx'_ + y0_ * xy'_ + x0'_)
+           (x0_ * yx'_ + y0_ * yy'_ + y0'_)
 
   (+) = pointwise2 (+)
   (-) = pointwise2 (-)
@@ -322,13 +331,15 @@ instance Num Matrix where
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
 {-# INLINE pointwise #-}
-pointwise f (Matrix xx yx xy yy x0 y0) =
-  Matrix (f xx) (f yx) (f xy) (f yy) (f x0) (f y0)
+pointwise :: (Double -> Double) -> Matrix -> Matrix  
+pointwise f (Matrix xx_ yx_ xy_ yy_ x0_ y0_) =
+  Matrix (f xx_) (f yx_) (f xy_) (f yy_) (f x0_) (f y0_)
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
 {-# INLINE pointwise2 #-}
-pointwise2 f (Matrix xx yx xy yy x0 y0) (Matrix xx' yx' xy' yy' x0' y0') =
-  Matrix (f xx xx') (f yx yx') (f xy xy') (f yy yy') (f x0 x0') (f y0 y0')
+pointwise2 :: (Double -> Double -> Double) -> Matrix -> Matrix -> Matrix
+pointwise2 f (Matrix xx_ yx_ xy_ yy_ x0_ y0_) (Matrix xx'_ yx'_ xy'_ yy'_ x0'_ y0'_) =
+  Matrix (f xx_ xx'_) (f yx_ yx'_) (f xy_ xy'_) (f yy_ yy'_) (f x0_ x0'_) (f y0_ y0'_)
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
 identity :: Matrix
@@ -336,16 +347,16 @@ identity = Matrix 1 0 0 1 0 0
 
 -- | Copied and adopted from Graphics.Rendering.Cairo.Matrix
 translate :: Vector -> Matrix -> Matrix
-translate tv m = m * (Matrix 1 0 0 1 (v_x tv) (v_y tv))
+translate tv m = m * Matrix 1 0 0 1 (v_x tv) (v_y tv)
 
 -- | Copied and adopted from Graphics.Rendering.Cairo.Matrix
 scale :: Vector -> Matrix -> Matrix
-scale sv m = m * (Matrix (v_x sv) 0 0 (v_y sv) 0 0)
+scale sv m = m * Matrix (v_x sv) 0 0 (v_y sv) 0 0
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
 --   Rotations angle is given in radians.
 rotate :: Double -> Matrix -> Matrix
-rotate r m = m * (Matrix c s (-s) c 0 0)
+rotate r m = m * Matrix c s (-s) c 0 0
   where s = sin r
         c = cos r
 
@@ -360,17 +371,6 @@ adjoint (Matrix a b c d tx ty) =
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
 invert :: Matrix -> Matrix
-invert m@(Matrix xx yx xy yy _ _) = scalarMultiply (recip det) $ adjoint m
-  where det = xx*yy - yx*xy
-
-
-
-
-
-
-
-
-
-
-
+invert m@(Matrix xx_ yx_ xy_ yy_ _ _) = scalarMultiply (recip det) $ adjoint m
+  where det = xx_*yy_ - yx_*xy_
 

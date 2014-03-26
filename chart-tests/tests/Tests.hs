@@ -372,7 +372,7 @@ misc1 fsz rot lw = fillBackground fwhite $ (gridToRenderable t)
     hs = [HTA_Left, HTA_Centre, HTA_Right]
     vs = [VTA_Top, VTA_Centre, VTA_Bottom, VTA_BaseLine]
     fwhite = solidFillStyle $ opaque white
-    fblue = solidFillStyle $ opaque $ sRGB 0.8 0.8 1
+    fblue = solidFillStyle $ withOpacity (sRGB 0.8 0.8 1) 0.6
     fs = def {_font_size=fsz,_font_weight=FontWeightBold}
     crossHairs r =Renderable {
       minsize = minsize r,

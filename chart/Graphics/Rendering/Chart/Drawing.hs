@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Drawing
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- This module contains basic types and functions used for drawing.
@@ -13,7 +13,7 @@
 --
 -- These accessors are not shown in this API documentation.  They have
 -- the same name as the field, but with the trailing underscore
--- dropped. Hence for data field f_::F in type D, they have type
+-- dropped. Hence for data field @f_::F@ in type @D@, they have type
 --
 -- @
 --   f :: Control.Lens.Lens' D F
@@ -85,17 +85,21 @@ module Graphics.Rendering.Chart.Drawing
 ) where
 
 import Data.Default.Class
-import Control.Lens hiding (moveTo)
+-- lens < 4 includes Control.Lens.Zipper.moveTo which clashes
+-- with Graphics.Rendering.Chart.Geometry.moveTo (so you get
+-- -Wall notices). This would suggest a 'hiding (moveTo)' in
+-- the import, but it's been removed in lens-4.0 and I don't
+-- feel it's worth the use of conditional compilation. This does
+-- lead to the qualified Geometry import below.
+import Control.Lens
 import Data.Colour
-import Data.Colour.SRGB
 import Data.Colour.Names
 import Data.List (unfoldr)
 import Data.Monoid
 
-import Control.Monad.Reader
-
 import Graphics.Rendering.Chart.Backend
-import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Geometry hiding (moveTo)
+import qualified Graphics.Rendering.Chart.Geometry as G
 
 -- -----------------------------------------------------------------------
 -- Transformation helpers
@@ -124,8 +128,8 @@ withScaleY y = withScale (Vector 1 y)
 -- | Changes the 'LineStyle' and 'FillStyle' to comply with
 --   the given 'PointStyle'.
 withPointStyle :: PointStyle -> ChartBackend a -> ChartBackend a
-withPointStyle (PointStyle cl bcl bw _ _) m = do
-  withLineStyle (def { _line_color = bcl, _line_width = bw }) $ do
+withPointStyle (PointStyle cl bcl bw _ _) m = 
+  withLineStyle (def { _line_color = bcl, _line_width = bw }) $ 
     withFillStyle (solidFillStyle cl) m
 
 withDefaultStyle :: ChartBackend a -> ChartBackend a
@@ -137,11 +141,11 @@ withDefaultStyle = withLineStyle def . withFillStyle def . withFontStyle def
 
 -- | Align the path by applying the given function on all points.
 alignPath :: (Point -> Point) -> Path -> Path
-alignPath f = foldPath (\p -> moveTo $ f p)
-                       (\p -> lineTo $ f p)
-                       (\p -> arc $ f p)
-                       (\p -> arcNeg $ f p)
-                       (close)
+alignPath f = foldPath (G.moveTo . f)
+                       (lineTo . f)
+                       (arc . f)
+                       (arcNeg . f)
+                       close
 
 -- | Align the path using the environment's alignment function for points.
 --   This is generally useful when stroking. 
@@ -192,7 +196,7 @@ alignFillPoint p = do
 -- | Create a path by connecting all points with a line.
 --   The path is not closed.
 stepPath :: [Point] -> Path
-stepPath (p:ps) = moveTo p
+stepPath (p:ps) = G.moveTo p
                <> mconcat (map lineTo ps)
 stepPath [] = mempty
 
@@ -211,7 +215,7 @@ fillPointPath pts = fillPath $ stepPath pts
 -- | Draw a line of text that is aligned at a different anchor point.
 --   See 'drawText'.
 drawTextA :: HTextAnchor -> VTextAnchor -> Point -> String -> ChartBackend ()
-drawTextA hta vta p s = drawTextR hta vta 0 p s
+drawTextA hta vta = drawTextR hta vta 0
 
 -- | Draw a textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
@@ -234,13 +238,13 @@ drawTextsR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> ChartBa
 drawTextsR hta vta angle p s = case num of
       0 -> return ()
       1 -> drawTextR hta vta angle p s
-      _ -> do
+      _ -> 
         withTranslation p $
           withRotation theta $ do
             tss <- mapM textSize ss
             let ts = head tss
-            let widths = map textSizeWidth tss
-                maxw   = maximum widths
+            let -- widths = map textSizeWidth tss
+                -- maxw   = maximum widths
                 maxh   = maximum (map textSizeYBearing tss)
                 gap    = maxh / 2 -- half-line spacing
                 totalHeight = fromIntegral num*maxh +
@@ -253,11 +257,11 @@ drawTextsR hta vta angle p s = case num of
       ss   = lines s
       num  = length ss
 
-      drawT x y s = drawText (Point x y) s
+      drawT x y = drawText (Point x y)
       theta = angle*pi/180.0
 
-      yinit VTA_Top      ts height = textSizeAscent ts
-      yinit VTA_BaseLine ts height = 0
+      yinit VTA_Top      ts _      = textSizeAscent ts
+      yinit VTA_BaseLine _  _      = 0
       yinit VTA_Centre   ts height = height / 2 + textSizeAscent ts
       yinit VTA_Bottom   ts height = height + textSizeAscent ts
 
@@ -268,15 +272,15 @@ adjustText hta vta ts = Point (adjustTextX hta ts) (adjustTextY vta ts)
 -- | Calculate the correct offset to align the horizontal anchor.
 adjustTextX :: HTextAnchor -> TextSize -> Double
 adjustTextX HTA_Left   _  = 0
-adjustTextX HTA_Centre ts = (- (textSizeWidth ts / 2))
-adjustTextX HTA_Right  ts = (- textSizeWidth ts)
+adjustTextX HTA_Centre ts = - (textSizeWidth ts / 2)
+adjustTextX HTA_Right  ts = - textSizeWidth ts
 
 -- | Calculate the correct offset to align the vertical anchor.
 adjustTextY :: VTextAnchor -> TextSize -> Double
 adjustTextY VTA_Top      ts = textSizeAscent ts
-adjustTextY VTA_Centre   ts = - (textSizeYBearing ts) / 2
+adjustTextY VTA_Centre   ts = - textSizeYBearing ts / 2
 adjustTextY VTA_BaseLine _  = 0
-adjustTextY VTA_Bottom   ts = -(textSizeDescent ts)
+adjustTextY VTA_Bottom   ts = - textSizeDescent ts
 
 -- | Return the bounding rectangle for a text string positioned
 --   where it would be drawn by 'drawText'.
@@ -343,7 +347,7 @@ defaultPointStyle = def
 drawPoint :: PointStyle  -- ^ Style to use when rendering the point.
           -> Point       -- ^ Position of the point to render.
           -> ChartBackend ()
-drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
+drawPoint ps@(PointStyle _ _ _ r shape) p = withPointStyle ps $ do
   p'@(Point x y) <- alignStrokePoint p
   case shape of
     PointShapeCircle -> do
@@ -356,12 +360,12 @@ drawPoint ps@(PointStyle cl bcl bw r shape) p = withPointStyle ps $ do
             then       fromIntegral n * 2*pi/fromIntegral sides
             else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
           angles = map intToAngle [0 .. sides-1]
-          (p:ps) = map (\a -> Point (x + r * sin a)
-                                    (y + r * cos a)) angles
-      let path = moveTo p <> mconcat (map lineTo ps) <> lineTo p
+          (p1:p1s) = map (\a -> Point (x + r * sin a)
+                                      (y + r * cos a)) angles
+      let path = G.moveTo p1 <> mconcat (map lineTo p1s) <> lineTo p1
       fillPath path
       strokePath path
-    PointShapePlus -> do
+    PointShapePlus -> 
       strokePath $ moveTo' (x+r) y
                 <> lineTo' (x-r) y
                 <> moveTo' x (y-r)
@@ -465,6 +469,6 @@ stars radius w cl =
 
 -- | Fill style that fill everything this the given colour.
 solidFillStyle :: AlphaColour Double -> FillStyle
-solidFillStyle cl = FillStyleSolid cl
+solidFillStyle = FillStyleSolid
 
 $( makeLenses ''PointStyle )

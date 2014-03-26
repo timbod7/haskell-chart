@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Plot.ErrBars
--- Copyright   :  (c) Tim Docker 2006
+-- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Plot series of points with associated error bars.
@@ -30,11 +30,9 @@ import Data.Monoid
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Colour (opaque)
-import Data.Colour.Names (black, blue)
-import Data.Colour.SRGB (sRGB)
+import Data.Colour.Names (blue)
 import Data.Default.Class
 
 -- | Value for holding a point with associated error bounds for each axis.
@@ -79,7 +77,7 @@ instance ToPlot PlotErrBars where
         pts = _plot_errbars_values p
 
 renderPlotErrBars :: PlotErrBars x y -> PointMapFn x y -> ChartBackend ()
-renderPlotErrBars p pmap = do
+renderPlotErrBars p pmap = 
     mapM_ (drawErrBar.epmap) (_plot_errbars_values p)
   where
     epmap (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) =
@@ -90,10 +88,11 @@ renderPlotErrBars p pmap = do
     drawErrBar = drawErrBar0 p
     pmap'      = mapXY pmap
 
+drawErrBar0 :: PlotErrBars x y -> ErrPoint Double Double -> ChartBackend ()
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = _plot_errbars_tick_length ps
         let oh = _plot_errbars_overhang ps
-        withLineStyle (_plot_errbars_line_style ps) $ do
+        withLineStyle (_plot_errbars_line_style ps) $ 
           strokePath $ moveTo' (xl-oh) y
                     <> lineTo' (xh+oh) y
                     <> moveTo' x (yl-oh)
@@ -108,14 +107,15 @@ drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
                     <> lineTo' (x+tl) yh
 
 renderPlotLegendErrBars :: PlotErrBars x y -> Rect -> ChartBackend ()
-renderPlotLegendErrBars p r@(Rect p1 p2) = do
-    drawErrBar (symErrPoint (p_x p1)              ((p_y p1 + p_y p2)/2) dx dx)
-    drawErrBar (symErrPoint ((p_x p1 + p_x p2)/2) ((p_y p1 + p_y p2)/2) dx dx)
-    drawErrBar (symErrPoint (p_x p2)              ((p_y p1 + p_y p2)/2) dx dx)
+renderPlotLegendErrBars p (Rect p1 p2) = do
+    drawErrBar (symErrPoint (p_x p1)              y dx dx)
+    drawErrBar (symErrPoint ((p_x p1 + p_x p2)/2) y dx dx)
+    drawErrBar (symErrPoint (p_x p2)              y dx dx)
 
   where
     drawErrBar = drawErrBar0 p
     dx         = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
+    y          = (p_y p1 + p_y p2)/2
 
 {-# DEPRECATED defaultPlotErrBars "Use the according Data.Default instance!" #-}
 defaultPlotErrBars :: PlotErrBars x y

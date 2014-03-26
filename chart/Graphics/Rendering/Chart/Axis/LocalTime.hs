@@ -1,31 +1,32 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Axis.LocalTime
--- Copyright   :  (c) Tim Docker 2010
+-- Copyright   :  (c) Tim Docker 2010, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Calculate and render time axes
 
 module Graphics.Rendering.Chart.Axis.LocalTime(
+    TimeSeq,
+    TimeLabelFn,
+    TimeLabelAlignment(..),
+    
     timeAxis,
     autoTimeAxis,
-    days, months, years
-) where
+    
+    days, months, years,
+                  
+    -- * Utilities
+    doubleFromLocalTime
+    
+    ) where
  
 import Data.Default.Class
 import Data.Time
 import Data.Fixed
 import System.Locale (defaultTimeLocale)
-import Control.Monad
-import Data.List
 import Control.Lens
-import Data.Colour (opaque)
-import Data.Colour.Names (black, lightgrey)
-import Data.Ord (comparing)
 
-import Graphics.Rendering.Chart.Geometry
-import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Axis.Types
 
 instance PlotValue LocalTime where
@@ -55,21 +56,21 @@ localTimeFromDouble v =
 type TimeSeq = LocalTime-> ([LocalTime],[LocalTime])
 
 coverTS :: TimeSeq -> LocalTime -> LocalTime -> [LocalTime]
-coverTS tseq min max = min' ++ enumerateTS tseq min max ++ max'
+coverTS tseq minT maxT = min' ++ enumerateTS tseq minT maxT ++ max'
   where
-    min' =  if elemTS min tseq then [] else take 1 (fst (tseq min))
-    max' =  if elemTS max tseq then [] else take 1 (snd (tseq max))
+    min' =  if elemTS minT tseq then [] else take 1 (fst (tseq minT))
+    max' =  if elemTS maxT tseq then [] else take 1 (snd (tseq maxT))
 
 enumerateTS :: TimeSeq -> LocalTime -> LocalTime -> [LocalTime]
-enumerateTS tseq min max =
-    reverse (takeWhile (>=min) ts1)  ++ takeWhile (<=max) ts2
+enumerateTS tseq minT maxT =
+    reverse (takeWhile (>=minT) ts1)  ++ takeWhile (<=maxT) ts2
   where
-    (ts1,ts2) = tseq min
+    (ts1,ts2) = tseq minT
 
 elemTS :: LocalTime -> TimeSeq -> Bool
 elemTS t tseq = case tseq t of
-    (_,(t0:_)) | t == t0 -> True
-    _                    -> False
+    (_,t0:_) | t == t0 -> True
+    _                  -> False
 
 -- | How to display a time
 type TimeLabelFn = LocalTime -> String
@@ -78,15 +79,24 @@ data TimeLabelAlignment = UnderTicks
                         | BetweenTicks
                         deriving (Show)
 
--- | Create an 'AxisFn' to for a time axis.  The first 'TimeSeq' sets the
---   minor ticks, and the ultimate range will be aligned to its elements.
---   The second 'TimeSeq' sets the labels and grid.  The third 'TimeSeq'
---   sets the second line of labels.  The 'TimeLabelFn' is
---   used to format LocalTimes for labels.  The values to be plotted
---   against this axis can be created with 'doubleFromLocalTime'.
-timeAxis :: TimeSeq -> TimeSeq -> TimeLabelFn -> TimeLabelAlignment -> 
-                       TimeSeq -> TimeLabelFn -> TimeLabelAlignment -> 
-            AxisFn LocalTime
+-- | Create an 'AxisFn' to for a time axis.
+--
+--   The values to be plotted against this axis can be created with
+--   'doubleFromLocalTime'.
+timeAxis :: 
+  TimeSeq 
+  -- ^ Set the minor ticks, and the final range will be aligned to its
+  --   elements.
+  -> TimeSeq 
+  -- ^ Set the labels and grid.
+  -> TimeLabelFn 
+  -> TimeLabelAlignment 
+  -> TimeSeq 
+  -- ^ Set the second line of labels.
+  -> TimeLabelFn 
+  -- ^ Format `LocalTime` for labels.
+  -> TimeLabelAlignment 
+  -> AxisFn LocalTime
 timeAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
     _axis_visibility = def,
     _axis_viewport = vmap(min', max'),
@@ -98,24 +108,24 @@ timeAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
     _axis_grid     = [ t     | t <- ltimes, visible t]
     }
   where
-    (min,max)    = case pts of
+    (minT,maxT)  = case pts of
                        [] -> (refLocalTime,refLocalTime)
                        ps -> (minimum ps, maximum ps)
     refLocalTime = LocalTime (ModifiedJulianDay 0) midnight
-    times        = coverTS tseq min max
-    ltimes       = coverTS lseq min max
-    ctimes       = coverTS cseq min max
+    times        = coverTS tseq minT maxT
+    ltimes       = coverTS lseq minT maxT
+    ctimes       = coverTS cseq minT maxT
     min'         = minimum times
     max'         = maximum times
     visible t    = min' <= t && t <= max'
-    labels f ts lal =
-        [ (align lal m1' m2', f m1)
+    labels f ts lal' =
+        [ (align lal' m1' m2', f m1)
           | (m1,m2) <- zip ts (tail ts)
           , let m1' = if m1<min' then min' else m1
           , let m2' = if m2>max' then max' else m2 ]
 
     align BetweenTicks m1 m2 = avg m1 m2
-    align UnderTicks m1 m2 = m1
+    align UnderTicks   m1 _  = m1
 
     avg m1 m2    = localTimeFromDouble $ m1' + (m2' - m1')/2
      where
@@ -146,28 +156,27 @@ secondSeq :: Pico -> TimeSeq
 secondSeq step t = (iterate rev t1, tail (iterate fwd t1))
   where h0       = todHour (localTimeOfDay t)
         m0       = todMin  (localTimeOfDay t)
-        s0       = todSec  (localTimeOfDay t) `truncateTo` (fromIntegral 1 / 1000)
+        s0       = todSec  (localTimeOfDay t) `truncateTo` (1 / 1000)
         t0       = LocalTime (localDay t) (TimeOfDay h0 m0 s0)
-        t1       = if t0 < t then t0 else (rev t0)
+        t1       = if t0 < t then t0 else rev t0
         rev      = addTod 0 0 (negate step)
-        fwd      = addTod 0 0 (step)
+        fwd      = addTod 0 0 step
 
 millis1, millis10, millis100, seconds, fiveSeconds  :: TimeSeq
-millis1 = secondSeq (fromIntegral 1 / 1000)
-millis10 = secondSeq (fromIntegral 1 / 100)
-millis100 = secondSeq (fromIntegral 1 / 10)
-seconds = secondSeq (fromIntegral 1)
-fiveSeconds = secondSeq (fromIntegral 5)
+millis1 = secondSeq (1 / 1000)
+millis10 = secondSeq (1 / 100)
+millis100 = secondSeq (1 / 10)
+seconds = secondSeq 1
+fiveSeconds = secondSeq 5
 
 minuteSeq :: Int -> TimeSeq
 minuteSeq step t = (iterate rev t1, tail (iterate fwd t1))
   where h0       = todHour (localTimeOfDay t)
         m0       = todMin  (localTimeOfDay t)
         t0       = LocalTime (localDay t) (TimeOfDay h0 m0 0)
-        t1       = if t0 < t then t0 else (rev t0)
-        rev      = addTod 0 (negate step) (fromIntegral 0)
-        fwd      = addTod 0 step    (fromIntegral 0)
-
+        t1       = if t0 < t then t0 else rev t0
+        rev      = addTod 0 (negate step) 0
+        fwd      = addTod 0 step 0
 
 minutes, fiveMinutes :: TimeSeq
 minutes = minuteSeq 1
@@ -178,15 +187,15 @@ hours :: TimeSeq
 hours t = (iterate rev t1, tail (iterate fwd t1))
   where h0       = todHour (localTimeOfDay t)
         t0       = LocalTime (localDay t) (TimeOfDay h0 0 0)
-        t1       = if t0 < t then t0 else (rev t0)
-        rev      = addTod (-1) 0 (fromIntegral 0)
-        fwd      = addTod 1    0 (fromIntegral 0)
+        t1       = if t0 < t then t0 else rev t0
+        rev      = addTod (-1) 0 0
+        fwd      = addTod 1    0 0
 
 -- | A 'TimeSeq' for calendar days.
 days :: TimeSeq
 days t = (map toTime $ iterate rev t1, map toTime $ tail (iterate fwd t1))
   where t0       = localDay t
-        t1       = if (toTime t0) < t then t0 else (rev t0)
+        t1       = if toTime t0 < t then t0 else rev t0
         rev      = pred
         fwd      = succ
         toTime d = LocalTime d midnight
@@ -194,8 +203,8 @@ days t = (map toTime $ iterate rev t1, map toTime $ tail (iterate fwd t1))
 -- | A 'TimeSeq' for calendar months.
 months :: TimeSeq
 months t = (map toTime $ iterate rev t1, map toTime $ tail (iterate fwd t1))
-  where t0       = let (y,m,d) = toGregorian $ localDay t in fromGregorian y m 1
-        t1       = if toTime t0 < t then t0 else (rev t0)
+  where t0       = let (y,m,_) = toGregorian $ localDay t in fromGregorian y m 1
+        t1       = if toTime t0 < t then t0 else rev t0
         rev      = addGregorianMonthsClip (-1)
         fwd      = addGregorianMonthsClip 1
         toTime d = LocalTime d midnight
@@ -203,15 +212,15 @@ months t = (map toTime $ iterate rev t1, map toTime $ tail (iterate fwd t1))
 -- | A 'TimeSeq' for calendar years.
 years :: TimeSeq
 years t = (map toTime $ iterate rev t1, map toTime $ tail (iterate fwd t1))
-  where t0       = let (y,m,d) = toGregorian $ localDay t in y
-        t1       = if toTime t0 < t then t0 else (rev t0)
+  where t0       = toGregorian (localDay t) ^. _1
+        t1       = if toTime t0 < t then t0 else rev t0
         rev      = pred
         fwd      = succ
         toTime y = LocalTime (fromGregorian y 1 1) midnight
 
 -- | A 'TimeSeq' for no sequence at all.
 noTime :: TimeSeq
-noTime t = ([],[])
+noTime _ = ([],[])
 
 -- | Automatically choose a suitable time axis, based upon the time range
 --   of data.  The values to be plotted against this axis can be created
