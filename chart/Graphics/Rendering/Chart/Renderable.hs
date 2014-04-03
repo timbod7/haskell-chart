@@ -60,11 +60,11 @@ nullPickFn = const Nothing
 --   graphic element.
 data Renderable a = Renderable {
 
-   -- | A Cairo action to calculate a minimum size.
+   -- | Calculate the minimum size of the renderable.
    minsize :: ChartBackend RectSize,
 
-   -- | A Cairo action for drawing it within a rectangle.
-   --   The rectangle is from the origin to the given point.
+   -- | Draw the renderable with a rectangle, which covers
+   --   the origin to a given point.
    --
    --   The resulting "pick" function  maps a point in the image to a value.
    render  :: RectSize -> ChartBackend (PickFn a)

@@ -138,8 +138,8 @@ data TextSize = TextSize
 
 -- | Abstract data type for a fill style.
 --
---   The contained Cairo action sets the required fill
---   style in the Cairo rendering state.
+--   The contained action sets the required fill
+--   style in the rendering state.
 newtype FillStyle = FillStyleSolid 
   { _fill_colour :: AlphaColour Double 
   } deriving (Show, Eq)
