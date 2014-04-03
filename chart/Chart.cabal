@@ -7,7 +7,10 @@ Author: Tim Docker <tim@dockerz.net>
 Maintainer: Tim Docker <tim@dockerz.net>
 Homepage: https://github.com/timbod7/haskell-chart/wiki
 Synopsis: A library for generating 2D Charts and Plots
-Description: A library for generating 2D Charts and Plots, based upon the cairo graphics library.
+Description: A library for generating 2D Charts and Plots, with backends provided by 
+             Cairo (<http://hackage.haskell.org/package/Chart-cairo>)
+             and
+             Diagrams (<http://hackage.haskell.org/package/Chart-diagrams>).
 Category: Graphics
 Cabal-Version: >= 1.6
 Build-Type: Simple
