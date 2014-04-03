@@ -1,27 +1,29 @@
 ---------------------------------------------------------------
 -- |
 -- Module      : Graphics.Rendering.Chart.Sparkline
--- Copyright   : (c) Hitesh Jasani, 2008, Malcolm Wallace 2011
+-- Copyright   : (c) Hitesh Jasani, 2008, Malcolm Wallace 2011, Tim Docker 2014
 -- License     : BSD3
 --
--- Created     : 2008-02-26
--- Modified    : 2011-02-11
--- Version     : 0.2
---
--- Sparklines implementation in Haskell.  Sparklines are
--- mini graphs inspired by Edward Tufte.
+-- Sparklines are mini graphs inspired by Edward Tufte; see
+-- <http://www.edwardtufte.com/bboard/q-and-a-fetch-msg?msg_id=0001OR>
+-- and
+-- <http://en.wikipedia.org/wiki/Sparkline> for more information.
 --
 -- The original implementation (by Hitesh Jasani) used the gd
 -- package as a backend renderer, and is still available at
---     http://hackage.haskell.org/package/hsparklines
--- The present version uses Cairo as its renderer, and integrates with
+-- <http://hackage.haskell.org/package/hsparklines>.
+--
+-- The present version integrates with
 -- the Chart package, in the sense that Sparklines are just another
--- kind of (ToRenderable a => a), so can be composed into grids etc.
+-- kind of (@ToRenderable a => a@), so they can be composed into grids
+-- and used with the rest of Chart.
 --
 -- > dp :: [Double]
 -- > dp = [24,21,32.3,24,15,34,43,55,57,72,74,75,73,72,55,44]
 -- >
--- > sparkLineToPNG "bar_spark.png" (SparkLine barSpark dp)
+-- > sl = SparkLine barSpark dp
+-- > fopts = FileOptions (sparkSize sl) PNG
+-- > renderableToFile fopts (sparkLineToRenderable sl) "bar_spark.png" 
 -- >
 ---------------------------------------------------------------
 
@@ -90,6 +92,7 @@ smoothSpark  = SparkOptions
 barSpark :: SparkOptions
 barSpark  = smoothSpark { so_smooth=False }
 
+-- | Create a renderable from a SparkLine.
 sparkLineToRenderable :: SparkLine -> Renderable ()
 sparkLineToRenderable sp = Renderable
             { minsize = let (w,h) = sparkSize sp in return (fromIntegral w , fromIntegral h)
@@ -109,10 +112,11 @@ sparkWidth SparkLine{sl_options=opt, sl_data=ds} =
          | otherwise  = 2
   in w
 
+-- | Return the width and height of the SparkLine.
 sparkSize :: SparkLine -> (Int,Int)
 sparkSize s = (sparkWidth s, so_height (sl_options s))
 
--- | Render a SparkLine to a drawing surface using cairo.
+-- | Render a SparkLine to a drawing surface.
 renderSparkLine :: SparkLine -> ChartBackend (PickFn ())
 renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
   let w = 4 + (so_step opt) * (length ds - 1) + extrawidth
