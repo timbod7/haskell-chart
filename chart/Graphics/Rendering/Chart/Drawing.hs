@@ -217,6 +217,19 @@ fillPointPath pts = fillPath $ stepPath pts
 drawTextA :: HTextAnchor -> VTextAnchor -> Point -> String -> ChartBackend ()
 drawTextA hta vta = drawTextR hta vta 0
 
+{- 
+   The following is useful for checking out the bounding-box
+   calculation. At present it looks okay for PNG/Cairo but
+   is a bit off for SVG/Diagrams; this may well be down to
+   differences in how fonts are rendered in the two backends
+
+drawTextA hta vta p txt =
+  drawTextR hta vta 0 p txt 
+  >> withLineStyle (solidLine 1 (opaque red)) 
+     (textDrawRect hta vta p txt
+       >>= \rect -> alignStrokePath (rectPath rect) >>= strokePath)
+-}
+  
 -- | Draw a textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
@@ -288,12 +301,17 @@ adjustTextY VTA_Bottom   ts = - textSizeDescent ts
 textDrawRect :: HTextAnchor -> VTextAnchor -> Point -> String -> ChartBackend Rect
 textDrawRect hta vta (Point x y) s = do
   ts <- textSize s
-  let (w,h) = (textSizeWidth ts, textSizeHeight ts)
-  let lx = adjustTextX hta ts
-  let ly = adjustTextY vta ts
-  let (x',y') = (x + lx, y + ly)
-  let p1 = Point x' y'
-  let p2 = Point (x' + w) (y' + h)
+  -- This does not account for the pixel width of the label; e.g.
+  -- with a label "bread" and a large-enough foint size (e.g. 36)
+  -- I have seen the right-hand edge of the bounding box go through
+  -- the vertical part of the 'd' character (see chart-tests/tests/Test8.hs
+  -- and bump up the label size).
+  let (w,h,dh) = (textSizeWidth ts, textSizeHeight ts, textSizeDescent ts)
+      lx = adjustTextX hta ts
+      ly = adjustTextY vta ts
+      (x',y') = (x + lx, y + ly + dh)
+      p1 = Point x' (y' - h)
+      p2 = Point (x' + w) y'
   return $ Rect p1 p2
 
 -- | Get the width and height of the string when rendered.
