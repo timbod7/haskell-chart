@@ -606,26 +606,26 @@ applyWithoutTrans m v =
         )
 
 -- | Apply the Chart line style to a diagram.
-applyLineStyle :: (D.HasStyle a) => LineStyle -> a -> a
-applyLineStyle ls = D.lineWidth (_line_width ls) 
+applyLineStyle :: (D.V a ~ R2, D.HasStyle a) => LineStyle -> a -> a
+applyLineStyle ls = D.lineWidth (D.Global $ _line_width ls)
                   . D.lineColor (_line_color ls) 
                   . D.lineCap (convertLineCap $ _line_cap ls) 
                   . D.lineJoin (convertLineJoin $ _line_join ls) 
-                  . D.dashing (_line_dashes ls) 0
+                  . D.dashing (map D.Global $ _line_dashes ls) (D.Global 0)
 
 -- | Apply the Chart fill style to a diagram.
-applyFillStyle :: (D.HasStyle a) => FillStyle -> a -> a
+applyFillStyle :: (D.V a ~ R2, D.HasStyle a) => FillStyle -> a -> a
 applyFillStyle fs = case fs of
   FillStyleSolid cl -> D.fillColor cl
 
 -- | Apply all pure diagrams properties from the font style.
-applyFontStyleSVG :: (D.HasStyle a) => FontStyle -> a -> a
+applyFontStyleSVG :: (D.V a ~ R2, D.HasStyle a) => FontStyle -> a -> a
 applyFontStyleSVG fs = applyLineStyle noLineStyle 
                      . applyFillStyle (solidFillStyle $ _font_color fs)
 
-applyFontStyleText :: (D.HasStyle a) => FontStyle -> a -> a
+applyFontStyleText :: (D.V a ~ R2, D.HasStyle a) => FontStyle -> a -> a
 applyFontStyleText fs = D2.font (_font_name fs)
-                      . D2.fontSize (_font_size fs)
+                      . D2.fontSize (D.Global $ _font_size fs)
                       . D2.fontSlant (convertFontSlant $ _font_slant fs)
                       . D2.fontWeight (convertFontWeight $ _font_weight fs)
                       . D.fillColor (_font_color fs)
