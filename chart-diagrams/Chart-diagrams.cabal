@@ -28,9 +28,9 @@ library
   Build-depends: base >= 3 && < 5
                , old-locale
                , time, mtl
-               , diagrams-core >= 1.1 && < 1.2
-               , diagrams-lib >= 1.1 && < 1.2
-               , diagrams-svg >= 0.8 && < 1.2
+               , diagrams-core >= 1.2 && < 1.3
+               , diagrams-lib >= 1.2 && < 1.3
+               , diagrams-svg >= 1.1 && < 1.2
                , diagrams-postscript >= 0.7 && < 1.2
                , SVGFonts >= 1.4 && < 1.5
                , colour >= 2.2.1 && < 2.4
