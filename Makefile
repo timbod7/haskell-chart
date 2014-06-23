@@ -1,34 +1,42 @@
-# Use cabal with sandboxes
-CABAL=cabal
+install: cabal.sandbox.config
+	cabal install --dependencies-only
 
-.cabal-sandbox:
-	$(CABAL) sandbox init
+cabal.sandbox.config:
+	cabal sandbox init
 
-install: .cabal-sandbox unregister
-	$(CABAL) install chart/ chart-cairo/ chart-gtk/ chart-diagrams/ chart-simple/
+	cabal install gtk2hs-buildtools
+	PATH=.cabal-sandbox/bin:$$PATH cabal install gtk
 
-unregister:
-	-$(CABAL) sandbox hc-pkg unregister Chart-simple
-	-$(CABAL) sandbox hc-pkg unregister Chart-diagrams
-	-$(CABAL) sandbox hc-pkg unregister Chart-gtk
-	-$(CABAL) sandbox hc-pkg unregister Chart-cairo
-	-$(CABAL) sandbox hc-pkg unregister Chart
+	cabal sandbox add-source chart
+	cabal sandbox add-source chart-cairo
+	cabal sandbox add-source chart-gtk
+	cabal sandbox add-source chart-diagrams
+	cabal sandbox add-source chart-simple
 
-clean: unregister
-	cd chart && $(CABAL) clean
-	cd chart-cairo && $(CABAL) clean
-	cd chart-gtk && $(CABAL) clean
-	cd chart-diagrams && $(CABAL) clean
-	cd chart-simple && $(CABAL) clean
-	cd chart-tests && $(CABAL) clean
+clean:
+	cd chart && cabal clean
+	cd chart-cairo && cabal clean
+	cd chart-gtk && cabal clean
+	cd chart-diagrams && cabal clean
+	cd chart-simple && cabal clean
+	cd chart-tests && cabal clean
+
+clean-sandbox: clean
+	rm -rf cabal.sandbox.config .cabal-sandbox
+	rm -f chart-tests/cabal.sandbox.config
 
 sdist:
-	cd chart && $(CABAL) sdist
-	cd chart-cairo && $(CABAL) sdist
-	cd chart-gtk && $(CABAL) sdist
-	cd chart-diagrams && $(CABAL) sdist
-	cd chart-simple && $(CABAL) sdist
+	cd chart && cabal sdist
+	cd chart-cairo && cabal sdist
+	cd chart-gtk && cabal sdist
+	cd chart-diagrams && cabal sdist
+	cd chart-simple && cabal sdist
 
-tests:
-	$(CABAL) install chart-tests/ --flags="cairo gtk diagrams"
+chart-tests/cabal.sandbox.config:
+	cd chart-tests && cabal sandbox init --sandbox ../.cabal-sandbox
+
+tests: chart-tests/cabal.sandbox.config
+	cd chart-tests && cabal install --dependencies-only 
+	cd chart-tests && cabal install --flags="cairo gtk diagrams"
+
 
