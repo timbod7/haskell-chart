@@ -10,7 +10,7 @@ import Graphics.Rendering.Chart.Drawing
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as BD
 import qualified Graphics.Rendering.Chart.Backend.Cairo as BC
 
-import Diagrams.Core.Types ( renderDia )
+import Diagrams.Core ( renderDia )
 import Diagrams.TwoD ( SizeSpec2D(..) )
 import Diagrams.Backend.Cairo hiding ( renderCairo )
 import Diagrams.Backend.Cairo.Internal

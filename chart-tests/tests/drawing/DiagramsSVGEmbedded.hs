@@ -3,7 +3,7 @@ import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
 import qualified Graphics.Rendering.Chart.Renderable as R
 
-import Diagrams.Core.Types ( renderDia )
+import Diagrams.Core ( renderDia )
 import Diagrams.TwoD ( SizeSpec2D(..) )
 import Diagrams.Backend.Cairo
 import Diagrams.Backend.Cairo.Internal

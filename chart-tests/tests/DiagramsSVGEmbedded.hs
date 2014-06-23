@@ -2,7 +2,7 @@
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
 
-import Diagrams.Core.Types ( renderDia )
+import Diagrams.Core ( renderDia )
 import Diagrams.TwoD ( SizeSpec2D(..) )
 import Diagrams.Backend.SVG
 import Graphics.Rendering.Chart.Renderable ( render, Renderable )
