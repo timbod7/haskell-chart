@@ -32,6 +32,13 @@ sdist:
 	cd chart-diagrams && cabal sdist
 	cd chart-simple && cabal sdist
 
+upload:
+	cd chart && cabal upload
+	cd chart-cairo && cabal upload
+	cd chart-gtk && cabal upload
+	cd chart-diagrams && cabal upload
+	cd chart-simple && cabal upload
+
 chart-tests/cabal.sandbox.config:
 	cd chart-tests && cabal sandbox init --sandbox ../.cabal-sandbox
 
