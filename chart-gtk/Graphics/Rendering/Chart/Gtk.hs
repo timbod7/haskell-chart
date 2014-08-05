@@ -20,15 +20,17 @@ import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Backend.Cairo
 import Data.List (isPrefixOf)
 import Data.IORef
+import qualified Data.Text as T
 import Control.Monad(when)
 import System.IO.Unsafe(unsafePerformIO)
 
 -- do action m for any keypress (except meta keys)
 anyKey :: (Monad m) => m a -> GE.Event -> m Bool
 anyKey m (GE.Key {GE.eventKeyName=key})
-    | any (`isPrefixOf` key) ignores = return True
-    | otherwise                      = m >> return True
-  where ignores = ["Shift","Control","Alt",
+    | any (`T.isPrefixOf` key) ignores = return True
+    | otherwise                        = m >> return True
+  where ignores = map T.pack
+                  ["Shift","Control","Alt",
                    "Super","Meta","Hyper"]
 
 -- Yuck. But we really want the convenience function
