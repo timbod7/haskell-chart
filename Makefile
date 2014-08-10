@@ -32,12 +32,14 @@ sdist:
 	cd chart-diagrams && cabal sdist
 	cd chart-simple && cabal sdist
 
+# define environment variable CHART_VERSION
+# before making upload
 upload:
-	cd chart && cabal upload
-	cd chart-cairo && cabal upload
-	cd chart-gtk && cabal upload
-	cd chart-diagrams && cabal upload
-	cd chart-simple && cabal upload
+	cd chart && cabal upload dist/Chart-$(CHART_VERSION).tar.gz
+	cd chart-cairo && cabal upload dist/Chart-cairo-$(CHART_VERSION).tar.gz
+	cd chart-gtk && cabal upload dist/Chart-gtk-$(CHART_VERSION).tar.gz
+	cd chart-diagrams && cabal upload dist/Chart-diagrams-$(CHART_VERSION).tar.gz
+	cd chart-simple && cabal upload dist/Chart-simple-$(CHART_VERSION).tar.gz
 
 chart-tests/cabal.sandbox.config:
 	cd chart-tests && cabal sandbox init --sandbox ../.cabal-sandbox
