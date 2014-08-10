@@ -23,13 +23,10 @@ import Data.IORef
 import Control.Monad(when)
 import System.IO.Unsafe(unsafePerformIO)
 
--- do action m for any keypress (except meta keys)
+-- do action m for any keypress (except modified keys)
 anyKey :: (Monad m) => m a -> GE.Event -> m Bool
-anyKey m (GE.Key {GE.eventKeyName=key})
-    | any (`isPrefixOf` key) ignores = return True
-    | otherwise                      = m >> return True
-  where ignores = ["Shift","Control","Alt",
-                   "Super","Meta","Hyper"]
+anyKey m (GE.Key {GE.eventModifier=[]}) = m >> return True
+anyKey _ _ = return True
 
 -- Yuck. But we really want the convenience function
 -- renderableToWindow as to be callable without requiring
