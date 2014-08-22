@@ -12,7 +12,6 @@ module Graphics.Rendering.Chart.Legend(
     Legend(..),
     LegendStyle(..),
     LegendOrientation(..),
-    defaultLegendStyle,
     legendToRenderable,
     legend_label_style,
     legend_margin,
@@ -89,10 +88,6 @@ join_nub :: [(String, a)] -> [(String, [a])]
 join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
                          (xs, rest) -> (x, a1:map snd xs) : join_nub rest
 join_nub []          = []
-
-{-# DEPRECATED defaultLegendStyle  "Use the according Data.Default instance!" #-}
-defaultLegendStyle :: LegendStyle
-defaultLegendStyle = def
 
 instance Default LegendStyle where
   def = LegendStyle 

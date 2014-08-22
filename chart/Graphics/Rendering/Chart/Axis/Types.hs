@@ -18,7 +18,6 @@ module Graphics.Rendering.Chart.Axis.Types(
     AxisFn,
 
     defaultAxisLineStyle,
-    defaultAxisStyle,
     defaultGridLineStyle,
 
     makeAxis,
@@ -395,10 +394,6 @@ defaultAxisLineStyle = solidLine 1 $ opaque black
 -- | The default 'LineStyle' of a plot area grid.
 defaultGridLineStyle :: LineStyle
 defaultGridLineStyle = dashedLine 1 [5,5] $ opaque lightgrey
-
-{-# DEPRECATED defaultAxisStyle "Use the according Data.Default instance!" #-}
-defaultAxisStyle :: AxisStyle
-defaultAxisStyle = def
 
 instance Default AxisStyle where
   def = AxisStyle 

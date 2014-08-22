@@ -10,7 +10,6 @@
 
 module Graphics.Rendering.Chart.Plot.ErrBars(
     PlotErrBars(..),
-    defaultPlotErrBars,
     ErrPoint(..),
     ErrValue(..),
     symErrPoint,
@@ -116,10 +115,6 @@ renderPlotLegendErrBars p (Rect p1 p2) = do
     drawErrBar = drawErrBar0 p
     dx         = min ((p_x p2 - p_x p1)/6) ((p_y p2 - p_y p1)/2)
     y          = (p_y p1 + p_y p2)/2
-
-{-# DEPRECATED defaultPlotErrBars "Use the according Data.Default instance!" #-}
-defaultPlotErrBars :: PlotErrBars x y
-defaultPlotErrBars = def
 
 instance Default (PlotErrBars x y) where
   def = PlotErrBars 

@@ -10,7 +10,6 @@
 
 module Graphics.Rendering.Chart.Plot.Lines(
     PlotLines(..),
-    defaultPlotLines,
     defaultPlotLineStyle,
     hlinePlot,
     vlinePlot,
@@ -76,10 +75,6 @@ defaultPlotLineStyle = (solidLine 1 $ opaque blue){
      _line_join = LineJoinRound
  }
 
-{-# DEPRECATED defaultPlotLines "Use the according Data.Default instance!" #-}
-defaultPlotLines :: PlotLines x y
-defaultPlotLines = def
-
 instance Default (PlotLines x y) where
   def = PlotLines 
     { _plot_lines_title        = ""
@@ -90,7 +85,7 @@ instance Default (PlotLines x y) where
 
 -- | Helper function to plot a single horizontal line.
 hlinePlot :: String -> LineStyle -> b -> Plot a b
-hlinePlot t ls v = toPlot defaultPlotLines {
+hlinePlot t ls v = toPlot def {
     _plot_lines_title        = t,
     _plot_lines_style        = ls,
     _plot_lines_limit_values = [[(LMin, LValue v),(LMax, LValue v)]]
@@ -98,7 +93,7 @@ hlinePlot t ls v = toPlot defaultPlotLines {
 
 -- | Helper function to plot a single vertical line.
 vlinePlot :: String -> LineStyle -> a -> Plot a b
-vlinePlot t ls v = toPlot defaultPlotLines {
+vlinePlot t ls v = toPlot def {
     _plot_lines_title        = t,
     _plot_lines_style        = ls,
     _plot_lines_limit_values = [[(LValue v,LMin),(LValue v,LMax)]]

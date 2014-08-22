@@ -10,7 +10,6 @@
 
 module Graphics.Rendering.Chart.Plot.Annotation(
     PlotAnnotation(..),
-    defaultPlotAnnotation,
 
     plot_annotation_hanchor,
     plot_annotation_vanchor,
@@ -59,10 +58,6 @@ renderAnnotation p pMap = withFontStyle style $
           style =  _plot_annotation_style p
           drawOne (x,y,s) = drawTextsR hta vta angle point s
               where point = pMap (LValue x, LValue y)
-
-{-# DEPRECATED defaultPlotAnnotation  "Use the according Data.Default instance!" #-}
-defaultPlotAnnotation :: PlotAnnotation x y
-defaultPlotAnnotation = def
 
 instance Default (PlotAnnotation x y) where
   def = PlotAnnotation 

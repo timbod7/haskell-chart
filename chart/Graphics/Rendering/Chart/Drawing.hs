@@ -27,7 +27,6 @@ module Graphics.Rendering.Chart.Drawing
     PointShape(..)
   , PointStyle(..)
   , drawPoint
-  , defaultPointStyle
   
   -- * Alignments and Paths
   , alignPath
@@ -355,11 +354,6 @@ instance Default PointStyle where
     , _point_radius       = 1
     , _point_shape        = PointShapeCircle
     }
-
-{-# DEPRECATED defaultPointStyle "Use the according Data.Default instance!" #-}
--- | Default style for points.
-defaultPointStyle :: PointStyle
-defaultPointStyle = def
 
 -- | Draw a single point at the given location.
 drawPoint :: PointStyle  -- ^ Style to use when rendering the point.

@@ -48,7 +48,6 @@ module Graphics.Rendering.Chart.Layout
   , setLayoutLRForeground
   , updateAllAxesStylesLR
 
-  , defaultLayoutAxis
   , laxis_title_style
   , laxis_title
   , laxis_style
@@ -87,7 +86,6 @@ module Graphics.Rendering.Chart.Layout
   , layoutlr_margin
   , layoutlr_grid_last
 
-  , defaultStackedLayouts
   , slayouts_layouts
   , slayouts_compress_legend
 
@@ -485,10 +483,6 @@ data StackedLayouts x = StackedLayouts
     -- ^ If the different legends shall be combined in one legend at the bottom.
   }
 
-{-# DEPRECATED defaultStackedLayouts  "Use the according Data.Default instance!" #-}
-defaultStackedLayouts :: StackedLayouts x
-defaultStackedLayouts = def
-
 -- | A empty 'StackedLayout' with compressions applied.
 instance Default (StackedLayouts x) where
   def = StackedLayouts [] True
@@ -761,10 +755,6 @@ instance (PlotValue x, PlotValue y1, PlotValue y2) => Default (LayoutLR x y1 y2)
     , _layoutlr_margin          = 10
     , _layoutlr_grid_last       = False
     }
-
-{-# DEPRECATED defaultLayoutAxis "Use the according Data.Default instance!" #-}
-defaultLayoutAxis :: PlotValue t => LayoutAxis t
-defaultLayoutAxis = def
 
 instance PlotValue t => Default (LayoutAxis t) where
   def = LayoutAxis

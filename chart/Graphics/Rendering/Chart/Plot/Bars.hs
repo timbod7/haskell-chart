@@ -10,7 +10,6 @@
 
 module Graphics.Rendering.Chart.Plot.Bars(
     PlotBars(..),
-    defaultPlotBars,
     PlotBarsStyle(..),
     PlotBarsSpacing(..),
     PlotBarsAlignment(..),
@@ -105,10 +104,6 @@ data PlotBars x y = PlotBars {
    -- | The actual points to be plotted.
    _plot_bars_values          :: [ (x,[y]) ]
 }
-
-{-# DEPRECATED defaultPlotBars "Use the according Data.Default instance!" #-}
-defaultPlotBars :: BarsPlotValue y => PlotBars x y
-defaultPlotBars = def
 
 instance BarsPlotValue y => Default (PlotBars x y) where
   def = PlotBars

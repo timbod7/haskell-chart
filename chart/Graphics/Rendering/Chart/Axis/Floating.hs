@@ -16,8 +16,6 @@ module Graphics.Rendering.Chart.Axis.Floating(
     LinearAxisParams(..),
     LogValue(..),
     LogAxisParams(..),
-    defaultLinearAxis,
-    defaultLogAxis,
     scaledAxis,
     autoScaledAxis,
     autoScaledLogAxis,
@@ -46,7 +44,7 @@ import Graphics.Rendering.Chart.Axis.Types
 instance PlotValue Double where
     toValue  = id
     fromValue= id
-    autoAxis = autoScaledAxis defaultLinearAxis
+    autoAxis = autoScaledAxis def
 
 -- | A wrapper class for doubles used to indicate they are to
 -- be plotted against a percentage axis.
@@ -59,7 +57,7 @@ instance Show Percent where
 instance PlotValue Percent where
     toValue  = unPercent
     fromValue= Percent
-    autoAxis = autoScaledAxis defaultLinearAxis{-_la_labelf=-}
+    autoAxis = autoScaledAxis def {-_la_labelf=-}
 
 -- | A wrapper class for doubles used to indicate they are to
 -- be plotted against a log axis.
@@ -72,7 +70,7 @@ instance Show LogValue where
 instance PlotValue LogValue where
     toValue (LogValue x) = log x
     fromValue d          = LogValue (exp d)
-    autoAxis             = autoScaledLogAxis defaultLogAxis
+    autoAxis             = autoScaledLogAxis def
 
 showD :: (RealFloat d) => d -> String
 showD x = case reverse $ showFFloat Nothing x "" of
@@ -89,10 +87,6 @@ data LinearAxisParams a = LinearAxisParams {
     -- | The target number of ticks to be shown.
     _la_nTicks  :: Int
 }
-
-{-# DEPRECATED defaultLinearAxis "Use the according Data.Default instance!" #-}
-defaultLinearAxis :: (Show a, RealFloat a) => LinearAxisParams a
-defaultLinearAxis = def
 
 instance (Show a, RealFloat a) => Default (LinearAxisParams a) where
   def = LinearAxisParams 
@@ -154,10 +148,6 @@ autoSteps nSteps vs = map fromRational $ steps (fromIntegral nSteps) r
     r         = range ps
 
 ----------------------------------------------------------------------
-
-{-# DEPRECATED defaultLogAxis "Use the according Data.Default instance!" #-}
-defaultLogAxis :: (Show a, RealFloat a) => LogAxisParams a
-defaultLogAxis = def
 
 instance (Show a, RealFloat a) => Default (LogAxisParams a) where
   def = LogAxisParams 

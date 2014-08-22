@@ -11,7 +11,6 @@
 module Graphics.Rendering.Chart.Plot.Candle(
     PlotCandle(..),
     Candle(..),
-    defaultPlotCandle,
 
     plot_candle_title,
     plot_candle_line_style,
@@ -136,10 +135,6 @@ renderPlotLegendCandle pc (Rect p1 p2) = do
     hi    = min (p_y p1) (p_y p2)
     open  = (lo + mid) / 2
     close = (mid + hi) / 2
-
-{-# DEPRECATED defaultPlotCandle "Use the according Data.Default instance!" #-}
-defaultPlotCandle :: PlotCandle x y
-defaultPlotCandle = def
 
 instance Default (PlotCandle x y) where
   def = PlotCandle 

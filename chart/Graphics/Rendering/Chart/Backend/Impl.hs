@@ -64,10 +64,6 @@ data ChartBackendInstr a where
 --   found in the documentation of 'ChartBackendInstr'.
 type ChartBackend a = Program ChartBackendInstr a
 
-{-# DEPRECATED CRender  "Use the new name ChartBackend!" #-}
--- | Alias so the old name for rendering code still works.
-type CRender a = ChartBackend a
-
 -- | Stroke the outline of the given path using the 
 --   current 'LineStyle'. This function does /not/ perform
 --   alignment operations on the path. See 'Path' for the exact semantic

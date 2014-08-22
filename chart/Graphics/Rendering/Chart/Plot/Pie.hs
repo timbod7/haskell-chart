@@ -24,9 +24,6 @@ module Graphics.Rendering.Chart.Plot.Pie(
     PieLayout(..),
     PieChart(..),
     PieItem(..),
-    defaultPieLayout,
-    defaultPieChart,
-    defaultPieItem,
     
     pieToRenderable,
     pieChartToRenderable,
@@ -86,10 +83,6 @@ data PieItem = PieItem {
    _pitem_value  :: Double
 }
 
-{-# DEPRECATED defaultPieChart  "Use the according Data.Default instance!" #-}
-defaultPieChart :: PieChart
-defaultPieChart = def
-
 instance Default PieChart where
   def = PieChart 
     { _pie_data             = []
@@ -99,16 +92,8 @@ instance Default PieChart where
     , _pie_start_angle      = 0
     }
 
-{-# DEPRECATED defaultPieItem  "Use the according Data.Default instance!" #-}
-defaultPieItem :: PieItem
-defaultPieItem = def
-
 instance Default PieItem where
   def = PieItem "" 0 0
-
-{-# DEPRECATED defaultPieLayout  "Use the according Data.Default instance!" #-}
-defaultPieLayout :: PieLayout
-defaultPieLayout = def
 
 instance Default PieLayout where
   def = PieLayout 

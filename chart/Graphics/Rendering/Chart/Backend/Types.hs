@@ -105,11 +105,6 @@ instance Default FontStyle where
     , _font_color  = opaque black
     }
 
-{-# DEPRECATED defaultFontStyle  "Use the according Data.Default instance!" #-}
--- | The default font style.
-defaultFontStyle :: FontStyle
-defaultFontStyle = def
-
 -- | Possible horizontal anchor points for text.
 data HTextAnchor = HTA_Left 
                  | HTA_Centre 

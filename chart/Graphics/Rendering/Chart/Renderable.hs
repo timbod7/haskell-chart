@@ -133,7 +133,7 @@ fillBackground fs r = r{ render = rf }
       render r rsize
 
 -- | Helper function for using a renderable, when we generate it
---   in the CRender monad.
+--   in the ChartBackend monad.
 embedRenderable :: ChartBackend (Renderable a) -> Renderable a
 embedRenderable ca = Renderable {
    minsize = do { a <- ca; minsize a },

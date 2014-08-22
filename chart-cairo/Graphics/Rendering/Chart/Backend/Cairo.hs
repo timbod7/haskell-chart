@@ -16,13 +16,6 @@ module Graphics.Rendering.Chart.Backend.Cairo
 
   , cBackendToFile
 
-  , renderableToPNGFile  -- deprecated
-  , renderableToPDFFile  -- deprecated
-  , renderableToPSFile   -- deprecated
-  , renderableToSVGFile  -- deprecated
-  
-  , sparkLineToPDF       -- deprecated
-  , sparkLineToPNG       -- deprecated
   ) where
 
 import Data.Default.Class
@@ -223,28 +216,6 @@ cBackendToFile fo cr path = do
 
     (width,height) = _fo_size fo
 
-{-# DEPRECATED renderableToPNGFile "use renderableToFile" #-}
-renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
-renderableToPNGFile r width height path = renderableToFile (FileOptions (width,height) PNG) path r
-
--- | Output the given renderable to a PDF file of the specifed size
---   (in points), to the specified file.
-{-# DEPRECATED renderableToPDFFile "use renderableToFile" #-}
-renderableToPDFFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToPDFFile r width height path = void $ renderableToFile (FileOptions (width,height) PDF) path r
-
--- | Output the given renderable to a postscript file of the specifed size
---   (in points), to the specified file.
-{-# DEPRECATED renderableToPSFile "use renderableToFile" #-}
-renderableToPSFile  :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToPSFile r width height path  = void $ renderableToFile (FileOptions (width,height) PS) path r
-
--- | Output the given renderable to an SVG file of the specifed size
---   (in points), to the specified file.
-{-# DEPRECATED renderableToSVGFile "use renderableToFile" #-}
-renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToSVGFile r width height path = void $ renderableToFile (FileOptions (width,height) SVG) path r
-
 -- -----------------------------------------------------------------------
 -- Type Conversions: Chart -> Cairo
 -- -----------------------------------------------------------------------
@@ -324,19 +295,5 @@ cArc p r a1 a2 = C.arc (p_x p) (p_y p) r a1 a2
 
 cArcNegative :: Point -> Double -> Double -> Double -> C.Render ()
 cArcNegative p r a1 a2 = C.arcNegative (p_x p) (p_y p) r a1 a2
-
--- -----------------------------------------------------------------------
--- SparkLine Functions
--- -----------------------------------------------------------------------
-
--- | Generate a PNG for the sparkline, using its natural size.
-{-# DEPRECATED sparkLineToPNG "use renderableToFile" #-}
-sparkLineToPNG :: FilePath -> SparkLine -> IO (PickFn ())
-sparkLineToPNG fp sp = renderableToFile (FileOptions (sparkSize sp) PNG) fp (sparkLineToRenderable sp)
-
--- | Generate a PDF for the sparkline, using its natural size.
-{-# DEPRECATED sparkLineToPDF "use renderableToFile" #-}
-sparkLineToPDF :: FilePath -> SparkLine -> IO ()
-sparkLineToPDF fp sp = void $ renderableToFile (FileOptions (sparkSize sp) PDF) fp (sparkLineToRenderable sp)
 
 $( makeLenses ''FileOptions )

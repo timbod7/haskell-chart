@@ -22,24 +22,18 @@ module Graphics.Rendering.Chart.Backend.Diagrams
 
   -- * EPS Utility Functions
   , cBackendToEPSFile
-  , renderableToEPSFile            -- deprecated
-  , renderableToEPSFile'           -- deprecated
   
   -- * SVG Utility Functions
   , cBackendToSVG
   , cBackendToEmbeddedFontSVG  
   , renderableToSVG
   , renderableToSVG'
-  , renderableToSVGFile            -- deprecated
-  , renderableToSVGFile'           -- deprecated
   , renderableToSVGString
   , renderableToSVGString'
   
   -- * SVG Embedded Font Utility Functions
   , renderableToEmbeddedFontSVG
   , renderableToEmbeddedFontSVG'
-  , renderableToEmbeddedFontSVGFile  -- deprecated
-  , renderableToEmbeddedFontSVGFile' -- deprecated
   ) where
 
 import Data.Default.Class
@@ -144,23 +138,6 @@ cBackendToFile fo cb path = do
 -- SVG Utility Functions
 -- -----------------------------------------------------------------------
 
--- | Output the given renderable to a SVG file of the specifed size
---   (in points), to the specified file using the default environment.
-{-# DEPRECATED renderableToSVGFile "use renderToFile" #-}
-renderableToSVGFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
-renderableToSVGFile r w h file = do
-  (svg, x) <- renderableToSVGString r w h
-  BS.writeFile file svg
-  return x
-
--- | Output the given renderable to a SVG file using the given environment.
-{-# DEPRECATED renderableToSVGFile' "use renderToFile" #-}
-renderableToSVGFile' :: Renderable a -> DEnv -> FilePath -> IO (PickFn a)
-renderableToSVGFile' r env file = do
-  let (svg, x) = renderableToSVGString' r env
-  BS.writeFile file svg
-  return x
-
 -- | Output the given renderable to a string containing a SVG of the specifed size
 --   (in points) using the default environment.
 renderableToSVGString :: Renderable a -> Double -> Double -> IO (BS.ByteString, PickFn a)
@@ -193,25 +170,6 @@ renderableToSVG' r env =
 -- -----------------------------------------------------------------------
 -- SVG Embedded Font Utility Functions
 -- -----------------------------------------------------------------------
-
--- | Output the given renderable to a SVG file of the specifed size
---   (in points), to the specified file using the default environment.
---   Font are embedded to save space.
-{-# DEPRECATED renderableToEmbeddedFontSVGFile "use renderToFile" #-}
-renderableToEmbeddedFontSVGFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
-renderableToEmbeddedFontSVGFile r w h file = do
-  (svg, x) <- renderableToEmbeddedFontSVG r w h
-  BS.writeFile file $ renderSvg svg
-  return x
-
--- | Output the given renderable to a SVG file using the given environment.
---   Font are embedded to save space.
-{-# DEPRECATED renderableToEmbeddedFontSVGFile' "use renderToFile" #-}
-renderableToEmbeddedFontSVGFile' :: Renderable a -> DEnv -> FilePath -> IO (PickFn a)
-renderableToEmbeddedFontSVGFile' r env file = do
-  let (svg, x) = renderableToEmbeddedFontSVG' r env
-  BS.writeFile file $ renderSvg svg
-  return x
 
 -- | Output the given renderable as a SVG of the specifed size
 --   (in points) using the default environment.
@@ -258,31 +216,6 @@ cBackendToEmbeddedFontSVG cb env = (svg, x)
         -- M.Map (String, FontSlant, FontWeight) (S.Set String)
         -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
     svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) fontDefs) d
-
--- -----------------------------------------------------------------------
--- EPS Utility Functions
--- -----------------------------------------------------------------------
-
--- | Output the given renderable to a EPS file using the default environment.
-{-# DEPRECATED renderableToEPSFile "use renderToFile" #-}
-renderableToEPSFile :: Renderable a -> Double -> Double -> FilePath -> IO (PickFn a)
-renderableToEPSFile r w h file = do
-  env <- defaultEnv vectorAlignmentFns w h
-  renderableToEPSFile' r env file
-
--- | Output the given renderable to a EPS file using the given environment.
-{-# DEPRECATED renderableToEPSFile' "use renderToFile" #-}
-renderableToEPSFile' :: Renderable a -> DEnv -> FilePath -> IO (PickFn a)
-renderableToEPSFile' r env file = do
-  let (w, h) = envOutputSize env
-  let (d, x) = runBackendR env r
-  let psOpts = DEPS.PostscriptOptions 
-                  file 
-                  (D2.Dims w h) 
-                  DEPS.EPS
-  D.renderDia DEPS.Postscript psOpts d
-  return x
-  
 
 -- -----------------------------------------------------------------------
 -- Backend

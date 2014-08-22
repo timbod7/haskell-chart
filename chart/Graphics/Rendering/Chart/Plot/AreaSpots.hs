@@ -11,7 +11,6 @@
 
 module Graphics.Rendering.Chart.Plot.AreaSpots
   ( AreaSpots(..)
-  , defaultAreaSpots
 
   , area_spots_title
   , area_spots_linethick
@@ -22,7 +21,6 @@ module Graphics.Rendering.Chart.Plot.AreaSpots
   , area_spots_values
 
   , AreaSpots4D(..)
-  , defaultAreaSpots4D
 
   , area_spots_4d_title
   , area_spots_4d_linethick
@@ -54,10 +52,6 @@ data AreaSpots z x y = AreaSpots
   , _area_spots_max_radius :: Double	-- ^ the largest size of spot
   , _area_spots_values     :: [(x,y,z)]
   }
-
-{-# DEPRECATED defaultAreaSpots "Use the according Data.Default instance!" #-}
-defaultAreaSpots :: AreaSpots z x y
-defaultAreaSpots = def
 
 instance Default (AreaSpots z x y) where
   def = AreaSpots
@@ -127,10 +121,6 @@ data AreaSpots4D z t x y = AreaSpots4D
   , _area_spots_4d_max_radius :: Double	-- ^ the largest size of spot
   , _area_spots_4d_values     :: [(x,y,z,t)]
   }
-
-{-# DEPRECATED defaultAreaSpots4D "Use the according Data.Default instance!" #-}
-defaultAreaSpots4D :: AreaSpots4D z t x y
-defaultAreaSpots4D = def
 
 instance Default (AreaSpots4D z t x y) where
   def = AreaSpots4D
