@@ -8,6 +8,7 @@ module Graphics.Rendering.Chart.Backend.Cairo
   , FileOptions(..)
   , runBackend
   , renderableToFile
+  , toFile
   , defaultEnv
 
   , fo_size
@@ -184,11 +185,17 @@ instance Default FileOptions where
 
 -- | Generate an image file for the given renderable, at the specified path. Size and
 -- format are set through the `FileOptions` parameter.
-renderableToFile :: FileOptions -> Renderable a -> FilePath -> IO (PickFn a)
-renderableToFile fo r path = cBackendToFile fo cr path
+renderableToFile :: FileOptions -> FilePath -> Renderable a -> IO (PickFn a)
+renderableToFile fo path r = cBackendToFile fo cr path
   where
     cr = render r (fromIntegral width, fromIntegral height)
     (width,height) = _fo_size fo
+
+-- | Generate an image file from anything that can be converted to a renderable.
+-- This is a convenience wrapper over `renderableToFile`
+
+toFile :: (ToRenderable r) => FileOptions -> FilePath -> r -> IO ()
+toFile fo path r = void $ renderableToFile fo path (toRenderable r)
 
 -- | Generate an image file for the given drawing instructions, at the specified path. Size and
 -- format are set through the `FileOptions` parameter.
@@ -218,25 +225,25 @@ cBackendToFile fo cr path = do
 
 {-# DEPRECATED renderableToPNGFile "use renderableToFile" #-}
 renderableToPNGFile :: Renderable a -> Int -> Int -> FilePath -> IO (PickFn a)
-renderableToPNGFile r width height path = renderableToFile (FileOptions (width,height) PNG) r path
+renderableToPNGFile r width height path = renderableToFile (FileOptions (width,height) PNG) path r
 
 -- | Output the given renderable to a PDF file of the specifed size
 --   (in points), to the specified file.
 {-# DEPRECATED renderableToPDFFile "use renderableToFile" #-}
 renderableToPDFFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToPDFFile r width height path = void $ renderableToFile (FileOptions (width,height) PDF) r path
+renderableToPDFFile r width height path = void $ renderableToFile (FileOptions (width,height) PDF) path r
 
 -- | Output the given renderable to a postscript file of the specifed size
 --   (in points), to the specified file.
 {-# DEPRECATED renderableToPSFile "use renderableToFile" #-}
 renderableToPSFile  :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToPSFile r width height path  = void $ renderableToFile (FileOptions (width,height) PS) r path
+renderableToPSFile r width height path  = void $ renderableToFile (FileOptions (width,height) PS) path r
 
 -- | Output the given renderable to an SVG file of the specifed size
 --   (in points), to the specified file.
 {-# DEPRECATED renderableToSVGFile "use renderableToFile" #-}
 renderableToSVGFile :: Renderable a -> Int -> Int -> FilePath -> IO ()
-renderableToSVGFile r width height path = void $ renderableToFile (FileOptions (width,height) SVG) r path
+renderableToSVGFile r width height path = void $ renderableToFile (FileOptions (width,height) SVG) path r
 
 -- -----------------------------------------------------------------------
 -- Type Conversions: Chart -> Cairo
@@ -325,11 +332,11 @@ cArcNegative p r a1 a2 = C.arcNegative (p_x p) (p_y p) r a1 a2
 -- | Generate a PNG for the sparkline, using its natural size.
 {-# DEPRECATED sparkLineToPNG "use renderableToFile" #-}
 sparkLineToPNG :: FilePath -> SparkLine -> IO (PickFn ())
-sparkLineToPNG fp sp = renderableToFile (FileOptions (sparkSize sp) PNG) (sparkLineToRenderable sp) fp
+sparkLineToPNG fp sp = renderableToFile (FileOptions (sparkSize sp) PNG) fp (sparkLineToRenderable sp)
 
 -- | Generate a PDF for the sparkline, using its natural size.
 {-# DEPRECATED sparkLineToPDF "use renderableToFile" #-}
 sparkLineToPDF :: FilePath -> SparkLine -> IO ()
-sparkLineToPDF fp sp = void $ renderableToFile (FileOptions (sparkSize sp) PDF) (sparkLineToRenderable sp) fp
+sparkLineToPDF fp sp = void $ renderableToFile (FileOptions (sparkSize sp) PDF) fp (sparkLineToRenderable sp)
 
 $( makeLenses ''FileOptions )

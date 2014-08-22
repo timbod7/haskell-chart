@@ -271,17 +271,17 @@ instance (IsPlot p, IsPlot q) => IsPlot (p,q) where
 
 instance PlotPDFType (IO a) where
     pld fn args = do
-        renderableToFile def{_fo_format=PDF,_fo_size=(640,480)} (layoutDddToRenderable $ uplot (reverse args)) fn
+        renderableToFile def{_fo_format=PDF,_fo_size=(640,480)} fn (layoutDddToRenderable $ uplot (reverse args))
         return undefined
 
 instance PlotPSType (IO a) where
     pls fn args = do
-        renderableToFile  def{_fo_format=PS,_fo_size=(640,480)} (layoutDddToRenderable $ uplot (reverse args)) fn
+        renderableToFile  def{_fo_format=PS,_fo_size=(640,480)} fn (layoutDddToRenderable $ uplot (reverse args))
         return undefined
 
 instance PlotPNGType (IO a) where
     plp fn args = do
-        renderableToFile def{_fo_format=PNG,_fo_size=(640,480)} (layoutDddToRenderable $ uplot (reverse args)) fn
+        renderableToFile def{_fo_format=PNG,_fo_size=(640,480)} fn (layoutDddToRenderable $ uplot (reverse args))
         return undefined
 
 -- | Display a plot on the screen.

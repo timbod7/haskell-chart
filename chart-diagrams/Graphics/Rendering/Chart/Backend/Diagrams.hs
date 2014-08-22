@@ -17,6 +17,7 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , fo_format
   , fo_customFonts
   , renderableToFile
+  , toFile
   , cBackendToFile
 
   -- * EPS Utility Functions
@@ -109,10 +110,16 @@ data FileOptions = FileOptions {
 
 -- | Generate an image file for the given renderable, at the specified path. Size, format,
 -- and text rendering mode are all set through the `FileOptions` parameter.
-renderableToFile :: FileOptions -> Renderable a -> FilePath -> IO (PickFn a)
-renderableToFile fo r path = cBackendToFile fo cb path
+renderableToFile :: FileOptions -> FilePath -> Renderable a -> IO (PickFn a)
+renderableToFile fo path r = cBackendToFile fo cb path
   where
     cb = render r (_fo_size fo)
+
+-- | Generate an image file from anything that can be converted to a renderable.
+-- This is a convenience wrapper over `renderableToFile`
+
+toFile :: (ToRenderable r) => FileOptions -> FilePath -> r -> IO ()
+toFile fo path r = void $ renderableToFile fo path (toRenderable r)
 
 -- | Generate an image file for the given drawing instructions, at the specified path. Size and
 -- format are set through the `FileOptions` parameter.
