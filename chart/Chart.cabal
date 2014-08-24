@@ -22,6 +22,7 @@ library
                , lens >= 3.9 && < 4.4
                , colour >= 2.2.1 && < 2.4
                , data-default-class < 0.1
+               , mtl >= 2.0 && < 2.3
                , operational >= 0.2.2 && < 0.3
 
   Ghc-options: -Wall -fno-warn-orphans
@@ -58,6 +59,8 @@ library
         Graphics.Rendering.Chart.Backend
         Graphics.Rendering.Chart.Backend.Impl
         Graphics.Rendering.Chart.Backend.Types
+        Graphics.Rendering.Chart.Easy,
+        Graphics.Rendering.Chart.State
 
 source-repository head
   type:     git

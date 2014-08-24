@@ -185,4 +185,5 @@ vectorAlignmentFns = AlignmentFns id id
 
 $( makeLenses ''LineStyle )
 $( makeLenses ''FontStyle )
+$( makeLenses ''FillStyle )
 
