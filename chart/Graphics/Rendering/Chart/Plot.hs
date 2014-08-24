@@ -10,6 +10,7 @@
 module Graphics.Rendering.Chart.Plot(
     module Graphics.Rendering.Chart.Plot.Types,
     module Graphics.Rendering.Chart.Plot.Lines,
+    module Graphics.Rendering.Chart.Plot.Vectors,
     module Graphics.Rendering.Chart.Plot.Points,
     module Graphics.Rendering.Chart.Plot.FillBetween,
     module Graphics.Rendering.Chart.Plot.ErrBars,
@@ -23,6 +24,7 @@ module Graphics.Rendering.Chart.Plot(
 
 import Graphics.Rendering.Chart.Plot.Types
 import Graphics.Rendering.Chart.Plot.Lines
+import Graphics.Rendering.Chart.Plot.Vectors
 import Graphics.Rendering.Chart.Plot.Points
 import Graphics.Rendering.Chart.Plot.FillBetween
 import Graphics.Rendering.Chart.Plot.ErrBars
