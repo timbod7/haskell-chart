@@ -43,11 +43,6 @@ module Graphics.Rendering.Chart.Layout
   , layoutToRenderable
   , layoutLRToRenderable
 
-  , setLayoutForeground
-  , updateAllAxesStyles
-  , setLayoutLRForeground
-  , updateAllAxesStylesLR
-
   , laxis_title_style
   , laxis_title
   , laxis_style
@@ -69,6 +64,11 @@ module Graphics.Rendering.Chart.Layout
   , layout_plots
   , layout_legend
   , layout_grid_last
+
+  , layout_axes_styles
+  , layout_axes_title_styles
+  , layout_all_font_styles
+  , layout_foreground
       
   , layoutlr_background
   , layoutlr_plot_background
@@ -85,6 +85,11 @@ module Graphics.Rendering.Chart.Layout
   , layoutlr_legend
   , layoutlr_margin
   , layoutlr_grid_last
+
+  , layoutlr_axes_styles
+  , layoutlr_axes_title_styles
+  , layoutlr_all_font_styles
+  , layoutlr_foreground
 
   , slayouts_layouts
   , slayouts_compress_legend
@@ -774,29 +779,59 @@ $( makeLenses ''LayoutLR )
 $( makeLenses ''LayoutAxis )
 $( makeLenses ''StackedLayouts )
 
--- | Helper to update all axis styles on a Layout1 simultaneously.
-updateAllAxesStyles :: (AxisStyle -> AxisStyle) -> Layout x y -> Layout x y
-updateAllAxesStyles uf = (layout_x_axis . laxis_style %~ uf) .
-                         (layout_y_axis . laxis_style %~ uf)
+-- | Setter to update all axis styles on a `Layout`
+layout_axes_styles :: Setter' (Layout x y) AxisStyle
+layout_axes_styles = sets $ \af -> 
+    (layout_x_axis . laxis_style %~ af) .
+    (layout_y_axis . laxis_style %~ af) 
 
--- | Helper to update all axis styles on a LayoutLR simultaneously.
-updateAllAxesStylesLR :: (AxisStyle -> AxisStyle) -> LayoutLR x yl yr -> LayoutLR x yl yr
-updateAllAxesStylesLR uf = (layoutlr_x_axis       . laxis_style %~ uf)
-                         . (layoutlr_left_axis  . laxis_style %~ uf)
-                         . (layoutlr_right_axis . laxis_style %~ uf)
+-- | Setter to update all the axes title styles on a `Layout`
+layout_axes_title_styles :: Setter' (Layout x y) FontStyle
+layout_axes_title_styles = sets $ \af -> 
+    (layout_x_axis . laxis_title_style %~ af) .
+    (layout_y_axis . laxis_title_style %~ af)
 
--- | Helper to set the forground color uniformly on a Layout.
-setLayoutForeground :: AlphaColour Double -> Layout x y -> Layout x y
-setLayoutForeground fg =
-    updateAllAxesStyles  ( (axis_line_style  . line_color .~ fg)
-                         . (axis_label_style . font_color .~ fg))
-                         . (layout_title_style . font_color .~ fg)
-                         . (layout_legend %~ fmap (legend_label_style .> font_color .~ fg))
+-- | Setter to update all the font styles on a `Layout`
+layout_all_font_styles :: Setter' (Layout x y) FontStyle
+layout_all_font_styles = sets $ \af -> 
+    (layout_axes_title_styles %~ af) .
+    (layout_x_axis . laxis_style . axis_label_style %~ af) .
+    (layout_y_axis . laxis_style . axis_label_style %~ af) .
+    (layout_legend . _Just . legend_label_style %~ af) .
+    (layout_title_style %~ af)
 
--- | Helper to set the forground color uniformly on a LayoutLR.
-setLayoutLRForeground :: AlphaColour Double -> LayoutLR x yl yr -> LayoutLR x yl yr
-setLayoutLRForeground fg = updateAllAxesStylesLR 
-  ( (axis_line_style  . line_color .~ fg)
-  . (axis_label_style . font_color .~ fg))
-  . (layoutlr_title_style . font_color .~ fg)
-  . (layoutlr_legend %~ fmap (legend_label_style .> font_color .~ fg))
+-- | Setter to update the foreground color of core chart elements on a `Layout`
+layout_foreground ::  Setter' (Layout x y) (AlphaColour Double)
+layout_foreground = sets $ \af ->
+    (layout_all_font_styles . font_color %~ af) .
+    (layout_axes_styles . axis_line_style . line_color %~ af) 
+
+-- | Setter to update all axis styles on a `LayoutLR`
+layoutlr_axes_styles :: Setter' (LayoutLR x y1 y2) AxisStyle
+layoutlr_axes_styles = sets $ \af -> 
+    (layoutlr_x_axis . laxis_style %~ af) .
+    (layoutlr_left_axis . laxis_style %~ af) .
+    (layoutlr_right_axis . laxis_style %~ af)
+
+-- | Setter to update all the axes title styles on a `LayoutLR`
+layoutlr_axes_title_styles :: Setter' (LayoutLR x y1 y2) FontStyle
+layoutlr_axes_title_styles = sets $ \af -> 
+    (layoutlr_x_axis . laxis_title_style %~ af) .
+    (layoutlr_left_axis . laxis_title_style %~ af) .
+    (layoutlr_right_axis . laxis_title_style %~ af)
+
+-- | Setter to update all the font styles on a `LayoutLR`
+layoutlr_all_font_styles :: Setter' (LayoutLR x y1 y2) FontStyle
+layoutlr_all_font_styles = sets $ \af -> 
+    (layoutlr_axes_title_styles %~ af) .
+    (layoutlr_x_axis . laxis_style . axis_label_style %~ af) .
+    (layoutlr_left_axis . laxis_style . axis_label_style %~ af) .
+    (layoutlr_right_axis . laxis_style . axis_label_style %~ af) .
+    (layoutlr_legend . _Just . legend_label_style %~ af) .
+    (layoutlr_title_style %~ af)
+
+-- | Setter to update the foreground color of core chart elements on a `LayoutLR`
+layoutlr_foreground ::  Setter' (LayoutLR x y1 y2) (AlphaColour Double)
+layoutlr_foreground = sets $ \af ->
+    (layoutlr_all_font_styles . font_color %~ af) .
+    (layoutlr_axes_styles . axis_line_style . line_color %~ af) 
