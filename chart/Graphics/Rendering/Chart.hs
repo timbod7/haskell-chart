@@ -43,7 +43,6 @@ module Graphics.Rendering.Chart(
     module Graphics.Rendering.Chart.Axis,
     module Graphics.Rendering.Chart.Plot,
     module Graphics.Rendering.Chart.Legend,
-    module Graphics.Rendering.Chart.State,
     module Graphics.Rendering.Chart.Backend.Types
 
 ) where
@@ -55,5 +54,4 @@ import Graphics.Rendering.Chart.Layout
 import Graphics.Rendering.Chart.Axis
 import Graphics.Rendering.Chart.Plot
 import Graphics.Rendering.Chart.Legend
-import Graphics.Rendering.Chart.State
 import Graphics.Rendering.Chart.Backend.Types

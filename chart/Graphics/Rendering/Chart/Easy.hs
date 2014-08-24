@@ -20,6 +20,7 @@ module Graphics.Rendering.Chart.Easy(
   module Data.Colour.Names,
 
   module Graphics.Rendering.Chart,
+  module Graphics.Rendering.Chart.State,
   ) where
 
 import Control.Lens
@@ -27,3 +28,4 @@ import Data.Default.Class
 import Data.Colour hiding (over) -- overlaps with lens over function
 import Data.Colour.Names
 import Graphics.Rendering.Chart
+import Graphics.Rendering.Chart.State

@@ -3,10 +3,14 @@ module Graphics.Rendering.Chart.State(
   plot,
   line,
   points,
-  layout,
   takeColor,
   takeShape,
-  CState
+
+  CState,
+  layout,
+  colors,
+  shapes
+  
   ) where
 
 import Control.Lens
@@ -24,10 +28,11 @@ import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 
+-- | The state held when monadically constructing a graphical element
 data CState l = CState {
-  _layout :: l,
-  _colors :: [AlphaColour Double],
-  _shapes :: [PointShape]
+  _layout :: l,                    -- ^ The graphical element being constructed
+  _colors :: [AlphaColour Double], -- ^ An infinite source of colors, for use in plots
+  _shapes :: [PointShape]          -- ^ An infinite source of shapes, for use in plots
   }
 
 $( makeLenses ''CState )
@@ -74,7 +79,7 @@ takeShape = do
   return c
 
 -- | Constuct a line plot with the given title and
--- data, using the next available color.  
+-- data, using the next available color.
 line :: String -> [[(x,y)]]  -> EC l (PlotLines x y)
 line title values = do
     color <- takeColor

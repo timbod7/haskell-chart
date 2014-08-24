@@ -102,6 +102,10 @@ data FileOptions = FileOptions {
   _fo_customFonts :: M.Map (String, FontSlant, FontWeight) FilePath
 }
 
+instance Default FileOptions where
+  def =  FileOptions (800,600) SVG M.empty
+
+
 -- | Generate an image file for the given renderable, at the specified path. Size, format,
 -- and text rendering mode are all set through the `FileOptions` parameter.
 renderableToFile :: FileOptions -> FilePath -> Renderable a -> IO (PickFn a)
