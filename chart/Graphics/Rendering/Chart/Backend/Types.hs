@@ -136,12 +136,12 @@ data TextSize = TextSize
 --   The contained action sets the required fill
 --   style in the rendering state.
 newtype FillStyle = FillStyleSolid 
-  { _fill_colour :: AlphaColour Double 
+  { _fill_color :: AlphaColour Double 
   } deriving (Show, Eq)
 
 -- | The default fill style.
 instance Default FillStyle where
-  def = FillStyleSolid { _fill_colour = opaque white }
+  def = FillStyleSolid { _fill_color = opaque white }
 
 -------------------------------------------------------------------------
 

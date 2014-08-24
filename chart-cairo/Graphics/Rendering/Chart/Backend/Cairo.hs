@@ -144,7 +144,7 @@ cWithFontStyle env font p = preserveCState0 $ do
 
 cWithFillStyle :: CEnv -> FillStyle -> ChartBackend a -> C.Render a
 cWithFillStyle env fs p = do
-  runBackend' env{ceFillColor=G._fill_colour fs} p
+  runBackend' env{ceFillColor=G._fill_color fs} p
 
 cWithLineStyle :: CEnv -> LineStyle -> ChartBackend a -> C.Render a
 cWithLineStyle env ls p = preserveCState0 $ do
