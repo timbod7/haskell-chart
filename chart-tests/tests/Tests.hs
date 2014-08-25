@@ -360,6 +360,29 @@ test13 lw = fillBackground fwhite $ (gridToRenderable t)
 
 
 ----------------------------------------------------------------------
+-- Vector Plot Test
+
+test18 :: Renderable (LayoutPick Double Double Double)
+test18 = layoutToRenderable layout
+  where
+    grid = [(x,y) | x <- range, y <- range] where range = [-5,-4..5]
+
+    proj1 = plot_vectors_style . vector_head_style . point_color .~ (opaque green)
+          $ plot_vectors_mapf .~ (\(x,y) -> (-x,-y))
+          $ plot_vectors_grid .~ grid
+          $ plot_vectors_title .~ "Projection1"
+          $ def
+
+    proj2 = plot_vectors_mapf .~ (\(x,y) -> (-(x+1), -(y-1)))
+          $ plot_vectors_grid .~ grid
+          $ plot_vectors_title .~ "Projection2"
+          $ def
+
+    layout = layout_title .~ "Vector Plot: Abyss"
+           $ layout_plots .~ plotVectorField `liftM` [proj1,proj2]
+           $ def
+
+----------------------------------------------------------------------
 -- a quick test to display labels with all combinations
 -- of anchors
 misc1 fsz rot lw = fillBackground fwhite $ (gridToRenderable t)
@@ -440,6 +463,7 @@ allTests =
      , ("test15a", stdSize, const $ simple (Test15.chart (LORows 2)))
      , ("test15b", stdSize, const $ simple (Test15.chart (LOCols 2)))
      , ("test17", stdSize,  \lw -> simple $ Test17.chart lw)
+     , ("test18", stdSize, const $ simple test18)
      , ("misc1",  stdSize, setPickFn nullPickFn . misc1 20 0)
        -- perhaps a bit excessive
      , ("misc1a", stdSize, setPickFn nullPickFn . misc1 12 45)

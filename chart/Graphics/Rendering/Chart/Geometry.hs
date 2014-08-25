@@ -20,6 +20,8 @@ module Graphics.Rendering.Chart.Geometry
   , pvadd
   , pvsub
   , psub
+  , vangle
+  , vlen
   , vscale
   , within
   , intersectRect
@@ -49,7 +51,13 @@ module Graphics.Rendering.Chart.Geometry
   , invert
   ) where
 
+import qualified Prelude
+import Prelude hiding ((^))
 import Data.Monoid
+
+-- The homomorphic version to avoid casts inside the code.
+(^) :: Num a => a -> Integer -> a
+(^) = (Prelude.^)
 
 -- | A point in two dimensions.
 data Point = Point {
@@ -66,6 +74,17 @@ data Vector = Vector {
 -- | Convert a 'Point' to a 'Vector'.
 pointToVec :: Point -> Vector
 pointToVec (Point x y) = Vector x y
+
+-- | Angle of a vector (counterclockwise from positive x-axis)
+vangle :: Vector -> Double
+vangle (Vector x y)
+    | x > 0 = atan (y/x)
+    | x < 0 = atan (y/x) + pi
+    | otherwise = if y > 0 then pi/2 else -pi/2
+
+-- | Length/magnitude of a vector
+vlen :: Vector -> Double
+vlen (Vector x y) = sqrt $ x^2 + y^2
 
 -- | Scale a vector by a constant.
 vscale :: Double -> Vector -> Vector

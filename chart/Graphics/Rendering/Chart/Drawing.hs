@@ -69,6 +69,7 @@ module Graphics.Rendering.Chart.Drawing
   , plusses
   , exes
   , stars
+  , arrows
     
   , solidFillStyle
   
@@ -330,6 +331,7 @@ data PointShape = PointShapeCircle           -- ^ A circle.
                 | PointShapePlus  -- ^ A plus sign.
                 | PointShapeCross -- ^ A cross.
                 | PointShapeStar  -- ^ Combination of a cross and a plus.
+                | PointShapeArrowHead Double
 
 -- | Abstract data type for the style of a plotted point.
 data PointStyle = PointStyle
@@ -359,7 +361,7 @@ instance Default PointStyle where
 drawPoint :: PointStyle  -- ^ Style to use when rendering the point.
           -> Point       -- ^ Position of the point to render.
           -> ChartBackend ()
-drawPoint ps@(PointStyle _ _ _ r shape) p = withPointStyle ps $ do
+drawPoint ps@(PointStyle cl _ _ r shape) p = withPointStyle ps $ do
   p'@(Point x y) <- alignStrokePoint p
   case shape of
     PointShapeCircle -> do
@@ -377,6 +379,9 @@ drawPoint ps@(PointStyle _ _ _ r shape) p = withPointStyle ps $ do
       let path = G.moveTo p1 <> mconcat (map lineTo p1s) <> lineTo p1
       fillPath path
       strokePath path
+    PointShapeArrowHead theta ->
+      withTranslation p $ withRotation (theta - pi/2) $
+          drawPoint (filledPolygon r 3 True cl) (Point 0 0)
     PointShapePlus -> 
       strokePath $ moveTo' (x+r) y
                 <> lineTo' (x-r) y
@@ -478,6 +483,14 @@ stars :: Double -- ^ Radius of circle.
       -> PointStyle
 stars radius w cl =
   PointStyle transparent cl w radius PointShapeStar
+
+arrows :: Double -- ^ Radius of circle.
+       -> Double -- ^ Rotation (Tau)
+       -> Double -- ^ Thickness of line.
+       -> AlphaColour Double -- ^ Color of line.
+       -> PointStyle
+arrows radius angle w cl =
+  PointStyle transparent cl w radius (PointShapeArrowHead angle)
 
 -- | Fill style that fill everything this the given colour.
 solidFillStyle :: AlphaColour Double -> FillStyle
