@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, TemplateHaskell, FlexibleInstances #-}
+{-# LANGUAGE TemplateHaskell, FlexibleInstances #-}
 module Graphics.Rendering.Chart.State(
   plot,
   plotLeft,
@@ -12,7 +12,8 @@ module Graphics.Rendering.Chart.State(
   colors,
   shapes,
 
-  execEC
+  execEC,
+  liftCState,
   ) where
 
 import Control.Lens
@@ -56,8 +57,12 @@ instance (Default l,ToRenderable l) => ToRenderable (EC l a) where
 
 -- | Run the monadic `EC` computation, and return the graphical
 -- element (ie the outer monad' state)
-execEC :: forall a l . (Default l) => EC l a -> l
+execEC :: (Default l) => EC l a -> l
 execEC ec = evalState (execStateT ec def) def
+
+-- | Lift a a computation over `CState`
+liftCState :: State CState a -> EC l a
+liftCState = lift
 
 -- | Add a plot to the `Layout` being constructed.
 plot :: ToPlot p => EC (Layout x y) (p x y) -> EC (Layout x y) ()
@@ -79,14 +84,14 @@ plotRight pm = do
 
 -- | Pop and return the next color from the state
 takeColor :: EC l (AlphaColour Double)
-takeColor = lift $ do
+takeColor = liftCState $ do
   (c:cs) <- use colors
   colors .= cs
   return c
 
 -- | Pop and return the next shape from the state
 takeShape :: EC l PointShape
-takeShape = lift $ do
+takeShape = liftCState $ do
   (c:cs) <- use shapes
   shapes .= cs
   return c
