@@ -1,6 +1,8 @@
 {-# LANGUAGE TemplateHaskell, FlexibleInstances #-}
 module Graphics.Rendering.Chart.State(
   plot,
+  plotLeft,
+  plotRight,
   line,
   points,
   takeColor,
@@ -54,15 +56,17 @@ plot pm = do
   p <- pm
   layout . layout_plots %= (toPlot p:)
 
--- | Add a plot to the `LayoutLR` being constructed. The Either value
--- controls the y axis against which the values will be plotted.
-plotLR :: ToPlot p => EC (LayoutLR x y1 y2 ) (Either (p x y1) (p x y2)) -> EC (LayoutLR x y1 y2) ()
-plotLR pm = do
-  ep <- pm
-  let p = case ep of
-           (Left p) -> Left (toPlot p)
-           (Right p) -> Right (toPlot p)
-  layout . layoutlr_plots %= (p:)
+-- | Add a plot against the left axis to the `LayoutLR` being constructed.
+plotLeft :: ToPlot p => EC (LayoutLR x y1 y2 ) (p x y1) -> EC (LayoutLR x y1 y2) ()
+plotLeft pm = do
+  p <- pm
+  layout . layoutlr_plots %= (Left (toPlot p):)
+
+-- | Add a plot against the right axis tof the `LayoutLR` being constructed.
+plotRight :: ToPlot p => EC (LayoutLR x y1 y2 ) (p x y2) -> EC (LayoutLR x y1 y2) ()
+plotRight pm = do
+  p <- pm
+  layout . layoutlr_plots %= (Right (toPlot p):)
 
 -- | Pop and return the next color from the state
 takeColor :: EC l (AlphaColour Double)
