@@ -219,7 +219,7 @@ test10LR prices lw = layout
  	   $ layoutlr_plots .~ [ Left (toPlot price1_area), Right (toPlot price2_area)
                                , Left (toPlot price1),      Right (toPlot price2)
                                ]
-           $ setLayoutLRForeground fg
+           $ layoutlr_foreground .~ fg
            $ def
 
 -------------------------------------------------------------------------------
@@ -288,7 +288,7 @@ test11e lw =
       -- how to use lens to get inside the maybe?
       l2' = -- layoutlr_legend . Just . legend_label_style . font_color .~ b
             layoutlr_legend .~ Just ((legend_label_style . font_color .~ b) $ def)
-            $ updateAllAxesStylesLR c l2
+            $ (layoutlr_axes_styles %~ c) l2
       c as = axis_line_style .~ solidLine 1 b
              $ axis_label_style . font_color .~ b
              $ as

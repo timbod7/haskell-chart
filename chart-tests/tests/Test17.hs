@@ -25,7 +25,7 @@ chart lwidth = layoutLRToRenderable layout
                                , Left  (toPlot aaplArea)
                                , Left  (toPlot aaplLine)
                                , Left  (toPlot aaplCandle) ]
-           $ setLayoutLRForeground (opaque black)
+           $ layoutlr_foreground .~ opaque black
            $ def
 
     aaplLine = plot_lines_style  .~ lineStyle 2 green

@@ -20,7 +20,7 @@ chart lwidth = layoutToRenderable layout
            $ layout_background .~ solidFillStyle (opaque white)
            $ layout_left_axis_visibility . axis_show_ticks .~ False
  	   $ layout_plots .~ [ toPlot price1, toPlot spots ]
-           $ setLayoutForeground (opaque black)
+           $ layout_foreground .~ opaque black
            $ def
 
     price1 = plot_lines_style .~ lineStyle
