@@ -26,6 +26,7 @@ module Graphics.Rendering.Chart.Easy(
   line,
   points,
   bars,
+  setColors,
   
   ) where
 
