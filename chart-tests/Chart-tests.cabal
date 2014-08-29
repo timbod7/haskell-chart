@@ -71,8 +71,7 @@ Executable ChartsTestCairo
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
       Chart           >= 1.3 && < 1.4,
-      Chart-cairo     >= 1.3 && < 1.4,
-      Chart-simple     >= 1.3 && < 1.4
+      Chart-cairo     >= 1.3 && < 1.4
   if !flag(cairo)
     Buildable: False
   Main-is: Cairo.hs
@@ -98,8 +97,7 @@ Executable ChartsTestGtk
       cairo           >= 0.9.11,
       Chart           >= 1.3 && < 1.4,
       Chart-gtk       >= 1.3 && < 1.4,
-      Chart-cairo     >= 1.3 && < 1.4,
-      Chart-simple     >= 1.3 && < 1.4
+      Chart-cairo     >= 1.3 && < 1.4
   if !flag(gtk)
     Buildable: False
   Main-is: TestPicking.hs
@@ -123,7 +121,6 @@ Executable ChartsTestDiagramsCairo
       old-time        >= 1.0,
       Chart           >= 1.3 && < 1.4,
       Chart-diagrams  >= 1.3 && < 1.4,
-      Chart-simple     >= 1.3 && < 1.4,
       diagrams-cairo  >= 1.2 && < 1.3,
       diagrams-lib    >= 1.2 && < 1.3,
       diagrams-core   >= 1.2 && < 1.3
@@ -152,7 +149,6 @@ Executable ChartsTestDiagramsSVG
       old-time        >= 1.0,
       Chart           >= 1.3 && < 1.4,
       Chart-diagrams  >= 1.3 && < 1.4,
-      Chart-simple     >= 1.3 && < 1.4,
       diagrams-svg    >= 1.1 && < 1.2,
       diagrams-lib    >= 1.2 && < 1.3,
       diagrams-core   >= 1.2 && < 1.3
@@ -179,7 +175,6 @@ Executable ChartsTestDiagramsEPS
       old-time        >= 1.0,
       Chart           >= 1.3 && < 1.4,
       Chart-diagrams  >= 1.3 && < 1.4,
-      Chart-simple     >= 1.3 && < 1.4,
       diagrams-postscript    >= 0.7 && < 1.2,
       diagrams-lib    >= 1.2 && < 1.3,
       diagrams-core   >= 1.2 && < 1.3
@@ -230,10 +225,9 @@ Executable ChartsTestDrawingDiagramsCairo
       old-time        >= 1.0,
       Chart           >= 1.3 && < 1.4,
       Chart-diagrams  >= 1.3 && < 1.4,
-      diagrams-cairo  >= 1.3 && < 1.3,
+      diagrams-cairo  >= 1.2 && < 1.3,
       diagrams-lib    >= 1.2 && < 1.3,
-      diagrams-core   >= 1.2 && < 1.3,
-      Chart-simple     >= 1.3 && < 1.4
+      diagrams-core   >= 1.2 && < 1.3
   if !flag(cairo) || !flag(diagrams)
     Buildable: False
   Main-is: DiagramsCairo.hs

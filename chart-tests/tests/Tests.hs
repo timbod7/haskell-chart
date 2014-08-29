@@ -3,7 +3,6 @@ module Tests where
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Simple
 import Graphics.Rendering.Chart.Grid
 
 import System.Time
@@ -24,7 +23,6 @@ import qualified Test2
 import qualified Test3
 import qualified Test4
 import qualified Test5
-import qualified Test6
 import qualified Test7
 import qualified Test8
 import qualified Test9
@@ -442,7 +440,6 @@ allTests =
      , ("test4c", stdSize, const $ simple (Test4.chart False True))
      , ("test4d", stdSize, \lw -> simple $ test4d lw)
      , ("test5",  stdSize, \lw -> simple $ Test5.chart lw)
-     , ("test6",  stdSize, const $ simple Test6.chart)
      , ("test7",  stdSize, const $ simple Test7.chart)
      , ("test8",  stdSize, const $ simple Test8.chart)
      , ("test9",  stdSize, const $ simple (Test9.chart True))
