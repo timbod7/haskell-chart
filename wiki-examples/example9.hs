@@ -14,14 +14,15 @@ chart = toRenderable layout
   where
     layout = layoutlr_title .~"Stock Prices"
            $ layoutlr_background .~ solidFillStyle (opaque white)
-           $ layoutlr_left_axis_visibility . axis_show_ticks .~ False
+           $ layoutlr_left_axis . laxis_override .~ axisGridHide
+           $ layoutlr_right_axis . laxis_override .~ axisGridHide
            $ layoutlr_plots .~ [ Right (toPlot msftArea)
                               , Right (toPlot msftLine)
                               , Right (toPlot msftCandle)
                               , Left  (toPlot aaplArea)
                               , Left  (toPlot aaplLine)
                               , Left  (toPlot aaplCandle) ]
-           $ setLayoutLRForeground (opaque black)
+           $ layoutlr_foreground .~ (opaque black)
            $ def
 
     aaplLine = plot_lines_style  .~ lineStyle 2 green
@@ -50,6 +51,8 @@ chart = toRenderable layout
 
     aaplCandle = plot_candle_line_style  .~ lineStyle 1 blue
                $ plot_candle_fill        .~ True
+               $ plot_candle_rise_fill_style .~ solidFillStyle (opaque white)
+               $ plot_candle_fall_fill_style .~ solidFillStyle (opaque blue)
                $ plot_candle_tick_length .~ 0
                $ plot_candle_width       .~ 2
                $ plot_candle_values      .~ [ Candle d lo op 0 cl hi
@@ -59,7 +62,7 @@ chart = toRenderable layout
 
     msftCandle = plot_candle_line_style  .~ lineStyle 1 red
                $ plot_candle_fill        .~ True
-               $ plot_candle_rise_fill_style .~ solidFillStyle (opaque pink)
+               $ plot_candle_rise_fill_style .~ solidFillStyle (opaque white)
                $ plot_candle_fall_fill_style .~ solidFillStyle (opaque red)
                $ plot_candle_tick_length .~ 0
                $ plot_candle_width       .~ 2
@@ -72,4 +75,4 @@ chart = toRenderable layout
                        $ line_color .~ opaque colour
                        $ def
 
-main = renderableToFile def chart "example9_big.png"
+main = renderableToFile def "example9_big.png" chart
