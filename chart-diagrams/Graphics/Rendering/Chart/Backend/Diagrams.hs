@@ -114,9 +114,9 @@ renderableToFile fo path r = cBackendToFile fo cb path
   where
     cb = render r (_fo_size fo)
 
--- | Generate an image file from anything that can be converted to a renderable.
--- This is a convenience wrapper over `renderableToFile`
-
+-- | Generate an image file from from the state content of an EC
+-- computation. The state may have any type that is an instance of
+-- `ToRenderable`
 toFile :: (Default r,ToRenderable r) => FileOptions -> FilePath -> EC r () -> IO ()
 toFile fo path ec = void $ renderableToFile fo path (toRenderable (execEC ec))
 
