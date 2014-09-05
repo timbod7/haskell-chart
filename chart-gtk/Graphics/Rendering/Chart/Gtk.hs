@@ -6,6 +6,7 @@
 
 module Graphics.Rendering.Chart.Gtk(
     renderableToWindow,
+    toWindow,
     createRenderableWindow,
     updateCanvas
     ) where
@@ -13,15 +14,21 @@ module Graphics.Rendering.Chart.Gtk(
 import qualified Graphics.UI.Gtk as G
 import qualified Graphics.UI.Gtk.Gdk.Events as GE
 import qualified Graphics.Rendering.Cairo as C
+
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Backend.Cairo
+import Graphics.Rendering.Chart.State(EC, execEC)
+
 import Data.List (isPrefixOf)
 import Data.IORef
+import Data.Default.Class
+
 import Control.Monad(when)
 import System.IO.Unsafe(unsafePerformIO)
+
 
 -- do action m for any keypress (except modified keys)
 anyKey :: (Monad m) => m a -> GE.Event -> m Bool
@@ -59,6 +66,13 @@ renderableToWindow chart windowWidth windowHeight = do
     G.onDestroy window G.mainQuit
     G.widgetShowAll window
     G.mainGUI
+
+-- | Generate a new GTK window from the state content of
+-- an EC computation. The state may have any type that is
+-- an instance of `ToRenderable`
+toWindow :: (Default r, ToRenderable r) =>Int -> Int -> EC r () -> IO ()
+toWindow windowWidth windowHeight ec = renderableToWindow r windowWidth windowHeight where
+                       r = toRenderable (execEC ec)
 
 -- | Create a new GTK window displaying a renderable.
 createRenderableWindow :: Renderable a -> Int -> Int -> IO G.Window
