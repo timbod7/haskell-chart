@@ -1,4 +1,3 @@
-import System.Environment(getArgs)
 import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
