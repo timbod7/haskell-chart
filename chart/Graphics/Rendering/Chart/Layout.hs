@@ -492,6 +492,12 @@ data StackedLayouts x = StackedLayouts
 instance Default (StackedLayouts x) where
   def = StackedLayouts [] True
 
+
+
+instance Ord x => ToRenderable (StackedLayouts x) where
+  toRenderable = renderStackedLayouts
+
+
 -- | Render several layouts with the same x-axis type and range,
 --   vertically stacked so that their origins and x-values are aligned.
 --
