@@ -1,14 +1,19 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.Chart.Plot.Contour
+-- Copyright   :  (c) Sacha Sokoloski <sokolo@mis.mpg.de> 2014
+-- License     :  BSD-style (see chart/COPYRIGHT)
+--
+-- Contour plots
+--
+{-# LANGUAGE TemplateHaskell #-}
+
 {-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Contour
     (
     -- * Contour Plots
-    PlotContours (PlotContours)
-    , contourPlot
-    , plot_contours_line_plots
-    , plot_contours_levels
-    , plot_contours_styles
-    , plot_contours_title
+      contourPlot
     -- * Util
     , rgbaGradient
     ) where
@@ -21,12 +26,10 @@ module Graphics.Rendering.Chart.Plot.Contour
 
 import Graphics.Rendering.Chart
 import Data.Colour
-import Data.Colour.Names
 import Data.Colour.SRGB.Linear
 
 -- General --
 
-import Numeric
 import Control.Lens
 import Control.Applicative
 import Control.Monad
@@ -40,11 +43,33 @@ import qualified Data.Map as M
 
 -- Unqualified --
 
-import Data.Ord
 import Data.Tuple (swap)
 
 
+--- Contour Plot ---
+
+
+contourPlot
+    :: (Double,Double) -- ^ The range along the x axis.
+    -> (Double,Double) -- ^ The range along the y axis.
+    -> Int -- ^ The number of points to sample along the x axis.
+    -> Int -- ^ The number of points to sample along the y axis.
+    -> Int -- ^ The number of isolevels.
+    -> (Double -> Double -> Double) -- ^ The function to contour.
+    -> [PlotLines Double Double]
+{-| Given various parameters and a function to analyze, contourPlot returns a
+    list of PlotLines each of which is an isoline. -}
+contourPlot (xmn,xmx) (ymn,ymx) nx ny nlvls f =
+    let lsts = functionToLists f (xmn,ymn) (xmx,ymx) stps
+        stps = ((xmx - xmn) / fromIntegral nx,(ymx - ymn) / fromIntegral ny)
+        (mn,mx) = (minimum $ minimum <$> lsts,maximum $ maximum <$> lsts)
+        isostp = (mx - mn) / fromIntegral nlvls
+        isolvls = take nlvls [mn + (isostp / 2),mn + (isostp * 1.5)..]
+     in singleContourPlot lsts (xmx,ymx) stps <$> isolvls
+
+
 --- Util ---
+
 
 rgbaGradient :: (Double, Double, Double,Double) -> (Double, Double, Double,Double) -> Int
     -> [AlphaColour Double]
@@ -58,36 +83,8 @@ rgbaGradient (rmn,gmn,bmn,amn) (rmx,gmx,bmx,amx) n =
           astp = (amx - amn) / fromIntegral n
 
 
--- Contour Plot --
+--- Internal ---
 
-data PlotContours x y = PlotContours
-    { _plot_contours_line_plots :: [PlotLines x y]
-    , _plot_contours_levels :: [Double]
-    , _plot_contours_styles :: [LineStyle]
-    , _plot_contours_title :: String }
-$( makeLenses ''PlotContours )
-
-instance ToPlot PlotContours where
-    toPlot plt =
-        let plts = plt ^. plot_contours_line_plots
-            mn = minimum $ plt ^. plot_contours_levels
-            mx = maximum $ plt ^. plot_contours_levels
-            ttl = plt ^. plot_contours_title
-            strs = if ttl == ""
-                       then repeat ""
-                       else ["Min " ++ ttl ++ ": " ++ showFFloat (Just 2) mn ""]
-                            ++ replicate (length plts -2) ""
-                            ++ ["Max " ++ ttl ++ ": " ++ showFFloat (Just 2) mx ""]
-            stls = plt ^. plot_contours_styles
-                       --else [ line_color ^= clr $ (head $ plt ^. plot_contours_styles)
-                       --     | clr <- plt ^. plot_contours_colours ]
-        in foldl1 joinPlot $ toPlot <$> zipWith3 zipperfun strs stls plts
-        where zipperfun str stl lplt =
-                  plot_lines_title .~ str
-                  $ plot_lines_style .~ stl
-                  $ lplt
-
--- Plotting Functions --
 
 singleContourPlot :: [[Double]] -> (Double,Double) -> (Double,Double)
     -> Double -> PlotLines Double Double
@@ -98,28 +95,6 @@ singleContourPlot lsts mxs stps isolvl =
               $ plot_lines_title .~ ttl
               $ plot_lines_style .~ solidLine 2 (opaque clr)
               $ def
-
-contourPlot
-    :: (Double,Double) -- ^ The range along the x axis.
-    -> (Double,Double) -- ^ The range along the y axis.
-    -> Int -- ^ The number of points to sample along the x axis.
-    -> Int -- ^ The number of points to sample along the y axis.
-    -> Int -- ^ The number of isolevels.
-    -> (Double -> Double -> Double) -- ^ The function to contour.
-    -> PlotContours Double Double -- ^ The contour plot.
-{-| Given various parameters and a function to analyze, contourPlot generates the default
-    PlotContours. -}
-contourPlot (xmn,xmx) (ymn,ymx) nx ny nlvls f =
-    let lsts = functionToLists f (xmn,ymn) (xmx,ymx) stps
-        stps = ((xmx - xmn) / fromIntegral nx,(ymx - ymn) / fromIntegral ny)
-        (mn,mx) = (minimum $ minimum <$> lsts,maximum $ maximum <$> lsts)
-        isostp = (mx - mn) / fromIntegral nlvls
-        isolvls = take nlvls [mn + (isostp / 2),mn + (isostp * 1.5)..]
-        plts = singleContourPlot lsts (xmx,ymx) stps <$> isolvls
-    in PlotContours { _plot_contours_line_plots = plts
-                    , _plot_contours_levels = isolvls
-                    , _plot_contours_styles = replicate nlvls $ solidLine 2 (opaque black)
-                    , _plot_contours_title = "" }
 
 
 --- Contour Plot Internal ---
