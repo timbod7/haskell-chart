@@ -26,6 +26,7 @@ library
 
   Exposed-modules:
         Graphics.Rendering.Chart.Gtk
+        Graphics.Rendering.Chart.Gtk.Interactive
 
 source-repository head
   type:     git

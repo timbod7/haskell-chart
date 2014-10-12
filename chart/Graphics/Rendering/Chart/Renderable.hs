@@ -9,14 +9,19 @@
 -- them.
 --
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Graphics.Rendering.Chart.Renderable(
+    RenderablePlus(..),
     Renderable(..),
     ToRenderable(..),
     PickFn,
     Rectangle(..),
     RectCornerStyle(..),
-    
+
     rectangleToRenderable,
 
     fillBackground,
@@ -70,15 +75,24 @@ data Renderable a = Renderable {
    render  :: RectSize -> ChartBackend (PickFn a)
 }
 
+class RenderablePlus a f | a -> f  where
+  -- | Renders the window and provides a way to scale the chart
+  buildRenderable :: a -> Renderable f
+  transformt :: (Point,Point) -> Range -> PickFn f -> a -> Maybe a
+  dragTransform :: (Point,Point) -> Range -> PickFn f -> a -> Maybe a
+
 -- | A type class abtracting the conversion of a value to a Renderable.
 class ToRenderable a where
   toRenderable :: a -> Renderable ()
+
+instance RenderablePlus a f => ToRenderable a where
+  toRenderable = setPickFn nullPickFn . buildRenderable
 
 emptyRenderable :: Renderable a
 emptyRenderable = spacer (0,0)
 
 -- | Create a blank renderable with a specified minimum size.
-spacer :: RectSize -> Renderable a 
+spacer :: RectSize -> Renderable a
 spacer sz  = Renderable {
    minsize = return sz,
    render  = \_ -> return nullPickFn
@@ -113,7 +127,7 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         (w,h) <- minsize rd
         return (w+l+r,h+t+b)
 
-    rf (w,h) = 
+    rf (w,h) =
         withTranslation (Point l t) $ do
           pickf <- render rd (w-l-r,h-t-b)
           return (mkpickf pickf (t,b,l,r) (w,h))
@@ -157,27 +171,27 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
        ts <- textSize s
        let sz = (textSizeWidth ts, textSizeHeight ts)
        return (xwid sz, ywid sz)
-       
+
     rf (w0,h0) = withFontStyle fs $ do
       ts <- textSize s
       let sz@(w,h) = (textSizeWidth ts, textSizeHeight ts)
           descent = textSizeDescent ts
-          
+
           xadj HTA_Left   = xwid sz/2
           xadj HTA_Centre = w0/2
           xadj HTA_Right  = w0 - xwid sz/2
-    
+
           yadj VTA_Top      = ywid sz/2
           yadj VTA_Centre   = h0/2
           yadj VTA_Bottom   = h0 - ywid sz/2
           yadj VTA_BaseLine = h0 - ywid sz/2 + descent*acr
 
-      withTranslation (Point 0 (-descent)) $ 
-        withTranslation (Point (xadj hta) (yadj vta)) $ 
+      withTranslation (Point 0 (-descent)) $
+        withTranslation (Point (xadj hta) (yadj vta)) $
           withRotation rot' $ do
             drawText (Point (-w/2) (h/2)) s
             return (\_-> Just s)  -- PickFn String
-            
+
     rot'      = rot / 180 * pi
     (cr,sr)   = (cos rot', sin rot')
     (acr,asr) = (abs cr, abs sr)
@@ -219,12 +233,12 @@ rectangleToRenderable rectangle = Renderable mf rf
       maybeM () (stroke sz) (_rect_lineStyle rectangle)
       return nullPickFn
 
-    fill sz fs = 
-        withFillStyle fs $ 
+    fill sz fs =
+        withFillStyle fs $
           fillPath $ strokeRectangleP sz (_rect_cornerStyle rectangle)
 
-    stroke sz ls = 
-        withLineStyle ls $ 
+    stroke sz ls =
+        withLineStyle ls $
           strokePath $ strokeRectangleP sz (_rect_cornerStyle rectangle)
 
     strokeRectangleP (x2,y2) RCornerSquare =
@@ -234,7 +248,7 @@ rectangleToRenderable rectangle = Renderable mf rf
                           <> lineTo' x2 y1
                           <> lineTo' x1 y1
                           <> lineTo' x1 y2
-                                
+
     strokeRectangleP (x2,y2) (RCornerBevel s) =
       let (x1,y1) = (0,0) in moveTo' x1 (y1+s)
                           <> lineTo' x1 (y2-s)
@@ -248,12 +262,12 @@ rectangleToRenderable rectangle = Renderable mf rf
                           <> lineTo' x1 (y2-s)
 
     strokeRectangleP (x2,y2) (RCornerRounded s) =
-      let (x1,y1) = (0,0) in arcNeg (Point (x1+s) (y2-s)) s (pi2*2) pi2 
+      let (x1,y1) = (0,0) in arcNeg (Point (x1+s) (y2-s)) s (pi2*2) pi2
                           <> arcNeg (Point (x2-s) (y2-s)) s pi2 0
                           <> arcNeg (Point (x2-s) (y1+s)) s 0 (pi2*3)
                           <> arcNeg (Point (x1+s) (y1+s)) s (pi2*3) (pi2*2)
                           <> lineTo' x1 (y2-s)
-    
+
     pi2 = pi / 2
 
 $( makeLenses ''Rectangle )

@@ -10,11 +10,12 @@
 
 module Graphics.Rendering.Chart.Axis.Indexed(
     PlotIndex(..),
+    indexAxis,
     autoIndexAxis,
     addIndexes,
 ) where
 
-import Control.Arrow (first) 
+import Control.Arrow (first)
 import Data.Default.Class
 
 import Graphics.Rendering.Chart.Axis.Types
@@ -36,18 +37,23 @@ addIndexes as = map (first PlotIndex) (zip [0..] as)
 -- | Create an axis for values indexed by position. The
 --   list of strings are the labels to be used.
 autoIndexAxis :: Integral i => [String] -> [i] -> AxisData i
-autoIndexAxis labels vs = AxisData {
+autoIndexAxis labels vs = indexAxis labels r
+  where
+    r = (minimum vs,maximum vs)
+
+indexAxis :: Integral i => [String] -> (i,i) -> AxisData i
+indexAxis labels (imin,imax) = AxisData {
     _axis_visibility = def { _axis_show_ticks = False },
     _axis_viewport = vport,
     _axis_tropweiv = invport,
     _axis_ticks    = [],
     _axis_labels   = [filter (\(i,_) -> i >= imin && i <= imax)
                             (zip [0..] labels)],
-    _axis_grid     = []
+    _axis_grid     = [],
+    _axis_ranged   = indexAxis labels
     }
   where
     vport r i = linMap id ( fromIntegral imin - 0.5
                           , fromIntegral imax + 0.5) r (fromIntegral i)
     invport = invLinMap round fromIntegral (imin, imax)
-    imin = minimum vs
-    imax = maximum vs
+
