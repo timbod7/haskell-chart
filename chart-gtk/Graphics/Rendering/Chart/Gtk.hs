@@ -7,18 +7,15 @@
 module Graphics.Rendering.Chart.Gtk(
     renderableToWindow,
     toWindow,
-    toZoomableWindow,
     createRenderableWindow,
-    createZoomableWindow,
+    createInteractiveWindow,
+    toInteractiveWindow,
     updateCanvas
     ) where
 
 import qualified Graphics.UI.Gtk as G
 import qualified Graphics.UI.Gtk.Gdk.Events as GE
-import qualified Graphics.UI.Gtk.Selectors.FileChooserDialog as FC
 import qualified Graphics.Rendering.Cairo as C
-
--- import Graphics.UI.Gtk.Gdk.GC
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Renderable
@@ -85,9 +82,9 @@ toWindow :: (Default r, ToRenderable r) =>Int -> Int -> EC r () -> IO ()
 toWindow windowWidth windowHeight ec = renderableToWindow r windowWidth windowHeight where
                        r = toRenderable (execEC ec)
 
-toZoomableWindow :: (Default z, RenderablePlus z a) => Int -> Int -> EC z () -> IO ()
-toZoomableWindow windowWidth windowHeight ec = makeWindow window where
-  window = createZoomableWindow (execEC ec) windowWidth windowHeight
+toInteractiveWindow :: (Default z, RenderablePlus z a) => Int -> Int -> EC z () -> IO ()
+toInteractiveWindow windowWidth windowHeight ec = makeWindow window where
+  window = createInteractiveWindow (execEC ec) windowWidth windowHeight
 
 -- | Create a new GTK window displaying a renderable.
 createRenderableWindow :: Renderable a -> Int -> Int -> IO G.Window

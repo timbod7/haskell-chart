@@ -5,7 +5,7 @@
 -- License     :  BSD-style (see chart/COPYRIGHT)
 
 module Graphics.Rendering.Chart.Gtk.Interactive (
-  createZoomableWindow,
+  createInteractiveWindow,
   updateCanvas
 ) where
 
@@ -54,7 +54,7 @@ zoomTransform tss r f = panTransform (clear ts') r f
     clear tss = tss { press_complete = Nothing }
     transformed = do
       ps <- press_complete tss
-      z' <- transformt ps r f z
+      z' <- selectTransform ps r f z
       return $ tss { ts = z':(ts tss) }
 
 panTransform :: RenderablePlus z a => ZoomState z -> Range -> PickFn a -> ZoomState z
@@ -70,8 +70,8 @@ panTransform tss r f = result
 
 -----------------------------------------------------------
 
-createZoomableWindow :: RenderablePlus z a => z -> Int -> Int -> IO G.Window
-createZoomableWindow z windowWidth windowHeight = do
+createInteractiveWindow :: RenderablePlus z a => z -> Int -> Int -> IO G.Window
+createInteractiveWindow z windowWidth windowHeight = do
     zooms <- newIORef $ zoomZero [z]
     pickfn <- newIORef nullPickFn :: IO(IORef (PickFn a) )
     window <- G.windowNew

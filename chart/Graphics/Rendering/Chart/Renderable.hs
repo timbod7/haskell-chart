@@ -78,7 +78,7 @@ data Renderable a = Renderable {
 class RenderablePlus a f | a -> f  where
   -- | Renders the window and provides a way to scale the chart
   buildRenderable :: a -> Renderable f
-  transformt :: (Point,Point) -> Range -> PickFn f -> a -> Maybe a
+  selectTransform :: (Point,Point) -> Range -> PickFn f -> a -> Maybe a
   dragTransform :: (Point,Point) -> Range -> PickFn f -> a -> Maybe a
 
 -- | A type class abtracting the conversion of a value to a Renderable.

@@ -220,7 +220,7 @@ instance (PlotValue x, PlotValue y) => RenderablePlus (Layout x y) (LayoutPick x
       yaxis = transformAxis th (_layout_y_axis l)
 
 
-  transformt (p1,p2) _ f l = do
+  selectTransform (p1,p2) _ f l = do
    lp1 <- f p1
    lp2 <- f p2
    case (lp1, lp2) of
@@ -413,8 +413,45 @@ data LayoutLR x y1 y2 = LayoutLR
     --   beneath (@False@) or over (@True@) all plots.
   }
 
-instance (Ord x, Ord yl, Ord yr) => ToRenderable (LayoutLR x yl yr) where
-  toRenderable = setPickFn nullPickFn . layoutLRToRenderable
+instance (PlotValue x, PlotValue yl, PlotValue yr) =>
+               RenderablePlus (LayoutLR x yl yr) (LayoutPick x yl yr) where
+  buildRenderable = layoutLRToRenderable
+  dragTransform (Point x y,Point x' y') (width,height) _ l = Just l'
+    where
+      l' = l { _layoutlr_x_axis = xaxis
+             , _layoutlr_left_axis = laxis
+             , _layoutlr_right_axis = raxis }
+      dx = (x - x')/width
+      dy = (y' - y)/height
+      tw = (dx, 1+dx)
+      th = (dy, 1+dy)
+      xaxis = transformAxis tw (_layoutlr_x_axis l)
+      laxis = transformAxis th (_layoutlr_left_axis l)
+      raxis = transformAxis th (_layoutlr_right_axis l)
+
+
+  selectTransform (p1,p2) _ f l = do
+   lp1 <- f p1
+   lp2 <- f p2
+   case (lp1, lp2) of
+     (LayoutPick_PlotArea x1 l1 r1, LayoutPick_PlotArea x2 l2 r2) -> Just l'
+       where
+         l' = l { _layoutlr_x_axis = xaxis
+                , _layoutlr_left_axis = leftaxis
+                , _layoutlr_right_axis = rightaxis }
+         lr = (min x1 x2, max x1 x2)
+         tleft = (min l1 l2, max l1 l2)
+         tright = (min r1 r2, max r1 r2)
+         xoverride' = _laxis_override $ _layoutlr_x_axis l
+         loverride' = _laxis_override $ _layoutlr_left_axis l
+         roverride' = _laxis_override $ _layoutlr_right_axis l
+         xaxis = (_layoutlr_x_axis l) { _laxis_override = override lr . xoverride' }
+         leftaxis = (_layoutlr_left_axis l) { _laxis_override = override tleft . loverride' }
+         rightaxis = (_layoutlr_right_axis l) { _laxis_override = override tright . roverride' }
+         override range ax = _axis_ranged ax range
+
+     _ -> Nothing
+
 
 -- | Render the given 'LayoutLR'.
 layoutLRToRenderable :: forall x yl yr . (Ord x, Ord yl, Ord yr)
