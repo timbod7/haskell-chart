@@ -36,25 +36,24 @@ defaultIntAxis  = LinearAxisParams {
 
 autoScaledIntAxis :: (Integral i, PlotValue i) =>
                      LinearAxisParams i -> AxisFn i
-autoScaledIntAxis lap ps = scaledIntAxis lap rs ps
+autoScaledIntAxis lap ps = scaledIntAxis lap rs
   where
     rs = (minimum ps,maximum ps)
 
 scaledIntAxis :: (Integral i, PlotValue i) =>
-                 LinearAxisParams i -> (i,i) -> AxisFn i
-scaledIntAxis lap (minI,maxI) ps =
-    makeAxis (_la_labelf lap) (labelvs,tickvs,gridvs)
+                 LinearAxisParams i -> (i,i) -> AxisData i
+scaledIntAxis lap (minI,maxI) =
+    makeAxis smooth (_la_labelf lap) (labelvs,tickvs,gridvs)
   where
-    range []  = (0,1)
-    range _   | minI == maxI = (fromIntegral $ minI-1, fromIntegral $ minI+1)
-              | otherwise    = (fromIntegral   minI,   fromIntegral   maxI)
+    r | minI == maxI = (fromIntegral $ minI-1, fromIntegral $ minI+1)
+      | otherwise    = (fromIntegral   minI,   fromIntegral   maxI)
 --  labelvs  :: [i]
     labelvs   = stepsInt (fromIntegral $ _la_nLabels lap) r
     tickvs    = stepsInt (fromIntegral $ _la_nTicks lap)
                                   ( fromIntegral $ minimum labelvs
                                   , fromIntegral $ maximum labelvs )
     gridvs    = labelvs
-    r         = range ps
+    smooth    = scaledIntAxis lap
 
 stepsInt :: Integral a => a -> Range -> [a]
 stepsInt nSteps range = bestSize (goodness alt0) alt0 alts

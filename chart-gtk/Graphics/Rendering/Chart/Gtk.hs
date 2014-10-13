@@ -8,6 +8,8 @@ module Graphics.Rendering.Chart.Gtk(
     renderableToWindow,
     toWindow,
     createRenderableWindow,
+    createInteractiveWindow,
+    toInteractiveWindow,
     updateCanvas
     ) where
 
@@ -23,6 +25,8 @@ import Graphics.Rendering.Chart.Backend.Cairo
 import Graphics.Rendering.Chart.State(EC, execEC)
 
 import Data.List (isPrefixOf)
+import Graphics.Rendering.Chart.Gtk.Interactive
+
 import Data.IORef
 import Data.Default.Class
 
@@ -54,13 +58,17 @@ initGuiOnce = do
 -- | Display a renderable in a gtk window.
 --
 -- Note that this is a convenience function that initialises GTK on
--- it's first call, but not subsequent calls. Hence it's 
--- unlikely to be compatible with other code using gtk. In 
+-- it's first call, but not subsequent calls. Hence it's
+-- unlikely to be compatible with other code using gtk. In
 -- that case use createRenderableWindow.
 renderableToWindow :: Renderable a -> Int -> Int -> IO ()
-renderableToWindow chart windowWidth windowHeight = do
+renderableToWindow chart windowWidth windowHeight = makeWindow window where
+    window = createRenderableWindow chart windowWidth windowHeight
+
+makeWindow :: IO G.Window -> IO ()
+makeWindow w = do
     initGuiOnce
-    window <- createRenderableWindow chart windowWidth windowHeight
+    window <- w
     -- press any key to exit the loop
     G.onKeyPress window $ anyKey (G.widgetDestroy window)
     G.onDestroy window G.mainQuit
@@ -74,6 +82,10 @@ toWindow :: (Default r, ToRenderable r) =>Int -> Int -> EC r () -> IO ()
 toWindow windowWidth windowHeight ec = renderableToWindow r windowWidth windowHeight where
                        r = toRenderable (execEC ec)
 
+toInteractiveWindow :: (Default z, RenderablePlus z a) => Int -> Int -> EC z () -> IO ()
+toInteractiveWindow windowWidth windowHeight ec = makeWindow window where
+  window = createInteractiveWindow (execEC ec) windowWidth windowHeight
+
 -- | Create a new GTK window displaying a renderable.
 createRenderableWindow :: Renderable a -> Int -> Int -> IO G.Window
 createRenderableWindow chart windowWidth windowHeight = do
@@ -84,14 +96,3 @@ createRenderableWindow chart windowWidth windowHeight = do
     G.set window [G.containerChild G.:= canvas]
     return window
 
-
-updateCanvas :: Renderable a -> G.DrawingArea  -> IO Bool
-updateCanvas chart canvas = do
-    win <- G.widgetGetDrawWindow canvas
-    (width, height) <- G.widgetGetSize canvas
-    regio <- G.regionRectangle $ GE.Rectangle 0 0 width height
-    let sz = (fromIntegral width,fromIntegral height)
-    G.drawWindowBeginPaintRegion win regio
-    G.renderWithDrawable win $ runBackend (defaultEnv bitmapAlignmentFns) (render chart sz) 
-    G.drawWindowEndPaint win
-    return True

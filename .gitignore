@@ -1,6 +1,7 @@
 *~
 *.hi
 *.o
+*.tags
 cabal.sandbox.config
 .cabal-sandbox/
 chart/dist/
