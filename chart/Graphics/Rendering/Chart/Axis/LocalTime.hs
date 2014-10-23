@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Axis.LocalTime
@@ -22,9 +24,13 @@ module Graphics.Rendering.Chart.Axis.LocalTime(
     ) where
  
 import Data.Default.Class
+#if MIN_VERSION_time(1,5,0)
+import Data.Time hiding (months)
+#else
 import Data.Time
-import Data.Fixed
 import System.Locale (defaultTimeLocale)
+#endif
+import Data.Fixed
 import Control.Lens
 
 import Graphics.Rendering.Chart.Axis.Types
