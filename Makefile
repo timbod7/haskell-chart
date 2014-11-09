@@ -13,7 +13,15 @@ cabal.sandbox.config:
 	cabal sandbox add-source chart-diagrams
 	cabal sandbox add-source chart-simple
 
-clean:
+unregister: 
+	-cabal sandbox hc-pkg unregister Chart-tests
+	-cabal sandbox hc-pkg unregister Chart-simple
+	-cabal sandbox hc-pkg unregister Chart-diagrams
+	-cabal sandbox hc-pkg unregister Chart-gtk
+	-cabal sandbox hc-pkg unregister Chart-cairo
+	-cabal sandbox hc-pkg unregister Chart
+
+clean: unregister
 	cd chart && cabal clean
 	cd chart-cairo && cabal clean
 	cd chart-gtk && cabal clean
