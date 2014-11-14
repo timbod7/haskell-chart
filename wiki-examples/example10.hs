@@ -23,4 +23,4 @@ chart = toRenderable layout
            $ layout_plots .~ [toPlot bars, toPlot points]
            $ def
 
-main = renderableToFile def "example10_big.png" chart
+main = renderableToFile def chart "example10_big.png"
