@@ -21,4 +21,4 @@ chart = toRenderable layout
            $ layout_plots .~ [toPlot circleP]
            $ def
 
-main = renderableToFile def "example7_big.png" chart
+main = renderableToFile def chart "example7_big.png"

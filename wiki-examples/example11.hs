@@ -30,4 +30,4 @@ chart borders = toRenderable layout
   bstyle = if borders then Just (solidLine 1.0 $ opaque black) else Nothing
   mkstyle c = (solidFillStyle c, bstyle)
 
-main = renderableToFile def "example11_big.png" (chart True)
+main = renderableToFile def (chart True) "example11_big.png"

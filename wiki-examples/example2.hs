@@ -34,4 +34,4 @@ chart = toRenderable layout
            $ layoutlr_grid_last .~ False
            $ def
 
-main = renderableToFile def "example2_big.png" chart
+main = renderableToFile def chart "example2_big.png"

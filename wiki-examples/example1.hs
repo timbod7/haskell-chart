@@ -28,5 +28,5 @@ chart = toRenderable layout
                               toPlot sinusoid2]
            $ def
 
-main = renderableToFile def "example1_big.png" chart
+main = renderableToFile def chart "example1_big.png"
 

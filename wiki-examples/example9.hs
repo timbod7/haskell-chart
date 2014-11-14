@@ -22,7 +22,7 @@ chart = toRenderable layout
                               , Left  (toPlot aaplArea)
                               , Left  (toPlot aaplLine)
                               , Left  (toPlot aaplCandle) ]
-           $ layoutlr_foreground .~ (opaque black)
+           $ setLayoutLRForeground (opaque black)
            $ def
 
     aaplLine = plot_lines_style  .~ lineStyle 2 green
@@ -75,4 +75,4 @@ chart = toRenderable layout
                        $ line_color .~ opaque colour
                        $ def
 
-main = renderableToFile def "example9_big.png" chart
+main = renderableToFile def chart "example9_big.png"

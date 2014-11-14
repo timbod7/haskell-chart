@@ -18,4 +18,4 @@ chart = toRenderable layout
            $ pie_plot . pie_data .~ map pitem values
            $ def
 
-main = renderableToFile def "example5_big.png" chart
+main = renderableToFile def chart "example5_big.png"

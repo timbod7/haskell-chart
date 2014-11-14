@@ -17,7 +17,7 @@ chart lwidth = toRenderable layout
            $ layout_background .~ solidFillStyle (opaque white)
            $ layout_left_axis_visibility . axis_show_ticks .~ False
            $ layout_plots .~ [ toPlot price1, toPlot spots ]
-           $ layout_foreground .~ (opaque black)
+           $ setLayoutForeground (opaque black)
            $ def
 
     price1 = plot_lines_style .~ lineStyle
@@ -40,4 +40,4 @@ chart lwidth = toRenderable layout
               $ line_color .~ opaque blue
               $ def
 
-main = renderableToFile def "example8_big.png" (chart 0.25) 
+main = renderableToFile def (chart 0.25) "example8_big.png"
