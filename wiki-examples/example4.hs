@@ -38,4 +38,4 @@ chart lwidth = toRenderable (layout 1001 (trial bits) :: Layout Double LogValue)
     s1 = solidLine lwidth $ opaque green
     s2 = solidLine lwidth $ opaque blue
 
-main = renderableToFile def (chart 0.25) "example4_big.png"
+main = renderableToFile def "example4_big.png" (chart 0.25)

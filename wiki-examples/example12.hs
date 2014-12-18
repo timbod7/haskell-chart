@@ -23,17 +23,19 @@ chart = toRenderable layout
     eplot = plot_vectors_mapf .~ (\(x,y) ->
                 efield 1 (x-20) y `add` efield (-1) (x+20) y)
           $ plot_vectors_grid  .~ square 30 3
-          $ plot_vectors_style . vector_line_style . line_color .~ opaque gray
+          $ plot_vectors_style . vector_line_style . line_color .~ opaque black
           $ plot_vectors_style . vector_head_style . point_color .~ opaque black
           $ plot_vectors_title .~ "Electric field"
           $ def
     bplot = plot_vectors_mapf .~ (\(x,y) ->
                 bfield 1 (x-20) y `add` bfield (-1) (x+20) y)
           $ plot_vectors_grid  .~ square 30 5
+          $ plot_vectors_style . vector_line_style . line_color .~ opaque blue
+          $ plot_vectors_style . vector_head_style . point_color .~ opaque blue
           $ plot_vectors_title .~ "B-field"
           $ def
     layout = layout_title .~ "Positive and Negative Charges"
            $ layout_plots .~ (plotVectorField <$> [eplot,bplot])
            $ def
 
-main = renderableToFile def chart "example12_big.png"
+main = renderableToFile def "example12_big.png" chart

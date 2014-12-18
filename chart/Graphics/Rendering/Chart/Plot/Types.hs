@@ -47,6 +47,9 @@ data Plot x y = Plot {
 class ToPlot a where
    toPlot :: a x y -> Plot x y
 
+instance ToPlot Plot where
+  toPlot p = p
+
 -- | Join any two plots together (they will share a legend).
 joinPlot :: Plot x y -> Plot x y -> Plot x y
 joinPlot Plot{ _plot_render     = renderP

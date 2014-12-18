@@ -3,8 +3,7 @@ module Graphics.Rendering.Chart.State(
   plot,
   plotLeft,
   plotRight,
-  line,
-  points,
+
   takeColor,
   takeShape,
 
@@ -12,7 +11,9 @@ module Graphics.Rendering.Chart.State(
   colors,
   shapes,
 
+  EC,
   execEC,
+  liftEC,
   liftCState,
   ) where
 
@@ -49,38 +50,44 @@ type EC l a = StateT l (State CState) a
 instance Default CState where
   def = CState colors shapes
     where
-      colors = cycle (map opaque [blue,red,green,orange,yellow,violet])
+      colors = cycle (map opaque [blue,green,red,orange,yellow,violet])
       shapes = cycle [PointShapeCircle,PointShapePlus,PointShapeCross,PointShapeStar]
       
-instance (Default l,ToRenderable l) => ToRenderable (EC l a) where
-  toRenderable ec = toRenderable (execEC ec)
-
 -- | Run the monadic `EC` computation, and return the graphical
 -- element (ie the outer monad' state)
 execEC :: (Default l) => EC l a -> l
 execEC ec = evalState (execStateT ec def) def
+
+-- | Nest the construction of a graphical element within
+-- the construction of another.
+liftEC :: (Default l1) => EC l1 a -> EC l2 l1
+liftEC ec = do
+  cs <- lift get
+  let (l,cs') = runState (execStateT ec def) cs
+  lift (put cs')
+  return l
 
 -- | Lift a a computation over `CState`
 liftCState :: State CState a -> EC l a
 liftCState = lift
 
 -- | Add a plot to the `Layout` being constructed.
-plot :: ToPlot p => EC (Layout x y) (p x y) -> EC (Layout x y) ()
+plot :: (ToPlot p) => EC (Layout x y) (p x y) -> EC (Layout x y) ()
 plot pm = do
-  p <- pm
-  layout_plots %= (toPlot p:)
+    p <- pm
+    layout_plots %= (++[toPlot p])
 
 -- | Add a plot against the left axis to the `LayoutLR` being constructed.
-plotLeft :: ToPlot p => EC (LayoutLR x y1 y2 ) (p x y1) -> EC (LayoutLR x y1 y2) ()
+plotLeft :: (ToPlot p) => EC (LayoutLR x y1 y2) (p x y1) -> EC (LayoutLR x y1 y2) ()
 plotLeft pm = do
   p <- pm
-  layoutlr_plots %= (Left (toPlot p):)
+  layoutlr_plots %= (++[Left (toPlot p)])
 
 -- | Add a plot against the right axis tof the `LayoutLR` being constructed.
-plotRight :: ToPlot p => EC (LayoutLR x y1 y2 ) (p x y2) -> EC (LayoutLR x y1 y2) ()
+plotRight :: (ToPlot p) => EC (LayoutLR x y1 y2) (p x y2) -> EC (LayoutLR x y1 y2) ()
 plotRight pm = do
   p <- pm
-  layoutlr_plots %= (Right (toPlot p):)
+  layoutlr_plots %= (++[Right (toPlot p)])
 
 -- | Pop and return the next color from the state
 takeColor :: EC l (AlphaColour Double)
@@ -95,29 +102,4 @@ takeShape = liftCState $ do
   (c:cs) <- use shapes
   shapes .= cs
   return c
-
--- | Constuct a line plot with the given title and
--- data, using the next available color.
-line :: String -> [[(x,y)]]  -> EC l (PlotLines x y)
-line title values = do
-    color <- takeColor
-    return (
-      plot_lines_values .~ values $
-      plot_lines_title .~ title $
-      plot_lines_style . line_color .~ color $
-      def )
-
--- | Construct a scatter plot with the given title and dtda, using the
--- next available color and point shape.
-points :: String -> [(x,y)]  -> EC l (PlotPoints x y)
-points title values = do
-    color <- takeColor
-    shape <- takeShape
-    return (
-      plot_points_values .~ values $
-      plot_points_title .~ title $
-      plot_points_style . point_color .~ color $
-      plot_points_style . point_shape .~ shape $
-      plot_points_style . point_radius .~ 2 $
-      def )
 

@@ -1,8 +1,8 @@
 Name: Chart-diagrams
-Version: 1.2.4
+Version: 1.3.2
 License: BSD3
 License-file: LICENSE
-Copyright: Jan Bracker, 2006-2010
+Copyright: Jan Bracker, 2006-2014
 Author: Jan Bracker <jan.bracker@googlemail.com>
 Maintainer: Jan Bracker <jan.bracker@googlemail.com>
 Homepage: https://github.com/timbod7/haskell-chart/wiki
@@ -39,8 +39,8 @@ library
                , operational >= 0.2.2 && < 0.3
                , containers >= 0.4 && < 0.6
                , data-default-class < 0.1
-               , lens >= 3.9 && < 4.4
-               , Chart >= 1.2 && < 1.3
+               , lens >= 3.9 && < 4.7
+               , Chart >= 1.3 && < 1.4
                , text
   other-modules: Paths_Chart_diagrams
   Exposed-modules:

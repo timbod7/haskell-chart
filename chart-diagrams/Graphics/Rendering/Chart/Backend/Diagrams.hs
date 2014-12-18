@@ -80,6 +80,7 @@ import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
+import Graphics.Rendering.Chart.State(EC, execEC)
 
 import Paths_Chart_diagrams ( getDataFileName )
 
@@ -113,11 +114,11 @@ renderableToFile fo path r = cBackendToFile fo cb path
   where
     cb = render r (_fo_size fo)
 
--- | Generate an image file from anything that can be converted to a renderable.
--- This is a convenience wrapper over `renderableToFile`
-
-toFile :: (ToRenderable r) => FileOptions -> FilePath -> r -> IO ()
-toFile fo path r = void $ renderableToFile fo path (toRenderable r)
+-- | Generate an image file from from the state content of an EC
+-- computation. The state may have any type that is an instance of
+-- `ToRenderable`
+toFile :: (Default r,ToRenderable r) => FileOptions -> FilePath -> EC r () -> IO ()
+toFile fo path ec = void $ renderableToFile fo path (toRenderable (execEC ec))
 
 -- | Generate an image file for the given drawing instructions, at the specified path. Size and
 -- format are set through the `FileOptions` parameter.

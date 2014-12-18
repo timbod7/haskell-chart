@@ -1,4 +1,3 @@
-import System.Environment(getArgs)
 import Graphics.Rendering.Chart
 import Data.Colour
 import Data.Colour.Names
@@ -19,7 +18,7 @@ chart = toRenderable layout
               $ plot_lines_title .~ "am"
               $ def
 
-    sinusoid2 = plot_points_style .~ filledCircles 2 (opaque red)
+    sinusoid2 = plot_points_style .~ filledCircles 2 (opaque green)
               $ plot_points_values .~ [ (x,(am x)) | x <- [0,7..400]]
               $ plot_points_title .~ "am points"
               $ def
@@ -29,5 +28,5 @@ chart = toRenderable layout
                               toPlot sinusoid2]
            $ def
 
-main = renderableToFile def chart "example1_big.png"
+main = renderableToFile def "example1_big.png" chart
 

@@ -18,10 +18,10 @@ chart borders = toRenderable layout
       $ def :: Layout PlotIndex Double
 
   bars2 = plot_bars_titles .~ ["Cash","Equity"]
-      $ plot_bars_values .~ addIndexes [[20,45],[45,30],[30,20],[70,25]]
+      $ plot_bars_values .~ addIndexes [[20,45],[45,30],[30,20],[10,40],[20,50]]
       $ plot_bars_style .~ BarsClustered
       $ plot_bars_spacing .~ BarsFixGap 30 5
-      $ plot_bars_item_styles .~ map mkstyle (cycle defaultColorSeq)
+      $ plot_bars_item_styles .~ map mkstyle (cycle [opaque blue, opaque green])
       $ def
 
   alabels = [ "Jun", "Jul", "Aug", "Sep", "Oct" ]
@@ -30,4 +30,4 @@ chart borders = toRenderable layout
   bstyle = if borders then Just (solidLine 1.0 $ opaque black) else Nothing
   mkstyle c = (solidFillStyle c, bstyle)
 
-main = renderableToFile def (chart True) "example11_big.png"
+main = renderableToFile def "example11_big.png" (chart True)

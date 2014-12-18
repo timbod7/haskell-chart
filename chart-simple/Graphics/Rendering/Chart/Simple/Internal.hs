@@ -147,6 +147,7 @@ layoutDddToRenderable = layoutToRenderable . plotLayout
 instance ToRenderable LayoutDDD where
   toRenderable = setPickFn nullPickFn . toRenderable
 
+{-# DEPRECATED uplot "use Chart.Graphics.Rendering.Chart.Easy" #-}
 uplot :: [UPlot] -> LayoutDDD
 uplot us = LayoutDDD $ iplot $ nameDoubles $ evalfuncs us
   where
@@ -184,6 +185,7 @@ uplot us = LayoutDDD $ iplot $ nameDoubles $ evalfuncs us
 --   that your arguments need to be in class PlotArg.  And PlotArg consists
 --   of functions and [Double] and String and PlotKind or [PlotKind].
 
+{-# DEPRECATED plot "use Chart.Graphics.Rendering.Chart.Easy" #-}
 plot :: PlotType a => a
 plot = pl []
 class PlotType t where
@@ -195,6 +197,7 @@ instance PlotType LayoutDDD where
 
 -- | Save a plot as a PDF file.
 
+{-# DEPRECATED plotPDF "use Chart.Graphics.Rendering.Chart.Easy" #-}
 plotPDF :: PlotPDFType a => String -> a
 plotPDF fn = pld fn []
 class PlotPDFType t where
@@ -204,6 +207,7 @@ instance (PlotArg a, PlotPDFType r) => PlotPDFType (a -> r) where
 
 -- | Save a plot as a postscript file.
 
+{-# DEPRECATED plotPS "use Chart.Graphics.Rendering.Chart.Easy" #-}
 plotPS :: PlotPSType a => String -> a
 plotPS fn = pls fn []
 class PlotPSType t where
@@ -212,6 +216,7 @@ instance (PlotArg a, PlotPSType r) => PlotPSType (a -> r) where
     pls fn args = \ a -> pls fn (toUPlot a ++ args)
 
 -- | Save a plot as a png file.
+{-# DEPRECATED plotPNG "use Chart.Graphics.Rendering.Chart.Easy" #-}
 plotPNG :: PlotPNGType a => String -> a
 plotPNG fn = plp fn []
 
@@ -286,6 +291,7 @@ instance PlotPNGType (IO a) where
 
 -- | Display a plot on the screen.
 
+{-# DEPRECATED plotWindow "use Chart.Graphics.Rendering.Chart.Easy" #-}
 plotWindow :: PlotWindowType a => a
 plotWindow = plw []
 class PlotWindowType t where

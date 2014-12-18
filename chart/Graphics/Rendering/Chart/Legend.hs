@@ -65,6 +65,7 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
     ps  :: [(String, [Rect -> ChartBackend ()])]
     ps   = join_nub lvs
 
+    rf :: (String,[Rect -> ChartBackend ()]) -> Grid (Renderable String)
     rf (title,rfs) = besideN [gpic,ggap2,gtitle]
       where
         gpic = besideN $ intersperse ggap2 (map rp rfs)

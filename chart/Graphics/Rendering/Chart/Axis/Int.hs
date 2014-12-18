@@ -65,8 +65,16 @@ stepsInt nSteps range = bestSize (goodness alt0) alt0 alts
 
     goodness vs          = abs (genericLength vs - nSteps)
 
-    (alt0:alts)          = map (\n -> steps n range) sampleSteps
+    (alt0:alts)          = map (\n -> steps n range) sampleSteps'
 
+    -- throw away sampleSteps that are definitely too small as
+    -- they takes a long time to process                           
+    sampleSteps'         = let rangeMag = ceiling (snd range - fst range)
+                               
+                               (s1,s2) = span (< (rangeMag `div` nSteps)) sampleSteps
+                           in ((reverse . take 5 . reverse) s1) ++ s2
+
+    -- generate all possible step sizes
     sampleSteps          = [1,2,5] ++ sampleSteps1
     sampleSteps1         = [10,20,25,50] ++ map (*10) sampleSteps1
 

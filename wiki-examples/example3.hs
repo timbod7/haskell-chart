@@ -32,4 +32,4 @@ chart = toRenderable layout
            $ def
 
 
-main = renderableToFile def chart "example4_big.png"
+main = renderableToFile def "example3_big.png" chart
