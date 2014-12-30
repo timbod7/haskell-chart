@@ -52,6 +52,9 @@ instance Default CState where
     where
       colors = cycle (map opaque [blue,green,red,orange,yellow,violet])
       shapes = cycle [PointShapeCircle,PointShapePlus,PointShapeCross,PointShapeStar]
+
+instance (Default a,ToRenderable a) => ToRenderable (EC a b) where
+  toRenderable = toRenderable . execEC
       
 -- | Run the monadic `EC` computation, and return the graphical
 -- element (ie the outer monad' state)
