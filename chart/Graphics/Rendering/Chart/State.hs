@@ -20,15 +20,12 @@ module Graphics.Rendering.Chart.State(
 import Control.Lens
 import Control.Monad.State
 import Data.Default.Class
-import Data.List(cycle)
 
 import Data.Colour
 import Data.Colour.Names
 
 import Graphics.Rendering.Chart.Layout
 import Graphics.Rendering.Chart.Plot
-import Graphics.Rendering.Chart.Axis
-import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 
@@ -48,10 +45,10 @@ $( makeLenses ''CState )
 type EC l a = StateT l (State CState) a
 
 instance Default CState where
-  def = CState colors shapes
+  def = CState defColors defShapes
     where
-      colors = cycle (map opaque [blue,green,red,orange,yellow,violet])
-      shapes = cycle [PointShapeCircle,PointShapePlus,PointShapeCross,PointShapeStar]
+      defColors = cycle (map opaque [blue,green,red,orange,yellow,violet])
+      defShapes = cycle [PointShapeCircle,PointShapePlus,PointShapeCross,PointShapeStar]
 
 instance (Default a,ToRenderable a) => ToRenderable (EC a b) where
   toRenderable = toRenderable . execEC
