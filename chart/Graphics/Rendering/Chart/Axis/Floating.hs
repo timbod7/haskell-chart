@@ -114,9 +114,10 @@ scaledAxis lap rs@(minV,maxV) ps0 = makeAxis' realToFrac realToFrac
 -- | Generate a linear axis automatically, scaled appropriately for the
 -- input data.
 autoScaledAxis :: RealFloat a => LinearAxisParams a -> AxisFn a
-autoScaledAxis lap ps0 = scaledAxis lap rs ps0
+autoScaledAxis lap ps0 = scaledAxis lap rs ps
   where
-    rs = (minimum ps0,maximum ps0)
+    ps = filter isValidNumber ps0
+    rs = (minimum ps,maximum ps)
 
 steps :: RealFloat a => a -> (a,a) -> [Rational]
 steps nSteps rs@(minV,maxV) = map ((s*) . fromIntegral) [min' .. max']

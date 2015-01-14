@@ -27,10 +27,11 @@ module Graphics.Rendering.Chart.Easy(
   points,
   bars,
   setColors,
-  
+  setShapes
   ) where
 
 import Control.Lens
+import Control.Monad(when)
 import Data.Default.Class
 import Data.Colour hiding (over) -- overlaps with lens over function
 import Data.Colour.Names
@@ -41,6 +42,11 @@ import Graphics.Rendering.Chart.State
 -- subsequent plots
 setColors :: [AlphaColour Double] -> EC l ()
 setColors cs = liftCState $ colors .= cycle cs
+
+-- | Set the contents of the shape source, for
+-- subsequent plots
+setShapes :: [PointShape] -> EC l ()
+setShapes ps = liftCState $ shapes .= cycle ps
 
 -- | Constuct a line plot with the given title and
 -- data, using the next available color.
@@ -62,7 +68,17 @@ points title values = liftEC $ do
     plot_points_style . point_color .= color
     plot_points_style . point_shape .= shape
     plot_points_style . point_radius .= 2
+    
+    -- Show borders for unfilled shapes
+    when (not (isFilled shape)) $ do
+        plot_points_style . point_border_color .= color
+        plot_points_style . point_border_width .= 1
 
+isFilled :: PointShape -> Bool
+isFilled PointShapeCircle = True
+isFilled PointShapePolygon{} = True
+isFilled _ = False
+    
 -- | Construct a bar chart with the given titles and data, using the
 -- next available colors    
 bars :: (PlotValue x, BarsPlotValue y) => [String] -> [(x,[y])] -> EC l (PlotBars x y)
