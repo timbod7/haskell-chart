@@ -15,23 +15,16 @@
 --     * 'LayoutLR'
 -- 
 --     * 'StackedLayouts'
---
+-- 
 --     * 'LayoutAxis'
---
--- These accessors are not shown in this API documentation.  They have
--- the same name as the field, but with the leading underscore
--- dropped. Hence for data field @_f::F@ in type @D@, they have type
---
--- @
---   f :: `Control.Lens.Lens'` D F
--- @
 --
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ExistentialQuantification #-}
 
 module Graphics.Rendering.Chart.Layout
-  ( Layout(..)
+  ( -- * Types
+    Layout(..)
   , LayoutLR(..)
   , LayoutAxis(..)
   , LayoutPick(..)
@@ -40,9 +33,12 @@ module Graphics.Rendering.Chart.Layout
   -- , LegendItem  haddock complains about this being missing, but from what?
   , MAxisFn
   
+    -- * Rendering
   , layoutToRenderable
   , layoutLRToRenderable
+  , renderStackedLayouts
 
+    -- * LayoutAxis lenses
   , laxis_title_style
   , laxis_title
   , laxis_style
@@ -50,6 +46,7 @@ module Graphics.Rendering.Chart.Layout
   , laxis_override
   , laxis_reverse
     
+    -- * Layout lenses
   , layout_background
   , layout_plot_background
   , layout_title
@@ -70,6 +67,7 @@ module Graphics.Rendering.Chart.Layout
   , layout_all_font_styles
   , layout_foreground
       
+    -- * LayoutLR lenses
   , layoutlr_background
   , layoutlr_plot_background
   , layoutlr_title
@@ -91,10 +89,9 @@ module Graphics.Rendering.Chart.Layout
   , layoutlr_all_font_styles
   , layoutlr_foreground
 
+    -- * StackedLayouts lenses
   , slayouts_layouts
   , slayouts_compress_legend
-
-  , renderStackedLayouts
   ) where
 
 import Graphics.Rendering.Chart.Axis
