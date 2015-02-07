@@ -21,17 +21,16 @@ module Graphics.Rendering.Chart.Plot.Histogram
 
 import Control.Monad (when)
 import Data.Monoid
-import Data.List (transpose)
 import Data.Maybe (fromMaybe)
 import qualified Data.Foldable as F
 import qualified Data.Vector as V
 
-import Control.Lens hiding (moveTo)
+import Control.Lens
 import Graphics.Rendering.Chart
 import Data.Default.Class
 
 import Data.Colour (opaque)
-import Data.Colour.Names (black, blue)
+import Data.Colour.Names (blue)
 import Data.Colour.SRGB (sRGB)
 
 import Numeric.Histogram
@@ -121,7 +120,7 @@ histToPlot p = Plot {
 buildHistPath :: (RealFrac x, Num y)
               => PointMapFn x y -> [((x,x), y)] -> Path
 buildHistPath _ [] = End
-buildHistPath pmap bins = MoveTo (pt x0 0) (go bins)
+buildHistPath pmap bins = MoveTo (pt xb 0) (go bins)
     where go [((x1,x2),y)]      = LineTo (pt x1 y)
                                 $ LineTo (pt x2 y)
                                 $ LineTo (pt x2 0)
@@ -129,7 +128,8 @@ buildHistPath pmap bins = MoveTo (pt x0 0) (go bins)
           go (((x1,x2),y):rest) = LineTo (pt x1 y)
                                 $ LineTo (pt x2 y)
                                 $ go rest
-          ((x0,_),_) = head bins
+          go []                 = End
+          ((xb,_),_) = head bins
           pt x y = pmap (LValue x, LValue y)
 
 renderPlotHist :: (RealFrac x, Num y, Ord y)
@@ -150,7 +150,7 @@ renderPlotHist p pmap
                                     ) $ tail bins
 
 renderPlotLegendHist :: PlotHist x y -> Rect -> ChartBackend ()
-renderPlotLegendHist p r@(Rect p1 p2) =
+renderPlotLegendHist p (Rect p1 p2) =
     withLineStyle (_plot_hist_line_style p) $
         let y = (p_y p1 + p_y p2) / 2
         in strokePath $ moveTo' (p_x p1) y <> lineTo' (p_x p2) y
@@ -163,7 +163,7 @@ histToBins hist =
           dx = realToFrac (b-a) / realToFrac n
           bounds = binBounds a b n
           values = _plot_hist_values hist
-          filter_zeros | _plot_hist_no_zeros hist  = filter (\(b,c)->c > 0)
+          filter_zeros | _plot_hist_no_zeros hist  = filter (\(_,c)->c > 0)
                        | otherwise                 = id
           norm = dx * realToFrac (V.length values)
           normalize = _plot_hist_norm_func hist norm

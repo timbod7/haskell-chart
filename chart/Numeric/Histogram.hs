@@ -38,10 +38,10 @@ histWithBins bins xs =
             f :: (RealFrac a, Num w)
               => V.Vector (Range a) -> MV.STVector s w -> (w, a)
               -> ST s ()
-            f bins bs (w,x) =
-                case V.dropWhile (not . testBin x . snd) $ V.indexed bins of
+            f bins1 bs (w,x) =
+                case V.dropWhile (not . testBin x . snd) $ V.indexed bins1 of
                     v | V.null v  -> return ()
-                    v | (idx,bounds) <- V.head v  -> do
+                    v | (idx,_) <- V.head v  -> do
                         n <- MV.read bs idx
                         MV.write bs idx $! n+w
 
