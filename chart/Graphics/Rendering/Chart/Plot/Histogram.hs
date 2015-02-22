@@ -26,7 +26,9 @@ import qualified Data.Foldable as F
 import qualified Data.Vector as V
 
 import Control.Lens
-import Graphics.Rendering.Chart
+import Graphics.Rendering.Chart.Plot.Types
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Drawing
 import Data.Default.Class
 
 import Data.Colour (opaque)
@@ -43,7 +45,7 @@ data PlotHist x y = PlotHist
     , _plot_hist_bins                 :: Int
 
       -- | Values to histogram
-    , _plot_hist_values               :: V.Vector x
+    , _plot_hist_values               :: [x]
 
       -- | Don't attempt to plot bins with zero counts. Useful when
       -- the y-axis is logarithmically scaled.
@@ -76,7 +78,7 @@ instance Default (PlotHist x Int) where
 defaultPlotHist :: PlotHist x Int
 defaultPlotHist = PlotHist { _plot_hist_bins        = 20
                            , _plot_hist_title       = ""
-                           , _plot_hist_values      = V.empty
+                           , _plot_hist_values      = []
                            , _plot_hist_no_zeros    = False
                            , _plot_hist_range       = Nothing
                            , _plot_hist_drop_lines  = False
@@ -162,7 +164,7 @@ histToBins hist =
           (a,b) = realHistRange hist
           dx = realToFrac (b-a) / realToFrac n
           bounds = binBounds a b n
-          values = _plot_hist_values hist
+          values = V.fromList (_plot_hist_values hist)
           filter_zeros | _plot_hist_no_zeros hist  = filter (\(_,c)->c > 0)
                        | otherwise                 = id
           norm = dx * realToFrac (V.length values)
@@ -173,7 +175,7 @@ histToBins hist =
 -- TODO: Determine more aesthetically pleasing range
 realHistRange :: (RealFrac x) => PlotHist x y -> (x,x)
 realHistRange hist = fromMaybe range $ _plot_hist_range hist
-    where values = _plot_hist_values hist
+    where values = V.fromList (_plot_hist_values hist)
           range = if V.null values
                     then (0,0)
                     else (V.minimum values, V.maximum values)
