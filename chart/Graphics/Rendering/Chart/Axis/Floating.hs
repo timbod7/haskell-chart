@@ -46,6 +46,11 @@ instance PlotValue Double where
     fromValue= id
     autoAxis = autoScaledAxis def
 
+instance PlotValue Float where
+    toValue  = realToFrac
+    fromValue= realToFrac
+    autoAxis = autoScaledAxis def
+
 -- | A wrapper class for doubles used to indicate they are to
 -- be plotted against a percentage axis.
 newtype Percent = Percent {unPercent :: Double}
