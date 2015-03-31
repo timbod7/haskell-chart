@@ -24,6 +24,7 @@ library
                , data-default-class < 0.1
                , mtl >= 2.0 && < 2.3
                , operational >= 0.2.2 && < 0.3
+               , containers >= 0.5.5 && < 0.6
 
   Ghc-options: -Wall -fno-warn-orphans
 
@@ -49,6 +50,7 @@ library
         Graphics.Rendering.Chart.Plot.AreaSpots,
         Graphics.Rendering.Chart.Plot.Bars,
         Graphics.Rendering.Chart.Plot.Candle,
+        Graphics.Rendering.Chart.Plot.Contour,
         Graphics.Rendering.Chart.Plot.ErrBars,
         Graphics.Rendering.Chart.Plot.FillBetween,
         Graphics.Rendering.Chart.Plot.Hidden,
