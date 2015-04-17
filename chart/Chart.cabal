@@ -19,11 +19,13 @@ library
   Build-depends: base >= 3 && < 5
                , old-locale
                , time, mtl, array
-               , lens >= 3.9 && < 4.9
+               , lens >= 3.9 && < 4.10
                , colour >= 2.2.1 && < 2.4
                , data-default-class < 0.1
                , mtl >= 2.0 && < 2.3
                , operational >= 0.2.2 && < 0.3
+               , vector >=0.9 && <0.11
+
 
   Ghc-options: -Wall -fno-warn-orphans
 
@@ -55,14 +57,15 @@ library
         Graphics.Rendering.Chart.Plot.Lines,
         Graphics.Rendering.Chart.Plot.Vectors,
         Graphics.Rendering.Chart.Plot.Pie,
-        Graphics.Rendering.Chart.Plot.Points
+        Graphics.Rendering.Chart.Plot.Points,
+        Graphics.Rendering.Chart.Plot.Histogram
         Graphics.Rendering.Chart.SparkLine
         Graphics.Rendering.Chart.Backend
         Graphics.Rendering.Chart.Backend.Impl
         Graphics.Rendering.Chart.Backend.Types
-        Graphics.Rendering.Chart.Easy,
+        Graphics.Rendering.Chart.Easy
         Graphics.Rendering.Chart.State
-
+        Numeric.Histogram
 source-repository head
   type:     git
   location: https://github.com/timbod7/haskell-chart
