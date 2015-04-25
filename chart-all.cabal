@@ -15,9 +15,7 @@ Build-Type: Simple
 
 library
   Build-depends: Chart
-
                , Chart-diagrams
-
                , Chart-cairo
                , Chart-gtk
-               , Chart-simple
+
