@@ -70,8 +70,8 @@ Executable ChartsTestCairo
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
-      Chart           >= 1.3 && < 1.4,
-      Chart-cairo     >= 1.3 && < 1.4
+      Chart           >= 1.3 && < 1.5,
+      Chart-cairo     >= 1.3 && < 1.5
   if !flag(cairo)
     Buildable: False
   Main-is: Cairo.hs
@@ -95,9 +95,9 @@ Executable ChartsTestGtk
       old-time        >= 1.0,
       gtk             >= 0.9.11,
       cairo           >= 0.9.11,
-      Chart           >= 1.3 && < 1.4,
-      Chart-gtk       >= 1.3 && < 1.4,
-      Chart-cairo     >= 1.3 && < 1.4
+      Chart           >= 1.3 && < 1.5,
+      Chart-gtk       >= 1.3 && < 1.5,
+      Chart-cairo     >= 1.3 && < 1.5
   if !flag(gtk)
     Buildable: False
   Main-is: TestPicking.hs
@@ -119,8 +119,8 @@ Executable ChartsTestDiagramsCairo
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
-      Chart           >= 1.3 && < 1.4,
-      Chart-diagrams  >= 1.3 && < 1.4,
+      Chart           >= 1.3 && < 1.5,
+      Chart-diagrams  >= 1.3 && < 1.5,
       diagrams-cairo  >= 1.2 && < 1.3,
       diagrams-lib    >= 1.2 && < 1.3,
       diagrams-core   >= 1.2 && < 1.3
@@ -147,8 +147,8 @@ Executable ChartsTestDiagramsSVG
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
-      Chart           >= 1.3 && < 1.4,
-      Chart-diagrams  >= 1.3 && < 1.4,
+      Chart           >= 1.3 && < 1.5,
+      Chart-diagrams  >= 1.3 && < 1.5,
       diagrams-svg    >= 1.1 && < 1.2,
       diagrams-lib    >= 1.2 && < 1.3,
       diagrams-core   >= 1.2 && < 1.3
@@ -173,8 +173,8 @@ Executable ChartsTestDiagramsEPS
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
-      Chart           >= 1.3 && < 1.4,
-      Chart-diagrams  >= 1.3 && < 1.4,
+      Chart           >= 1.3 && < 1.5,
+      Chart-diagrams  >= 1.3 && < 1.5,
       diagrams-postscript    >= 0.7 && < 1.2,
       diagrams-lib    >= 1.2 && < 1.3,
       diagrams-core   >= 1.2 && < 1.3
@@ -200,8 +200,8 @@ Executable ChartsTestDrawingCairo
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
       cairo           >= 0.9.11,
-      Chart           >= 1.3 && < 1.4,
-      Chart-cairo     >= 1.3 && < 1.4
+      Chart           >= 1.3 && < 1.5,
+      Chart-cairo     >= 1.3 && < 1.5
   if !flag(cairo)
     Buildable: False
   Main-is: Cairo.hs
@@ -223,8 +223,8 @@ Executable ChartsTestDrawingDiagramsCairo
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
-      Chart           >= 1.3 && < 1.4,
-      Chart-diagrams  >= 1.3 && < 1.4,
+      Chart           >= 1.3 && < 1.5,
+      Chart-diagrams  >= 1.3 && < 1.5,
       diagrams-cairo  >= 1.2 && < 1.3,
       diagrams-lib    >= 1.2 && < 1.3,
       diagrams-core   >= 1.2 && < 1.3
@@ -250,9 +250,9 @@ Executable ChartsTestCompareFonts
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
       cairo           >= 0.9.11,
-      Chart           >= 1.3 && < 1.4,
-      Chart-diagrams  >= 1.3 && < 1.4,
-      Chart-cairo     >= 1.3 && < 1.4,
+      Chart           >= 1.3 && < 1.5,
+      Chart-diagrams  >= 1.3 && < 1.5,
+      Chart-cairo     >= 1.3 && < 1.5,
       diagrams-cairo  >= 1.2 && < 1.3,
       diagrams-lib    >= 1.2 && < 1.3,
       diagrams-core   >= 1.2 && < 1.3
