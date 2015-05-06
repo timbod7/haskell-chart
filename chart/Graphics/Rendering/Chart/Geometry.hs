@@ -230,7 +230,7 @@ lineTo' x y = lineTo $ Point x y
 --   is smaller then the start angle it is increased by multiples of
 --   @2 * pi@ until is is greater or equal.
 arc :: Point  -- ^ Center point of the circle arc.
-    -> Double -- ^ Redius of the circle.
+    -> Double -- ^ Radius of the circle.
     -> Double -- ^ Angle to start drawing at, in radians.
     -> Double -- ^ Angle to stop drawing at, in radians.
     -> Path
