@@ -4,7 +4,6 @@ import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
 
 import Diagrams.Core ( renderDia )
-import Diagrams.TwoD ( SizeSpec2D(..) )
 import Graphics.Rendering.Chart.Renderable ( render, Renderable )
 import qualified Diagrams.Backend.Postscript as DEPS
 
@@ -24,7 +23,7 @@ main1 args = do
     env0 <- defaultEnv bitmapAlignmentFns 0 0
     showTests (fmap (\(x,_,_) -> x) allTests) (renderDiagram env0)
   where
-    renderDiagram :: DEnv -> (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
+    renderDiagram :: DEnv Double -> (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
     renderDiagram env0 (n,(w,h),ir) = do
       let cr = render (ir 0.25) (fromIntegral w, fromIntegral h)
           env = env0{ envOutputSize = (fromIntegral w, fromIntegral h) }

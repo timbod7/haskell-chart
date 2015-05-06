@@ -4,7 +4,7 @@ import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
 
 import Diagrams.Core ( renderDia )
-import Diagrams.TwoD ( SizeSpec2D(..) )
+import Diagrams.Prelude ( dims, V2(..) )
 import Diagrams.Backend.Cairo
 import Diagrams.Backend.Cairo.Internal
 import Graphics.Rendering.Chart.Renderable ( render, Renderable )
@@ -26,5 +26,5 @@ main1 args = do
       renderDiagram (n,(w,h),ir) = do
         let env' = env { envOutputSize = (fromIntegral w, fromIntegral h) }
             (d, _) = runBackendR env' (ir 1.0)
-        fst $ renderDia Cairo (CairoOptions (n ++ ".png") (Dims (fromIntegral w) (fromIntegral h)) PNG False) d
+        fst $ renderDia Cairo (CairoOptions (n ++ ".png") (dims $ V2 (fromIntegral w) (fromIntegral h)) PNG False) d
   showTests (fmap (\(x,_,_) -> x) allTests) renderDiagram

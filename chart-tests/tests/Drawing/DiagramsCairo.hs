@@ -4,7 +4,7 @@ import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
 
 import Diagrams.Core ( renderDia )
-import Diagrams.TwoD ( SizeSpec2D(..) )
+import Diagrams.Prelude ( dims, V2(..) )
 import Diagrams.Backend.Cairo
 import Diagrams.Backend.Cairo.Internal
 
@@ -19,4 +19,4 @@ render :: FilePath -> Int -> Int -> ChartBackend a -> IO ()
 render f w h m = do
   env <- defaultEnv bitmapAlignmentFns (fromIntegral w) (fromIntegral h)
   let (d, _) = runBackend env m
-  fst $ renderDia Cairo (CairoOptions f (Dims (fromIntegral w) (fromIntegral h)) PNG False) d
+  fst $ renderDia Cairo (CairoOptions f (dims $ V2 (fromIntegral w) (fromIntegral h)) PNG False) d
