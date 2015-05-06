@@ -22,15 +22,15 @@ module Graphics.Rendering.Chart.Backend.Diagrams
 
   -- * EPS Utility Functions
   , cBackendToEPSFile
-  
+
   -- * SVG Utility Functions
   , cBackendToSVG
-  , cBackendToEmbeddedFontSVG  
+  , cBackendToEmbeddedFontSVG
   , renderableToSVG
   , renderableToSVG'
   , renderableToSVGString
   , renderableToSVGString'
-  
+
   -- * SVG Embedded Font Utility Functions
   , renderableToEmbeddedFontSVG
   , renderableToEmbeddedFontSVG'
@@ -52,7 +52,7 @@ import Control.Monad.Operational
 import Control.Monad.State.Lazy
 
 import Diagrams.Core.Transform ( Transformation(..) )
-import Diagrams.Prelude 
+import Diagrams.Prelude
   ( Diagram
   , R2, P2, T2
   , r2, p2, unr2, unp2
@@ -166,7 +166,7 @@ renderableToSVG r w h = do
 
 -- | Output the given renderable as a SVG using the given environment.
 renderableToSVG' :: Renderable a -> DEnv -> (Svg.Svg, PickFn a)
-renderableToSVG' r env = 
+renderableToSVG' r env =
   let (w, h) = envOutputSize env
       (d, x) = runBackendR env r
       svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.Dims w h) Nothing) d
@@ -198,7 +198,7 @@ cBackendToEPSFile cb env path = do
         psOpts = DEPS.PostscriptOptions path (D2.Dims w h) DEPS.EPS
     D.renderDia DEPS.Postscript psOpts d
     return a
-  
+
 cBackendToSVG :: ChartBackend a -> DEnv -> (Svg.Svg,a)
 cBackendToSVG cb env = (svg,a)
   where
@@ -215,7 +215,7 @@ cBackendToEmbeddedFontSVG cb env = (svg, x)
         let fs = envFontStyle env
         let font = envSelectFont env $ fs { _font_name = fFam
                                           , _font_slant = fSlant
-                                          , _font_weight = fWeight 
+                                          , _font_weight = fWeight
                                           }
         makeSvgFont font usedGs
         -- M.Map (String, FontSlant, FontWeight) (S.Set String)
@@ -253,7 +253,7 @@ defaultFonts = do
   sansRI  <- loadDefaultFont "fonts/SourceSansPro_RI.svg"
   monoR  <- loadDefaultFont "fonts/SourceCodePro_R.svg"
   monoRB <- loadDefaultFont "fonts/SourceCodePro_RB.svg"
-  
+
   let selectFont :: FontStyle -> DFont
       selectFont fs = case (_font_name fs, _font_slant fs, _font_weight fs) of
         ("serif", FontSlantNormal , FontWeightNormal) -> alterFontFamily "serif" serifR
@@ -262,36 +262,36 @@ defaultFonts = do
         ("serif", FontSlantOblique, FontWeightNormal) -> alterFontFamily "serif" serifRI
         ("serif", FontSlantItalic , FontWeightBold  ) -> alterFontFamily "serif" serifRBI
         ("serif", FontSlantOblique, FontWeightBold  ) -> alterFontFamily "serif" serifRBI
-        
+
         ("sans-serif", FontSlantNormal , FontWeightNormal) -> alterFontFamily "sans-serif" sansR
         ("sans-serif", FontSlantNormal , FontWeightBold  ) -> alterFontFamily "sans-serif" sansRB
         ("sans-serif", FontSlantItalic , FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
         ("sans-serif", FontSlantOblique, FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
         ("sans-serif", FontSlantItalic , FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
         ("sans-serif", FontSlantOblique, FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
-        
+
         ("monospace", _, FontWeightNormal) -> alterFontFamily "monospace" monoR
         ("monospace", _, FontWeightBold  ) -> alterFontFamily "monospace" monoRB
-        
+
         (fam, FontSlantNormal , FontWeightNormal) | fam `isFontFamily` serifR   -> serifR
         (fam, FontSlantNormal , FontWeightBold  ) | fam `isFontFamily` serifRB  -> serifRB
         (fam, FontSlantItalic , FontWeightNormal) | fam `isFontFamily` serifRI  -> serifRI
         (fam, FontSlantOblique, FontWeightNormal) | fam `isFontFamily` serifRI  -> serifRI
         (fam, FontSlantItalic , FontWeightBold  ) | fam `isFontFamily` serifRBI -> serifRBI
         (fam, FontSlantOblique, FontWeightBold  ) | fam `isFontFamily` serifRBI -> serifRBI
-        
+
         (fam, FontSlantNormal , FontWeightNormal) | fam `isFontFamily` sansR   -> sansR
         (fam, FontSlantNormal , FontWeightBold  ) | fam `isFontFamily` sansRB  -> sansRB
         (fam, FontSlantItalic , FontWeightNormal) | fam `isFontFamily` sansRI  -> sansRI
         (fam, FontSlantOblique, FontWeightNormal) | fam `isFontFamily` sansRI  -> sansRI
         (fam, FontSlantItalic , FontWeightBold  ) | fam `isFontFamily` sansRBI -> sansRBI
         (fam, FontSlantOblique, FontWeightBold  ) | fam `isFontFamily` sansRBI -> sansRBI
-        
+
         (fam, _, FontWeightNormal) | fam `isFontFamily` monoR  -> monoR
         (fam, _, FontWeightBold  ) | fam `isFontFamily` monoRB -> monoRB
-        
+
         (_, slant, weight) -> selectFont (fs { _font_name = "sans-serif" })
-  
+
   return selectFont
 
 alterFontFamily :: String -> DFont -> DFont
@@ -299,7 +299,7 @@ alterFontFamily n (fd, om) = (fd { F.fontDataFamily = n }, om)
 
 isFontFamily :: String -> DFont -> Bool
 isFontFamily n (fd, _) = n == F.fontDataFamily fd
-  
+
 loadDefaultFont :: FilePath -> IO DFont
 loadDefaultFont file = getDataFileName file >>= return . F.outlMap
 
@@ -315,10 +315,10 @@ customFontEnv :: AlignmentFns     -- ^ Alignment functions to use.
 customFontEnv alignFns w h fontFiles = do
   fonts <- traverse loadFont fontFiles
   selectFont <- defaultFonts
-  return $ DEnv 
+  return $ DEnv
     { envAlignmentFns = alignFns
     , envFontStyle = def
-    , envSelectFont = \fs -> 
+    , envSelectFont = \fs ->
         case M.lookup (_font_name fs, _font_slant fs, _font_weight fs) fonts of
           Just font -> font
           Nothing -> selectFont fs
@@ -338,7 +338,7 @@ runBackendR :: (D.Backend b R2, D.Renderable (D.Path R2) b)
            => DEnv         -- ^ Environment to start rendering with.
            -> Renderable a -- ^ Chart render code.
            -> (Diagram b R2, PickFn a) -- ^ The diagram.
-runBackendR env r = 
+runBackendR env r =
   let cb = render r (envOutputSize env)
   in runBackend env cb
 
@@ -347,7 +347,7 @@ runBackend :: (D.Backend b R2, D.Renderable (D.Path R2) b)
            => DEnv   -- ^ Environment to start rendering with.
            -> ChartBackend a    -- ^ Chart render code.
            -> (Diagram b R2, a) -- ^ The diagram.
-runBackend env m = 
+runBackend env m =
   let (d, x) = evalState (runBackend' TextRenderSvg $ withDefaultStyle m) env
   in (adjustOutputDiagram env d, x)
 
@@ -359,18 +359,18 @@ runBackendWithGlyphs :: ( D.Backend b R2
                      -> ChartBackend a    -- ^ Chart render code.
                      -> ( Diagram b R2, a
                         , M.Map (String, FontSlant, FontWeight) (S.Set String))
-runBackendWithGlyphs env m = 
+runBackendWithGlyphs env m =
   let ((d, x), env') = runState (runBackend' TextRenderNative $ withDefaultStyle m) env
   in (adjustOutputDiagram env d, x, envUsedGlyphs env')
 
 -- | Flag to decide which technique should ne used to render text.
---   The type parameter is the primitive that has to be supported by 
+--   The type parameter is the primitive that has to be supported by
 --   a backend when rendering text using this technique.
 data TextRender a where
   TextRenderNative :: TextRender (D2.Text)
   TextRenderSvg    :: TextRender (D.Path R2)
 
-runBackend' :: (D.Renderable (D.Path R2) b, D.Renderable t b) 
+runBackend' :: (D.Renderable (D.Path R2) b, D.Renderable t b)
             => TextRender t -> ChartBackend a -> DState (Diagram b R2, a)
 runBackend' tr m = eval tr $ view $ m
   where
@@ -392,12 +392,12 @@ runBackend' tr m = eval tr $ view $ m
     step :: (D.Renderable (D.Path R2) b, D.Renderable t b)
          => TextRender t -> (v -> ChartBackend a) -> v -> DState (Diagram b R2, a)
     step tr f v = runBackend' tr (f v)
-    
+
     (<>#) :: (Monad s, Monoid m) => s m -> (() -> s (m, a)) -> s (m, a)
     (<>#) m f = do
       ma <- m
       return (ma, ()) <>= f
-    
+
     (<>=) :: (Monad s, Monoid m) => s (m, a) -> (a -> s (m, b)) -> s (m, b)
     (<>=) m f = do
       (ma, a) <- m
@@ -428,8 +428,8 @@ dTextSize text = do
   env <- get
   let fs = envFontStyle env
   let (scaledH, scaledA, scaledD, scaledYB) = calcFontMetrics env
-  return (mempty, TextSize 
-                { textSizeWidth = D2.width $ F.textSVG' 
+  return (mempty, TextSize
+                { textSizeWidth = D2.width $ F.textSVG'
                                            $ fontStyleToTextOpts env text
                 , textSizeAscent = scaledA -- scaledH * (a' / h') -- ascent
                 , textSizeDescent = scaledD -- scaledH * (d' / h') -- descent
@@ -458,12 +458,12 @@ dDrawTextNative (Point x y) text = do
   env <- get
   addGlyphsOfString text
   return $ D.transform (toTransformation $ translate (Vector x y) 1)
-         $ applyFontStyleText (envFontStyle env) 
+         $ applyFontStyleText (envFontStyle env)
          $ D2.scaleY (-1)
          $ D2.baselineText text
 
 dWith :: (D.Renderable (D.Path R2) b, D.Renderable t b)
-      => TextRender t -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2) 
+      => TextRender t -> (DEnv -> DEnv) -> (Diagram b R2 -> Diagram b R2)
       -> ChartBackend a -> DState (Diagram b R2, a)
 dWith tr envF dF m = dLocal $ do
   modify envF
@@ -501,7 +501,7 @@ addGlyphsOfString s = do
   let fontData = fst $ envSelectFont env fs
   let ligatures = ((filter ((>1) . length)) . (M.keys) . F.fontDataGlyphs) fontData
   let glyphs = fmap T.unpack $ F.characterStrings s ligatures
-  modify $ \env -> 
+  modify $ \env ->
     let gKey = (_font_name fs, _font_slant fs, _font_weight fs)
         gMap = envUsedGlyphs env
         entry = case M.lookup gKey gMap of
@@ -517,7 +517,7 @@ adjustOutputDiagram :: (D.Backend b R2) => DEnv -> Diagram b R2 -> Diagram b R2
 adjustOutputDiagram env d = D2.reflectY $ D2.view (p2 (0,0)) (r2 (envOutputSize env)) d
 
 noLineStyle :: LineStyle
-noLineStyle = def 
+noLineStyle = def
   { _line_width = 0
   , _line_color = transparent
   }
@@ -526,7 +526,7 @@ noFillStyle :: FillStyle
 noFillStyle = solidFillStyle transparent
 
 toTransformation :: Matrix -> T2
-toTransformation m = Transformation 
+toTransformation m = Transformation
   (applyWithoutTrans m <-> applyWithoutTrans (invert m))
   (applyWithoutTrans (transpose m) <-> applyWithoutTrans (transpose (invert m)))
   (r2 (x0 m, y0 m))
@@ -553,9 +553,9 @@ applyWithoutTrans m v =
 -- | Apply the Chart line style to a diagram.
 applyLineStyle :: (D.V a ~ R2, D.HasStyle a) => LineStyle -> a -> a
 applyLineStyle ls = D.lineWidth (D.Global $ _line_width ls)
-                  . D.lineColor (_line_color ls) 
-                  . D.lineCap (convertLineCap $ _line_cap ls) 
-                  . D.lineJoin (convertLineJoin $ _line_join ls) 
+                  . D.lineColor (_line_color ls)
+                  . D.lineCap (convertLineCap $ _line_cap ls)
+                  . D.lineJoin (convertLineJoin $ _line_join ls)
                   . D.dashing (map D.Global $ _line_dashes ls) (D.Global 0)
 
 -- | Apply the Chart fill style to a diagram.
@@ -565,7 +565,7 @@ applyFillStyle fs = case fs of
 
 -- | Apply all pure diagrams properties from the font style.
 applyFontStyleSVG :: (D.V a ~ R2, D.HasStyle a) => FontStyle -> a -> a
-applyFontStyleSVG fs = applyLineStyle noLineStyle 
+applyFontStyleSVG fs = applyLineStyle noLineStyle
                      . applyFillStyle (solidFillStyle $ _font_color fs)
 
 applyFontStyleText :: (D.V a ~ R2, D.HasStyle a) => FontStyle -> a -> a
@@ -578,7 +578,7 @@ applyFontStyleText fs = D2.font (_font_name fs)
 -- | Calculate the font metrics for the currently set font style.
 --   The returned value will be @(height, ascent, descent, ybearing)@.
 calcFontMetrics :: DEnv -> (Double, Double, Double, Double)
-calcFontMetrics env = 
+calcFontMetrics env =
   let fs = envFontStyle env
       font@(fontData,_) = envSelectFont env fs
       bbox = F.fontDataBoundingBox fontData
@@ -597,7 +597,7 @@ calcFontMetrics env =
   in (scaledHeight, scaledAscent, scaledDescent, scaledMaxHAdv)
 
 fontStyleToTextOpts :: DEnv -> String -> F.TextOpts
-fontStyleToTextOpts env text = 
+fontStyleToTextOpts env text =
   let fs = envFontStyle env
       font = envSelectFont env fs
       (scaledH, _, _, _) = calcFontMetrics env
@@ -642,29 +642,29 @@ convertFontWeight fw = case fw of
   FontWeightBold   -> D2.FontWeightBold
   FontWeightNormal -> D2.FontWeightNormal
 
--- | Convert paths. The boolean says wether all trails 
+-- | Convert paths. The boolean says wether all trails
 --   of the path shall be closed or remain open.
 convertPath :: Bool -> Path -> D.Path R2
-convertPath closeAll path = 
+convertPath closeAll path =
   let (start, t, restM) = pathToTrail closeAll (Point 0 0) $ makeLinesExplicit path
   in D.pathFromTrailAt t start <> case restM of
     Nothing -> mempty
     Just rest -> convertPath closeAll rest
 
-pathToTrail :: Bool -> Point -> Path 
+pathToTrail :: Bool -> Point -> Path
             -> (D.Point R2, Trail R2, Maybe Path)
-pathToTrail closeAll _ (MoveTo p0 path) = 
+pathToTrail closeAll _ (MoveTo p0 path) =
   let (t, close, rest) = pathToTrail' closeAll path p0
   in (pointToP2 p0, makeTrail close t, rest)
-pathToTrail closeAll _ path@(Arc c r s _ _) = 
+pathToTrail closeAll _ path@(Arc c r s _ _) =
   let p0 = translateP (pointToVec c) $ rotateP s $ Point r 0
       (t, close, rest) = pathToTrail' closeAll path p0
   in (pointToP2 p0, makeTrail close t, rest)
-pathToTrail closeAll _ path@(ArcNeg c r s _ _) = 
+pathToTrail closeAll _ path@(ArcNeg c r s _ _) =
   let p0 = translateP (pointToVec c) $ rotateP s $ Point r 0
       (t, close, rest) = pathToTrail' closeAll path p0
   in (pointToP2 p0, makeTrail close t, rest)
-pathToTrail closeAll start path = 
+pathToTrail closeAll start path =
   let (t, close, rest) = pathToTrail' closeAll path start
   in (pointToP2 start, makeTrail close t, rest)
 
@@ -674,15 +674,15 @@ makeTrail False t = D.wrapTrail $ t
 
 pathToTrail' :: Bool -> Path -> Point -> (D.Trail' D.Line R2, Bool, Maybe Path)
 pathToTrail' closeAll p@(MoveTo _ _) _ = (mempty, False || closeAll, Just p)
-pathToTrail' closeAll (LineTo p1 path) p0 = 
+pathToTrail' closeAll (LineTo p1 path) p0 =
   let (t, c, rest) = pathToTrail' closeAll path p1
   in ( (pointToP2 p0 ~~ pointToP2 p1) <> t, c || closeAll, rest )
-pathToTrail' closeAll (Arc p0 r s e path) _ = 
+pathToTrail' closeAll (Arc p0 r s e path) _ =
   let endP = translateP (pointToVec p0) $ rotateP e $ Point r 0
       (t, c, rest) = pathToTrail' closeAll path endP
       arcTrail = D2.scale r $ D2.arc (s @@ rad) (e @@ rad)
   in ( arcTrail <> t, c || closeAll, rest )
-pathToTrail' closeAll (ArcNeg p0 r s e path) _ = 
+pathToTrail' closeAll (ArcNeg p0 r s e path) _ =
   let endP = translateP (pointToVec p0) $ rotateP e $ Point r 0
       (t, c, rest) = pathToTrail' closeAll path endP
       arcTrail = D2.scale r $ D2.arcCW (s @@ rad) (e @@ rad)
