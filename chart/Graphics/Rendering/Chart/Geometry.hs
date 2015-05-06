@@ -3,7 +3,7 @@
 -- Module      :  Graphics.Rendering.Chart.Geometry
 -- Copyright   :  (c) Tim Docker 2006, 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
--- 
+--
 module Graphics.Rendering.Chart.Geometry
   ( -- * Points and Vectors
     Rect(..)
@@ -12,7 +12,7 @@ module Graphics.Rendering.Chart.Geometry
 
   , RectSize
   , Range
-  
+
   , pointToVec
 
   , mkrect
@@ -29,7 +29,7 @@ module Graphics.Rendering.Chart.Geometry
   , RectEdge(..)
   , Limit(..)
   , PointMapFn
-  
+
   -- * Paths
   , Path(..)
   , lineTo, moveTo
@@ -37,10 +37,10 @@ module Graphics.Rendering.Chart.Geometry
   , arc, arc'
   , arcNeg, arcNeg'
   , close
-  
+
   , foldPath
   , makeLinesExplicit
-  
+
   -- * Matrices
   , transformP, scaleP, rotateP, translateP
   , Matrix(..)
@@ -134,11 +134,11 @@ intersectRect LMax r = r
 intersectRect r LMax = r
 intersectRect LMin _ = LMin
 intersectRect _ LMin = LMin
-intersectRect (LValue (Rect (Point x11 y11) (Point x12 y12))) 
+intersectRect (LValue (Rect (Point x11 y11) (Point x12 y12)))
               (LValue (Rect (Point x21 y21) (Point x22 y22))) =
   let p1@(Point x1 y1) = Point (max x11 x21) (max y11 y21)
       p2@(Point x2 y2) = Point (min x12 x22) (min y12 y22)
-  in if x2 < x1 || y2 < y1 
+  in if x2 < x1 || y2 < y1
         then LMin
         else LValue $ Rect p1 p2
 
@@ -149,14 +149,14 @@ type RectSize = (Double,Double)
 -- | Make a path from a rectangle.
 rectPointPath :: Rect -> [Point]
 rectPointPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = [p1,p2,p3,p4,p1]
-  where    
+  where
     p2 = (Point x1 y2)
     p4 = (Point x2 y1)
 -}
 
 -- | Make a path from a rectangle.
 rectPath :: Rect -> Path
-rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) = 
+rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) =
   let p2 = Point x1 y2
       p4 = Point x2 y1
   in moveTo p1 <> lineTo p2 <> lineTo p3 <> lineTo p4 <> close
@@ -166,35 +166,35 @@ rectPath (Rect p1@(Point x1 y1) p3@(Point x2 y2)) =
 -- -----------------------------------------------------------------------
 
 -- | The path type used by Charts.
---   
+--
 --   A path can consist of several subpaths. Each
 --   is started by a 'MoveTo' operation. All subpaths
 --   are open, except the last one, which may be closed
 --   using the 'Close' operation. When filling a path
 --   all subpaths are closed implicitly.
---   
+--
 --   Closing a subpath means that a line is drawn from
 --   the end point to the start point of the subpath.
---   
+--
 --   If a 'Arc' (or 'ArcNeg') is drawn a implicit line
 --   from the last end point of the subpath is drawn
 --   to the beginning of the arc. Another implicit line
 --   is drawn from the end of an arc to the beginning of
 --   the next path segment.
---   
+--
 --   The beginning of a subpath is either (0,0) or set
 --   by a 'MoveTo' instruction. If the first subpath is started
 --   with an arc the beginning of that subpath is the beginning
 --   of the arc.
-data Path = MoveTo Point Path 
+data Path = MoveTo Point Path
           | LineTo Point Path
           | Arc Point Double Double Double Path
           | ArcNeg Point Double Double Double Path
-          | End 
+          | End
           | Close
 
 -- | Paths are monoids. After a path is closed you can not append
---   anything to it anymore. The empty path is open. 
+--   anything to it anymore. The empty path is open.
 --   Use 'close' to close a path.
 instance Monoid Path where
   mappend p1 p2 = case p1 of
@@ -214,7 +214,7 @@ moveTo p = MoveTo p mempty
 moveTo' :: Double -> Double -> Path
 moveTo' x y = moveTo $ Point x y
 
--- | Move the paths pointer to the given location and draw a straight 
+-- | Move the paths pointer to the given location and draw a straight
 --   line while doing so.
 lineTo :: Point -> Path
 lineTo p = LineTo p mempty
@@ -262,9 +262,9 @@ foldPath :: (Monoid m)
          -> m    -- ^ Close
          -> Path -- ^ Path to fold
          -> m
-foldPath moveTo_ lineTo_ arc_ arcNeg_ close_ path = 
+foldPath moveTo_ lineTo_ arc_ arcNeg_ close_ path =
   let restF = foldPath moveTo_ lineTo_ arc_ arcNeg_ close_
-  in case path of 
+  in case path of
     MoveTo p rest -> moveTo_ p <> restF rest
     LineTo p rest -> lineTo_ p <> restF rest
     Arc    p r a1 a2 rest -> arc_    p r a1 a2 <> restF rest
@@ -276,9 +276,9 @@ foldPath moveTo_ lineTo_ arc_ arcNeg_ close_ path =
 --   that otherwise would be implicit. See 'Path' for details
 --   about what lines in paths are implicit.
 makeLinesExplicit :: Path -> Path
-makeLinesExplicit (Arc c r s e rest) = 
+makeLinesExplicit (Arc c r s e rest) =
   Arc c r s e $ makeLinesExplicit' rest
-makeLinesExplicit (ArcNeg c r s e rest) = 
+makeLinesExplicit (ArcNeg c r s e rest) =
   ArcNeg c r s e $ makeLinesExplicit' rest
 makeLinesExplicit path = makeLinesExplicit' path
 
@@ -286,15 +286,15 @@ makeLinesExplicit path = makeLinesExplicit' path
 makeLinesExplicit' :: Path -> Path
 makeLinesExplicit' End   = End
 makeLinesExplicit' Close = Close
-makeLinesExplicit' (Arc c r s e rest) = 
+makeLinesExplicit' (Arc c r s e rest) =
   let p = translateP (pointToVec c) $ rotateP s $ Point r 0
   in lineTo p <> arc c r s e <> makeLinesExplicit' rest
-makeLinesExplicit' (ArcNeg c r s e rest) = 
+makeLinesExplicit' (ArcNeg c r s e rest) =
   let p = translateP (pointToVec c) $ rotateP s $ Point r 0
   in lineTo p <> arcNeg c r s e <> makeLinesExplicit' rest
-makeLinesExplicit' (MoveTo p0 rest) = 
+makeLinesExplicit' (MoveTo p0 rest) =
   MoveTo p0 $ makeLinesExplicit' rest
-makeLinesExplicit' (LineTo p0 rest) = 
+makeLinesExplicit' (LineTo p0 rest) =
   LineTo p0 $ makeLinesExplicit' rest
 
 -- -----------------------------------------------------------------------
@@ -345,12 +345,12 @@ instance Num Matrix where
   negate = pointwise negate
   abs    = pointwise abs
   signum = pointwise signum
-  
+
   fromInteger n = Matrix (fromInteger n) 0 0 (fromInteger n) 0 0
 
 -- | Copied from Graphics.Rendering.Cairo.Matrix
 {-# INLINE pointwise #-}
-pointwise :: (Double -> Double) -> Matrix -> Matrix  
+pointwise :: (Double -> Double) -> Matrix -> Matrix
 pointwise f (Matrix xx_ yx_ xy_ yy_ x0_ y0_) =
   Matrix (f xx_) (f yx_) (f xy_) (f yy_) (f x0_) (f y0_)
 
@@ -392,4 +392,3 @@ adjoint (Matrix a b c d tx ty) =
 invert :: Matrix -> Matrix
 invert m@(Matrix xx_ yx_ xy_ yy_ _ _) = scalarMultiply (recip det) $ adjoint m
   where det = xx_*yy_ - yx_*xy_
-
