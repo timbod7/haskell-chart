@@ -1,3 +1,4 @@
+module DiagramsCairo where
 
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
@@ -27,4 +28,3 @@ main1 args = do
             (d, _) = runBackendR env' (ir 1.0)
         fst $ renderDia Cairo (CairoOptions (n ++ ".png") (Dims (fromIntegral w) (fromIntegral h)) PNG False) d
   showTests (fmap (\(x,_,_) -> x) allTests) renderDiagram
-  

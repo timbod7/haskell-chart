@@ -12,253 +12,38 @@ Category: Graphics
 Cabal-Version: >= 1.10
 Build-Type: Simple
 
-Extra-Source-Files:
-     tests/Cairo.hs,
-     tests/Test1.hs,
-     tests/Test2.hs,
-     tests/Test3.hs,
-     tests/Test4.hs,
-     tests/Test5.hs,
-     tests/Test6.hs,
-     tests/Test7.hs,
-     tests/Test8.hs,
-     tests/Test9.hs,
-     tests/Test14.hs,
-     tests/Test14a.hs,
-     tests/Test15.hs,
-     tests/Test17.hs,
-     tests/TestParametric.hs,     
-     tests/Prices.hs,
-     tests/ExampleStocks.hs,
-     tests/gtk/Prices.hs,
-     tests/gtk/TestPicking.hs,
-     tests/gtk/darcs_usage.hs,
-     tests/drawing/Tests.hs,
-     tests/drawing/Cairo.hs,
-     tests/drawing/DiagramsCairo.hs
 
 source-repository head
   type:     git
   location: https://github.com/timbod7/haskell-chart
 
-flag cairo
-  description: Install cairo backend tests.
-  default:     False
-  manual:      True
-
-flag gtk
-  description: Install GTK backend tests. This also requires the cairo backend.
-  default:     False
-  manual:      True
-
-flag diagrams
-  description: Install Diagrams backend tests. This also requires the cairo backend.
-  default:     False
-  manual:      True
-
-Executable ChartsTestCairo
-  if flag(cairo)
+Executable harness
     Build-Depends:
-      base >= 3 && < 5, 
-      old-locale, 
+      base >= 3 && < 5,
+      old-locale,
       array,
-      time, 
-      mtl, 
+      time,
+      mtl,
       colour          >= 2.2.1 && < 2.4,
       lens >= 3.9 && < 4.10,
       data-default-class < 0.1,
+      bytestring      >= 0.9 && < 1.0,
+      blaze-svg       >= 0.3.3,
       random          >= 1.0,
       containers      >= 0.4 && <0.6,
       old-time        >= 1.0,
       Chart           >= 1.3 && < 1.5,
-      Chart-cairo     >= 1.3 && < 1.5
-  if !flag(cairo)
-    Buildable: False
-  Main-is: Cairo.hs
-  Hs-Source-Dirs: tests
-  Ghc-Options: -threaded
-  default-language:    Haskell2010
-
-Executable ChartsTestGtk
-  if flag(gtk)
-    Build-Depends: 
-      base >= 3 && < 5, 
-      old-locale, 
-      array,
-      time, 
-      mtl, 
-      colour          >= 2.2.1 && < 2.4,
-      lens >= 3.9 && < 4.10,
-      data-default-class < 0.1,
-      random          >= 1.0,
-      containers      >= 0.4 && <0.6,
-      old-time        >= 1.0,
+      Chart-cairo     >= 1.3 && < 1.5,
+      Chart-gtk       >= 1.3 && < 1.5,
+      Chart-diagrams  >= 1.3 && < 1.5,
       gtk             >= 0.9.11,
       cairo           >= 0.9.11,
-      Chart           >= 1.3 && < 1.5,
-      Chart-gtk       >= 1.3 && < 1.5,
-      Chart-cairo     >= 1.3 && < 1.5
-  if !flag(gtk)
-    Buildable: False
-  Main-is: TestPicking.hs
-  Hs-Source-Dirs: tests/gtk
-  Ghc-Options: -threaded
-  default-language:    Haskell2010
-
-Executable ChartsTestDiagramsCairo
-  if flag(cairo) && flag(diagrams)
-    Build-Depends: 
-      base >= 3 && < 5, 
-      old-locale, 
-      array,
-      time, 
-      mtl, 
-      colour          >= 2.2.1 && < 2.4,
-      lens >= 3.9 && < 4.10,
-      data-default-class < 0.1,
-      random          >= 1.0,
-      containers      >= 0.4 && <0.6,
-      old-time        >= 1.0,
-      Chart           >= 1.3 && < 1.5,
-      Chart-diagrams  >= 1.3 && < 1.5,
       diagrams-cairo  >= 1.2 && < 1.3,
-      diagrams-lib    >= 1.2 && < 1.3,
-      diagrams-core   >= 1.2 && < 1.3
-  if !flag(cairo) || !flag(diagrams)
-    Buildable: False
-  Main-is: DiagramsCairo.hs
-  Hs-Source-Dirs: tests
-  Ghc-Options: -threaded
-  default-language:    Haskell2010
-
-Executable ChartsTestDiagramsSVG
-  if flag(diagrams)
-    Build-Depends: 
-      base >= 3 && < 5, 
-      old-locale, 
-      array,
-      time, 
-      mtl, 
-      colour          >= 2.2.1 && < 2.4,
-      lens >= 3.9 && < 4.10,
-      data-default-class < 0.1,
-      bytestring >= 0.9 && < 1.0,
-      blaze-svg >= 0.3.3,
-      random          >= 1.0,
-      containers      >= 0.4 && <0.6,
-      old-time        >= 1.0,
-      Chart           >= 1.3 && < 1.5,
-      Chart-diagrams  >= 1.3 && < 1.5,
       diagrams-svg    >= 1.1 && < 1.2,
-      diagrams-lib    >= 1.2 && < 1.3,
-      diagrams-core   >= 1.2 && < 1.3
-  if !flag(diagrams)
-    Buildable: False
-  Main-is: DiagramsSVG.hs
-  Hs-Source-Dirs: tests
-  Ghc-Options: -threaded
-  default-language:    Haskell2010
-
-Executable ChartsTestDiagramsEPS
-  if flag(diagrams)
-    Build-Depends: 
-      base >= 3 && < 5, 
-      old-locale, 
-      array,
-      time, 
-      mtl, 
-      colour          >= 2.2.1 && < 2.4,
-      lens >= 3.9 && < 4.10,
-      data-default-class < 0.1,
-      random          >= 1.0,
-      containers      >= 0.4 && <0.6,
-      old-time        >= 1.0,
-      Chart           >= 1.3 && < 1.5,
-      Chart-diagrams  >= 1.3 && < 1.5,
       diagrams-postscript    >= 0.7 && < 1.2,
       diagrams-lib    >= 1.2 && < 1.3,
       diagrams-core   >= 1.2 && < 1.3
-  if !flag(diagrams)
-    Buildable: False
-  Main-is: DiagramsEPS.hs
+  Main-is: Main.hs
   Hs-Source-Dirs: tests
-  Ghc-Options: -threaded
-  default-language:    Haskell2010
-
-Executable ChartsTestDrawingCairo
-  if flag(cairo)
-    Build-Depends: 
-      base >= 3 && < 5, 
-      old-locale, 
-      array,
-      time, 
-      mtl, 
-      colour          >= 2.2.1 && < 2.4,
-      lens >= 3.9 && < 4.10,
-      data-default-class < 0.1,
-      random          >= 1.0,
-      containers      >= 0.4 && <0.6,
-      old-time        >= 1.0,
-      cairo           >= 0.9.11,
-      Chart           >= 1.3 && < 1.5,
-      Chart-cairo     >= 1.3 && < 1.5
-  if !flag(cairo)
-    Buildable: False
-  Main-is: Cairo.hs
-  Hs-Source-Dirs: tests/drawing
-  Ghc-Options: -threaded
-  default-language:    Haskell2010
-
-Executable ChartsTestDrawingDiagramsCairo
-  if flag(cairo) && flag(diagrams)
-    Build-Depends: 
-      base >= 3 && < 5, 
-      old-locale, 
-      array,
-      time, 
-      mtl, 
-      colour          >= 2.2.1 && < 2.4,
-      lens >= 3.9 && < 4.10,
-      data-default-class < 0.1,
-      random          >= 1.0,
-      containers      >= 0.4 && <0.6,
-      old-time        >= 1.0,
-      Chart           >= 1.3 && < 1.5,
-      Chart-diagrams  >= 1.3 && < 1.5,
-      diagrams-cairo  >= 1.2 && < 1.3,
-      diagrams-lib    >= 1.2 && < 1.3,
-      diagrams-core   >= 1.2 && < 1.3
-  if !flag(cairo) || !flag(diagrams)
-    Buildable: False
-  Main-is: DiagramsCairo.hs
-  Hs-Source-Dirs: tests/drawing
-  Ghc-Options: -threaded
-  default-language:    Haskell2010
-
-Executable ChartsTestCompareFonts
-  if flag(cairo) && flag(diagrams)
-    Build-Depends: 
-      base >= 3 && < 5, 
-      old-locale, 
-      array,
-      time, 
-      mtl, 
-      colour          >= 2.2.1 && < 2.4,
-      lens >= 3.9 && < 4.10,
-      data-default-class < 0.1,
-      random          >= 1.0,
-      containers      >= 0.4 && <0.6,
-      old-time        >= 1.0,
-      cairo           >= 0.9.11,
-      Chart           >= 1.3 && < 1.5,
-      Chart-diagrams  >= 1.3 && < 1.5,
-      Chart-cairo     >= 1.3 && < 1.5,
-      diagrams-cairo  >= 1.2 && < 1.3,
-      diagrams-lib    >= 1.2 && < 1.3,
-      diagrams-core   >= 1.2 && < 1.3
-  if !flag(cairo) || !flag(diagrams)
-    Buildable: False
-  Main-is: Compare.hs
-  Hs-Source-Dirs: tests/compare-font
   Ghc-Options: -threaded
   default-language:    Haskell2010

@@ -1,3 +1,4 @@
+module DiagramsEPS where
 
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
@@ -29,4 +30,4 @@ main1 args = do
           env = env0{ envOutputSize = (fromIntegral w, fromIntegral h) }
           path = n ++ ".eps"
       cBackendToEPSFile cr env path
-      putStrLn (path ++ "...")              
+      putStrLn (path ++ "...")

@@ -1,3 +1,4 @@
+module DiagramsSVG where
 
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
@@ -32,8 +33,5 @@ main1 args = do
           env = env0{ envOutputSize = (fromIntegral w, fromIntegral h) }
           (svg, _) = cBackendToSVG cr env
           path = n ++ ".svg"
-      putStrLn (path ++ "...")              
+      putStrLn (path ++ "...")
       BS.writeFile path (renderSvg svg)
-
-
-  

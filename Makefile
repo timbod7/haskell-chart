@@ -12,7 +12,7 @@ cabal.sandbox.config:
 	cabal sandbox add-source chart-gtk
 	cabal sandbox add-source chart-diagrams
 
-unregister: 
+unregister:
 	-cabal sandbox hc-pkg unregister Chart-tests
 	-cabal sandbox hc-pkg unregister Chart-diagrams
 	-cabal sandbox hc-pkg unregister Chart-gtk
@@ -47,8 +47,23 @@ upload:
 chart-tests/cabal.sandbox.config:
 	cd chart-tests && cabal sandbox init --sandbox ../.cabal-sandbox
 
+ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+HARNESS=$(ROOT_DIR)/.cabal-sandbox/bin/harness
+
 tests: chart-tests/cabal.sandbox.config
-	cd chart-tests && cabal install --dependencies-only 
-	cd chart-tests && cabal install --flags="cairo gtk diagrams"
-
-
+	cd chart-tests && cabal install --dependencies-only
+	cd chart-tests && cabal install
+	mkdir -p chart-tests/output/fonts
+	mkdir -p chart-tests/output/drawing/{cairo,diagrams}
+	mkdir -p chart-tests/output/charts/{cairo-png,cairo-svg,cairo-ps,cairo-pdf}
+	mkdir -p chart-tests/output/charts/{diagrams-png,diagrams-svg,diagrams-eps}
+	cd chart-tests/output/drawing/cairo && $(HARNESS) drawing-cairo
+	cd chart-tests/output/drawing/diagrams && $(HARNESS) drawing-diagrams
+	cd chart-tests/output/fonts && $(HARNESS) compare-fonts
+	cd chart-tests/output/charts/cairo-png && $(HARNESS) charts-cairo --png
+	cd chart-tests/output/charts/cairo-ps && $(HARNESS) charts-cairo --ps
+	cd chart-tests/output/charts/cairo-svg && $(HARNESS) charts-cairo --svg
+	cd chart-tests/output/charts/cairo-pdf && $(HARNESS) charts-cairo --pdf
+	cd chart-tests/output/charts/diagrams-png && $(HARNESS) charts-diagrams--cairo
+	cd chart-tests/output/charts/diagrams-svg && $(HARNESS) charts-diagrams --svg
+	cd chart-tests/output/charts/diagrams-eps && $(HARNESS) charts-diagrams --eps

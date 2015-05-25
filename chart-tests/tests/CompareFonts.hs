@@ -1,3 +1,4 @@
+module CompareFonts where
 
 import Data.Colour
 import Data.Colour.Names
@@ -19,7 +20,7 @@ import qualified Graphics.Rendering.Cairo as C
 import qualified Graphics.Rendering.Cairo.Matrix as CM
 
 markLineStyle :: LineStyle
-markLineStyle = def 
+markLineStyle = def
   { _line_color = opaque red
   , _line_width = 1
   }
@@ -32,9 +33,9 @@ main = render ("test.png") 1000 500 $ do
       let d = fromIntegral i
       withTranslation (Point 0 (d * 70)) $ testDrawText (i * 10 + 10)
     return ()
- 
+
 testDrawText :: Int -> ChartBackend ()
-testDrawText fontSize = 
+testDrawText fontSize =
   withFontStyle (def { _font_size = fromIntegral fontSize, _font_name = "Source Sans Pro" }) $ do
     let text = "ÄÖÜ Testing " ++ show fontSize ++ "px"
     -- Text metrics
@@ -56,10 +57,10 @@ testDrawText fontSize =
                           <> lineTo' 500 (fromIntegral fontSize)
                           <> moveTo' 0 0
                           <> lineTo' 0 (fromIntegral fontSize)
-                          
+
       strokePath p
     drawText (Point 0 a) text
-  
+
 -- Render it side by side using cairo and diagrams cairo with SVGFonts.
 render :: FilePath -> Int -> Int -> ChartBackend () -> IO ()
 render f w h m = do
@@ -89,7 +90,7 @@ render f w h m = do
 renderCairo :: (Int, Int) -> ChartBackend () -> IO (C.Render ())
 renderCairo (w,h) m = do
   return $ BC.runBackend (BC.defaultEnv bitmapAlignmentFns) m
-  
+
 renderDiagramsCairo :: (Int, Int) -> ChartBackend () -> IO (C.Render ())
 renderDiagramsCairo (w,h) m = do
   env <- BD.defaultEnv bitmapAlignmentFns (fromIntegral w) (fromIntegral h)

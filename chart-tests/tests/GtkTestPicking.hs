@@ -1,3 +1,5 @@
+module GtkTestPicking where
+
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Layout(layoutLRToRenderable)
 import Graphics.Rendering.Chart.Grid
@@ -18,7 +20,7 @@ import Prices(prices2)
 
 type PickType = LayoutPick LocalTime Double Double
 
-chart :: [(LocalTime,Double,Double)] 
+chart :: [(LocalTime,Double,Double)]
       -> Bool -> Double -> Renderable (LayoutPick LocalTime Double Double)
 chart prices showMinMax lwidth = layoutLRToRenderable layout
   where
@@ -70,7 +72,7 @@ updateCanvas chart canvas pickfv = do
     win <- G.widgetGetDrawWindow canvas
     (width, height) <- G.widgetGetSize canvas
     let sz = (fromIntegral width,fromIntegral height)
-    pickf <- G.renderWithDrawable win $ runBackend (defaultEnv bitmapAlignmentFns) (render chart sz) 
+    pickf <- G.renderWithDrawable win $ runBackend (defaultEnv bitmapAlignmentFns) (render chart sz)
     writeIORef pickfv (Just pickf)
     return True
 
@@ -109,7 +111,7 @@ gridWindow = do
     f s = tval $ setPickFn (const (Just s)) $ label def HTA_Centre VTA_Centre s
     e = tval $ spacer (20,20)
 
-                                       
+
 main = do
   G.initGUI
   chartWindow
