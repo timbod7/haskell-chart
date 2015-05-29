@@ -173,7 +173,8 @@ renderableToSVG' :: Renderable a -> DEnv Double -> (Svg.Svg (), PickFn a)
 renderableToSVG' r env =
   let (w, h) = envOutputSize env
       (d, x) = runBackendR env r
-      svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) [] T.empty) d
+      opts = DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty
+      svg = D.renderDia DSVG.SVG opts d
   in (svg, x)
 
 -- -----------------------------------------------------------------------
@@ -208,7 +209,7 @@ cBackendToSVG cb env = (svg,a)
   where
     (w, h) = envOutputSize env
     (d, a) = runBackend env cb
-    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) [] T.empty) d
+    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty) d
 
 cBackendToEmbeddedFontSVG :: ChartBackend a -> DEnv Double -> (Svg.Svg (), a)
 cBackendToEmbeddedFontSVG cb env = (svg, x)
@@ -224,7 +225,7 @@ cBackendToEmbeddedFontSVG cb env = (svg, x)
         makeSvgFont font usedGs
         -- M.Map (String, FontSlant, FontWeight) (S.Set String)
         -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
-    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) [] T.empty) d
+    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty) d
 
 -- -----------------------------------------------------------------------
 -- Backend
