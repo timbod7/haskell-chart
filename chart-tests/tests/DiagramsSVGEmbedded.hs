@@ -1,3 +1,4 @@
+module DiagramsSVGEmbedded where
 
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
@@ -25,4 +26,3 @@ main1 args = do
         renderableToEmbeddedFontSVGFile' (ir T.SVG) (env { envOutputSize = (fromIntegral w, fromIntegral h) }) (n ++ "-embedded.svg")
         return ()
   showTests (fmap (\(x,_,_) -> x) allTests) renderDiagram
-  

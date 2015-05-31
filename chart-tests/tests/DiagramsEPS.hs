@@ -1,3 +1,5 @@
+module DiagramsEPS where
+
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
 

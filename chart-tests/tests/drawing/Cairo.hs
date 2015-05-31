@@ -1,9 +1,11 @@
+module Drawing.Cairo where
+
 import Control.Monad
 
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Cairo
 
-import Tests
+import Drawing.Tests
 
 main :: IO ()
 main = (flip mapM_) tests $ \(name, w, h, draw) -> do
