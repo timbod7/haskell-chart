@@ -72,6 +72,7 @@ import qualified Diagrams.Backend.SVG as DSVG
 
 import Lucid.Svg (renderBS)
 import qualified Lucid.Svg as Svg
+import qualified Text.Blaze.Renderer.Text as B
 
 import qualified Graphics.SVGFonts as F
 import qualified Graphics.SVGFonts.CharReference as F
@@ -216,16 +217,17 @@ cBackendToEmbeddedFontSVG cb env = (svg, x)
   where
     (w, h) = envOutputSize env
     (d, x, gs) = runBackendWithGlyphs env cb
-    fontDefs = Just $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
-        let fs = envFontStyle env
-        let font = envSelectFont env $ fs { _font_name = fFam
-                                          , _font_slant = fSlant
-                                          , _font_weight = fWeight
-                                          }
-        makeSvgFont font usedGs
-        -- M.Map (String, FontSlant, FontWeight) (S.Set String)
-        -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
-    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty) d
+    fontDefs = Just . Svg.toHtml . B.renderMarkup
+               $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
+                   let fs = envFontStyle env
+                   let font = envSelectFont env $ fs { _font_name = fFam
+                                                     , _font_slant = fSlant
+                                                     , _font_weight = fWeight
+                                                     }
+                   makeSvgFont font usedGs
+                   -- M.Map (String, FontSlant, FontWeight) (S.Set String)
+                   -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
+    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) fontDefs T.empty) d
 
 -- -----------------------------------------------------------------------
 -- Backend
