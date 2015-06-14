@@ -8,7 +8,7 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   ( runBackend
   , runBackendR
   , defaultEnv
-  , customFontEnv
+  , createEnv
   , DEnv(..), DFont
 
   -- * File Output Functons
@@ -16,7 +16,7 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , FileOptions(..)
   , fo_size
   , fo_format
-  , fo_customFonts
+  , fo_fonts
   , renderableToFile
   , toFile
   , cBackendToFile
@@ -35,6 +35,12 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   -- * SVG Embedded Font Utility Functions
   , renderableToEmbeddedFontSVG
   , renderableToEmbeddedFontSVG'
+
+  -- * Fonts
+  , loadSansSerifFonts
+  , loadCommonFonts
+  , FontSelector
+
   ) where
 
 import Data.Default.Class
@@ -105,12 +111,11 @@ data FileFormat = EPS
 data FileOptions = FileOptions {
   _fo_size :: (Double,Double),
   _fo_format :: FileFormat,
-  _fo_customFonts :: M.Map (String, FontSlant, FontWeight) FilePath
+  _fo_fonts :: IO (FontSelector Double)
 }
 
 instance Default FileOptions where
-  def =  FileOptions (800,600) SVG M.empty
-
+  def =  FileOptions (800,600) SVG loadSansSerifFonts
 
 -- | Generate an image file for the given renderable, at the specified path. Size, format,
 -- and text rendering mode are all set through the `FileOptions` parameter.
@@ -129,7 +134,8 @@ toFile fo path ec = void $ renderableToFile fo path (toRenderable (execEC ec))
 -- format are set through the `FileOptions` parameter.
 cBackendToFile :: FileOptions -> ChartBackend a -> FilePath -> IO a
 cBackendToFile fo cb path = do
-    env <- customFontEnv vectorAlignmentFns w h (_fo_customFonts fo)
+    fontSelector <- _fo_fonts fo
+    let env = createEnv vectorAlignmentFns w h fontSelector
     case _fo_format fo of
       EPS -> do
         cBackendToEPSFile cb env path
@@ -247,19 +253,44 @@ type DState n a = State (DEnv n) a
 
 type DFont n = F.PreparedFont n
 
-defaultFonts :: forall n. (RealFloat n, Read n)
-             => IO (FontStyle -> F.PreparedFont n)
-defaultFonts = do
-  serifR   <- loadDefaultFont "fonts/LinLibertine_R.svg"
-  serifRB  <- loadDefaultFont "fonts/LinLibertine_RB.svg"
-  serifRBI <- loadDefaultFont "fonts/LinLibertine_RBI.svg"
-  serifRI  <- loadDefaultFont "fonts/LinLibertine_RI.svg"
-  sansR   <- loadDefaultFont "fonts/SourceSansPro_R.svg"
-  sansRB  <- loadDefaultFont "fonts/SourceSansPro_RB.svg"
-  sansRBI <- loadDefaultFont "fonts/SourceSansPro_RBI.svg"
-  sansRI  <- loadDefaultFont "fonts/SourceSansPro_RI.svg"
-  monoR  <- loadDefaultFont "fonts/SourceCodePro_R.svg"
-  monoRB <- loadDefaultFont "fonts/SourceCodePro_RB.svg"
+type FontSelector n = FontStyle -> DFont n
+
+
+-- | Load sans-serif fonts only
+
+loadSansSerifFonts :: forall n. (RealFloat n, Read n)
+             => IO (FontSelector n)
+loadSansSerifFonts = do
+  sansR    <- getDataFileName "fonts/SourceSansPro_R.svg" >>= F.loadFont
+  sansRB   <- getDataFileName "fonts/SourceSansPro_RB.svg" >>= F.loadFont
+  sansRBI  <- getDataFileName "fonts/SourceSansPro_RBI.svg" >>= F.loadFont
+  sansRI   <- getDataFileName "fonts/SourceSansPro_RI.svg" >>= F.loadFont
+
+  let selectFont :: FontStyle -> F.PreparedFont n
+      selectFont fs = case (_font_name fs, _font_slant fs, _font_weight fs) of
+        (_, FontSlantNormal , FontWeightNormal) -> alterFontFamily "sans-serif" sansR
+        (_, FontSlantNormal , FontWeightBold  ) -> alterFontFamily "sans-serif" sansRB
+        (_, FontSlantItalic , FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
+        (_, FontSlantOblique, FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
+        (_, FontSlantItalic , FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
+        (_, FontSlantOblique, FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
+
+  return selectFont
+
+
+-- | Load serif, sans-serif and monospace fonts.
+loadCommonFonts :: forall n. (RealFloat n, Read n) => IO (FontSelector n)
+loadCommonFonts = do
+  serifR   <- getDataFileName "fonts/LinLibertine_R.svg" >>= F.loadFont
+  serifRB  <- getDataFileName "fonts/LinLibertine_RB.svg" >>= F.loadFont
+  serifRBI <- getDataFileName "fonts/LinLibertine_RBI.svg" >>= F.loadFont
+  serifRI  <- getDataFileName "fonts/LinLibertine_RI.svg" >>= F.loadFont
+  sansR    <- getDataFileName "fonts/SourceSansPro_R.svg" >>= F.loadFont
+  sansRB   <- getDataFileName "fonts/SourceSansPro_RB.svg" >>= F.loadFont
+  sansRBI  <- getDataFileName "fonts/SourceSansPro_RBI.svg" >>= F.loadFont
+  sansRI   <- getDataFileName "fonts/SourceSansPro_RI.svg" >>= F.loadFont
+  monoR    <- getDataFileName "fonts/SourceCodePro_R.svg" >>= F.loadFont
+  monoRB   <- getDataFileName "fonts/SourceCodePro_RB.svg" >>= F.loadFont
 
   let selectFont :: FontStyle -> F.PreparedFont n
       selectFont fs = case (_font_name fs, _font_slant fs, _font_weight fs) of
@@ -301,43 +332,38 @@ defaultFonts = do
 
   return selectFont
 
+
 alterFontFamily :: String -> DFont n -> DFont n
 alterFontFamily n (fd, om) = (fd { F.fontDataFamily = n }, om)
 
 isFontFamily :: String -> DFont n -> Bool
 isFontFamily n (fd, _) = n == F.fontDataFamily fd
 
-loadDefaultFont :: (RealFloat n, Read n) => FilePath -> IO (F.PreparedFont n)
-loadDefaultFont file = getDataFileName file >>= F.loadFont
-
 -- | Produce an environment with a custom set of fonts.
 --   The defult fonts are still loaded as fall back.
-customFontEnv :: (Read n, RealFloat n)
+createEnv :: (Read n, RealFloat n)
               => AlignmentFns     -- ^ Alignment functions to use.
               -> n -- ^ The output image width in backend coordinates.
               -> n -- ^ The output image height in backend coordinates.
-              -> M.Map (String, FontSlant, FontWeight) FilePath -> IO (DEnv n)
-customFontEnv alignFns w h fontFiles = do
-  fonts <- traverse F.loadFont fontFiles
-  selectFont <- defaultFonts
-  return $ DEnv
+              -> FontSelector n -> DEnv n
+createEnv alignFns w h fontSelector = DEnv
     { envAlignmentFns = alignFns
     , envFontStyle = def
-    , envSelectFont = \fs ->
-        case M.lookup (_font_name fs, _font_slant fs, _font_weight fs) fonts of
-          Just font -> font
-          Nothing -> selectFont fs
+    , envSelectFont = fontSelector
     , envOutputSize = (w,h)
     , envUsedGlyphs = M.empty
     }
 
--- | Produce a default environment with the default fonts.
+-- | Produce a default environment with just the sans-serif fonts.
+
 defaultEnv :: (Read n, RealFloat n)
            => AlignmentFns -- ^ Alignment functions to use.
            -> n -- ^ The output image width in backend coordinates.
            -> n -- ^ The output image height in backend coordinates.
            -> IO (DEnv n)
-defaultEnv alignFns w h = customFontEnv alignFns w h M.empty
+defaultEnv alignFns w h = do
+  fontSelector <- loadSansSerifFonts
+  return (createEnv alignFns w h fontSelector)
 
 -- | Run this backends renderer.
 runBackendR :: ( D.Backend b V2 (N b), D.Renderable (D.Path V2 (N b)) b

@@ -1,5 +1,7 @@
 module Drawing.DiagramsCairo where
 
+import Control.Monad(forM_)
+
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
 
@@ -11,12 +13,14 @@ import Diagrams.Backend.Cairo.Internal
 import Drawing.Tests (tests)
 
 main :: IO ()
-main = (flip mapM_) tests $ \(name, w, h, draw) -> do
-  render (name ++ ".png") w h draw
+main = do
+  fonts <- loadCommonFonts
+  forM_ tests $ \(name, w, h, draw) -> do
+    render fonts (name ++ ".png") w h draw
 
 
-render :: FilePath -> Int -> Int -> ChartBackend a -> IO ()
-render f w h m = do
-  env <- defaultEnv bitmapAlignmentFns (fromIntegral w) (fromIntegral h)
+render :: FontSelector Double -> FilePath -> Int -> Int -> ChartBackend a -> IO ()
+render fonts f w h m = do
+  let env = createEnv bitmapAlignmentFns (fromIntegral w) (fromIntegral h) fonts
   let (d, _) = runBackend env m
   fst $ renderDia Cairo (CairoOptions f (dims $ V2 (fromIntegral w) (fromIntegral h)) PNG False) d
