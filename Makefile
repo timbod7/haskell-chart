@@ -64,6 +64,6 @@ tests: chart-tests/cabal.sandbox.config
 	cd chart-tests/output/charts/cairo-ps && $(HARNESS) charts-cairo --ps
 	cd chart-tests/output/charts/cairo-svg && $(HARNESS) charts-cairo --svg
 	cd chart-tests/output/charts/cairo-pdf && $(HARNESS) charts-cairo --pdf
-	cd chart-tests/output/charts/diagrams-png && $(HARNESS) charts-diagrams--cairo
+	cd chart-tests/output/charts/diagrams-png && $(HARNESS) charts-diagrams --cairo
 	cd chart-tests/output/charts/diagrams-svg && $(HARNESS) charts-diagrams --svg
 	cd chart-tests/output/charts/diagrams-eps && $(HARNESS) charts-diagrams --eps
