@@ -35,12 +35,12 @@ library
                , SVGFonts >= 1.4 && < 1.6
                , colour >= 2.2.1 && < 2.4
                , blaze-markup >= 0.7 && < 0.8
-               , lucid-svg >= 0.4 && < 0.5
+               , lucid-svg >= 0.4 && < 0.6
                , bytestring >= 0.9 && < 1.0
                , operational >= 0.2.2 && < 0.3
                , containers >= 0.4 && < 0.6
                , data-default-class < 0.1
-               , lens >= 3.9 && < 4.12
+               , lens >= 3.9 && < 4.13
                , Chart >= 1.5 && < 1.6
                , text
   other-modules: Paths_Chart_diagrams
