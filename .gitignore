@@ -3,6 +3,7 @@
 *.o
 cabal.sandbox.config
 .cabal-sandbox/
+.stack-work/
 chart/dist/
 chart-gtk/dist/
 chart-cairo/dist/
