@@ -24,7 +24,7 @@ library
                , data-default-class < 0.1
                , mtl >= 2.0 && < 2.3
                , operational >= 0.2.2 && < 0.3
-               , vector >=0.9 && <0.11
+               , vector >=0.9 && <0.12
 
 
   Ghc-options: -Wall -fno-warn-orphans

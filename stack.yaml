@@ -6,10 +6,5 @@ packages:
 - chart-tests/
 - chart-gtk/
 extra-deps:
-- lens-4.12.2
-- reflection-2
-- SVGFonts-1.5.0.0
-- blaze-svg-0.3.4.1
-- tuple-0.3.0.2
-- OneTuple-0.2.1
-resolver: nightly-2015-07-25
+- vector-0.11.0.0  
+resolver: nightly-2015-08-19
