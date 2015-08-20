@@ -5,13 +5,26 @@
 -- Copyright   :  (c) Tim Docker 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
+-- A high level API for generating a plot quickly.
+-- 
 -- Importing the Easy module brings into scope all core functions and types required
 -- for working with the chart library. This includes key external dependencies such as
 -- Control.Len and Data.Colour. The module also provides several helper functions for
--- quickly generating common plots.
+-- quickly generating common plots. Note that chart backends must still be explicitly
+-- imported, as some backends cannot be built on all platforms.
 --
--- Note that chart backends must still be explicitly imported, as some backends cannot
--- be built on all platforms.
+-- Example usage:
+--
+-- > import Graphics.Rendering.Chart.Easy
+-- > import Graphics.Rendering.Chart.Backend.Cairo
+-- > 
+-- > signal :: [Double] -> [(Double,Double)]
+-- > signal xs = [ (x,(sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))) | x <- xs ]
+-- > 
+-- > main = toFile def "example.png" $ do
+-- >     layout_title .= "Amplitude Modulation"
+-- >     plot (line "am" [signal [0,(0.5)..400]])
+-- >     plot (points "am points" (signal [0,7..400]))
 
 module Graphics.Rendering.Chart.Easy(
 

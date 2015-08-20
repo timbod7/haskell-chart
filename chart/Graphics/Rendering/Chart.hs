@@ -6,11 +6,15 @@
 --
 -- A framework for creating 2D charts in Haskell.
 --
--- The basic model is that you define a value representing a chart to
--- be displayed, and then convert it to a 'Renderable' by applying
--- 'toRenderable'. This 'Renderable' is then actually output by
--- calling a function in an appropriate graphics backend, eg
--- 'renderableToFile'.
+-- For the simplest API, see the "Graphics.Rendering.Chart.Easy"
+-- module.
+--
+-- When more control is required, understanding the various data types
+-- is necessary. The basic model is that you define a value
+-- representing a chart to be displayed (eg. a `Layout`), and then
+-- convert it to a 'Renderable' by applying 'toRenderable'. This
+-- 'Renderable' is then actually output by calling a function in an
+-- appropriate graphics backend, eg 'renderableToFile'.
 --
 -- Currently, there are three types of charts:
 --
