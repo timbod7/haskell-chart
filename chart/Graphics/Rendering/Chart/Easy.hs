@@ -25,6 +25,8 @@
 -- >     layout_title .= "Amplitude Modulation"
 -- >     plot (line "am" [signal [0,(0.5)..400]])
 -- >     plot (points "am points" (signal [0,7..400]))
+--
+-- More examples can be found on the <https://github.com/timbod7/haskell-chart/wiki library's wiki>
 
 module Graphics.Rendering.Chart.Easy(
 
