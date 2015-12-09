@@ -332,6 +332,7 @@ data PointShape = PointShapeCircle           -- ^ A circle.
                 | PointShapeCross -- ^ A cross.
                 | PointShapeStar  -- ^ Combination of a cross and a plus.
                 | PointShapeArrowHead Double
+                | PointShapeEllipse Double Double -- ^ Ratio of minor to major axis and rotation
 
 -- | Abstract data type for the style of a plotted point.
 data PointStyle = PointStyle
@@ -403,6 +404,11 @@ drawPoint ps@(PointStyle cl _ _ r shape) p = withPointStyle ps $ do
                 <> lineTo' (x-rad) (y-rad)
                 <> moveTo' (x+rad) (y-rad)
                 <> lineTo' (x-rad) (y+rad)
+    PointShapeEllipse b theta ->
+      withTranslation p $ withRotation theta $ withScaleX b $ do
+        let path = arc (Point 0 0) r 0 (2*pi)
+        fillPath path
+        strokePath path
 
 -- -----------------------------------------------------------------------
 -- Style Helpers
