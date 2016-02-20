@@ -7,4 +7,7 @@ packages:
 - chart-gtk/
 extra-deps:
 - vector-0.11.0.0  
-resolver: nightly-2015-08-19
+- SVGFonts-1.5.0.0
+- tuple-0.3.0.2
+- OneTuple-0.2.1
+resolver: lts-5.1
