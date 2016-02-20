@@ -4,7 +4,7 @@ module Main where
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Backend.Cairo
 
-import System.Environment(getArgs)
+import System.Environment(getArgs,getProgName)
 import qualified GtkTestPicking
 import qualified DiagramsCairo
 import qualified DiagramsSVG
@@ -45,13 +45,14 @@ main1 _ = usage
 
 usage :: IO ()
 usage = do
+  progname <- getProgName 
   putStrLn "Usage:"
-  putStrLn "  harness charts-cairo (--pdf|--svg|--ps|--png) chart-name..."
-  putStrLn "  harness charts-diagrams (--cairo|--svg|--eps) chart-name..."
-  putStrLn "  harness drawing-cairo"
-  putStrLn "  harness drawing-diagrams"
-  putStrLn "  harness compare-fonts"
-  putStrLn "  harness gtk-picking"
+  putStrLn $ "  " ++ progname ++ " charts-cairo (--pdf|--svg|--ps|--png) chart-name..."
+  putStrLn $ "  " ++ progname ++ " charts-diagrams (--cairo|--svg|--eps) chart-name..."
+  putStrLn $ "  " ++ progname ++ " drawing-cairo"
+  putStrLn $ "  " ++ progname ++ " drawing-diagrams"
+  putStrLn $ "  " ++ progname ++ " compare-fonts"
+  putStrLn $ "  " ++ progname ++ " gtk-picking"
 
 chartsCairo :: [String] -> IO ()
 chartsCairo ("--pdf":tests) = renderTestsToFiles PDF ".pdf" tests

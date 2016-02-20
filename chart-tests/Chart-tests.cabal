@@ -17,7 +17,7 @@ source-repository head
   type:     git
   location: https://github.com/timbod7/haskell-chart
 
-Executable harness
+Executable chart-harness
     Build-Depends:
       base >= 3 && < 5,
       old-locale,
