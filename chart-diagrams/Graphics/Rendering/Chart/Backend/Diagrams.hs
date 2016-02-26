@@ -9,7 +9,7 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , runBackendR
   , defaultEnv
   , createEnv
-  , DEnv(..), DFont
+  , DEnv(..)
 
   -- * File Output Functons
   , FileFormat(..)
@@ -241,20 +241,17 @@ cBackendToEmbeddedFontSVG cb env = (svg, x)
 
 -- | The diagrams backend environement.
 data DEnv n = DEnv
-  { envAlignmentFns :: AlignmentFns     -- ^ The used alignment functions.
-  , envFontStyle :: FontStyle           -- ^ The current/initial font style.
-  , envSelectFont :: FontStyle -> F.PreparedFont n -- ^ The font selection function.
-  , envOutputSize :: (n,n)              -- ^ The size of the rendered output.
+  { envAlignmentFns :: AlignmentFns -- ^ The used alignment functions.
+  , envFontStyle :: FontStyle       -- ^ The current/initial font style.
+  , envSelectFont :: FontSelector n -- ^ The font selection function.
+  , envOutputSize :: (n,n)          -- ^ The size of the rendered output.
   , envUsedGlyphs :: M.Map (String, FontSlant, FontWeight) (S.Set String)
     -- ^ The map of all glyphs that are used from a specific font.
   }
 
 type DState n a = State (DEnv n) a
 
-type DFont n = F.PreparedFont n
-
-type FontSelector n = FontStyle -> DFont n
-
+type FontSelector n = FontStyle -> F.PreparedFont n
 
 -- | Load sans-serif fonts only
 
@@ -333,10 +330,10 @@ loadCommonFonts = do
   return selectFont
 
 
-alterFontFamily :: String -> DFont n -> DFont n
+alterFontFamily :: String -> F.PreparedFont n -> F.PreparedFont n
 alterFontFamily n (fd, om) = (fd { F.fontDataFamily = n }, om)
 
-isFontFamily :: String -> DFont n -> Bool
+isFontFamily :: String -> F.PreparedFont n -> Bool
 isFontFamily n (fd, _) = n == F.fontDataFamily fd
 
 -- | Produce an environment with a custom set of fonts.
