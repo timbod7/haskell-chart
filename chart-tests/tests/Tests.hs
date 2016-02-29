@@ -41,17 +41,17 @@ fwhite = solidFillStyle $ opaque white
 test1a :: Double -> Renderable (LayoutPick Double Double Double)
 test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
   where
-    t = weights (1,1) $ aboveN [ besideN [rf g1, rf g2, rf g3],
-                                 besideN [rf g4, rf g5, rf g6] ]
+    t = aboveN [ besideN [layoutToGrid l1, layoutToGrid l2, layoutToGrid l3],
+                 besideN [layoutToGrid l4, layoutToGrid l5, layoutToGrid l6] ]
 
-    g1 = layout_title .~ "minimal"
+    l1 = layout_title .~ "minimal"
        $ layout_bottom_axis_visibility . axis_show_ticks .~ False
        $ layout_left_axis_visibility   . axis_show_ticks .~ False
        $ layout_x_axis . laxis_override .~ axisGridHide
        $ layout_y_axis . laxis_override .~ axisGridHide
        $ Test1.layout lwidth
 
-    g2 = layout_title .~ "with borders"
+    l2 = layout_title .~ "with borders"
        $ layout_bottom_axis_visibility . axis_show_ticks .~ False
        $ layout_left_axis_visibility   . axis_show_ticks .~ False
        $ layout_top_axis_visibility    . axis_show_line   .~ True
@@ -60,10 +60,10 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
        $ layout_y_axis . laxis_override .~ axisGridHide
        $ Test1.layout lwidth
 
-    g3 = layout_title .~ "default"
+    l3 = layout_title .~ "default"
        $ Test1.layout lwidth
 
-    g4 = layout_title .~ "tight grid"
+    l4 = layout_title .~ "tight grid"
        $ layout_y_axis . laxis_generate .~ axis
        $ layout_y_axis . laxis_override .~ axisGridAtTicks
        $ layout_x_axis . laxis_generate .~ axis
@@ -76,13 +76,13 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
           $ def
           )
 
-    g5 = layout_title .~ "y linked"
+    l5 = layout_title .~ "y linked"
        $ layout_right_axis_visibility . axis_show_line   .~ True
        $ layout_right_axis_visibility . axis_show_ticks  .~ True
        $ layout_right_axis_visibility . axis_show_labels .~ True
        $ Test1.layout lwidth
 
-    g6 = layout_title .~ "everything"
+    l6 = layout_title .~ "everything"
        $ layout_right_axis_visibility . axis_show_line   .~ True
        $ layout_right_axis_visibility . axis_show_ticks  .~ True
        $ layout_right_axis_visibility . axis_show_labels .~ True
@@ -90,8 +90,6 @@ test1a lwidth = fillBackground fwhite $ (gridToRenderable t)
        $ layout_top_axis_visibility . axis_show_ticks  .~ True
        $ layout_top_axis_visibility . axis_show_labels .~ True
        $ Test1.layout lwidth
-
-    rf = tval . layoutToRenderable
 
 ----------------------------------------------------------------------
 test4d :: LineWidth -> Renderable (LayoutPick Double Double Double)

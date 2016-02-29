@@ -35,7 +35,9 @@ module Graphics.Rendering.Chart.Layout
   
     -- * Rendering
   , layoutToRenderable
+  , layoutToGrid  
   , layoutLRToRenderable
+  , layoutLRToGrid  
   , renderStackedLayouts
 
     -- * LayoutAxis lenses
@@ -205,17 +207,17 @@ instance (Ord x, Ord y) => ToRenderable (Layout x y) where
 
 -- | Render the given 'Layout'.
 layoutToRenderable :: forall x y . (Ord x, Ord y) => Layout x y -> Renderable (LayoutPick x y y)
-layoutToRenderable lxy = fillBackground (_layout_background lxy) 
-                     $ gridToRenderable (layoutToGrid lxy)
-  where
-    layoutToGrid l = aboveN
-           [  tval $ titleToRenderable (_layout_margin l) (_layout_title_style l) (_layout_title l)
-           ,  weights (1,1) $ tval $ gridToRenderable $
-                  addMarginsToGrid (lm,lm,lm,lm) (layoutPlotAreaToGrid l)
-           ,  tval $ renderLegend l (getLegendItems l)
-           ]
+layoutToRenderable l = fillBackground (_layout_background l) $ gridToRenderable (layoutToGrid l)
 
-    lm = _layout_margin lxy
+layoutToGrid :: forall x y . (Ord x, Ord y) => Layout x y -> Grid (Renderable (LayoutPick x y y))
+layoutToGrid l = grid
+  where
+    grid = titleToRenderable lm (_layout_title_style l) (_layout_title l)
+           `wideAbove`
+           addMarginsToGrid (lm,lm,lm,lm) (layoutPlotAreaToGrid l)
+           `aboveWide` 
+           renderLegend l (getLegendItems l)
+    lm = _layout_margin l
   
 getLayoutXVals :: Layout x y -> [x]
 getLayoutXVals l = concatMap (fst . _plot_all_points) (_layout_plots l)
@@ -373,17 +375,19 @@ instance (Ord x, Ord yl, Ord yr) => ToRenderable (LayoutLR x yl yr) where
 -- | Render the given 'LayoutLR'.
 layoutLRToRenderable :: forall x yl yr . (Ord x, Ord yl, Ord yr) 
                      => LayoutLR x yl yr -> Renderable (LayoutPick x yl yr)
-layoutLRToRenderable llr = fillBackground (_layoutlr_background llr) 
-                       $ gridToRenderable (layoutLRToGrid llr)
-  where
-    layoutLRToGrid l = aboveN
-           [  tval $ titleToRenderable (_layoutlr_margin l) (_layoutlr_title_style l) (_layoutlr_title l)
-           ,  weights (1,1) $ tval $ gridToRenderable $
-                  addMarginsToGrid (lm,lm,lm,lm) (layoutLRPlotAreaToGrid l)
-           ,  tval $ renderLegendLR l (getLegendItemsLR l)
-           ]
+layoutLRToRenderable l = fillBackground (_layoutlr_background l) 
+                       $ gridToRenderable (layoutLRToGrid l)
 
-    lm = _layoutlr_margin llr
+layoutLRToGrid :: forall x yl yr . (Ord x, Ord yl, Ord yr) 
+                     => LayoutLR x yl yr -> Grid (Renderable (LayoutPick x yl yr))
+layoutLRToGrid l = grid
+  where
+    grid = titleToRenderable lm (_layoutlr_title_style l) (_layoutlr_title l)
+           `wideAbove`
+           addMarginsToGrid (lm,lm,lm,lm) (layoutLRPlotAreaToGrid l)
+           `aboveWide`
+           renderLegendLR l (getLegendItemsLR l)
+    lm = _layoutlr_margin l
 
 getLayoutLRXVals :: LayoutLR x yl yr -> [x]
 getLayoutLRXVals l = concatMap deEither $ _layoutlr_plots l
