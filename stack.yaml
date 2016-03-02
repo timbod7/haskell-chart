@@ -6,8 +6,7 @@ packages:
 - chart-tests/
 - chart-gtk/
 extra-deps:
-- vector-0.11.0.0  
 - SVGFonts-1.5.0.0
 - tuple-0.3.0.2
 - OneTuple-0.2.1
-resolver: lts-5.1
+resolver: lts-5.5
