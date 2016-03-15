@@ -7,8 +7,8 @@ Copyright: Tim Docker, 2014
 Author: Tim Docker <tim@dockerz.net>
 Maintainer: Tim Docker <tim@dockerz.net>
 Homepage: https://github.com/timbod7/haskell-chart/wiki
-Synopsis: A placeholder package depending on all Chart packages
-Description: A placeholder package depending on all Chart packages
+Synopsis: A placeholder package depending on all Chart packages 
+Description: A placeholder package depending on all Chart packages 
 Category: Graphics
 Cabal-Version: >= 1.6
 Build-Type: Simple
@@ -18,3 +18,4 @@ library
                , Chart-diagrams
                , Chart-cairo
                , Chart-gtk
+
