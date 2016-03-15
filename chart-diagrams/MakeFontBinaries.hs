@@ -4,11 +4,7 @@ module MakeFontBinaries (main) where
 import Data.Monoid ((<>))
 import qualified Graphics.SVGFonts.ReadFont as ReadFont
 import qualified Data.ByteString.Lazy as ByteString.Lazy
--- import qualified Data.Binary as Binary
 import qualified Data.Serialize as Serialize
-
--- import GHC.Generics (Generic)
--- import Diagrams.Prelude (Path, V2)
 
 import Graphics.Rendering.Chart.Backend.Diagrams
 import Graphics.Rendering.Chart.Backend.Serialize
