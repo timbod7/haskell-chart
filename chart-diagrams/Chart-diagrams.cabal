@@ -1,5 +1,5 @@
 Name: Chart-diagrams
-Version: 1.5.4
+Version: 1.6
 License: BSD3
 License-file: LICENSE
 Copyright: Jan Bracker, 2006-2014
@@ -45,13 +45,15 @@ library
                , containers >= 0.4 && < 0.6
                , data-default-class < 0.1
                , lens >= 3.9 && < 4.14
-               , Chart >= 1.5 && < 1.6
+               , Chart >= 1.6 && < 1.7
                , text
                , file-embed
                , template-haskell
-               , binary
                , cereal
+               , fingertree
+               , cereal-vector
   other-modules: Paths_Chart_diagrams
+               , Graphics.Rendering.Chart.Backend.Serialize
   Exposed-modules:
         Graphics.Rendering.Chart.Backend.Diagrams
 

@@ -10,7 +10,7 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , runBackendR
   , defaultEnv
   , createEnv
-  , DEnv(..), DFont
+  , DEnv(..)
 
   -- * File Output Functons
   , FileFormat(..)
@@ -98,7 +98,9 @@ import Graphics.Rendering.Chart.State (EC, execEC)
 import Paths_Chart_diagrams (getDataFileName)
 
 import qualified Data.FileEmbed
-import qualified Data.Binary
+import qualified Data.Serialize as Serialize
+
+import Graphics.Rendering.Chart.Backend.Serialize
 
 -- -----------------------------------------------------------------------
 -- General purpose file output function
@@ -249,31 +251,31 @@ cBackendToEmbeddedFontSVG cb env = (svg, x)
 
 -- | The diagrams backend environement.
 data DEnv n = DEnv
-  { envAlignmentFns :: AlignmentFns     -- ^ The used alignment functions.
-  , envFontStyle :: FontStyle           -- ^ The current/initial font style.
-  , envSelectFont :: FontStyle -> F.PreparedFont n -- ^ The font selection function.
-  , envOutputSize :: (n,n)              -- ^ The size of the rendered output.
-  , envUsedGlyphs :: !(M.Map (String, FontSlant, FontWeight) (S.Set String))
+  { envAlignmentFns :: AlignmentFns -- ^ The used alignment functions.
+  , envFontStyle :: FontStyle       -- ^ The current/initial font style.
+  , envSelectFont :: FontSelector n -- ^ The font selection function.
+  , envOutputSize :: (n,n)          -- ^ The size of the rendered output.
+  , envUsedGlyphs :: M.Map (String, FontSlant, FontWeight) (S.Set String)
     -- ^ The map of all glyphs that are used from a specific font.
   }
 
 type DState n a = State (DEnv n) a
 
-type DFont n = F.PreparedFont n
+type FontSelector n = FontStyle -> F.PreparedFont n
 
-type FontSelector n = FontStyle -> DFont n
-
-decodeStrict :: Data.ByteString.ByteString -> F.PreparedFont Double
-decodeStrict = Data.Binary.decode . BS.fromStrict
+decodeCereal :: Data.ByteString.ByteString -> F.PreparedFont Double
+decodeCereal x = case Serialize.decode x of
+  Right  y -> y
+  Left err -> error err
 
 loadSVGFont :: String -> Data.ByteString.ByteString -> F.PreparedFont Double
 loadSVGFont name str = snd (F.loadFont' name str)
 
-binary_sansR, binary_sansRB, binary_sansRBI, binary_sansRI :: F.PreparedFont Double
-binary_sansR   = decodeStrict $(Data.FileEmbed.embedFile "fonts/SourceSansPro_R.bin")
-binary_sansRB  = decodeStrict $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RB.bin")
-binary_sansRBI = decodeStrict $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RBI.bin")
-binary_sansRI  = decodeStrict $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RI.bin")
+cereal_sansR, cereal_sansRB, cereal_sansRBI, cereal_sansRI :: F.PreparedFont Double
+cereal_sansR   = decodeCereal $(Data.FileEmbed.embedFile "fonts/SourceSansPro_R.cereal.bin")
+cereal_sansRB  = decodeCereal $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RB.cereal.bin")
+cereal_sansRBI = decodeCereal $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RBI.cereal.bin")
+cereal_sansRI  = decodeCereal $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RI.cereal.bin")
 
 svg_sansR, svg_sansRB, svg_sansRBI, svg_sansRI :: F.PreparedFont Double
 svg_sansR   = loadSVGFont "SourceSansPro_R"   $(Data.FileEmbed.embedFile "fonts/SourceSansPro_R.svg")
@@ -287,14 +289,12 @@ loadSansSerifFonts = do
   let
     selectFont :: FontStyle -> F.PreparedFont Double
     selectFont fs = case (_font_name fs, _font_slant fs, _font_weight fs) of
-      (_, FontSlantNormal , FontWeightNormal) -> alterFontFamily "sans-serif" binary_sansR
-      (_, FontSlantNormal , FontWeightBold  ) -> alterFontFamily "sans-serif" binary_sansRB
-      (_, FontSlantItalic , FontWeightNormal) -> alterFontFamily "sans-serif" binary_sansRI
-      (_, FontSlantOblique, FontWeightNormal) -> alterFontFamily "sans-serif" binary_sansRI
-      (_, FontSlantItalic , FontWeightBold  ) -> alterFontFamily "sans-serif" binary_sansRBI
-      (_, FontSlantOblique, FontWeightBold  ) -> alterFontFamily "sans-serif" binary_sansRBI
-      -- _ -> F.dummyFont
-      _ -> error "not found"
+      (_, FontSlantNormal , FontWeightNormal) -> alterFontFamily "sans-serif" cereal_sansR
+      (_, FontSlantNormal , FontWeightBold  ) -> alterFontFamily "sans-serif" cereal_sansRB
+      (_, FontSlantItalic , FontWeightNormal) -> alterFontFamily "sans-serif" cereal_sansRI
+      (_, FontSlantOblique, FontWeightNormal) -> alterFontFamily "sans-serif" cereal_sansRI
+      (_, FontSlantItalic , FontWeightBold  ) -> alterFontFamily "sans-serif" cereal_sansRBI
+      (_, FontSlantOblique, FontWeightBold  ) -> alterFontFamily "sans-serif" cereal_sansRBI
 
   -- return (sansR `seq` sansRB `seq` sansRI `seq` sansRBI `seq` selectFont)
   return selectFont
@@ -354,10 +354,10 @@ loadCommonFonts = do
   return selectFont
 
 
-alterFontFamily :: String -> DFont n -> DFont n
+alterFontFamily :: String -> F.PreparedFont n -> F.PreparedFont n
 alterFontFamily n (fd, om) = (fd { F.fontDataFamily = n }, om)
 
-isFontFamily :: String -> DFont n -> Bool
+isFontFamily :: String -> F.PreparedFont n -> Bool
 isFontFamily n (fd, _) = n == F.fontDataFamily fd
 
 -- | Produce an environment with a custom set of fonts.
