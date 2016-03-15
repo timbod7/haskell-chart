@@ -23,8 +23,12 @@ data-files: fonts/LinLibertine_R.svg
           , fonts/SourceCodePro_R.svg
           , fonts/SourceCodePro_RB.svg
 
+executable make-font-binaries
+  main-is:             MakeFontBinaries.hs
+  ghc-options:         -main-is MakeFontBinaries -O2
 
 library
+  ghc-options: -O2
   Build-depends: base >= 3 && < 5
                , old-locale
                , time, mtl
@@ -43,6 +47,10 @@ library
                , lens >= 3.9 && < 4.14
                , Chart >= 1.5 && < 1.6
                , text
+               , file-embed
+               , template-haskell
+               , binary
+               , cereal
   other-modules: Paths_Chart_diagrams
   Exposed-modules:
         Graphics.Rendering.Chart.Backend.Diagrams
