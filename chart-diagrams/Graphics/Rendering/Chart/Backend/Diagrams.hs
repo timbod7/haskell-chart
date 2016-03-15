@@ -2,7 +2,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE BangPatterns #-}
 
 -- | The backend to render charts with the diagrams library.
 module Graphics.Rendering.Chart.Backend.Diagrams
@@ -50,7 +49,7 @@ import Data.Colour.SRGB
 import Data.List (unfoldr)
 import Data.Monoid
 import Data.Traversable
-import qualified Data.Map.Strict as M
+import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString
