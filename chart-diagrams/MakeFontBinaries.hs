@@ -30,5 +30,4 @@ go (name, filepath) = do
   let
     font :: ReadFont.PreparedFont Double
     font = snd (ReadFont.loadFont' name bs)
-  -- Serialize.encodeFile ("fonts/" <> name <> ".bin") font
   ByteString.Lazy.writeFile ("fonts/" <> name <> ".cereal.bin") (Serialize.encodeLazy font)
