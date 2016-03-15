@@ -454,13 +454,13 @@ runBackend' tr m = eval tr (view m)
 
     (<>#) :: (Monad s, Monoid m) => s m -> (() -> s (m, a)) -> s (m, a)
     (<>#) m f = do
-      !ma <- m
+      ma <- m
       return (ma, ()) <>= f
 
     (<>=) :: (Monad s, Monoid m) => s (m, a) -> (a -> s (m, b)) -> s (m, b)
     (<>=) m f = do
-      (!ma, !a) <- m
-      (!mb, !b) <- f a
+      (ma, a) <- m
+      (mb, b) <- f a
       return (mb <> ma, b)
 
 -- | Executes the given state locally, but preserves the changes to the 'envUsedGlyphs'
@@ -470,7 +470,7 @@ dLocal m = do
   env <- get
   x <- m
   env' <- get
-  put $! env { envUsedGlyphs = envUsedGlyphs env' }
+  put $ env { envUsedGlyphs = envUsedGlyphs env' }
   return x
 
 dStrokePath :: (D.Renderable (D.Path V2 (N b)) b, D.TypeableFloat (N b))
@@ -505,7 +505,7 @@ dDrawTextSvg :: (D.Renderable (D.Path V2 (N b)) b, D.TypeableFloat (N b))
              => Point -> String -> DState (N b) (D.QDiagram b V2 (N b) Any)
 dDrawTextSvg (Point x y) text = do
   env <- get
-  return $! D.transform (toTransformation $ translate (Vector x y) 1)
+  return $ D.transform (toTransformation $ translate (Vector x y) 1)
          $ applyFontStyleSVG (envFontStyle env)
          $ D2.scaleY (-1)
          $ F.textSVG_ (fontStyleToTextOpts env) text
@@ -515,7 +515,7 @@ dDrawTextNative :: (D.Renderable (D2.Text (N b)) b, D.TypeableFloat (N b))
 dDrawTextNative (Point x y) text = do
   env <- get
   addGlyphsOfString text
-  return $! D.transform (toTransformation $ translate (Vector x y) 1)
+  return $ D.transform (toTransformation $ translate (Vector x y) 1)
          $ applyFontStyleText (envFontStyle env)
          $ D2.scaleY (-1)
          $ D2.baselineText text
