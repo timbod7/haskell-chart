@@ -114,11 +114,11 @@ data FileFormat = EPS
                 | SVG
                 | SVG_EMBEDDED
 
-data FileOptions = FileOptions
-  { _fo_size :: (Double, Double)
-  , _fo_format :: FileFormat
-  , _fo_fonts :: IO (FontSelector Double)
-  }
+data FileOptions = FileOptions {
+  _fo_size :: (Double,Double),
+  _fo_format :: FileFormat,
+  _fo_fonts :: IO (FontSelector Double)
+}
 
 instance Default FileOptions where
   def =  FileOptions (800,600) SVG loadSansSerifFonts
@@ -267,20 +267,11 @@ decodeCereal x = case Serialize.decode x of
   Right  y -> y
   Left err -> error err
 
-loadSVGFont :: String -> Data.ByteString.ByteString -> F.PreparedFont Double
-loadSVGFont name str = snd (F.loadFont' name str)
-
 cereal_sansR, cereal_sansRB, cereal_sansRBI, cereal_sansRI :: F.PreparedFont Double
 cereal_sansR   = decodeCereal $(Data.FileEmbed.embedFile "fonts/SourceSansPro_R.cereal.bin")
 cereal_sansRB  = decodeCereal $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RB.cereal.bin")
 cereal_sansRBI = decodeCereal $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RBI.cereal.bin")
 cereal_sansRI  = decodeCereal $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RI.cereal.bin")
-
-svg_sansR, svg_sansRB, svg_sansRBI, svg_sansRI :: F.PreparedFont Double
-svg_sansR   = loadSVGFont "SourceSansPro_R"   $(Data.FileEmbed.embedFile "fonts/SourceSansPro_R.svg")
-svg_sansRB  = loadSVGFont "SourceSansPro_RB"  $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RB.svg")
-svg_sansRBI = loadSVGFont "SourceSansPro_RBI" $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RBI.svg")
-svg_sansRI  = loadSVGFont "SourceSansPro_RI"  $(Data.FileEmbed.embedFile "fonts/SourceSansPro_RI.svg")
 
 -- | Load sans-serif fonts only
 loadSansSerifFonts :: IO (FontSelector Double)
@@ -402,7 +393,7 @@ runBackend :: ( D.Backend b V2 (N b), D.Renderable (D.Path V2 (N b)) b
            -> ChartBackend a    -- ^ Chart render code.
            -> (D.QDiagram b V2 (N b) Any, a)    -- ^ The diagram.
 runBackend env m =
-  let (d, x) = evalState (runBackend' TextRenderSvg (withDefaultStyle m)) env
+  let (d, x) = evalState (runBackend' TextRenderSvg $ withDefaultStyle m) env
   in (adjustOutputDiagram env d, x)
 
 -- | Run this backends renderer.
@@ -428,7 +419,7 @@ data TextRender b a where
 runBackend' :: (D.Renderable (D.Path V2 (N b)) b, D.Renderable t b, D.TypeableFloat (N b))
             => TextRender b t -> ChartBackend a
             -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
-runBackend' tr m = eval tr (view m)
+runBackend' tr m = eval tr $ view $ m
   where
     eval :: (D.Renderable (D.Path V2 (N b)) b, D.Renderable t b, D.TypeableFloat (N b))
          => TextRender b t -> ProgramView ChartBackendInstr a
@@ -656,7 +647,7 @@ calcFontMetrics env =
       a' = unscaledH
       d' = (d / h) * h'
       h' = (a + d) / (1 - d / h)
-      unscaledH = F.bbox_dy fontData
+      unscaledH = F.bbox_dy $ fontData
       scaledHeight  = realToFrac (_font_size fs) * (h' / h)
       scaledAscent  = scaledHeight * (a' / h')
       scaledDescent = scaledHeight * (d' / h')
@@ -736,8 +727,8 @@ pathToTrail closeAll start path =
   in (pointToP2 start, makeTrail close t, rest)
 
 makeTrail :: Bool -> D.Trail' D.Line V2 n -> Trail V2 n
-makeTrail True  t = D.wrapTrail (D.closeLine t)
-makeTrail False t = D.wrapTrail t
+makeTrail True  t = D.wrapTrail $ D.closeLine t
+makeTrail False t = D.wrapTrail $ t
 
 angleToDirection :: RealFloat n => Double -> D.Direction V2 n
 angleToDirection a = D.direction $ fmap realToFrac $ D2.V2 (cos a) (sin a)
