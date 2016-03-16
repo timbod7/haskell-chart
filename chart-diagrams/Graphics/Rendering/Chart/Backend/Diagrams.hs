@@ -286,6 +286,7 @@ loadSansSerifFonts = do
   -- return (sansR `seq` sansRB `seq` sansRI `seq` sansRBI `seq` selectFont)
   return selectFont
 
+
 -- | Load serif, sans-serif and monospace fonts.
 loadCommonFonts :: forall n. (RealFloat n, Read n) => IO (FontSelector n)
 loadCommonFonts = do
