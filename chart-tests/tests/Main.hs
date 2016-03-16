@@ -59,7 +59,7 @@ renderTestsToFiles :: FileFormat -> String -> [String] -> IO ()
 renderTestsToFiles fmt suffix tests = mapM_ doTest (getTests tests)
   where
     doTest :: (String, (Int, Int), LineWidth -> Renderable ()) -> IO ()
-    doTest (n, size, renderable) = do
-      let filename = n ++ suffix
+    doTest (name, size, renderable) = do
+      let filename = name ++ suffix
       putStrLn (filename ++ "...")
       void $ renderableToFile (FileOptions size fmt) filename (renderable (chooseLineWidth fmt))
