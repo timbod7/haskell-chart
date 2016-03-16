@@ -84,7 +84,7 @@ import qualified Text.Blaze.Renderer.Text as B
 import qualified Graphics.SVGFonts as F
 import qualified Graphics.SVGFonts.CharReference as F
 import qualified Graphics.SVGFonts.ReadFont as F
-import Graphics.SVGFonts.WriteFont (makeSvgFont)
+import Graphics.SVGFonts.WriteFont ( makeSvgFont )
 
 import Graphics.Rendering.Chart.Backend as G
 import Graphics.Rendering.Chart.Backend.Impl
@@ -92,9 +92,9 @@ import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.State (EC, execEC)
+import Graphics.Rendering.Chart.State(EC, execEC)
 
-import Paths_Chart_diagrams (getDataFileName)
+import Paths_Chart_diagrams ( getDataFileName )
 
 import qualified Data.FileEmbed
 import qualified Data.Serialize as Serialize
@@ -229,17 +229,14 @@ cBackendToEmbeddedFontSVG cb env = (svg, x)
   where
     (w, h) = envOutputSize env
     (d, x, gs) = runBackendWithGlyphs env cb
-    fontDefs = (Just . Svg.toHtml . B.renderMarkup) (forM_ (M.toList gs) mkSvgFont)
-
-    mkSvgFont ((fFam, fSlant, fWeight), usedGs) =
-     let
-       fs = envFontStyle env
-       font = envSelectFont env $ fs { _font_name = fFam
-                                     , _font_slant = fSlant
-                                     , _font_weight = fWeight
-                                     }
-     in
-       makeSvgFont font usedGs
+    fontDefs = Just . Svg.toHtml . B.renderMarkup
+               $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
+                   let fs = envFontStyle env
+                   let font = envSelectFont env $ fs { _font_name = fFam
+                                                     , _font_slant = fSlant
+                                                     , _font_weight = fWeight
+                                                     }
+                   makeSvgFont font usedGs
                    -- M.Map (String, FontSlant, FontWeight) (S.Set String)
                    -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
     svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) fontDefs T.empty) d
@@ -547,21 +544,18 @@ dWithClipRegion tr clip = dWith tr id $ D2.clipBy (convertPath True $ rectPath c
 addGlyphsOfString :: String -> DState n ()
 addGlyphsOfString s = do
   env <- get
-
-  let
-    fs = envFontStyle env
-    fontData = fst (envSelectFont env fs)
-    ligatures = (filter ((>1) . length) . M.keys . F.fontDataGlyphs) fontData
-    glyphs = S.fromList $ fmap T.unpack (F.characterStrings s ligatures)
-
-    glyphKey = (_font_name fs, _font_slant fs, _font_weight fs)
-    glyphMap = envUsedGlyphs env
-
-    entry = case M.lookup glyphKey glyphMap of
-        Nothing -> glyphs
-        Just gs -> gs `S.union` glyphs
-
-  put $ env { envUsedGlyphs = M.insert glyphKey entry glyphMap }
+  let fs = envFontStyle env
+  let fontData = fst $ envSelectFont env fs
+  let ligatures = (filter ((>1) . length) . M.keys . F.fontDataGlyphs) fontData
+  let glyphs = fmap T.unpack $ F.characterStrings s ligatures
+  modify $ \env ->
+    let gKey = (_font_name fs, _font_slant fs, _font_weight fs)
+        gMap = envUsedGlyphs env
+        entry = case M.lookup gKey gMap of
+          Nothing -> S.fromList glyphs
+          Just gs -> gs `S.union` S.fromList glyphs
+    in env { envUsedGlyphs = M.insert gKey entry gMap }
+  return ()
 
 pointToP2 :: RealFrac n => Point -> P2 n
 pointToP2 (Point x y) = p2 (realToFrac x, realToFrac y)
