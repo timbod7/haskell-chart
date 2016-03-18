@@ -50,10 +50,7 @@ library
                , file-embed
                , template-haskell
                , cereal
-               , fingertree
-               , cereal-vector
   other-modules: Paths_Chart_diagrams
-               , Graphics.Rendering.Chart.Backend.Serialize
   Exposed-modules:
         Graphics.Rendering.Chart.Backend.Diagrams
 

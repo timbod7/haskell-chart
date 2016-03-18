@@ -7,7 +7,6 @@ import qualified Data.ByteString.Lazy as ByteString.Lazy
 import qualified Data.Serialize as Serialize
 
 import Graphics.Rendering.Chart.Backend.Diagrams
-import Graphics.Rendering.Chart.Backend.Serialize
 
 main :: IO ()
 main = mapM_ go namesFilepaths

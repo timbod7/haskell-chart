@@ -99,8 +99,6 @@ import Paths_Chart_diagrams ( getDataFileName )
 import qualified Data.FileEmbed
 import qualified Data.Serialize as Serialize
 
-import Graphics.Rendering.Chart.Backend.Serialize
-
 -- -----------------------------------------------------------------------
 -- General purpose file output function
 -- -----------------------------------------------------------------------
