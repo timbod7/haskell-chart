@@ -30,7 +30,6 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.Text as T
 
-import Control.Lens(makeLenses)
 import Control.Monad.Operational
 import Control.Monad.State.Lazy
 
