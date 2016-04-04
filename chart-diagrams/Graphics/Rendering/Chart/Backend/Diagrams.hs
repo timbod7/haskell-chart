@@ -17,8 +17,8 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , toEmbeddedFontSVGFile
 
   -- * Fonts
-  , sansSerifFonts
-  , commonFonts
+  , loadSansSerifFonts
+  , loadCommonFonts
   , FontSelector
 
   ) where
@@ -129,9 +129,9 @@ type FontSelector n = FontStyle -> F.PreparedFont n
 
 -- | Load sans-serif fonts only
 
-sansSerifFonts :: forall n. (RealFloat n, Read n)
-             => FontSelector n
-sansSerifFonts = unsafePerformIO $ do
+loadSansSerifFonts :: forall n. (RealFloat n, Read n)
+             => IO (FontSelector n)
+loadSansSerifFonts = do
   sansR    <- getDataFileName "fonts/SourceSansPro_R.svg" >>= F.loadFont
   sansRB   <- getDataFileName "fonts/SourceSansPro_RB.svg" >>= F.loadFont
   sansRBI  <- getDataFileName "fonts/SourceSansPro_RBI.svg" >>= F.loadFont
@@ -150,8 +150,8 @@ sansSerifFonts = unsafePerformIO $ do
 
 
 -- | Load serif, sans-serif and monospace fonts.
-commonFonts :: forall n. (RealFloat n, Read n) => FontSelector n
-commonFonts = unsafePerformIO $ do
+loadCommonFonts :: forall n. (RealFloat n, Read n) => IO (FontSelector n)
+loadCommonFonts = do
   serifR   <- getDataFileName "fonts/LinLibertine_R.svg" >>= F.loadFont
   serifRB  <- getDataFileName "fonts/LinLibertine_RB.svg" >>= F.loadFont
   serifRBI <- getDataFileName "fonts/LinLibertine_RBI.svg" >>= F.loadFont
@@ -226,8 +226,8 @@ createEnv alignFns fontSelector = DEnv
 
 defaultEnv :: (Read n, RealFloat n)
            => AlignmentFns -- ^ Alignment functions to use.
-           -> DEnv n
-defaultEnv alignFns = createEnv alignFns sansSerifFonts
+           -> IO (DEnv n)
+defaultEnv alignFns = createEnv alignFns <$> loadSansSerifFonts
 
 -- | Run this backends renderer.
 runBackendRenderable :: ( D.Backend b V2 (N b), D.Renderable (D.Path V2 (N b)) b

@@ -20,7 +20,7 @@ main1 :: [String] -> IO ()
 main1 args = do
     -- We don't use the renderableToFile function as we want to construct the
     -- environment once for speed
-    let env0 = defaultEnv bitmapAlignmentFns
+    env0 <- defaultEnv bitmapAlignmentFns
     showTests (fmap (\(x,_,_) -> x) allTests) (renderDiagram env0)
   where
     renderDiagram :: DEnv Double -> (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()

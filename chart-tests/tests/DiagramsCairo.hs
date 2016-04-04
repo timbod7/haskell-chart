@@ -21,7 +21,7 @@ main = do
 main1 :: [String] -> IO ()
 main1 args = do
   -- Only load the environment once, to speed things up.
-  let env = defaultEnv bitmapAlignmentFns
+  env <- defaultEnv bitmapAlignmentFns
   let renderDiagram :: (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
       renderDiagram (n,(w,h),ir) = do
         let (d, _) = runBackendRenderable (fromIntegral w, fromIntegral h) env (ir 1.0)

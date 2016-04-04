@@ -93,6 +93,6 @@ renderCairo (w,h) m = do
 
 renderDiagramsCairo :: (Int, Int) -> ChartBackend () -> IO (C.Render ())
 renderDiagramsCairo (w,h) m = do
-  let env = BD.defaultEnv bitmapAlignmentFns
+  env <- BD.defaultEnv bitmapAlignmentFns
   let (d, _) = BD.runBackend (fromIntegral w, fromIntegral h) env m
   return $ snd $ renderDia Cairo (CairoOptions "" (dims $ V2 (fromIntegral w) (fromIntegral h)) PNG True) d

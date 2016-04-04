@@ -14,7 +14,7 @@ import Drawing.Tests (tests)
 
 main :: IO ()
 main = do
-  let fonts = commonFonts
+  fonts <- loadCommonFonts
   forM_ tests $ \(name, w, h, draw) -> do
     render fonts (name ++ ".png") w h draw
 
