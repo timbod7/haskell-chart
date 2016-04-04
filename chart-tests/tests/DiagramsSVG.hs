@@ -8,7 +8,6 @@ import qualified Data.ByteString.Lazy as BS
 import Diagrams.Core ( renderDia )
 import Diagrams.Backend.SVG
 import Graphics.Rendering.Chart.Renderable ( render, Renderable )
-import Lucid.Svg ( renderBS )
 
 import System.Environment ( getArgs )
 
