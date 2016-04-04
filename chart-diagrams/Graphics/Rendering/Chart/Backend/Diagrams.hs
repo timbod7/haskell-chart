@@ -604,7 +604,3 @@ pathToTrail' closeAll (ArcNeg p0 r s e path) _ =
   in ( arcTrail <> t, c || closeAll, rest )
 pathToTrail' closeAll End _ = (mempty, False || closeAll, Nothing)
 pathToTrail' closeAll Close _ = (mempty, True || closeAll, Nothing)
-
-----------------------------------------------------------------------
-
--- $( makeLenses ''FileOptions )
