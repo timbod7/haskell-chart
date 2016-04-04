@@ -32,8 +32,8 @@ main1 ("charts-cairo":"--ps":tests) = renderTestsToFiles PS ".ps" tests
 main1 ("charts-cairo":"--png":tests) = renderTestsToFiles PNG ".png" tests
 
 main1 ("charts-diagrams":"--cairo":args) = DiagramsCairo.main1 args
--- main1 ("charts-diagrams":"--svg":args) = DiagramsSVG.main1 args
--- main1 ("charts-diagrams":"--eps":args) = DiagramsEPS.main1 args
+main1 ("charts-diagrams":"--svg":args) = DiagramsSVG.main1 args
+main1 ("charts-diagrams":"--eps":args) = DiagramsEPS.main1 args
 
 main1 ("drawing-cairo":[]) = Drawing.Cairo.main
 main1 ("drawing-diagrams":[]) = Drawing.DiagramsCairo.main
