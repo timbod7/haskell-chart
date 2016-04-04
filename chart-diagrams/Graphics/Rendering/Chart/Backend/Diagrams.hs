@@ -11,6 +11,11 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , createEnv
   , DEnv(..)
 
+  -- * File output utility functions
+  , toEPSFile
+  , toSVGFile
+  , toEmbeddedFontSVGFile
+
   -- * Fonts
   , sansSerifFonts
   , commonFonts
