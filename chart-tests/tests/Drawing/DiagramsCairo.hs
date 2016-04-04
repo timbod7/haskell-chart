@@ -14,13 +14,13 @@ import Drawing.Tests (tests)
 
 main :: IO ()
 main = do
-  fonts <- loadCommonFonts
+  let fonts = commonFonts
   forM_ tests $ \(name, w, h, draw) -> do
     render fonts (name ++ ".png") w h draw
 
 
 render :: FontSelector Double -> FilePath -> Int -> Int -> ChartBackend a -> IO ()
 render fonts f w h m = do
-  let env = createEnv bitmapAlignmentFns (fromIntegral w) (fromIntegral h) fonts
-  let (d, _) = runBackend env m
+  let env = createEnv bitmapAlignmentFns fonts
+  let (d, _) = runBackend (fromIntegral w, fromIntegral h) env m
   fst $ renderDia Cairo (CairoOptions f (dims $ V2 (fromIntegral w) (fromIntegral h)) PNG False) d
