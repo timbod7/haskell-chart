@@ -11,7 +11,7 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , createEnv
   , DEnv(..)
 
-  -- * File output utility functions
+  -- * File output functions
   , toEPSFile
   , toSVGFile
   , toEmbeddedFontSVGFile
@@ -26,12 +26,9 @@ module Graphics.Rendering.Chart.Backend.Diagrams
 import Data.Default.Class
 import Data.Colour
 import Data.Colour.SRGB
-import Data.List (unfoldr)
 import Data.Monoid
-import Data.Traversable
 import qualified Data.Map as M
 import qualified Data.Set as S
-import qualified Data.ByteString.Lazy as BS
 import qualified Data.Text as T
 
 import Control.Lens(makeLenses)
@@ -70,11 +67,8 @@ import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.State(EC, execEC)
 
 import Paths_Chart_diagrams ( getDataFileName )
-
-import System.IO.Unsafe (unsafePerformIO)
 
 -- -----------------------------------------------------------------------
 -- General purpose file output function
