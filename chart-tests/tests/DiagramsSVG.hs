@@ -2,6 +2,7 @@ module DiagramsSVG where
 
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
+import qualified Graphics.Rendering.Chart.Backend.Diagrams as Backend.Diagrams
 
 import qualified Data.ByteString.Lazy as BS
 
@@ -26,8 +27,7 @@ main1 args = do
     showTests (fmap (\(x,_,_) -> x) allTests) (renderDiagram env0)
   where
     renderDiagram :: DEnv Double -> (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
-    renderDiagram env (n,(w,h),ir) = do
-      let chartBackend = render (ir 0.25) (fromIntegral w, fromIntegral h)
-          path = n ++ ".svg"
-      toSVGFile chartBackend (fromIntegral w, fromIntegral h) env path
+    renderDiagram env (name, (w,h), ir) = do
+      let path = name ++ ".eps"
+      renderableToFile (FileOptions (fromIntegral w, fromIntegral h) Backend.Diagrams.SVG loadSansSerifFonts) path (ir 0.25)
       putStrLn (path ++ "...")

@@ -11,9 +11,11 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , DEnv(..)
 
   -- * File output functions
-  , toEPSFile
-  , toSVGFile
-  , toEmbeddedFontSVGFile
+  , FileFormat(..)
+  , FileOptions(..)
+  , ecToFile
+  , renderableToFile
+  , chartBackendToFile
 
   -- * Fonts
   , loadSansSerifFonts
@@ -65,42 +67,75 @@ import Graphics.Rendering.Chart.Backend.Types
 import Graphics.Rendering.Chart.Geometry as G
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
+import Graphics.Rendering.Chart.State(EC, execEC)
 
 import Paths_Chart_diagrams ( getDataFileName )
 
--- -----------------------------------------------------------------------
--- General purpose file output function
--- -----------------------------------------------------------------------
+-- | The file output format:
+--     EPS -> Embedded Postscript
+--     SVG -> SVG with text rendered as stroked paths
+--     SVG -> SVG with embedded font information and text rendered as text operations
+data FileFormat = EPS
+                | SVG
+                | SVG_EMBEDDED
 
-toEPSFile :: ChartBackend a -> (Double, Double) -> DEnv Double -> FilePath -> IO a
-toEPSFile cb (w, h) env path = do
-    let (d, a) = runBackend (w, h) env cb
-        psOpts = DEPS.PostscriptOptions path (D2.dims2D w h) DEPS.EPS
-    D.renderDia DEPS.Postscript psOpts d
-    return a
+data FileOptions = FileOptions {
+  _fo_size :: (Double,Double),
+  _fo_format :: FileFormat,
+  _fo_fonts :: IO (FontSelector Double)
+}
 
-toSVGFile :: ChartBackend a -> (Double, Double) -> DEnv Double -> FilePath -> IO a
-toSVGFile cb (w, h) env path = do
-  let (d, a) = runBackend (w, h) env cb
-      svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty [] True) d
-  Svg.renderToFile path svg
-  return a
+instance Default FileOptions where
+  def =  FileOptions (800,600) SVG loadSansSerifFonts
 
-toEmbeddedFontSVGFile :: ChartBackend a -> (Double, Double) -> DEnv Double -> FilePath -> IO a
-toEmbeddedFontSVGFile chartBackend (w, h) env path = do
-  let
-    (d, a, gs) = runBackendWithGlyphs (w, h) env chartBackend
-    fontDefs = Just . Svg.toElement . B.renderMarkup
-               $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
-                   let fs = envFontStyle env
-                   let font = envSelectFont env $ fs { _font_name = fFam
-                                                     , _font_slant = fSlant
-                                                     , _font_weight = fWeight
-                                                     }
-                   makeSvgFont font usedGs
-    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) fontDefs T.empty [] True) d
-  Svg.renderToFile path svg
-  return a
+-- | Generate an image file from from the state content of an EC
+-- computation. The state may have any type that is an instance of
+-- `ToRenderable`
+ecToFile :: (Default r, ToRenderable r) => FileOptions -> FilePath -> EC r () -> IO ()
+ecToFile fo path ec = void $ renderableToFile fo path (toRenderable (execEC ec))
+
+-- | Generate an image file for the given renderable, at the specified path. Size, format,
+-- and text rendering mode are all set through the `FileOptions` parameter.
+renderableToFile :: FileOptions -> FilePath -> Renderable a -> IO (PickFn a)
+renderableToFile fo path r = chartBackendToFile fo path chartBackend
+  where
+    chartBackend = render r (_fo_size fo)
+
+-- | Generate an image file for the given drawing instructions, at the specified path. Size and
+-- format are set through the `FileOptions` parameter.
+chartBackendToFile :: FileOptions -> FilePath -> ChartBackend a -> IO a
+chartBackendToFile fo path chartBackend = do
+    fontSelector <- _fo_fonts fo
+    let env = createEnv vectorAlignmentFns fontSelector
+
+    case _fo_format fo of
+      EPS -> do
+        let (d, a) = runBackend (w, h) env chartBackend
+            opts = DEPS.PostscriptOptions path (D2.dims2D w h) DEPS.EPS
+        D.renderDia DEPS.Postscript opts d
+        return a
+      SVG -> do
+        let (d, a) = runBackend (w, h) env chartBackend
+            opts = DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty [] True
+            svg = D.renderDia DSVG.SVG opts d
+        Svg.renderToFile path svg
+        return a
+      SVG_EMBEDDED -> do
+        let
+          (d, a, gs) = runBackendWithGlyphs (w, h) env chartBackend
+          fontDefs = Just . Svg.toElement . B.renderMarkup
+                     $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
+                         let fs = envFontStyle env
+                         let font = envSelectFont env $ fs { _font_name = fFam
+                                                           , _font_slant = fSlant
+                                                           , _font_weight = fWeight
+                                                           }
+                         makeSvgFont font usedGs
+          svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) fontDefs T.empty [] True) d
+        Svg.renderToFile path svg
+        return a
+  where
+    (w,h) = _fo_size fo
 
 -- -----------------------------------------------------------------------
 -- Backend
