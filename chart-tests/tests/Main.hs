@@ -45,7 +45,7 @@ main1 _ = usage
 
 usage :: IO ()
 usage = do
-  progname <- getProgName 
+  progname <- getProgName
   putStrLn "Usage:"
   putStrLn $ "  " ++ progname ++ " charts-cairo (--pdf|--svg|--ps|--png) chart-name..."
   putStrLn $ "  " ++ progname ++ " charts-diagrams (--cairo|--svg|--eps) chart-name..."

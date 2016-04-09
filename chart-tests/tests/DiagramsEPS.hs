@@ -20,13 +20,11 @@ main1 :: [String] -> IO ()
 main1 args = do
     -- We don't use the renderableToFile function as we want to construct the
     -- environment once for speed
-    env0 <- defaultEnv bitmapAlignmentFns 0 0
+    env0 <- defaultEnv bitmapAlignmentFns
     showTests (fmap (\(x,_,_) -> x) allTests) (renderDiagram env0)
   where
     renderDiagram :: DEnv Double -> (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
-    renderDiagram env0 (n,(w,h),ir) = do
-      let cr = render (ir 0.25) (fromIntegral w, fromIntegral h)
-          env = env0{ envOutputSize = (fromIntegral w, fromIntegral h) }
-          path = n ++ ".eps"
-      cBackendToEPSFile cr env path
+    renderDiagram env (name, (w,h), ir) = do
+      let path = name ++ ".eps"
+      renderableToFile (FileOptions (fromIntegral w, fromIntegral h) EPS loadSansSerifFonts) path (ir 0.25)
       putStrLn (path ++ "...")

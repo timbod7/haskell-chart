@@ -1,40 +1,21 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | The backend to render charts with the diagrams library.
 module Graphics.Rendering.Chart.Backend.Diagrams
   ( runBackend
-  , runBackendR
+  , runBackendRenderable
   , defaultEnv
   , createEnv
   , DEnv(..)
 
-  -- * File Output Functons
+  -- * File output functions
   , FileFormat(..)
   , FileOptions(..)
-  , fo_size
-  , fo_format
-  , fo_fonts
+  , ecToFile
   , renderableToFile
-  , toFile
-  , cBackendToFile
-
-  -- * EPS Utility Functions
-  , cBackendToEPSFile
-
-  -- * SVG Utility Functions
-  , cBackendToSVG
-  , cBackendToEmbeddedFontSVG
-  , renderableToSVG
-  , renderableToSVG'
-  , renderableToSVGString
-  , renderableToSVGString'
-
-  -- * SVG Embedded Font Utility Functions
-  , renderableToEmbeddedFontSVG
-  , renderableToEmbeddedFontSVG'
+  , chartBackendToFile
 
   -- * Fonts
   , loadSansSerifFonts
@@ -46,15 +27,11 @@ module Graphics.Rendering.Chart.Backend.Diagrams
 import Data.Default.Class
 import Data.Colour
 import Data.Colour.SRGB
-import Data.List (unfoldr)
 import Data.Monoid
-import Data.Traversable
 import qualified Data.Map as M
 import qualified Data.Set as S
-import qualified Data.ByteString.Lazy as BS
 import qualified Data.Text as T
 
-import Control.Lens(makeLenses)
 import Control.Monad.Operational
 import Control.Monad.State.Lazy
 
@@ -76,8 +53,7 @@ import qualified Diagrams.TwoD.Text as D2
 import qualified Diagrams.Backend.Postscript as DEPS
 import qualified Diagrams.Backend.SVG as DSVG
 
-import Lucid.Svg (renderBS)
-import qualified Lucid.Svg as Svg
+import qualified Graphics.Svg as Svg
 import qualified Text.Blaze.Renderer.Text as B
 
 import qualified Graphics.SVGFonts as F
@@ -94,11 +70,6 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.State(EC, execEC)
 
 import Paths_Chart_diagrams ( getDataFileName )
-
--- -----------------------------------------------------------------------
--- General purpose file output function
--- -----------------------------------------------------------------------
-
 
 -- | The file output format:
 --     EPS -> Embedded Postscript
@@ -117,123 +88,54 @@ data FileOptions = FileOptions {
 instance Default FileOptions where
   def =  FileOptions (800,600) SVG loadSansSerifFonts
 
--- | Generate an image file for the given renderable, at the specified path. Size, format,
--- and text rendering mode are all set through the `FileOptions` parameter.
-renderableToFile :: FileOptions -> FilePath -> Renderable a -> IO (PickFn a)
-renderableToFile fo path r = cBackendToFile fo cb path
-  where
-    cb = render r (_fo_size fo)
-
 -- | Generate an image file from from the state content of an EC
 -- computation. The state may have any type that is an instance of
 -- `ToRenderable`
-toFile :: (Default r,ToRenderable r) => FileOptions -> FilePath -> EC r () -> IO ()
-toFile fo path ec = void $ renderableToFile fo path (toRenderable (execEC ec))
+ecToFile :: (Default r, ToRenderable r) => FileOptions -> FilePath -> EC r () -> IO ()
+ecToFile fo path ec = void $ renderableToFile fo path (toRenderable (execEC ec))
+
+-- | Generate an image file for the given renderable, at the specified path. Size, format,
+-- and text rendering mode are all set through the `FileOptions` parameter.
+renderableToFile :: FileOptions -> FilePath -> Renderable a -> IO (PickFn a)
+renderableToFile fo path r = chartBackendToFile fo path chartBackend
+  where
+    chartBackend = render r (_fo_size fo)
 
 -- | Generate an image file for the given drawing instructions, at the specified path. Size and
 -- format are set through the `FileOptions` parameter.
-cBackendToFile :: FileOptions -> ChartBackend a -> FilePath -> IO a
-cBackendToFile fo cb path = do
+chartBackendToFile :: FileOptions -> FilePath -> ChartBackend a -> IO a
+chartBackendToFile fo path chartBackend = do
     fontSelector <- _fo_fonts fo
-    let env = createEnv vectorAlignmentFns w h fontSelector
+    let env = createEnv vectorAlignmentFns fontSelector
+
     case _fo_format fo of
       EPS -> do
-        cBackendToEPSFile cb env path
+        let (d, a) = runBackend (w, h) env chartBackend
+            opts = DEPS.PostscriptOptions path (D2.dims2D w h) DEPS.EPS
+        D.renderDia DEPS.Postscript opts d
+        return a
       SVG -> do
-        let (svg, a) = cBackendToSVG cb env
-        BS.writeFile path (renderBS svg)
+        let (d, a) = runBackend (w, h) env chartBackend
+            opts = DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty [] True
+            svg = D.renderDia DSVG.SVG opts d
+        Svg.renderToFile path svg
         return a
       SVG_EMBEDDED -> do
-        let (svg,a) = cBackendToEmbeddedFontSVG cb env
-        BS.writeFile path (renderBS svg)
+        let
+          (d, a, gs) = runBackendWithGlyphs (w, h) env chartBackend
+          fontDefs = Just . Svg.toElement . B.renderMarkup
+                     $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
+                         let fs = envFontStyle env
+                         let font = envSelectFont env $ fs { _font_name = fFam
+                                                           , _font_slant = fSlant
+                                                           , _font_weight = fWeight
+                                                           }
+                         makeSvgFont font usedGs
+          svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) fontDefs T.empty [] True) d
+        Svg.renderToFile path svg
         return a
   where
     (w,h) = _fo_size fo
-
--- -----------------------------------------------------------------------
--- SVG Utility Functions
--- -----------------------------------------------------------------------
-
--- | Output the given renderable to a string containing a SVG of the specifed size
---   (in points) using the default environment.
-renderableToSVGString :: Renderable a -> Double -> Double -> IO (BS.ByteString, PickFn a)
-renderableToSVGString  r w h = do
-  (svg, x) <- renderableToSVG r w h
-  return (renderBS svg, x)
-
--- | Output the given renderable to a string containing a SVG using the given environment.
-renderableToSVGString' :: Renderable a -> DEnv Double -> (BS.ByteString, PickFn a)
-renderableToSVGString'  r env =
-  let (svg, x) = renderableToSVG' r env
-  in (renderBS svg, x)
-
--- | Output the given renderable as a SVG of the specifed size
---   (in points) using the default environment.
-
-renderableToSVG :: Renderable a -> Double -> Double -> IO (Svg.Svg (), PickFn a)
-renderableToSVG r w h = do
-   env <- defaultEnv vectorAlignmentFns w h
-   return $ renderableToSVG' r env
-
--- | Output the given renderable as a SVG using the given environment.
-renderableToSVG' :: Renderable a -> DEnv Double -> (Svg.Svg (), PickFn a)
-renderableToSVG' r env =
-  let (w, h) = envOutputSize env
-      (d, x) = runBackendR env r
-      opts = DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty
-      svg = D.renderDia DSVG.SVG opts d
-  in (svg, x)
-
--- -----------------------------------------------------------------------
--- SVG Embedded Font Utility Functions
--- -----------------------------------------------------------------------
-
--- | Output the given renderable as a SVG of the specifed size
---   (in points) using the default environment.
---   Font are embedded to save space.
-renderableToEmbeddedFontSVG :: Renderable a -> Double -> Double -> IO (Svg.Svg (), PickFn a)
-renderableToEmbeddedFontSVG r w h = do
-  env <- defaultEnv vectorAlignmentFns w h
-  return $ renderableToEmbeddedFontSVG' r env
-
--- | Output the given renderable as a SVG using the given environment.
---   Font are embedded to save space.
-renderableToEmbeddedFontSVG' :: Renderable a -> DEnv Double -> (Svg.Svg (), PickFn a)
-renderableToEmbeddedFontSVG' r env = cBackendToEmbeddedFontSVG (render r size) env
-  where
-    size = envOutputSize env
-
-cBackendToEPSFile :: ChartBackend a -> DEnv Double -> FilePath -> IO a
-cBackendToEPSFile cb env path = do
-    let (w, h) = envOutputSize env
-        (d, a) = runBackend env cb
-        psOpts = DEPS.PostscriptOptions path (D2.dims2D w h) DEPS.EPS
-    D.renderDia DEPS.Postscript psOpts d
-    return a
-
-cBackendToSVG :: ChartBackend a -> DEnv Double -> (Svg.Svg (), a)
-cBackendToSVG cb env = (svg,a)
-  where
-    (w, h) = envOutputSize env
-    (d, a) = runBackend env cb
-    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty) d
-
-cBackendToEmbeddedFontSVG :: ChartBackend a -> DEnv Double -> (Svg.Svg (), a)
-cBackendToEmbeddedFontSVG cb env = (svg, x)
-  where
-    (w, h) = envOutputSize env
-    (d, x, gs) = runBackendWithGlyphs env cb
-    fontDefs = Just . Svg.toHtml . B.renderMarkup
-               $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
-                   let fs = envFontStyle env
-                   let font = envSelectFont env $ fs { _font_name = fFam
-                                                     , _font_slant = fSlant
-                                                     , _font_weight = fWeight
-                                                     }
-                   makeSvgFont font usedGs
-                   -- M.Map (String, FontSlant, FontWeight) (S.Set String)
-                   -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
-    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) fontDefs T.empty) d
 
 -- -----------------------------------------------------------------------
 -- Backend
@@ -244,7 +146,6 @@ data DEnv n = DEnv
   { envAlignmentFns :: AlignmentFns -- ^ The used alignment functions.
   , envFontStyle :: FontStyle       -- ^ The current/initial font style.
   , envSelectFont :: FontSelector n -- ^ The font selection function.
-  , envOutputSize :: (n,n)          -- ^ The size of the rendered output.
   , envUsedGlyphs :: M.Map (String, FontSlant, FontWeight) (S.Set String)
     -- ^ The map of all glyphs that are used from a specific font.
   }
@@ -340,14 +241,11 @@ isFontFamily n (fd, _) = n == F.fontDataFamily fd
 --   The defult fonts are still loaded as fall back.
 createEnv :: (Read n, RealFloat n)
               => AlignmentFns     -- ^ Alignment functions to use.
-              -> n -- ^ The output image width in backend coordinates.
-              -> n -- ^ The output image height in backend coordinates.
               -> FontSelector n -> DEnv n
-createEnv alignFns w h fontSelector = DEnv
+createEnv alignFns fontSelector = DEnv
     { envAlignmentFns = alignFns
     , envFontStyle = def
     , envSelectFont = fontSelector
-    , envOutputSize = (w,h)
     , envUsedGlyphs = M.empty
     }
 
@@ -355,46 +253,44 @@ createEnv alignFns w h fontSelector = DEnv
 
 defaultEnv :: (Read n, RealFloat n)
            => AlignmentFns -- ^ Alignment functions to use.
-           -> n -- ^ The output image width in backend coordinates.
-           -> n -- ^ The output image height in backend coordinates.
            -> IO (DEnv n)
-defaultEnv alignFns w h = do
-  fontSelector <- loadSansSerifFonts
-  return (createEnv alignFns w h fontSelector)
+defaultEnv alignFns = createEnv alignFns <$> loadSansSerifFonts
 
 -- | Run this backends renderer.
-runBackendR :: ( D.Backend b V2 (N b), D.Renderable (D.Path V2 (N b)) b
+runBackendRenderable :: ( D.Backend b V2 (N b), D.Renderable (D.Path V2 (N b)) b
                , D.TypeableFloat (N b), D.Metric (V b))
-           => DEnv (N b)   -- ^ Environment to start rendering with.
+           => (N b, N b)   -- ^ The output image width and height in backend coordinates.
+           -> DEnv (N b)   -- ^ Environment to start rendering with.
            -> Renderable a -- ^ Chart render code.
            -> (D.QDiagram b V2 (N b) Any, PickFn a) -- ^ The diagram.
-runBackendR env r =
+runBackendRenderable (w, h) env r =
   let cb = render r (realToFrac w, realToFrac h)
-      (w,h) = envOutputSize env
-  in runBackend env cb
+  in runBackend (w, h) env cb
 
 -- | Run this backends renderer.
 runBackend :: ( D.Backend b V2 (N b), D.Renderable (D.Path V2 (N b)) b
               , D.TypeableFloat (N b), D.Metric (V b))
-           => DEnv (N b)        -- ^ Environment to start rendering with.
+           => (N b, N b)        -- ^ The output image width and height in backend coordinates.
+           -> DEnv (N b)        -- ^ Environment to start rendering with.
            -> ChartBackend a    -- ^ Chart render code.
            -> (D.QDiagram b V2 (N b) Any, a)    -- ^ The diagram.
-runBackend env m =
+runBackend (w, h) env m =
   let (d, x) = evalState (runBackend' TextRenderSvg $ withDefaultStyle m) env
-  in (adjustOutputDiagram env d, x)
+  in (adjustOutputDiagram (w, h) d, x)
 
 -- | Run this backends renderer.
 runBackendWithGlyphs :: ( D.Backend b V2 (N b)
                         , D.Renderable (D.Path V2 (N b)) b
                         , D.Renderable (D2.Text (N b)) b
                         , D.TypeableFloat (N b), D.Metric (V b))
-                     => DEnv (N b)        -- ^ Environment to start rendering with.
+                     => (N b, N b)        -- ^ The output image width and height in backend coordinates.
+                     -> DEnv (N b)        -- ^ Environment to start rendering with.
                      -> ChartBackend a    -- ^ Chart render code.
                      -> ( D.QDiagram b V2 (N b) Any, a
                         , M.Map (String, FontSlant, FontWeight) (S.Set String))
-runBackendWithGlyphs env m =
+runBackendWithGlyphs (w, h) env m =
   let ((d, x), env') = runState (runBackend' TextRenderNative $ withDefaultStyle m) env
-  in (adjustOutputDiagram env d, x, envUsedGlyphs env')
+  in (adjustOutputDiagram (w, h) d, x, envUsedGlyphs env')
 
 -- | Flag to decide which technique should ne used to render text.
 --   The type parameter is the primitive that has to be supported by
@@ -551,8 +447,8 @@ pointToP2 :: RealFrac n => Point -> P2 n
 pointToP2 (Point x y) = p2 (realToFrac x, realToFrac y)
 
 adjustOutputDiagram :: (D.Backend b V2 (N b), RealFloat (N b))
-                    => DEnv (N b) -> D.QDiagram b V2 (N b) Any -> D.QDiagram b V2 (N b) Any
-adjustOutputDiagram env d = D2.reflectY $ D.rectEnvelope (p2 (0,0)) (r2 (envOutputSize env)) d
+                    => (N b, N b) -> D.QDiagram b V2 (N b) Any -> D.QDiagram b V2 (N b) Any
+adjustOutputDiagram (w, h) d = D2.reflectY $ D.rectEnvelope (p2 (0,0)) (r2 (w, h)) d
 
 noLineStyle :: LineStyle
 noLineStyle = def
@@ -735,7 +631,3 @@ pathToTrail' closeAll (ArcNeg p0 r s e path) _ =
   in ( arcTrail <> t, c || closeAll, rest )
 pathToTrail' closeAll End _ = (mempty, False || closeAll, Nothing)
 pathToTrail' closeAll Close _ = (mempty, True || closeAll, Nothing)
-
-----------------------------------------------------------------------
-
-$( makeLenses ''FileOptions )

@@ -21,10 +21,9 @@ main = do
 main1 :: [String] -> IO ()
 main1 args = do
   -- Only load the environment once, to speed things up.
-  env <- defaultEnv bitmapAlignmentFns 500 500
+  env <- defaultEnv bitmapAlignmentFns
   let renderDiagram :: (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
       renderDiagram (n,(w,h),ir) = do
-        let env' = env { envOutputSize = (fromIntegral w, fromIntegral h) }
-            (d, _) = runBackendR env' (ir 1.0)
+        let (d, _) = runBackendRenderable (fromIntegral w, fromIntegral h) env (ir 1.0)
         fst $ renderDia Cairo (CairoOptions (n ++ ".png") (dims $ V2 (fromIntegral w) (fromIntegral h)) PNG False) d
   showTests (fmap (\(x,_,_) -> x) allTests) renderDiagram
