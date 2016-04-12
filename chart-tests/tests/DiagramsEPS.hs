@@ -26,7 +26,7 @@ main1 args = do
     renderDiagram :: DEnv Double -> (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
     renderDiagram env0 (n,(w,h),ir) = do
       let cr = render (ir 0.25) (fromIntegral w, fromIntegral h)
-          env = env0{ envOutputSize = (fromIntegral w, fromIntegral h) }
           path = n ++ ".eps"
-      cBackendToEPSFile cr env path
+          fo = FileOptions (fromIntegral w, fromIntegral h) EPS loadSansSerifFonts
+      cBackendToFile fo cr path
       putStrLn (path ++ "...")
