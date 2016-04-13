@@ -1,5 +1,6 @@
 module DiagramsSVG where
 
+import Control.Monad (void)
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Backend.Diagrams
 
@@ -8,7 +9,7 @@ import qualified Data.ByteString.Lazy as BS
 import Diagrams.Core ( renderDia )
 import Diagrams.Backend.SVG
 import Graphics.Rendering.Chart.Renderable ( render, Renderable )
-import Lucid.Svg ( renderBS )
+import qualified Graphics.Svg as Svg
 
 import System.Environment ( getArgs )
 
@@ -29,8 +30,7 @@ main1 args = do
     renderDiagram :: DEnv Double -> (String, (Int, Int), T.LineWidth -> Renderable ()) -> IO ()
     renderDiagram env0 (n,(w,h),ir) = do
       let cr = render (ir 0.25) (fromIntegral w, fromIntegral h)
-          env = env0{ envOutputSize = (fromIntegral w, fromIntegral h) }
-          (svg, _) = cBackendToSVG cr env
           path = n ++ ".svg"
+          fo = FileOptions (fromIntegral w, fromIntegral h) Graphics.Rendering.Chart.Backend.Diagrams.SVG loadSansSerifFonts
       putStrLn (path ++ "...")
-      BS.writeFile path (renderBS svg)
+      void $ cBackendToFile fo cr path

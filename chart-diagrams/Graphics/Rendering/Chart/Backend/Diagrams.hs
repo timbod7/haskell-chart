@@ -21,21 +21,6 @@ module Graphics.Rendering.Chart.Backend.Diagrams
   , toFile
   , cBackendToFile
 
-  -- * EPS Utility Functions
-  , cBackendToEPSFile
-
-  -- * SVG Utility Functions
-  , cBackendToSVG
-  , cBackendToEmbeddedFontSVG
-  , renderableToSVG
-  , renderableToSVG'
-  , renderableToSVGString
-  , renderableToSVGString'
-
-  -- * SVG Embedded Font Utility Functions
-  , renderableToEmbeddedFontSVG
-  , renderableToEmbeddedFontSVG'
-
   -- * Fonts
   , loadSansSerifFonts
   , loadCommonFonts
@@ -76,8 +61,7 @@ import qualified Diagrams.TwoD.Text as D2
 import qualified Diagrams.Backend.Postscript as DEPS
 import qualified Diagrams.Backend.SVG as DSVG
 
-import Lucid.Svg (renderBS)
-import qualified Lucid.Svg as Svg
+import qualified Graphics.Svg as Svg
 import qualified Text.Blaze.Renderer.Text as B
 
 import qualified Graphics.SVGFonts as F
@@ -134,106 +118,37 @@ toFile fo path ec = void $ renderableToFile fo path (toRenderable (execEC ec))
 -- format are set through the `FileOptions` parameter.
 cBackendToFile :: FileOptions -> ChartBackend a -> FilePath -> IO a
 cBackendToFile fo cb path = do
-    fontSelector <- _fo_fonts fo
-    let env = createEnv vectorAlignmentFns w h fontSelector
-    case _fo_format fo of
-      EPS -> do
-        cBackendToEPSFile cb env path
-      SVG -> do
-        let (svg, a) = cBackendToSVG cb env
-        BS.writeFile path (renderBS svg)
-        return a
-      SVG_EMBEDDED -> do
-        let (svg,a) = cBackendToEmbeddedFontSVG cb env
-        BS.writeFile path (renderBS svg)
-        return a
+  fontSelector <- _fo_fonts fo
+  let env = createEnv vectorAlignmentFns w h fontSelector
+
+  case _fo_format fo of
+    EPS -> do
+      let (d, a) = runBackend env cb
+          opts = DEPS.PostscriptOptions path (D2.dims2D w h) DEPS.EPS
+      D.renderDia DEPS.Postscript opts d
+      return a
+    SVG -> do
+      let (d, a) = runBackend env cb
+          opts = DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty [] True
+          svg = D.renderDia DSVG.SVG opts d
+      Svg.renderToFile path svg
+      return a
+    SVG_EMBEDDED -> do
+      let
+        (d, a, gs) = runBackendWithGlyphs env cb
+        fontDefs = Just . Svg.toElement . B.renderMarkup
+                   $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
+                       let fs = envFontStyle env
+                       let font = envSelectFont env $ fs { _font_name = fFam
+                                                         , _font_slant = fSlant
+                                                         , _font_weight = fWeight
+                                                         }
+                       makeSvgFont font usedGs
+        svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) fontDefs T.empty [] True) d
+      Svg.renderToFile path svg
+      return a
   where
     (w,h) = _fo_size fo
-
--- -----------------------------------------------------------------------
--- SVG Utility Functions
--- -----------------------------------------------------------------------
-
--- | Output the given renderable to a string containing a SVG of the specifed size
---   (in points) using the default environment.
-renderableToSVGString :: Renderable a -> Double -> Double -> IO (BS.ByteString, PickFn a)
-renderableToSVGString  r w h = do
-  (svg, x) <- renderableToSVG r w h
-  return (renderBS svg, x)
-
--- | Output the given renderable to a string containing a SVG using the given environment.
-renderableToSVGString' :: Renderable a -> DEnv Double -> (BS.ByteString, PickFn a)
-renderableToSVGString'  r env =
-  let (svg, x) = renderableToSVG' r env
-  in (renderBS svg, x)
-
--- | Output the given renderable as a SVG of the specifed size
---   (in points) using the default environment.
-
-renderableToSVG :: Renderable a -> Double -> Double -> IO (Svg.Svg (), PickFn a)
-renderableToSVG r w h = do
-   env <- defaultEnv vectorAlignmentFns w h
-   return $ renderableToSVG' r env
-
--- | Output the given renderable as a SVG using the given environment.
-renderableToSVG' :: Renderable a -> DEnv Double -> (Svg.Svg (), PickFn a)
-renderableToSVG' r env =
-  let (w, h) = envOutputSize env
-      (d, x) = runBackendR env r
-      opts = DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty
-      svg = D.renderDia DSVG.SVG opts d
-  in (svg, x)
-
--- -----------------------------------------------------------------------
--- SVG Embedded Font Utility Functions
--- -----------------------------------------------------------------------
-
--- | Output the given renderable as a SVG of the specifed size
---   (in points) using the default environment.
---   Font are embedded to save space.
-renderableToEmbeddedFontSVG :: Renderable a -> Double -> Double -> IO (Svg.Svg (), PickFn a)
-renderableToEmbeddedFontSVG r w h = do
-  env <- defaultEnv vectorAlignmentFns w h
-  return $ renderableToEmbeddedFontSVG' r env
-
--- | Output the given renderable as a SVG using the given environment.
---   Font are embedded to save space.
-renderableToEmbeddedFontSVG' :: Renderable a -> DEnv Double -> (Svg.Svg (), PickFn a)
-renderableToEmbeddedFontSVG' r env = cBackendToEmbeddedFontSVG (render r size) env
-  where
-    size = envOutputSize env
-
-cBackendToEPSFile :: ChartBackend a -> DEnv Double -> FilePath -> IO a
-cBackendToEPSFile cb env path = do
-    let (w, h) = envOutputSize env
-        (d, a) = runBackend env cb
-        psOpts = DEPS.PostscriptOptions path (D2.dims2D w h) DEPS.EPS
-    D.renderDia DEPS.Postscript psOpts d
-    return a
-
-cBackendToSVG :: ChartBackend a -> DEnv Double -> (Svg.Svg (), a)
-cBackendToSVG cb env = (svg,a)
-  where
-    (w, h) = envOutputSize env
-    (d, a) = runBackend env cb
-    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) Nothing T.empty) d
-
-cBackendToEmbeddedFontSVG :: ChartBackend a -> DEnv Double -> (Svg.Svg (), a)
-cBackendToEmbeddedFontSVG cb env = (svg, x)
-  where
-    (w, h) = envOutputSize env
-    (d, x, gs) = runBackendWithGlyphs env cb
-    fontDefs = Just . Svg.toHtml . B.renderMarkup
-               $ forM_ (M.toList gs) $ \((fFam, fSlant, fWeight), usedGs) -> do
-                   let fs = envFontStyle env
-                   let font = envSelectFont env $ fs { _font_name = fFam
-                                                     , _font_slant = fSlant
-                                                     , _font_weight = fWeight
-                                                     }
-                   makeSvgFont font usedGs
-                   -- M.Map (String, FontSlant, FontWeight) (S.Set String)
-                   -- makeSvgFont :: (FontData, OutlineMap) -> Set.Set String -> S.Svg
-    svg = D.renderDia DSVG.SVG (DSVG.SVGOptions (D2.dims2D w h) fontDefs T.empty) d
 
 -- -----------------------------------------------------------------------
 -- Backend
