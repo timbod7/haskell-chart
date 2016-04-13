@@ -177,7 +177,7 @@ axisGridAtLabels ad   = ad{ _axis_grid = map fst vs }
 axisLabelsOverride  :: [(x,String)] -> AxisData x -> AxisData x
 axisLabelsOverride o ad = ad{ _axis_labels = [o] }
 
-minsizeAxis :: AxisT x -> ChartBackend RectSize
+minsizeAxis :: AxisT x -> CBProgram RectSize
 minsizeAxis (AxisT at as _ ad) = do
     let labelVis = _axis_show_labels $ _axis_visibility ad
         tickVis  = _axis_show_ticks  $ _axis_visibility ad
@@ -211,7 +211,7 @@ maximum0 vs = maximum vs
 
 -- | Calculate the amount by which the labels extend beyond
 --   the ends of the axis.
-axisOverhang :: (Ord x) => AxisT x -> ChartBackend (Double,Double)
+axisOverhang :: (Ord x) => AxisT x -> CBProgram (Double,Double)
 axisOverhang (AxisT at as _ ad) = do
     let labels = map snd . sort . concat . _axis_labels $ ad
     labelSizes <- withFontStyle (_axis_label_style as) $
@@ -228,7 +228,7 @@ axisOverhang (AxisT at as _ ad) = do
                  E_Left   -> ohangv
                  E_Right  -> ohangh
 
-renderAxis :: AxisT x -> RectSize -> ChartBackend (PickFn x)
+renderAxis :: AxisT x -> RectSize -> CBProgram (PickFn x)
 renderAxis at@(AxisT et as _ ad) sz = do
   let ls = _axis_line_style as
       vis = _axis_visibility ad
@@ -333,7 +333,7 @@ axisMapping (AxisT et _ rev ad) (x2,y2) = case et of
     reverseR r@(r0,r1)  = if rev then (r1,r0) else r
 
 -- 
-renderAxisGrid :: RectSize -> AxisT z -> ChartBackend ()
+renderAxisGrid :: RectSize -> AxisT z -> CBProgram ()
 renderAxisGrid sz@(w,h) at@(AxisT re as _ ad) = 
     withLineStyle (_axis_grid_style as) $ 
       mapM_ (drawGridLine re) (_axis_grid ad)

@@ -157,7 +157,7 @@ data LayoutPick x y1 y2 = LayoutPick_Legend String -- ^ A legend entry.
                           | LayoutPick_YRightAxis y2 -- ^ The right y axis at the given plot coordinate.
                           deriving (Show)
 
-type LegendItem = (String,Rect -> ChartBackend ())
+type LegendItem = (String,Rect -> CBProgram ())
 
 -- | A Layout value is a single plot area, with single x and y
 --   axis. The title is at the top and the legend at the bottom. It's
@@ -261,7 +261,7 @@ layoutPlotAreaToGrid l = buildGrid LayoutGridElements{
     }
 
     -- | Render the plots of a 'Layout' to a plot area of given size.
-    renderPlots :: Layout x y -> RectSize -> ChartBackend (PickFn (LayoutPick x y y))
+    renderPlots :: Layout x y -> RectSize -> CBProgram (PickFn (LayoutPick x y y))
     renderPlots lxy sz@(w,h) = do
         unless (_layout_grid_last lxy) (renderGrids sz axes)
         withClipRegion (Rect (Point 0 0) (Point w h)) $
@@ -441,7 +441,7 @@ layoutLRPlotAreaToGrid l = buildGrid LayoutGridElements{
         render  = renderPlots llr
     }
 
-    renderPlots :: LayoutLR x yl yr -> RectSize -> ChartBackend (PickFn (LayoutPick x yl yr))
+    renderPlots :: LayoutLR x yl yr -> RectSize -> CBProgram (PickFn (LayoutPick x yl yr))
     renderPlots llr sz@(w,h) = do
         unless (_layoutlr_grid_last llr) (renderGrids sz axes)
         withClipRegion (Rect (Point 0 0) (Point w h)) $
@@ -675,7 +675,7 @@ buildGrid lge = layer2 `overlay` layer1
         gapG = tval $ spacer (lge_margin lge,0)
 
 -- | Render the grids of the given axis to a plot area of given size.
-renderGrids :: RectSize -> (Maybe (AxisT x), Maybe (AxisT yl), Maybe (AxisT x), Maybe (AxisT yr)) -> ChartBackend ()
+renderGrids :: RectSize -> (Maybe (AxisT x), Maybe (AxisT yl), Maybe (AxisT x), Maybe (AxisT yr)) -> CBProgram ()
 renderGrids sz (bAxis, lAxis, tAxis, rAxis) = do
   maybeM () (renderAxisGrid sz) tAxis
   maybeM () (renderAxisGrid sz) bAxis
@@ -688,7 +688,7 @@ optPairReverse rev (a,b) = if rev then (b,a) else (a,b)
 
 -- | Render a single set of plot data onto a plot area of given size using
 --   the given x and y axis.
-renderSinglePlot :: RectSize -> Maybe (AxisT x) -> Maybe (AxisT y) -> Plot x y -> ChartBackend ()
+renderSinglePlot :: RectSize -> Maybe (AxisT x) -> Maybe (AxisT y) -> Plot x y -> CBProgram ()
 renderSinglePlot (w, h) (Just (AxisT _ _ xrev xaxis)) (Just (AxisT _ _ yrev yaxis)) p =
   let xr = optPairReverse xrev (0, w)
       yr = optPairReverse yrev (h, 0)

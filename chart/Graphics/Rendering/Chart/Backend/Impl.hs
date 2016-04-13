@@ -48,7 +48,7 @@ data ChartBackendInstr a where
   WithLineStyle  :: LineStyle -> Program ChartBackendInstr a -> ChartBackendInstr a
   WithClipRegion :: Rect -> Program ChartBackendInstr a -> ChartBackendInstr a
 
--- | A 'ChartBackend' provides the capability to render a chart somewhere.
+-- | A 'CBProgram' provides the capability to render a chart somewhere.
 --   
 --   The coordinate system of the backend has its initial origin (0,0)
 --   in the top left corner of the drawing plane. The x-axis points 
@@ -61,14 +61,14 @@ data ChartBackendInstr a where
 --   initially.
 --   
 --   Information about the semantics of the instructions can be 
---   found in the documentation of 'ChartBackendInstr'.
-type ChartBackend a = Program ChartBackendInstr a
+--   found in the documentation of 'CBProgramInstr'.
+type CBProgram a = Program ChartBackendInstr a
 
 -- | Stroke the outline of the given path using the 
 --   current 'LineStyle'. This function does /not/ perform
 --   alignment operations on the path. See 'Path' for the exact semantic
 --   of paths.
-strokePath :: Path -> ChartBackend ()
+strokePath :: Path -> CBProgram ()
 strokePath p = singleton (StrokePath p)
 
 -- | Fill the given path using the current 'FillStyle'.
@@ -76,24 +76,24 @@ strokePath p = singleton (StrokePath p)
 --   This function does /not/ perform
 --   alignment operations on the path.
 --   See 'Path' for the exact semantic of paths.
-fillPath :: Path -> ChartBackend ()
+fillPath :: Path -> CBProgram ()
 fillPath p = singleton (FillPath p)
 
 -- | Calculate a 'TextSize' object with rendering information
 --   about the given string without actually rendering it.
-textSize :: String -> ChartBackend TextSize
+textSize :: String -> CBProgram TextSize
 textSize text = singleton (GetTextSize text)
 
 -- | Draw a single-line textual label anchored by the baseline (vertical) 
 --   left (horizontal) point. Uses the current 'FontStyle' for drawing.
-drawText :: Point -> String -> ChartBackend ()
+drawText :: Point -> String -> CBProgram ()
 drawText p text = singleton (DrawText p text)
 
 -- | Apply the given transformation in this local
 --   environment when drawing. The given transformation 
 --   is applied after the current transformation. This
 --   means both are combined.
-withTransform :: Matrix -> ChartBackend a -> ChartBackend a
+withTransform :: Matrix -> CBProgram a -> CBProgram a
 withTransform t p = singleton (WithTransform t p)
 
 -- | Use the given font style in this local
@@ -105,24 +105,24 @@ withTransform t p = singleton (WithTransform t p)
 --   If the backend is not able to find or load a given font 
 --   it is required to fall back to a custom fail-safe font
 --   and use it instead.
-withFontStyle :: FontStyle -> ChartBackend a -> ChartBackend a
+withFontStyle :: FontStyle -> CBProgram a -> CBProgram a
 withFontStyle fs p = singleton (WithFontStyle fs p)
 
 -- | Use the given fill style in this local
 --   environment when filling paths.
-withFillStyle :: FillStyle -> ChartBackend a -> ChartBackend a
+withFillStyle :: FillStyle -> CBProgram a -> CBProgram a
 withFillStyle fs p = singleton (WithFillStyle fs p)
 
 -- | Use the given line style in this local
 --   environment when stroking paths.
-withLineStyle :: LineStyle -> ChartBackend a -> ChartBackend a
+withLineStyle :: LineStyle -> CBProgram a -> CBProgram a
 withLineStyle ls p = singleton (WithLineStyle ls p)
 
 -- | Use the given clipping rectangle when drawing
 --   in this local environment. The new clipping region
 --   is intersected with the given clip region. You cannot 
 --   escape the clip!
-withClipRegion :: Rect -> ChartBackend a -> ChartBackend a
+withClipRegion :: Rect -> CBProgram a -> CBProgram a
 withClipRegion c p = singleton (WithClipRegion c p)
 
 -- -----------------------------------------------------------------------
@@ -130,10 +130,10 @@ withClipRegion c p = singleton (WithClipRegion c p)
 -- -----------------------------------------------------------------------
 
 -- | Get the point alignment function
-getPointAlignFn :: ChartBackend (Point->Point)
+getPointAlignFn :: CBProgram (Point->Point)
 getPointAlignFn = liftM afPointAlignFn (singleton GetAlignments)
 
 -- | Get the coordinate alignment function
-getCoordAlignFn :: ChartBackend (Point->Point)
+getCoordAlignFn :: CBProgram (Point->Point)
 getCoordAlignFn = liftM afCoordAlignFn (singleton GetAlignments)
 

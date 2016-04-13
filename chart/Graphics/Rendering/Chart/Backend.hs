@@ -5,12 +5,12 @@
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- This module provides the API for drawing operations abstracted
--- to arbitrary 'ChartBackend's.
+-- to arbitrary 'CBProgram's.
 
 module Graphics.Rendering.Chart.Backend
   (
   -- * The backend Monad
-    ChartBackend
+    CBProgram
   
   -- * Backend Operations
   , fillPath

@@ -75,7 +75,7 @@ instance ToPlot PlotErrBars where
       where
         pts = _plot_errbars_values p
 
-renderPlotErrBars :: PlotErrBars x y -> PointMapFn x y -> ChartBackend ()
+renderPlotErrBars :: PlotErrBars x y -> PointMapFn x y -> CBProgram ()
 renderPlotErrBars p pmap = 
     mapM_ (drawErrBar.epmap) (_plot_errbars_values p)
   where
@@ -87,7 +87,7 @@ renderPlotErrBars p pmap =
     drawErrBar = drawErrBar0 p
     pmap'      = mapXY pmap
 
-drawErrBar0 :: PlotErrBars x y -> ErrPoint Double Double -> ChartBackend ()
+drawErrBar0 :: PlotErrBars x y -> ErrPoint Double Double -> CBProgram ()
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = _plot_errbars_tick_length ps
         let oh = _plot_errbars_overhang ps
@@ -105,7 +105,7 @@ drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
                     <> moveTo' (x-tl) yh
                     <> lineTo' (x+tl) yh
 
-renderPlotLegendErrBars :: PlotErrBars x y -> Rect -> ChartBackend ()
+renderPlotLegendErrBars :: PlotErrBars x y -> Rect -> CBProgram ()
 renderPlotLegendErrBars p (Rect p1 p2) = do
     drawErrBar (symErrPoint (p_x p1)              y dx dx)
     drawErrBar (symErrPoint ((p_x p1 + p_x p2)/2) y dx dx)

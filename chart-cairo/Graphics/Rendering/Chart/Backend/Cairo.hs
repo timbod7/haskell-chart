@@ -70,11 +70,11 @@ defaultEnv alignFns = CEnv
 
 -- | Run this backends renderer.
 runBackend :: CEnv -- ^ Environment to start rendering with.
-           -> ChartBackend a  -- ^ Chart render code.
+           -> CBProgram a  -- ^ Chart render code.
            -> C.Render a      -- ^ Cairo render code.
 runBackend env m = runBackend' env (withDefaultStyle m)
 
-runBackend' :: CEnv -> ChartBackend a -> C.Render a
+runBackend' :: CEnv -> CBProgram a -> C.Render a
 runBackend' env m = eval env (view m)
   where
     eval :: CEnv -> ProgramView ChartBackendInstr a -> C.Render a
@@ -90,7 +90,7 @@ runBackend' env m = eval env (view m)
     eval env (WithLineStyle ls p :>>= f) = cWithLineStyle env ls p >>= step env f
     eval env (WithClipRegion r p :>>= f) = cWithClipRegion env r p >>= step env f
 
-    step :: CEnv -> (v -> ChartBackend a) -> v -> C.Render a
+    step :: CEnv -> (v -> CBProgram a) -> v -> C.Render a
     step env f =  \v -> runBackend' env (f v)
     
 walkPath :: Path -> C.Render ()
@@ -130,12 +130,12 @@ cDrawText env p text = preserveCState0 $ do
   C.moveTo 0 0
   C.showText text
 
-cWithTransform :: CEnv -> Matrix -> ChartBackend a -> C.Render a
+cWithTransform :: CEnv -> Matrix -> CBProgram a -> C.Render a
 cWithTransform env m p = preserveCState0 $ do
   C.transform (convertMatrix m)
   runBackend' env p
 
-cWithFontStyle :: CEnv -> FontStyle -> ChartBackend a -> C.Render a
+cWithFontStyle :: CEnv -> FontStyle -> CBProgram a -> C.Render a
 cWithFontStyle env font p = preserveCState0 $ do
   C.selectFontFace (G._font_name font) 
                    (convertFontSlant $ G._font_slant font) 
@@ -143,11 +143,11 @@ cWithFontStyle env font p = preserveCState0 $ do
   C.setFontSize (G._font_size font)
   runBackend' env{ceFontColor=G._font_color font} p
 
-cWithFillStyle :: CEnv -> FillStyle -> ChartBackend a -> C.Render a
+cWithFillStyle :: CEnv -> FillStyle -> CBProgram a -> C.Render a
 cWithFillStyle env fs p = do
   runBackend' env{ceFillColor=G._fill_color fs} p
 
-cWithLineStyle :: CEnv -> LineStyle -> ChartBackend a -> C.Render a
+cWithLineStyle :: CEnv -> LineStyle -> CBProgram a -> C.Render a
 cWithLineStyle env ls p = preserveCState0 $ do
   C.setLineWidth (G._line_width ls)
   C.setLineCap (convertLineCap $ G._line_cap ls)
@@ -155,7 +155,7 @@ cWithLineStyle env ls p = preserveCState0 $ do
   C.setDash (G._line_dashes ls) 0
   runBackend' env{cePathColor=G._line_color ls} p
 
-cWithClipRegion :: CEnv -> Rect -> ChartBackend a -> C.Render a
+cWithClipRegion :: CEnv -> Rect -> CBProgram a -> C.Render a
 cWithClipRegion env r p = preserveCState0 $ do
   setClipRegion r
   runBackend' env p
@@ -193,7 +193,7 @@ toFile fo path ec = void $ renderableToFile fo path (toRenderable (execEC ec))
 
 -- | Generate an image file for the given drawing instructions, at the specified path. Size and
 -- format are set through the `FileOptions` parameter.
-cBackendToFile :: FileOptions -> ChartBackend a -> FilePath -> IO a
+cBackendToFile :: FileOptions -> CBProgram a -> FilePath -> IO a
 cBackendToFile fo cr path = do
     case (_fo_format fo) of
       PS -> write C.withPSSurface

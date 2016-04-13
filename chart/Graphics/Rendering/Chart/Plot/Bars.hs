@@ -129,7 +129,7 @@ plotBars p = Plot {
         _plot_all_points = allBarPoints p
     }
 
-renderPlotBars :: (BarsPlotValue y) => PlotBars x y -> PointMapFn x y -> ChartBackend ()
+renderPlotBars :: (BarsPlotValue y) => PlotBars x y -> PointMapFn x y -> CBProgram ()
 renderPlotBars p pmap = case _plot_bars_style p of
       BarsClustered -> forM_ vals clusteredBars
       BarsStacked   -> forM_ vals stackedBars
@@ -209,7 +209,7 @@ allBarPoints p = case _plot_bars_style p of
 stack :: (BarsPlotValue y) => [y] -> [y]
 stack = scanl1 barsAdd
 
-renderPlotLegendBars :: (FillStyle,Maybe LineStyle) -> Rect -> ChartBackend ()
+renderPlotLegendBars :: (FillStyle,Maybe LineStyle) -> Rect -> CBProgram ()
 renderPlotLegendBars (fstyle,_) r = 
   withFillStyle fstyle $ 
     fillPath (rectPath r)
