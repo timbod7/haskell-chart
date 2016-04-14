@@ -20,17 +20,17 @@ supportLineStyle = def
   , _line_join = LineJoinBevel
   }
 
-withTestEnv :: CBProgram a -> CBProgram a
+withTestEnv :: BackendProgram a -> BackendProgram a
 withTestEnv m = do
   let p = rectPath $ Rect (Point 0 0) (Point 500 500)
   withFillStyle (solidFillStyle $ opaque white) $ fillPath p >> m
 
-withCenterRot :: Double -> Int -> Int -> CBProgram a -> CBProgram a
+withCenterRot :: Double -> Int -> Int -> BackendProgram a -> BackendProgram a
 withCenterRot a x y m =
   withTranslation (Point (fromIntegral x)
                          (fromIntegral y)) $ withRotation a $ m
 
-tests :: [(String, Int, Int, CBProgram ())]
+tests :: [(String, Int, Int, BackendProgram ())]
 tests = [ ("lines", 500, 500, testLines)
         , ("arcs" , 500, 500, testArcs)
         , ("text" , 500, 500, testText)
@@ -42,7 +42,7 @@ tests = [ ("lines", 500, 500, testLines)
                $ \(name, env) -> ("environment-" ++ name, 500, 500, env)
              )
 
-testPaths :: CBProgram ()
+testPaths :: BackendProgram ()
 testPaths = withTestEnv
           $ withLineStyle (def { _line_width = 10, _line_join = LineJoinMiter })
           $ withFillStyle (solidFillStyle $ opaque red)
@@ -67,7 +67,7 @@ testPaths = withTestEnv
   withTranslation (Point 0 140) $ strokePath $ multiDistArc <> close
   withTranslation (Point 0 280) $ fillPath $ multiDistArc <> close
 
-testTextMetrics :: CBProgram ()
+testTextMetrics :: BackendProgram ()
 testTextMetrics = withTestEnv $ do
 
   withFontStyle (def { _font_size = 20 }) $ do
@@ -105,7 +105,7 @@ testTextMetrics = withTestEnv $ do
     strokePath $ moveTo' 375 250 <> lineTo' 375 500
 
 
-testClip :: CBProgram ()
+testClip :: BackendProgram ()
 testClip = withTestEnv $ do
   let p = rectPath $ Rect (Point 0 0) (Point 500 500)
   withFillStyle (solidFillStyle $ opaque blue) $ fillPath p
@@ -116,7 +116,7 @@ testClip = withTestEnv $ do
   withClipRegion (Rect (Point 150 50) (Point 400 150)) $ do
     withFillStyle (solidFillStyle $ opaque red) $ fillPath p
 
-testFill :: CBProgram ()
+testFill :: BackendProgram ()
 testFill = withTestEnv $ do
   withFillStyle (solidFillStyle $ opaque green) $ do
     fillPath $ arc' 100 100 75 0 (1.5 * pi)
@@ -137,7 +137,7 @@ testFill = withTestEnv $ do
     fillPath $ arcNeg' 125 400 75 0 (1.5 * pi)
             <> lineTo' 125 400
 
-testEnvironments :: [(String, CBProgram ())]
+testEnvironments :: [(String, BackendProgram ())]
 testEnvironments =
   let envs = [ ("fill", withFillStyle $ solidFillStyle $ opaque green)
              , ("font", withFontStyle $ def { _font_color = opaque red })
@@ -155,7 +155,7 @@ testEnvironments =
        )
 
 
-testText :: CBProgram ()
+testText :: BackendProgram ()
 testText = withTestEnv $ do
   drawText (Point 10 50) "No Scale"
   withTranslation (Point 10 70) $ do
@@ -204,7 +204,7 @@ testText = withTestEnv $ do
     strokePath $ moveTo' 0 400 <> lineTo' 500 400
     strokePath $ moveTo' 250 300 <> lineTo' 250 500
 
-testArcs :: CBProgram ()
+testArcs :: BackendProgram ()
 testArcs = withTestEnv $ do
   (flip mapM_) ( [ def { _line_cap = LineCapButt  , _line_join = LineJoinMiter, _line_width = 10 }
                  , def { _line_cap = LineCapRound , _line_join = LineJoinRound, _line_width = 10 }
@@ -229,7 +229,7 @@ testArcs = withTestEnv $ do
     withCenterRot (1.0 * pi) 250 250 $ drawText (Point  75 0) $ "1 * pi"
     withCenterRot (1.5 * pi) 250 250 $ drawText (Point 100 0) $ "3/2 * pi"
 
-testLines :: CBProgram ()
+testLines :: BackendProgram ()
 testLines = withTestEnv $ do
   -- Test Line Caps
   (flip mapM_) [ (def { _line_cap = LineCapButt  , _line_width = 10 }, 0)

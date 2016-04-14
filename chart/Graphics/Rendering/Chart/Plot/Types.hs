@@ -31,12 +31,12 @@ data Plot x y = Plot {
 
     -- | Given the mapping between model space coordinates and device
     --   coordinates, render this plot into a chart.
-    _plot_render     :: PointMapFn x y -> CBProgram (),
+    _plot_render     :: PointMapFn x y -> BackendProgram (),
 
     -- | Details for how to show this plot in a legend. For each item
     --   the string is the text to show, and the function renders a
     --   graphical sample of the plot.
-    _plot_legend     :: [ (String, Rect -> CBProgram ()) ],
+    _plot_legend     :: [ (String, Rect -> BackendProgram ()) ],
 
     -- | All of the model space coordinates to be plotted. These are
     --   used to autoscale the axes where necessary.

@@ -19,7 +19,7 @@ main = do
     render fonts (name ++ ".png") w h draw
 
 
-render :: FontSelector Double -> FilePath -> Int -> Int -> CBProgram a -> IO ()
+render :: FontSelector Double -> FilePath -> Int -> Int -> BackendProgram a -> IO ()
 render fonts f w h m = do
   let env = createEnv bitmapAlignmentFns (fromIntegral w) (fromIntegral h) fonts
   let (d, _) = runBackend env m

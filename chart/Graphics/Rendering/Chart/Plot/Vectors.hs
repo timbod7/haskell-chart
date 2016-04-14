@@ -75,7 +75,7 @@ plotVectorField pv = Plot
     pts = concatMap (\(a,b) -> [a,b]) (pvals ++ mvals)
 
 renderPlotVectors :: (PlotValue x, PlotValue y)
-                  => PlotVectors x y -> PointMapFn x y -> CBProgram ()
+                  => PlotVectors x y -> PointMapFn x y -> BackendProgram ()
 renderPlotVectors pv pmap = do
     let pvals   = _plot_vectors_values pv
         mvals   = mapGrid (_plot_vectors_grid pv) (_plot_vectors_mapf pv)
@@ -111,7 +111,7 @@ renderPlotVectors pv pmap = do
                         (drawPoint (hs theta) (Point x y))
 
 renderPlotLegendVectors :: (PlotValue x, PlotValue y)
-                        => PlotVectors x y -> Rect -> CBProgram ()
+                        => PlotVectors x y -> Rect -> BackendProgram ()
 renderPlotLegendVectors pv (Rect p1 p2) = do
     let y = (p_y p1 + p_y p2)/2
         pv' = plot_vectors_grid .~ []

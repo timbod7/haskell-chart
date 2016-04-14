@@ -218,9 +218,9 @@ foldT f iv ft = foldr f' iv (assocs ft)
 ----------------------------------------------------------------------
 type DArray = Array Int Double
 
-getSizes :: Grid (Renderable a) -> CBProgram (DArray, DArray, DArray, DArray)
+getSizes :: Grid (Renderable a) -> BackendProgram (DArray, DArray, DArray, DArray)
 getSizes t = do
-    szs <- mapGridM minsize t :: CBProgram (Grid RectSize)
+    szs <- mapGridM minsize t :: BackendProgram (Grid RectSize)
     let szs'     = flatten szs
     let widths   = accumArray max 0 (0, width  t - 1)
                                                    (foldT (ef wf  fst) [] szs')
@@ -246,7 +246,7 @@ instance (ToRenderable a) => ToRenderable (Grid a) where
 gridToRenderable :: Grid (Renderable a) -> Renderable a
 gridToRenderable gt = Renderable minsizef renderf
   where
-    minsizef :: CBProgram RectSize
+    minsizef :: BackendProgram RectSize
     minsizef = do
         (widths, heights, _, _) <- getSizes gt
         return (sum (elems widths), sum (elems heights))

@@ -117,7 +117,7 @@ sparkSize :: SparkLine -> (Int,Int)
 sparkSize s = (sparkWidth s, so_height (sl_options s))
 
 -- | Render a SparkLine to a drawing surface.
-renderSparkLine :: SparkLine -> CBProgram (PickFn ())
+renderSparkLine :: SparkLine -> BackendProgram (PickFn ())
 renderSparkLine SparkLine{sl_options=opt, sl_data=ds} =
   let w = 4 + (so_step opt) * (length ds - 1) + extrawidth
       extrawidth | so_smooth opt = 0

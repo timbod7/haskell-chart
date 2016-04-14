@@ -43,7 +43,7 @@ instance ToPlot PlotFillBetween where
         _plot_all_points = plotAllPointsFillBetween p
     }
 
-renderPlotFillBetween :: PlotFillBetween x y -> PointMapFn x y -> CBProgram ()
+renderPlotFillBetween :: PlotFillBetween x y -> PointMapFn x y -> BackendProgram ()
 renderPlotFillBetween p =
     renderPlotFillBetween' p (_plot_fillbetween_values p)
 
@@ -51,7 +51,7 @@ renderPlotFillBetween' ::
   PlotFillBetween x y 
   -> [(a, (b, b))]
   -> ((Limit a, Limit b) -> Point)
-  -> CBProgram ()
+  -> BackendProgram ()
 renderPlotFillBetween' _ [] _     = return ()
 renderPlotFillBetween' p vs pmap  = 
   withFillStyle (_plot_fillbetween_style p) $ do
@@ -62,7 +62,7 @@ renderPlotFillBetween' p vs pmap  =
     (p0:p1s) = map pmap' [ (x,y1) | (x,(y1,_)) <- vs ]
     p2s      = map pmap' [ (x,y2) | (x,(_,y2)) <- vs ]
 
-renderPlotLegendFill :: PlotFillBetween x y -> Rect -> CBProgram ()
+renderPlotLegendFill :: PlotFillBetween x y -> Rect -> BackendProgram ()
 renderPlotLegendFill p r = 
   withFillStyle (_plot_fillbetween_style p) $ 
     fillPath (rectPath r)

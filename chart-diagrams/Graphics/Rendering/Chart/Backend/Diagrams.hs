@@ -116,7 +116,7 @@ toFile fo path ec = void $ renderableToFile fo path (toRenderable (execEC ec))
 
 -- | Generate an image file for the given drawing instructions, at the specified path. Size and
 -- format are set through the `FileOptions` parameter.
-cBackendToFile :: FileOptions -> CBProgram a -> FilePath -> IO a
+cBackendToFile :: FileOptions -> BackendProgram a -> FilePath -> IO a
 cBackendToFile fo cb path = do
   fontSelector <- _fo_fonts fo
   let env = createEnv vectorAlignmentFns w h fontSelector
@@ -292,7 +292,7 @@ runBackendR env r =
 runBackend :: ( D.Backend b V2 (N b), D.Renderable (D.Path V2 (N b)) b
               , D.TypeableFloat (N b), D.Metric (V b))
            => DEnv (N b)        -- ^ Environment to start rendering with.
-           -> CBProgram a    -- ^ Chart render code.
+           -> BackendProgram a    -- ^ Chart render code.
            -> (D.QDiagram b V2 (N b) Any, a)    -- ^ The diagram.
 runBackend env m =
   let (d, x) = evalState (runBackend' TextRenderSvg $ withDefaultStyle m) env
@@ -304,7 +304,7 @@ runBackendWithGlyphs :: ( D.Backend b V2 (N b)
                         , D.Renderable (D2.Text (N b)) b
                         , D.TypeableFloat (N b), D.Metric (V b))
                      => DEnv (N b)        -- ^ Environment to start rendering with.
-                     -> CBProgram a    -- ^ Chart render code.
+                     -> BackendProgram a    -- ^ Chart render code.
                      -> ( D.QDiagram b V2 (N b) Any, a
                         , M.Map (String, FontSlant, FontWeight) (S.Set String))
 runBackendWithGlyphs env m =
@@ -319,7 +319,7 @@ data TextRender b a where
   TextRenderSvg    :: TextRender b (D.Path V2 (N b))
 
 runBackend' :: (D.Renderable (D.Path V2 (N b)) b, D.Renderable t b, D.TypeableFloat (N b))
-            => TextRender b t -> CBProgram a
+            => TextRender b t -> BackendProgram a
             -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
 runBackend' tr m = eval tr $ view $ m
   where
@@ -340,7 +340,7 @@ runBackend' tr m = eval tr $ view $ m
     eval tr (WithClipRegion r p :>>= f) = dWithClipRegion tr r  p <>= step tr f
 
     step :: (D.Renderable (D.Path V2 (N b)) b, D.Renderable t b, D.TypeableFloat (N b))
-         => TextRender b t -> (v -> CBProgram a) -> v
+         => TextRender b t -> (v -> BackendProgram a) -> v
          -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
     step tr f v = runBackend' tr (f v)
 
@@ -416,30 +416,30 @@ dWith :: ( D.TypeableFloat (N b), D.Metric V2
          , D.Renderable (D.Path V2 (N b)) b, D.Renderable t b)
       => TextRender b t -> (DEnv (N b) -> DEnv (N b))
       -> (D.QDiagram b V2 (N b) Any -> D.QDiagram b V2 (N b) Any)
-      -> CBProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
+      -> BackendProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
 dWith tr envF dF m = dLocal $ do
   modify envF
   (ma, a) <- runBackend' tr m
   return (dF ma, a)
 
 dWithTransform :: (D.TypeableFloat (N b), D.Renderable (D.Path V2 (N b)) b, D.Renderable t b)
-               => TextRender b t -> Matrix -> CBProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
+               => TextRender b t -> Matrix -> BackendProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
 dWithTransform tr t = dWith tr id $ D.transform (toTransformation t)
 
 dWithLineStyle :: (D.TypeableFloat (N b), D.Renderable (D.Path V2 (N b)) b, D.Renderable t b)
-               => TextRender b t -> LineStyle -> CBProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
+               => TextRender b t -> LineStyle -> BackendProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
 dWithLineStyle tr ls = dWith tr id $ applyLineStyle ls
 
 dWithFillStyle :: (D.TypeableFloat (N b), D.Renderable (D.Path V2 (N b)) b, D.Renderable t b)
-               => TextRender b t -> FillStyle -> CBProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
+               => TextRender b t -> FillStyle -> BackendProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
 dWithFillStyle tr fs = dWith tr id $ applyFillStyle fs
 
 dWithFontStyle :: (D.TypeableFloat (N b), D.Renderable (D.Path V2 (N b)) b, D.Renderable t b)
-               => TextRender b t -> FontStyle -> CBProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
+               => TextRender b t -> FontStyle -> BackendProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
 dWithFontStyle tr fs = dWith tr (\e -> e { envFontStyle = fs }) $ id
 
 dWithClipRegion :: (D.TypeableFloat (N b), D.Renderable (D.Path V2 (N b)) b, D.Renderable t b)
-                => TextRender b t -> Rect -> CBProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
+                => TextRender b t -> Rect -> BackendProgram a -> DState (N b) (D.QDiagram b V2 (N b) Any, a)
 dWithClipRegion tr clip = dWith tr id $ D2.clipBy (convertPath True $ rectPath clip)
 
 -- -----------------------------------------------------------------------
