@@ -11,4 +11,4 @@ extra-deps:
 - OneTuple-0.2.1
 - diagrams-svg-1.4
 - svg-builder-0.1
-resolver: lts-5.5
+resolver: lts-5.13
