@@ -34,7 +34,7 @@ main = render ("test.png") 1000 500 $ do
       withTranslation (Point 0 (d * 70)) $ testDrawText (i * 10 + 10)
     return ()
 
-testDrawText :: Int -> ChartBackend ()
+testDrawText :: Int -> BackendProgram ()
 testDrawText fontSize =
   withFontStyle (def { _font_size = fromIntegral fontSize, _font_name = "Source Sans Pro" }) $ do
     let text = "ÄÖÜ Testing " ++ show fontSize ++ "px"
@@ -62,7 +62,7 @@ testDrawText fontSize =
     drawText (Point 0 a) text
 
 -- Render it side by side using cairo and diagrams cairo with SVGFonts.
-render :: FilePath -> Int -> Int -> ChartBackend () -> IO ()
+render :: FilePath -> Int -> Int -> BackendProgram () -> IO ()
 render f w h m = do
   rc <- renderCairo (w,h) m
   rd <- renderDiagramsCairo (w,h) m
@@ -87,11 +87,11 @@ render f w h m = do
     rd
   C.surfaceWriteToPNG s f
 
-renderCairo :: (Int, Int) -> ChartBackend () -> IO (C.Render ())
+renderCairo :: (Int, Int) -> BackendProgram () -> IO (C.Render ())
 renderCairo (w,h) m = do
   return $ BC.runBackend (BC.defaultEnv bitmapAlignmentFns) m
 
-renderDiagramsCairo :: (Int, Int) -> ChartBackend () -> IO (C.Render ())
+renderDiagramsCairo :: (Int, Int) -> BackendProgram () -> IO (C.Render ())
 renderDiagramsCairo (w,h) m = do
   env <- BD.defaultEnv bitmapAlignmentFns (fromIntegral w) (fromIntegral h)
   let (d, _) = BD.runBackend env m

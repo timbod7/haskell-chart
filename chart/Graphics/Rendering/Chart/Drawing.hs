@@ -106,33 +106,33 @@ import qualified Graphics.Rendering.Chart.Geometry as G
 -- -----------------------------------------------------------------------
 
 -- | Apply a local rotation. The angle is given in radians.
-withRotation :: Double -> ChartBackend a -> ChartBackend a
+withRotation :: Double -> BackendProgram a -> BackendProgram a
 withRotation angle = withTransform (rotate angle 1)
 
 -- | Apply a local translation.
-withTranslation :: Point -> ChartBackend a -> ChartBackend a
+withTranslation :: Point -> BackendProgram a -> BackendProgram a
 withTranslation p = withTransform (translate (pointToVec p) 1)
 
 -- | Apply a local scale.
-withScale :: Vector -> ChartBackend a -> ChartBackend a
+withScale :: Vector -> BackendProgram a -> BackendProgram a
 withScale v = withTransform (scale v 1)
 
 -- | Apply a local scale on the x-axis.
-withScaleX :: Double -> ChartBackend a -> ChartBackend a
+withScaleX :: Double -> BackendProgram a -> BackendProgram a
 withScaleX x = withScale (Vector x 1)
 
 -- | Apply a local scale on the y-axis.
-withScaleY :: Double -> ChartBackend a -> ChartBackend a
+withScaleY :: Double -> BackendProgram a -> BackendProgram a
 withScaleY y = withScale (Vector 1 y)
 
 -- | Changes the 'LineStyle' and 'FillStyle' to comply with
 --   the given 'PointStyle'.
-withPointStyle :: PointStyle -> ChartBackend a -> ChartBackend a
+withPointStyle :: PointStyle -> BackendProgram a -> BackendProgram a
 withPointStyle (PointStyle cl bcl bw _ _) m = 
   withLineStyle (def { _line_color = bcl, _line_width = bw }) $ 
     withFillStyle (solidFillStyle cl) m
 
-withDefaultStyle :: ChartBackend a -> ChartBackend a
+withDefaultStyle :: BackendProgram a -> BackendProgram a
 withDefaultStyle = withLineStyle def . withFillStyle def . withFontStyle def
 
 -- -----------------------------------------------------------------------
@@ -150,7 +150,7 @@ alignPath f = foldPath (G.moveTo . f)
 -- | Align the path using the environment's alignment function for points.
 --   This is generally useful when stroking. 
 --   See 'alignPath' and 'getPointAlignFn'.
-alignStrokePath :: Path -> ChartBackend Path
+alignStrokePath :: Path -> BackendProgram Path
 alignStrokePath p = do
   f <- getPointAlignFn
   return $ alignPath f p
@@ -158,7 +158,7 @@ alignStrokePath p = do
 -- | Align the path using the environment's alignment function for coordinates.
 --   This is generally useful when filling. 
 --   See 'alignPath' and 'getCoordAlignFn'.
-alignFillPath :: Path -> ChartBackend Path
+alignFillPath :: Path -> BackendProgram Path
 alignFillPath p = do
   f <- getCoordAlignFn
   return $ alignPath f p
@@ -166,7 +166,7 @@ alignFillPath p = do
 -- | The points will be aligned by the 'getPointAlignFn', so that
 --   when drawing bitmaps, 1 pixel wide lines will be centred on the
 --   pixels.
-alignStrokePoints :: [Point] -> ChartBackend [Point]
+alignStrokePoints :: [Point] -> BackendProgram [Point]
 alignStrokePoints p = do
   f <- getPointAlignFn
   return $ fmap f p
@@ -174,21 +174,21 @@ alignStrokePoints p = do
 -- | The points will be aligned by the 'getCoordAlignFn', so that
 --   when drawing bitmaps, the edges of the region will fall between
 --   pixels.
-alignFillPoints :: [Point] -> ChartBackend [Point]
+alignFillPoints :: [Point] -> BackendProgram [Point]
 alignFillPoints p = do
   f <- getCoordAlignFn
   return $ fmap f p
 
 -- | Align the point using the environment's alignment function for points.
 --   See 'getPointAlignFn'.
-alignStrokePoint :: Point -> ChartBackend Point
+alignStrokePoint :: Point -> BackendProgram Point
 alignStrokePoint p = do 
     alignfn <- getPointAlignFn
     return (alignfn p)
 
 -- | Align the point using the environment's alignment function for coordinates.
 --   See 'getCoordAlignFn'.
-alignFillPoint :: Point -> ChartBackend Point
+alignFillPoint :: Point -> BackendProgram Point
 alignFillPoint p = do 
     alignfn <- getCoordAlignFn
     return (alignfn p)
@@ -201,11 +201,11 @@ stepPath (p:ps) = G.moveTo p
 stepPath [] = mempty
 
 -- | Draw lines between the specified points.
-strokePointPath :: [Point] -> ChartBackend ()
+strokePointPath :: [Point] -> BackendProgram ()
 strokePointPath pts = strokePath $ stepPath pts
 
 -- | Fill the region with the given corners.
-fillPointPath :: [Point] -> ChartBackend ()
+fillPointPath :: [Point] -> BackendProgram ()
 fillPointPath pts = fillPath $ stepPath pts
 
 -- -----------------------------------------------------------------------
@@ -214,7 +214,7 @@ fillPointPath pts = fillPath $ stepPath pts
 
 -- | Draw a line of text that is aligned at a different anchor point.
 --   See 'drawText'.
-drawTextA :: HTextAnchor -> VTextAnchor -> Point -> String -> ChartBackend ()
+drawTextA :: HTextAnchor -> VTextAnchor -> Point -> String -> BackendProgram ()
 drawTextA hta vta = drawTextR hta vta 0
 
 {- 
@@ -234,7 +234,7 @@ drawTextA hta vta p txt =
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
 --   See 'drawText'.
-drawTextR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> ChartBackend ()
+drawTextR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> BackendProgram ()
 drawTextR hta vta angle p s =
   withTranslation p $
     withRotation theta $ do
@@ -247,7 +247,7 @@ drawTextR hta vta angle p s =
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
 --   See 'drawText'.
-drawTextsR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> ChartBackend ()
+drawTextsR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> BackendProgram ()
 drawTextsR hta vta angle p s = case num of
       0 -> return ()
       1 -> drawTextR hta vta angle p s
@@ -298,7 +298,7 @@ adjustTextY VTA_Bottom   ts = - textSizeDescent ts
 -- | Return the bounding rectangle for a text string positioned
 --   where it would be drawn by 'drawText'.
 --   See 'textSize'.
-textDrawRect :: HTextAnchor -> VTextAnchor -> Point -> String -> ChartBackend Rect
+textDrawRect :: HTextAnchor -> VTextAnchor -> Point -> String -> BackendProgram Rect
 textDrawRect hta vta (Point x y) s = do
   ts <- textSize s
   -- This does not account for the pixel width of the label; e.g.
@@ -316,7 +316,7 @@ textDrawRect hta vta (Point x y) s = do
 
 -- | Get the width and height of the string when rendered.
 --   See 'textSize'.
-textDimension :: String -> ChartBackend RectSize
+textDimension :: String -> BackendProgram RectSize
 textDimension s = do
   ts <- textSize s
   return (textSizeWidth ts, textSizeHeight ts)
@@ -361,7 +361,7 @@ instance Default PointStyle where
 -- | Draw a single point at the given location.
 drawPoint :: PointStyle  -- ^ Style to use when rendering the point.
           -> Point       -- ^ Position of the point to render.
-          -> ChartBackend ()
+          -> BackendProgram ()
 drawPoint ps@(PointStyle cl _ _ r shape) p = withPointStyle ps $ do
   p'@(Point x y) <- alignStrokePoint p
   case shape of

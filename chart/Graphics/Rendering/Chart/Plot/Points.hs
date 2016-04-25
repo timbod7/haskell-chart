@@ -42,14 +42,14 @@ instance ToPlot PlotPoints where
       where
         pts = _plot_points_values p
 
-renderPlotPoints :: PlotPoints x y -> PointMapFn x y -> ChartBackend ()
+renderPlotPoints :: PlotPoints x y -> PointMapFn x y -> BackendProgram ()
 renderPlotPoints p pmap = 
     mapM_ (drawPoint ps . pmap') (_plot_points_values p)
   where
     pmap' = mapXY pmap
     ps = _plot_points_style p
 
-renderPlotLegendPoints :: PlotPoints x y -> Rect -> ChartBackend ()
+renderPlotLegendPoints :: PlotPoints x y -> Rect -> BackendProgram ()
 renderPlotLegendPoints p (Rect p1 p2) = do
     drawPoint ps (Point (p_x p1)              y)
     drawPoint ps (Point ((p_x p1 + p_x p2)/2) y)

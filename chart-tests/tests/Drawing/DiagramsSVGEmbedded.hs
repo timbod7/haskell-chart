@@ -16,7 +16,7 @@ main = (flip mapM_) tests $ \(name, w, h, draw) -> do
   render (name ++ ".svg") w h draw
 
 
-render :: FilePath -> Int -> Int -> ChartBackend a -> IO ()
+render :: FilePath -> Int -> Int -> BackendProgram a -> IO ()
 render f w h m = do
   env <- defaultEnv bitmapAlignmentFns (fromIntegral w) (fromIntegral h)
   renderableToEmbeddedFontSVGFile' ( R.Renderable

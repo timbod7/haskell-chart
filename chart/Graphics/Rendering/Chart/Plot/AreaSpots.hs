@@ -71,7 +71,7 @@ instance (PlotValue z) => ToPlot (AreaSpots z) where
                                          , map (^._2) (_area_spots_values p) )
                     }
 
-renderAreaSpots  :: (PlotValue z) => AreaSpots z x y -> PointMapFn x y -> ChartBackend ()
+renderAreaSpots  :: (PlotValue z) => AreaSpots z x y -> PointMapFn x y -> BackendProgram ()
 renderAreaSpots p pmap = 
     forM_ (scaleMax (_area_spots_max_radius p^(2::Integer))
                     (_area_spots_values p))
@@ -93,7 +93,7 @@ renderAreaSpots p pmap =
                             scale v  = n * toValue v / largest
                         in over (mapped._3) scale points
 
-renderSpotLegend :: AreaSpots z x y -> Rect -> ChartBackend ()
+renderSpotLegend :: AreaSpots z x y -> Rect -> BackendProgram ()
 renderSpotLegend p (Rect p1 p2) = do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2
@@ -141,7 +141,7 @@ instance (PlotValue z, PlotValue t, Show t) => ToPlot (AreaSpots4D z t) where
                     }
 
 renderAreaSpots4D  :: (PlotValue z, PlotValue t, Show t) =>
-                      AreaSpots4D z t x y -> PointMapFn x y -> ChartBackend ()
+                      AreaSpots4D z t x y -> PointMapFn x y -> BackendProgram ()
 renderAreaSpots4D p pmap = 
     forM_ (scaleMax (_area_spots_4d_max_radius p^(2::Integer))
                     (length (_area_spots_4d_palette p))
@@ -173,7 +173,7 @@ renderAreaSpots4D p pmap =
                           in map (\ (x,y,z,t) -> (x,y, scale z, select t))
                                  points
 
-renderSpotLegend4D :: AreaSpots4D z t x y -> Rect -> ChartBackend ()
+renderSpotLegend4D :: AreaSpots4D z t x y -> Rect -> BackendProgram ()
 renderSpotLegend4D p (Rect p1 p2) = do
     let radius = min (abs (p_y p1 - p_y p2)) (abs (p_x p1 - p_x p2))
         centre = linearInterpolate p1 p2

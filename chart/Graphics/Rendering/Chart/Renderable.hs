@@ -61,13 +61,13 @@ nullPickFn = const Nothing
 data Renderable a = Renderable {
 
    -- | Calculate the minimum size of the renderable.
-   minsize :: ChartBackend RectSize,
+   minsize :: BackendProgram RectSize,
 
    -- | Draw the renderable with a rectangle, which covers
    --   the origin to a given point.
    --
    --   The resulting "pick" function  maps a point in the image to a value.
-   render  :: RectSize -> ChartBackend (PickFn a)
+   render  :: RectSize -> BackendProgram (PickFn a)
 }
 
 -- | A type class abtracting the conversion of a value to a Renderable.
@@ -133,8 +133,8 @@ fillBackground fs r = r{ render = rf }
       render r rsize
 
 -- | Helper function for using a renderable, when we generate it
---   in the ChartBackend monad.
-embedRenderable :: ChartBackend (Renderable a) -> Renderable a
+--   in the BackendProgram monad.
+embedRenderable :: BackendProgram (Renderable a) -> Renderable a
 embedRenderable ca = Renderable {
    minsize = do { a <- ca; minsize a },
    render  = \ r -> do { a <- ca; render a r }

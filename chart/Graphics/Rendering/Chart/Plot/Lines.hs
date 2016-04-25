@@ -54,7 +54,7 @@ instance ToPlot PlotLines where
         xs = [ x | (LValue x,_) <- concat (_plot_lines_limit_values p)]
         ys = [ y | (_,LValue y) <- concat (_plot_lines_limit_values p)]
 
-renderPlotLines :: PlotLines x y -> PointMapFn x y -> ChartBackend ()
+renderPlotLines :: PlotLines x y -> PointMapFn x y -> BackendProgram ()
 renderPlotLines p pmap = 
   withLineStyle (_plot_lines_style p) $ do
     mapM_ (drawLines (mapXY pmap)) (_plot_lines_values p)
@@ -62,7 +62,7 @@ renderPlotLines p pmap =
   where
     drawLines mapfn pts = alignStrokePoints (map mapfn pts) >>= strokePointPath 
 
-renderPlotLegendLines :: PlotLines x y -> Rect -> ChartBackend ()
+renderPlotLegendLines :: PlotLines x y -> Rect -> BackendProgram ()
 renderPlotLegendLines p (Rect p1 p2) = 
   withLineStyle (_plot_lines_style p) $ do
     let y = (p_y p1 + p_y p2) / 2

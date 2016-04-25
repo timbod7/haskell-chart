@@ -127,7 +127,7 @@ pieToRenderable p = fillBackground (_pie_background p) (
         title = label (_pie_title_style p) HTA_Centre VTA_Top (_pie_title p)
         lm    = _pie_margin p
 
-extraSpace :: PieChart -> ChartBackend (Double, Double)
+extraSpace :: PieChart -> BackendProgram (Double, Double)
 extraSpace p = do
     textSizes <- mapM (textDimension . _pitem_label) (_pie_data p)
     let maxw  = foldr (max.fst) 0 textSizes
@@ -136,12 +136,12 @@ extraSpace p = do
     let extra = label_rgap + label_rlength + maxo
     return (extra + maxw, extra + maxh )
 
-minsizePie :: PieChart -> ChartBackend (Double, Double)
+minsizePie :: PieChart -> BackendProgram (Double, Double)
 minsizePie p = do
     (extraw,extrah) <- extraSpace p
     return (extraw * 2, extrah * 2)
 
-renderPie :: PieChart -> (Double, Double) -> ChartBackend (PickFn a)
+renderPie :: PieChart -> (Double, Double) -> BackendProgram (PickFn a)
 renderPie p (w,h) = do
     (extraw,extrah) <- extraSpace p
     -- let (w,h)  = (p_x p2 - p_x p1, p_y p2 - p_y p1)
@@ -162,7 +162,7 @@ renderPie p (w,h) = do
                      | pitem <- _pie_data p ]
 
         paint :: Point -> Double -> Double -> (AlphaColour Double, PieItem)
-              -> ChartBackend Double
+              -> BackendProgram Double
         paint center radius a1 (color,pitem) = do
             let ax     = 360.0 * _pitem_value pitem
             let a2     = a1 + (ax / 2)
@@ -175,7 +175,7 @@ renderPie p (w,h) = do
             return a3
 
             where
-                pieLabel :: String -> Double -> Double -> ChartBackend ()
+                pieLabel :: String -> Double -> Double -> BackendProgram ()
                 pieLabel name angle offset = 
                     withFontStyle (_pie_label_style p) $ 
                       withLineStyle (_pie_label_line_style p) $ do
@@ -193,7 +193,7 @@ renderPie p (w,h) = do
                         let p2 = p1 `pvadd` Vector (offset' label_rgap) 0
                         drawTextA anchor VTA_Bottom p2 name
 
-                pieSlice :: Point -> Double -> Double -> AlphaColour Double -> ChartBackend ()
+                pieSlice :: Point -> Double -> Double -> AlphaColour Double -> BackendProgram ()
                 pieSlice (Point x y) arc1 arc2 pColor = do
                     let path = arc' x y radius (radian arc1) (radian arc2)
                             <> lineTo' x y

@@ -1,16 +1,16 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.Chart.Axis.Unit
+-- Module      :  Graphics.Rendering.Chart.Backend
 -- Copyright   :  (c) Tim Docker 2014
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- This module provides the API for drawing operations abstracted
--- to arbitrary 'ChartBackend's.
+-- to drive arbitrary Backend.
 
 module Graphics.Rendering.Chart.Backend
   (
   -- * The backend Monad
-    ChartBackend
+    BackendProgram
   
   -- * Backend Operations
   , fillPath

@@ -135,7 +135,7 @@ buildHistPath pmap bins = MoveTo (pt xb 0) (go bins)
           pt x y = pmap (LValue x, LValue y)
 
 renderPlotHist :: (RealFrac x, Num y, Ord y)
-               => PlotHist x y -> PointMapFn x y -> ChartBackend ()
+               => PlotHist x y -> PointMapFn x y -> BackendProgram ()
 renderPlotHist p pmap
     | null bins = return ()
     | otherwise = do
@@ -151,7 +151,7 @@ renderPlotHist p pmap
                                                 <> lineTo (pt x1 y)
                                     ) $ tail bins
 
-renderPlotLegendHist :: PlotHist x y -> Rect -> ChartBackend ()
+renderPlotLegendHist :: PlotHist x y -> Rect -> BackendProgram ()
 renderPlotLegendHist p (Rect p1 p2) =
     withLineStyle (_plot_hist_line_style p) $
         let y = (p_y p1 + p_y p2) / 2

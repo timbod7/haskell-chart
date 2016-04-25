@@ -45,7 +45,7 @@ data LegendOrientation = LORows Int
                        | LOCols Int
                        
 
-data Legend x y = Legend LegendStyle [(String, Rect -> ChartBackend ())]
+data Legend x y = Legend LegendStyle [(String, Rect -> BackendProgram ())]
 
 instance ToRenderable (Legend x y) where
   toRenderable = setPickFn nullPickFn . legendToRenderable
@@ -62,10 +62,10 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
 
     mkGrid n join1 join2 = join1 [ join2 (map rf ps1) | ps1 <- groups n ps ]
 
-    ps  :: [(String, [Rect -> ChartBackend ()])]
+    ps  :: [(String, [Rect -> BackendProgram ()])]
     ps   = join_nub lvs
 
-    rf :: (String,[Rect -> ChartBackend ()]) -> Grid (Renderable String)
+    rf :: (String,[Rect -> BackendProgram ()]) -> Grid (Renderable String)
     rf (title,rfs) = besideN [gpic,ggap2,gtitle]
       where
         gpic = besideN $ intersperse ggap2 (map rp rfs)
