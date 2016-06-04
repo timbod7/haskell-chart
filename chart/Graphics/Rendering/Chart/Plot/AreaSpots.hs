@@ -49,7 +49,7 @@ data AreaSpots z x y = AreaSpots
   , _area_spots_linecolour :: AlphaColour Double
   , _area_spots_fillcolour :: Colour Double
   , _area_spots_opacity    :: Double
-  , _area_spots_max_radius :: Double	-- ^ the largest size of spot
+  , _area_spots_max_radius :: Double   -- ^ the largest size of spot
   , _area_spots_values     :: [(x,y,z)]
   }
 
@@ -118,7 +118,7 @@ data AreaSpots4D z t x y = AreaSpots4D
   , _area_spots_4d_linethick  :: Double
   , _area_spots_4d_palette    :: [Colour Double]
   , _area_spots_4d_opacity    :: Double
-  , _area_spots_4d_max_radius :: Double	-- ^ the largest size of spot
+  , _area_spots_4d_max_radius :: Double        -- ^ the largest size of spot
   , _area_spots_4d_values     :: [(x,y,z,t)]
   }
 

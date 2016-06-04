@@ -40,9 +40,9 @@ data PlotAnnotation  x y = PlotAnnotation {
 
 instance ToPlot PlotAnnotation where
     toPlot p = Plot {
-        _plot_render = renderAnnotation p,
-	_plot_legend = [],
-	_plot_all_points = (map (^._1) vs , map (^._2) vs)
+      _plot_render = renderAnnotation p,
+      _plot_legend = [],
+      _plot_all_points = (map (^._1) vs , map (^._2) vs)
     }
       where
         vs = _plot_annotation_values p
