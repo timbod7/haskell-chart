@@ -196,10 +196,10 @@ minsizeAxis (AxisT at as _ ad) = do
     let vh = maximum0 (map (maximum0.map snd) labelSizes)
 
     let sz      = case at of
-		     E_Top    -> (hw,hh)
-		     E_Bottom -> (hw,hh)
-		     E_Left   -> (vw,vh)
-		     E_Right  -> (vw,vh)
+                    E_Top    -> (hw,hh)
+                    E_Bottom -> (hw,hh)
+                    E_Left   -> (vw,vh)
+                    E_Right  -> (vw,vh)
     return sz
 
 labelTexts :: AxisData a -> [[String]]
