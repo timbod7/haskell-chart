@@ -10,6 +10,7 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Graphics.Rendering.Chart.Axis.Floating(
     Percent(..),
@@ -31,7 +32,7 @@ module Graphics.Rendering.Chart.Axis.Floating(
 import Data.List(minimumBy)
 import Data.Ord (comparing)
 import Data.Default.Class
-import Numeric (showFFloat)
+import Numeric (showEFloat, showFFloat)
 
 import Control.Lens
 import Graphics.Rendering.Chart.Geometry
@@ -77,6 +78,103 @@ instance PlotValue LogValue where
     fromValue d          = LogValue (exp d)
     autoAxis             = autoScaledLogAxis def
 
+-- | Show a list of axis labels.
+-- If some are too big or all are too small, switch to scientific notation for all.
+-- If the range is much smaller than the mean, use an offset.
+-- TODO: show this offset only once, not on every label.
+-- When thinking about improving this function,
+-- https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/ticker.py
+-- is a good read.
+--
+-- >>> showDs [0, 1, 2 :: Double]
+-- ["0","1","2"]
+--
+-- >>> showDs [0, 1000, 2000 :: Double]
+-- ["0.0e0","1.0e3","2.0e3"]
+--
+-- >>> showDs [0, 0.001, 0.002 :: Double]
+-- ["0","0.001","0.002"]
+--
+-- >>> showDs [-10000, -1000, 9000 :: Double]
+-- ["-1.0e4","-1.0e3","9.0e3"]
+--
+-- >>> showDs [10, 11, 12 :: Double]
+-- ["10","11","12"]
+--
+-- >>> showDs [100, 101, 102 :: Double]
+-- ["100","101","102"]
+--
+-- >>> showDs [1000, 1001, 1002 :: Double]
+-- ["1000","1001","1002"]
+--
+-- >>> showDs [10000, 10001, 10002 :: Double]
+-- ["1.0e4 + 0","1.0e4 + 1","1.0e4 + 2"]
+--
+-- >>> showDs [-10000, -10001, -10002 :: Double]
+-- ["-1.0e4 + 2","-1.0e4 + 1","-1.0e4 + 0"]
+showDs :: forall d . (RealFloat d) => [d] -> [String]
+showDs xs
+  | useOffset = map addShownOffset $ showWithoutOffset (map (\x -> x - offset) xs)
+  | otherwise = showWithoutOffset xs
+  where
+    -- if the range is much smaller than the mean
+    -- AND the data is either all positive or all negative, apply an offset
+    useOffset
+      -- if some data is positive and some negative, we don't need an offset
+      | min' <= 0 && max' >= 0 = False
+      -- if the range is significantly smaller than the average, we need an offset
+      | 1000 * abs (max' - min') < abs mean' = True
+      | otherwise = False
+
+    mean' :: d
+    mean'
+      | n == 0 = 0
+      | otherwise = sum xs / fromIntegral n
+      where
+        n = length xs
+    min' = minimum xs
+    max' = maximum xs
+
+    -- Use the min for offset. Another good choice could be the mean.
+    offset :: d
+    offset = min'
+    shownOffset = case showWithoutOffset [offset] of
+      [r] -> r
+      rs -> error $ "showDs: shownOffset expected 1 element, got " ++ show (length rs)
+
+    addShownOffset :: String -> String
+    addShownOffset ('-':x) = shownOffset ++ " - " ++ x
+    addShownOffset x = shownOffset ++ " + " ++ x
+
+showWithoutOffset :: RealFloat d => [d] -> [String]
+showWithoutOffset xs
+  | useScientificNotation = map (\x -> showEFloat' (Just 1) x) xs
+  | otherwise = map showD xs
+  where
+    -- use scientific notation if max value is too big or too small
+    useScientificNotation = maxAbs > 1100 || maxAbs < 0.001
+    maxAbs = maximum (map abs xs)
+
+
+-- | Changes the behavior of showEFloat to drop more than one trailings 0.
+-- Instead of 1.000e4 you get 1.0e4
+showEFloat' :: forall d . RealFloat d => Maybe Int -> d -> String
+showEFloat' mdigits x = reverse $ cleanup0 (reverse shown0)
+  where
+    shown0 = showEFloat mdigits x ""
+
+    -- wait until we get the "e"
+    cleanup0 :: String -> String
+    cleanup0 (e@'e':ys) = e:cleanup1 ys
+    cleanup0 (y:ys) = y : cleanup0 ys
+    cleanup0 [] = reverse shown0 -- something went wrong, just return the original
+
+    -- get rid of redundant 0s before the '.'
+    cleanup1 :: String -> String
+    cleanup1 ('0':ys@('0':_)) = cleanup1 ys
+    cleanup1 y = y
+
+
 showD :: (RealFloat d) => d -> String
 showD x = case reverse $ showFFloat Nothing x "" of
             '0':'.':r -> reverse r
@@ -84,7 +182,7 @@ showD x = case reverse $ showFFloat Nothing x "" of
 
 data LinearAxisParams a = LinearAxisParams {
     -- | The function used to show the axes labels.
-    _la_labelf  :: a -> String,
+    _la_labelf  :: [a] -> [String],
 
     -- | The target number of labels to be shown.
     _la_nLabels :: Int,
@@ -95,7 +193,7 @@ data LinearAxisParams a = LinearAxisParams {
 
 instance (Show a, RealFloat a) => Default (LinearAxisParams a) where
   def = LinearAxisParams 
-    { _la_labelf    = showD
+    { _la_labelf    = showDs
     , _la_nLabels   = 5
     , _la_nTicks    = 50
     }
@@ -157,7 +255,7 @@ autoSteps nSteps vs = map fromRational $ steps (fromIntegral nSteps) r
 
 instance (Show a, RealFloat a) => Default (LogAxisParams a) where
   def = LogAxisParams 
-    { _loga_labelf = showD
+    { _loga_labelf = showDs
     }
 
 -- | Generate a log axis automatically, scaled appropriate for the
@@ -178,7 +276,7 @@ autoScaledLogAxis lap ps0 =
 
 data LogAxisParams a = LogAxisParams {
     -- | The function used to show the axes labels.
-    _loga_labelf :: a -> String
+    _loga_labelf :: [a] -> [String]
 }
 
 {-
@@ -249,4 +347,3 @@ log10 = logBase 10
 
 $( makeLenses ''LinearAxisParams )
 $( makeLenses ''LogAxisParams )
-

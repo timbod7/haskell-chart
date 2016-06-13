@@ -29,7 +29,7 @@ instance PlotValue Integer where
 
 defaultIntAxis :: (Show a) => LinearAxisParams a
 defaultIntAxis  = LinearAxisParams {
-    _la_labelf  = show,
+    _la_labelf  = map show,
     _la_nLabels = 5,
     _la_nTicks  = 10
 }
