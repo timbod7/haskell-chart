@@ -7,6 +7,5 @@ import Test.DocTest
 main :: IO ()
 main =
   doctest
-    [ "-ichart"
-    , "chart/Graphics/Rendering/Chart/Axis/Floating.hs"
+    [ "../chart/Graphics/Rendering/Chart/Axis/Floating.hs"
     ]
