@@ -118,31 +118,19 @@ instance PlotValue LogValue where
 --
 -- prop> let [s0, s1] = showDs [x, x + 1.0 :: Double] in s0 /= s1
 showDs :: forall d . (RealFloat d) => [d] -> [String]
-showDs xs
-  | useOffset = map addShownOffset $ showWithoutOffset (map (\x -> x - offset) xs)
-  | otherwise = showWithoutOffset xs
+showDs xs = case showWithoutOffset xs of
+  (s0:others)
+    | anyEqualNeighbor s0 others -> map addShownOffset $ showWithoutOffset (map (\x -> x - offset) xs)
+  s -> s
   where
-    -- if the range is much smaller than the mean
-    -- AND the data is either all positive or all negative, apply an offset
-    useOffset
-      -- if some data is positive and some negative, we don't need an offset
-      | min' <= 0 && max' >= 0 = False
-      -- if the range is significantly smaller than the average, we need an offset
-      | 1e6 * abs (max' - min') < abs mean' = True
-      | otherwise = False
-
-    mean' :: d
-    mean'
-      | n == 0 = 0
-      | otherwise = sum xs / fromIntegral n
-      where
-        n = length xs
-    min' = minimum xs
-    max' = maximum xs
+    anyEqualNeighbor z0 (z1:others)
+      | z0 == z1 = True
+      | otherwise = anyEqualNeighbor z1 others
+    anyEqualNeighbor _ [] = False
 
     -- Use the min for offset. Another good choice could be the mean.
     offset :: d
-    offset = min'
+    offset = minimum xs
     shownOffset = case showWithoutOffset [offset] of
       [r] -> r
       rs -> error $ "showDs: shownOffset expected 1 element, got " ++ show (length rs)
