@@ -89,14 +89,14 @@ instance PlotValue LogValue where
 -- >>> showDs [0, 1, 2 :: Double]
 -- ["0","1","2"]
 --
--- >>> showDs [0, 1000, 2000 :: Double]
--- ["0.0e0","1.0e3","2.0e3"]
+-- >>> showDs [0, 1000000, 2000000 :: Double]
+-- ["0.0e0","1.0e6","2.0e6"]
 --
 -- >>> showDs [0, 0.001, 0.002 :: Double]
 -- ["0","0.001","0.002"]
 --
--- >>> showDs [-10000, -1000, 9000 :: Double]
--- ["-1.0e4","-1.0e3","9.0e3"]
+-- >>> showDs [-10000000, -1000000, 9000000 :: Double]
+-- ["-1.0e7","-1.0e6","9.0e6"]
 --
 -- >>> showDs [10, 11, 12 :: Double]
 -- ["10","11","12"]
@@ -104,14 +104,19 @@ instance PlotValue LogValue where
 -- >>> showDs [100, 101, 102 :: Double]
 -- ["100","101","102"]
 --
--- >>> showDs [1000, 1001, 1002 :: Double]
--- ["1000","1001","1002"]
+-- >>> showDs [100000, 100001, 100002 :: Double]
+-- ["100000","100001","100002"]
 --
--- >>> showDs [10000, 10001, 10002 :: Double]
--- ["1.0e4 + 0","1.0e4 + 1","1.0e4 + 2"]
+-- >>> showDs [1000000, 1000001, 1000002 :: Double]
+-- ["1.0e6 + 0","1.0e6 + 1","1.0e6 + 2"]
 --
--- >>> showDs [-10000, -10001, -10002 :: Double]
--- ["-1.0e4 + 2","-1.0e4 + 1","-1.0e4 + 0"]
+-- >>> showDs [10000000, 10000001, 10000002 :: Double]
+-- ["1.0e7 + 0","1.0e7 + 1","1.0e7 + 2"]
+--
+-- >>> showDs [-10000000, -10000001, -10000002 :: Double]
+-- ["-1.0e7 + 2","-1.0e7 + 1","-1.0e7 + 0"]
+--
+-- prop> let [s0, s1] = showDs [x, x + 1.0 :: Double] in s0 /= s1
 showDs :: forall d . (RealFloat d) => [d] -> [String]
 showDs xs
   | useOffset = map addShownOffset $ showWithoutOffset (map (\x -> x - offset) xs)
@@ -123,7 +128,7 @@ showDs xs
       -- if some data is positive and some negative, we don't need an offset
       | min' <= 0 && max' >= 0 = False
       -- if the range is significantly smaller than the average, we need an offset
-      | 1000 * abs (max' - min') < abs mean' = True
+      | 1e6 * abs (max' - min') < abs mean' = True
       | otherwise = False
 
     mean' :: d
@@ -152,7 +157,7 @@ showWithoutOffset xs
   | otherwise = map showD xs
   where
     -- use scientific notation if max value is too big or too small
-    useScientificNotation = maxAbs > 1100 || maxAbs < 0.001
+    useScientificNotation = maxAbs >= 1e6 || maxAbs <= 1e-6
     maxAbs = maximum (map abs xs)
 
 
