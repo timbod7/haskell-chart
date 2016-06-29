@@ -53,23 +53,34 @@ instance ToRenderable (Legend x y) where
 legendToRenderable :: Legend x y -> Renderable String
 legendToRenderable (Legend ls lvs) = gridToRenderable grid
   where
+    grid :: Grid (Renderable String)
     grid = case _legend_orientation ls of
         LORows n -> mkGrid n aboveG besideG
         LOCols n -> mkGrid n besideG aboveG 
 
+    aboveG, besideG :: [Grid (Renderable String)] -> Grid (Renderable String)
     aboveG = aboveN.intersperse ggap1
     besideG = besideN.intersperse ggap1
 
+    mkGrid :: Int
+              -> ([Grid (Renderable String)] -> Grid (Renderable String))
+              -> ([Grid (Renderable String)] -> Grid (Renderable String))
+              -> Grid (Renderable String)
     mkGrid n join1 join2 = join1 [ join2 (map rf ps1) | ps1 <- groups n ps ]
 
     ps  :: [(String, [Rect -> BackendProgram ()])]
     ps   = join_nub lvs
 
-    rf :: (String,[Rect -> BackendProgram ()]) -> Grid (Renderable String)
+    rf :: (String, [Rect -> BackendProgram ()]) -> Grid (Renderable String)
     rf (title,rfs) = besideN [gpic,ggap2,gtitle]
       where
+        gpic :: Grid (Renderable String)
         gpic = besideN $ intersperse ggap2 (map rp rfs)
+
+        gtitle :: Grid (Renderable String)
         gtitle = tval $ lbl title
+
+        rp :: (Rect -> BackendProgram ()) -> Grid (Renderable String)
         rp rfn = tval Renderable {
                      minsize = return (_legend_plot_size ls, 0),
                      render  = \(w,h) -> do 
@@ -77,8 +88,11 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
                          return (\_-> Just title)
                  }
 
+    ggap1, ggap2 :: Grid (Renderable String)
     ggap1 = tval $ spacer (_legend_margin ls,_legend_margin ls / 2)
     ggap2 = tval $ spacer1 (lbl "X")
+
+    lbl :: String -> Renderable String
     lbl = label (_legend_label_style ls) HTA_Left VTA_Centre 
 
 groups :: Int -> [a] -> [[a]]

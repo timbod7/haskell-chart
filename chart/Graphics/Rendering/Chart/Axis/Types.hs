@@ -354,7 +354,7 @@ renderAxisGrid sz@(w,h) at@(AxisT re as _ ad) =
 
 -- | Construct an axis given the positions for ticks, grid lines, and 
 -- labels, and the labelling function
-makeAxis :: PlotValue x => (x -> String) -> ([x],[x],[x]) -> AxisData x
+makeAxis :: PlotValue x => ([x] -> [String]) -> ([x],[x],[x]) -> AxisData x
 makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     _axis_visibility = def,
     _axis_viewport = newViewport,
@@ -367,13 +367,19 @@ makeAxis labelf (labelvs, tickvs, gridvs) = AxisData {
     newViewport = vmap (min',max')
     newTropweiv = invmap (min',max')
     newTicks    = [ (v,2)        | v <- tickvs  ] ++ [ (v,5) | v <- labelvs ]
-    newLabels   = [ (v,labelf v) | v <- labelvs ]
+    newLabels   = zipWithLengthCheck labelvs (labelf labelvs)
+      where
+        zipWithLengthCheck (x:xs) (y:ys) = (x,y) : zipWithLengthCheck xs ys
+        zipWithLengthCheck [] [] = []
+        zipWithLengthCheck _ _ =
+          error "makeAxis: label function returned the wrong number of labels"
+
     min'        = minimum labelvs
     max'        = maximum labelvs
 
 -- | Construct an axis given the positions for ticks, grid lines, and 
 -- labels, and the positioning and labelling functions
-makeAxis' :: Ord x => (x -> Double) -> (Double -> x) -> (x -> String)
+makeAxis' :: Ord x => (x -> Double) -> (Double -> x) -> ([x] -> [String])
                    -> ([x],[x],[x]) -> AxisData x
 makeAxis' t f labelf (labelvs, tickvs, gridvs) = AxisData {
     _axis_visibility = def,
@@ -381,7 +387,12 @@ makeAxis' t f labelf (labelvs, tickvs, gridvs) = AxisData {
     _axis_tropweiv = invLinMap f t (minimum labelvs, maximum labelvs),
     _axis_ticks    = zip tickvs (repeat 2)  ++  zip labelvs (repeat 5),
     _axis_grid     = gridvs,
-    _axis_labels   = [[ (v,labelf v) | v <- labelvs ]]
+    _axis_labels   =
+      let zipWithLengthCheck (x:xs) (y:ys) = (x,y) : zipWithLengthCheck xs ys
+          zipWithLengthCheck [] [] = []
+          zipWithLengthCheck _ _ =
+            error "makeAxis': label function returned the wrong number of labels"
+      in [zipWithLengthCheck labelvs (labelf labelvs)]
     }
 
 
