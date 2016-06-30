@@ -227,7 +227,8 @@ chooseStep :: RealFloat a => a -> (a,a) -> Rational
 chooseStep nsteps (x1,x2) = minimumBy (comparing proximity) stepVals
   where
     delta = x2 - x1
-    mult  = 10 ^^ ((floor $ log10 $ delta / nsteps)::Integer)
+    mult  | delta == 0 = 1  -- Otherwise the case below will use all of memory
+          | otherwise  = 10 ^^ ((floor $ log10 $ delta / nsteps)::Integer)
     stepVals = map (mult*) [0.1,0.2,0.25,0.5,1.0,2.0,2.5,5.0,10,20,25,50]
     proximity x = abs $ delta / realToFrac x - nsteps
 
