@@ -54,7 +54,7 @@ initGuiOnce = do
 -- | Display a renderable in a gtk window.
 --
 -- Note that this is a convenience function that initialises GTK on
--- it's first call, but not subsequent calls. Hence it's 
+-- its first call, but not subsequent calls. Hence it's 
 -- unlikely to be compatible with other code using gtk. In 
 -- that case use createRenderableWindow.
 renderableToWindow :: Renderable a -> Int -> Int -> IO ()
