@@ -38,11 +38,11 @@ Executable chart-harness
       Chart-diagrams  >= 1.8 && < 1.9,
       gtk             >= 0.9.11,
       cairo           >= 0.9.11,
-      diagrams-cairo  >= 1.3 && < 1.4,
+      diagrams-cairo  >= 1.3 && < 1.5,
       diagrams-svg    >= 1.4 && < 1.5,
-      diagrams-postscript    >= 0.7 && < 1.4,
-      diagrams-lib    >= 1.2 && < 1.4,
-      diagrams-core   >= 1.3 && < 1.4
+      diagrams-postscript    >= 0.7 && < 1.5,
+      diagrams-lib    >= 1.2 && < 1.5,
+      diagrams-core   >= 1.3 && < 1.5
   Main-is: Main.hs
   Hs-Source-Dirs: tests
   Ghc-Options: -threaded
