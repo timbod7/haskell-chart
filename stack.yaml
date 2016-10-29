@@ -6,13 +6,18 @@ packages:
 - chart-tests/
 - chart-gtk/
 extra-deps:
-- SVGFonts-1.5.0.0
+- SVGFonts-1.6.0.1
 - tuple-0.3.0.2
 - OneTuple-0.2.1
-- diagrams-svg-1.4
-- svg-builder-0.1
-- gtk-0.14.2
+- diagrams-svg-1.4.1
+- svg-builder-0.1.0.2
+- gtk-0.14.5
+- diagrams-core-1.4
+- diagrams-lib-1.4
+- diagrams-cairo-1.4
+- optparse-applicative-0.13.0.0
+- diagrams-postscript-1.4
 flags:
   gtk:
     have-quartz-gtk: true
-resolver: lts-5.18
+resolver: lts-7.5
