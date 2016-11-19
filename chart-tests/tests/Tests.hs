@@ -461,6 +461,7 @@ allTests =
      , ("test17", stdSize,  \lw -> simple $ Test17.chart lw)
      , ("test18", stdSize, const $ simple test18)
      , ("test19", stdSize, const $ simple Test19.chart)
+     , ("test19b", stdSize, const $ simple Test19.chart2)
      , ("misc1",  stdSize, setPickFn nullPickFn . misc1 20 0)
        -- perhaps a bit excessive
      , ("misc1a", stdSize, setPickFn nullPickFn . misc1 12 45)

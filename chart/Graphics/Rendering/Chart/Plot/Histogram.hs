@@ -115,7 +115,11 @@ histToPlot p = Plot {
         _plot_render      = renderPlotHist p,
         _plot_legend      = [(_plot_hist_title p, renderPlotLegendHist p)],
         _plot_all_points  = unzip
-                            $ concatMap (\((x1,x2), y)->[(x1,y), (x2,y)])
+                            $ concatMap (\((x1,x2), y)->[ (x1,y)
+                                                        , (x2,y)
+                                                        , (x1, 0)
+                                                        , (x2, 0)
+                                                        ])
                             $ histToBins p
     }
 
@@ -170,9 +174,9 @@ histToBins hist =
           norm = dx * realToFrac (V.length values)
           normalize = _plot_hist_norm_func hist norm
           counts = V.toList $ V.map (normalize . snd)
-                   $ histWithBins (V.fromList bounds) (zip (repeat 1) $ V.toList values)
+                   $ histWithBins (V.fromList bounds)
+                   $ zip (repeat 1) (V.toList values)
 
--- TODO: Determine more aesthetically pleasing range
 realHistRange :: (RealFrac x) => PlotHist x y -> (x,x)
 realHistRange hist = fromMaybe range $ _plot_hist_range hist
     where values = V.fromList (_plot_hist_values hist)

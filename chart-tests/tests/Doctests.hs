@@ -8,4 +8,5 @@ main :: IO ()
 main =
   doctest
     [ "../chart/Graphics/Rendering/Chart/Axis/Floating.hs"
+    , "../chart/Numeric/Histogram.hs"
     ]
