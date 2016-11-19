@@ -21,7 +21,7 @@ type Range a = (a,a)
 -- >>> binBounds 0 3 4
 -- [(0.0,0.75),(0.75,1.5),(1.5,2.25),(2.25,3.0)]
 binBounds :: RealFrac a => a -> a -> Int -> [Range a]
-binBounds a b n = map (\i->(lbound i, lbound (i+1))) [0..n - 1]
+binBounds a b n = map (\i->(lbound i, lbound (i+1))) [0..n-1]
         where lbound i = a + (b-a) * realToFrac i / realToFrac n
 
 -- | 'histValues a b n vs' returns the bins for the histogram of

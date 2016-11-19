@@ -53,7 +53,7 @@ data PlotHist x y = PlotHist
 
       -- | Override the range of the histogram. If @Nothing@ the
       -- range of @_plot_hist_values@ is used.
-      -- 
+      --
       -- Note that any normalization is always computed over the full
       -- data set, including samples not falling in the histogram range.
     , _plot_hist_range                :: Maybe (x,x)
@@ -117,8 +117,8 @@ histToPlot p = Plot {
         _plot_all_points  = unzip
                             $ concatMap (\((x1,x2), y)->[ (x1,y)
                                                         , (x2,y)
-                                                        , (x1, 0)
-                                                        , (x2, 0)
+                                                        , (x1,0)
+                                                        , (x2,0)
                                                         ])
                             $ histToBins p
     }
