@@ -7,6 +7,7 @@
 module Graphics.Rendering.Chart.Backend.Diagrams
   ( runBackend
   , runBackendR
+  , runBackendWithGlyphs
   , defaultEnv
   , createEnv
   , DEnv(..)
