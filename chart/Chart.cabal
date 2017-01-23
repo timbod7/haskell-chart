@@ -11,6 +11,8 @@ Description: A library for generating 2D Charts and Plots, with backends provide
              Cairo (<http://hackage.haskell.org/package/Chart-cairo>)
              and
              Diagrams (<http://hackage.haskell.org/package/Chart-diagrams>).
+             
+             Documentation: https://github.com/timbod7/haskell-chart/wiki.
 Category: Graphics
 Cabal-Version: >= 1.6
 Build-Type: Simple
