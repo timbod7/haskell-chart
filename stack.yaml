@@ -24,4 +24,4 @@ extra-deps:
 flags:
   gtk:
     have-quartz-gtk: true
-resolver: lts-7.5
+resolver: lts-7.13
