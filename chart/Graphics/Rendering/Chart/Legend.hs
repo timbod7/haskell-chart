@@ -12,11 +12,13 @@ module Graphics.Rendering.Chart.Legend(
     Legend(..),
     LegendStyle(..),
     LegendOrientation(..),
+    LegendPosition(..),
     legendToRenderable,
     legend_label_style,
     legend_margin,
     legend_plot_size,
-    legend_orientation
+    legend_orientation,
+    legend_position
 ) where
 
 import Data.List (partition,intersperse)
@@ -35,7 +37,8 @@ data LegendStyle = LegendStyle {
    _legend_label_style :: FontStyle,
    _legend_margin      :: Double,
    _legend_plot_size   :: Double,
-   _legend_orientation :: LegendOrientation
+   _legend_orientation :: LegendOrientation,
+   _legend_position    :: LegendPosition
 }
 
 -- | Legends can be constructed in two orientations: in rows
@@ -43,7 +46,12 @@ data LegendStyle = LegendStyle {
 -- columns (where we specify the maximum number of rows)
 data LegendOrientation = LORows Int
                        | LOCols Int
-                       
+
+-- | Defines the position of the legend, relative to the plot.
+data LegendPosition = LegendAbove
+                    | LegendBelow
+                    | LegendRight
+                    | LegendLeft
 
 data Legend x y = Legend LegendStyle [(String, Rect -> BackendProgram ())]
 
@@ -83,7 +91,7 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
         rp :: (Rect -> BackendProgram ()) -> Grid (Renderable String)
         rp rfn = tval Renderable {
                      minsize = return (_legend_plot_size ls, 0),
-                     render  = \(w,h) -> do 
+                     render  = \(w,h) -> do
                          _ <- rfn (Rect (Point 0 0) (Point w h))
                          return (\_-> Just title)
                  }
@@ -93,7 +101,7 @@ legendToRenderable (Legend ls lvs) = gridToRenderable grid
     ggap2 = tval $ spacer1 (lbl "X")
 
     lbl :: String -> Renderable String
-    lbl = label (_legend_label_style ls) HTA_Left VTA_Centre 
+    lbl = label (_legend_label_style ls) HTA_Left VTA_Centre
 
 groups :: Int -> [a] -> [[a]]
 groups _ [] = []
@@ -105,11 +113,12 @@ join_nub ((x,a1):ys) = case partition ((==x) . fst) ys of
 join_nub []          = []
 
 instance Default LegendStyle where
-  def = LegendStyle 
+  def = LegendStyle
     { _legend_label_style = def
     , _legend_margin      = 20
     , _legend_plot_size   = 20
     , _legend_orientation = LORows 4
+    , _legend_position    = LegendBelow
     }
 
 $( makeLenses ''LegendStyle )
