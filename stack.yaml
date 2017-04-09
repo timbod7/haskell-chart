@@ -23,5 +23,6 @@ extra-deps:
 - gtk-0.14.6
 flags:
   gtk:
+    # This needs to be false on Linux
     have-quartz-gtk: true
 resolver: lts-7.13

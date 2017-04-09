@@ -8,7 +8,7 @@ import Data.Default.Class
 
 import Utils
 
-chart lo = layoutToRenderable layout
+chart lo lp = layoutToRenderable layout
  where
   layout = 
         layout_title .~ "Legend Test"
@@ -31,7 +31,9 @@ chart lo = layoutToRenderable layout
 
   alabels = [ "X", "Y" ]
 
-  lstyle = legend_orientation .~ lo $ def
+  lstyle = legend_orientation .~ lo
+         $ legend_position .~ lp
+         $ def
 
   btitle = ""
   mkstyle c = (solidFillStyle c, Nothing)

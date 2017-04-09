@@ -109,6 +109,7 @@ import Control.Lens hiding (at)
 import Data.Colour
 import Data.Colour.Names (white)
 import Data.Default.Class
+import Data.Maybe (fromMaybe)
 
 -- | A @MAxisFn@ is a function that generates an (optional) axis
 --   given the points plotted against that axis.
@@ -212,13 +213,19 @@ layoutToRenderable l = fillBackground (_layout_background l) $ gridToRenderable 
 layoutToGrid :: forall x y . (Ord x, Ord y) => Layout x y -> Grid (Renderable (LayoutPick x y y))
 layoutToGrid l = grid
   where
-    grid = titleToRenderable lm (_layout_title_style l) (_layout_title l)
-           `wideAbove`
-           addMarginsToGrid (lm,lm,lm,lm) (layoutPlotAreaToGrid l)
-           `aboveWide` 
-           renderLegend l (getLegendItems l)
+    lp :: Grid a -> a -> Grid a
+    lp = case fromMaybe LegendBelow $ _legend_position <$> _layout_legend l of
+              LegendAbove -> flip wideAbove
+              LegendBelow -> aboveWide
+              LegendRight -> besideTall
+              LegendLeft  -> flip tallBeside
+
+    title = titleToRenderable lm (_layout_title_style l) (_layout_title l)
+    plotArea = addMarginsToGrid (lm,lm,lm,lm) (layoutPlotAreaToGrid l)
+    legend = renderLegend l (getLegendItems l)
+    grid = title `wideAbove` (plotArea `lp` legend)
     lm = _layout_margin l
-  
+
 getLayoutXVals :: Layout x y -> [x]
 getLayoutXVals l = concatMap (fst . _plot_all_points) (_layout_plots l)
 
