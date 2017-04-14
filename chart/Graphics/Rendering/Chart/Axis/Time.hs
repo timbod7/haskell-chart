@@ -267,54 +267,50 @@ noTime _ = ([],[])
 --   with 'doubleFromTimeValue'.
 autoTimeValueAxis :: TimeValue t => AxisFn t
 autoTimeValueAxis pts
-    | null pts              = timeValueAxis days    days    (ft "%d-%b-%y") UnderTicks
-                                                    noTime  (ft "") UnderTicks []
-    | tdiff==0 && 100*dsec<1= timeValueAxis millis1   millis1  (ft "%S%Q") UnderTicks
-                                                      noTime (ft "%S%Q") UnderTicks pts
-    | tdiff==0 && 10*dsec<1 = timeValueAxis millis10  millis10  (ft "%S%Q") UnderTicks
-                                                      noTime (ft "%S%Q") UnderTicks pts
-    | tdiff==0 && dsec<1    = timeValueAxis millis10  millis100 (ft "%S%Q") UnderTicks
-                                                      seconds (ft "%M:%S") BetweenTicks pts
-    | tdiff==0 && dsec<5    = timeValueAxis millis100 seconds (ft "%M:%S%Q") UnderTicks
-                                                      seconds (ft "%M:%S") BetweenTicks pts
-    | tdiff==0 && dsec<32   = timeValueAxis seconds seconds (ft "%Ss") UnderTicks
-                                                    minutes (ft "%d-%b-%y %H:%M") BetweenTicks pts
-    | tdiff==0 && dsec<120  = timeValueAxis seconds fiveSeconds (ft "%Ss") UnderTicks
-                                                    minutes (ft "%d-%b-%y %H:%M") BetweenTicks pts
-    | tdiff==0 && dmin<7    = timeValueAxis fiveSeconds minutes (ft "%Mm") UnderTicks
-                                                    hours   (ft "%d-%b-%y %H:00") BetweenTicks pts
-    | tdiff==0 && dmin<32   = timeValueAxis minutes minutes (ft "%Mm") UnderTicks
-                                                    hours   (ft "%d-%b-%y %H:00") BetweenTicks pts
-    | tdiff==0 && dmin<90   = timeValueAxis minutes fiveMinutes (ft "%Mm") UnderTicks
-                                                    hours   (ft "%d-%b-%y %H:00") BetweenTicks pts
-    | tdiff < 2 && dhour<4  = timeValueAxis fiveMinutes hours (ft "%H:%M") UnderTicks
-                                                        days  (ft "%d-%b-%y") BetweenTicks pts
-    | tdiff < 2 && dhour<32 = timeValueAxis hours  hours  (ft "%H:%M") UnderTicks
-                                                   days   (ft "%d-%b-%y") BetweenTicks pts
-    | tdiff < 4             = timeValueAxis hours  days   (ft "%d-%b-%y") BetweenTicks
-                                                   noTime (ft "") BetweenTicks pts
-    | tdiff < 12            = timeValueAxis days   days   (ft "%d-%b") BetweenTicks
-                                                   years  (ft "%Y") BetweenTicks pts
-    | tdiff < 45            = timeValueAxis days   days   (ft "%d") BetweenTicks
-                                                   months (ft "%b-%y") BetweenTicks pts
-    | tdiff < 95            = timeValueAxis days   months (ft "%b-%y") BetweenTicks
-                                                   noTime (ft "") BetweenTicks pts
-    | tdiff < 450           = timeValueAxis months months (ft "%b-%y") BetweenTicks
-                                                   noTime (ft "") BetweenTicks pts
-    | tdiff < 735           = timeValueAxis months months (ft "%b") BetweenTicks
-                                                   years  (ft "%Y") BetweenTicks pts
-    | tdiff < 1800          = timeValueAxis months years (ft "%Y") BetweenTicks
-                                                   noTime (ft "") BetweenTicks pts
-    | otherwise             = timeValueAxis years  years (ft "%Y") BetweenTicks
-                                                   noTime (ft "") BetweenTicks pts
+    | null pts     = timeValueAxis days    days    (ft "%d-%b-%y") UnderTicks
+                                           noTime  (ft "") UnderTicks []
+    | 100*dsec<1   = timeValueAxis millis1   millis1  (ft "%S%Q") UnderTicks
+                                             noTime (ft "%S%Q") UnderTicks pts
+    | 10*dsec<1    = timeValueAxis millis10  millis10  (ft "%S%Q") UnderTicks
+                                             noTime (ft "%S%Q") UnderTicks pts
+    | dsec<1       = timeValueAxis millis10  millis100 (ft "%S%Q") UnderTicks
+                                             seconds (ft "%M:%S") BetweenTicks pts
+    | dsec<5       = timeValueAxis millis100 seconds (ft "%M:%S%Q") UnderTicks
+                                             seconds (ft "%M:%S") BetweenTicks pts
+    | dsec<32      = timeValueAxis seconds seconds (ft "%Ss") UnderTicks
+                                           minutes (ft "%d-%b-%y %H:%M") BetweenTicks pts
+    | dsec<120     = timeValueAxis seconds fiveSeconds (ft "%Ss") UnderTicks
+                                           minutes (ft "%d-%b-%y %H:%M") BetweenTicks pts
+    | dsec<7*60    = timeValueAxis fiveSeconds minutes (ft "%Mm") UnderTicks
+                                           hours   (ft "%d-%b-%y %H:00") BetweenTicks pts
+    | dsec<32*60   = timeValueAxis minutes minutes (ft "%Mm") UnderTicks
+                                           hours   (ft "%d-%b-%y %H:00") BetweenTicks pts
+    | dsec<90*60   = timeValueAxis minutes fiveMinutes (ft "%Mm") UnderTicks
+                                           hours   (ft "%d-%b-%y %H:00") BetweenTicks pts
+    | dsec<4*3600  = timeValueAxis fiveMinutes hours (ft "%H:%M") UnderTicks
+                                               days  (ft "%d-%b-%y") BetweenTicks pts
+    | dsec<32*3600 = timeValueAxis hours  hours  (ft "%H:%M") UnderTicks
+                                          days   (ft "%d-%b-%y") BetweenTicks pts
+    | dday<4       = timeValueAxis hours  days   (ft "%d-%b-%y") BetweenTicks
+                                          noTime (ft "") BetweenTicks pts
+    | dday<12      = timeValueAxis days   days   (ft "%d-%b") BetweenTicks
+                                          years  (ft "%Y") BetweenTicks pts
+    | dday<45      = timeValueAxis days   days   (ft "%d") BetweenTicks
+                                          months (ft "%b-%y") BetweenTicks pts
+    | dday<95      = timeValueAxis days   months (ft "%b-%y") BetweenTicks
+                                          noTime (ft "") BetweenTicks pts
+    | dday<450     = timeValueAxis months months (ft "%b-%y") BetweenTicks
+                                          noTime (ft "") BetweenTicks pts
+    | dday<735     = timeValueAxis months months (ft "%b") BetweenTicks
+                                          years  (ft "%Y") BetweenTicks pts
+    | dday<1800    = timeValueAxis months years (ft "%Y") BetweenTicks
+                                          noTime (ft "") BetweenTicks pts
+    | otherwise    = timeValueAxis years  years (ft "%Y") BetweenTicks
+                                          noTime (ft "") BetweenTicks pts
   where
-    upts = map utctimeFromTV pts
-    tdiff = diffDays (utctDay t1) (utctDay t0)
-    dhour = if tdiff==0 then h1-h0 else 24*fromIntegral tdiff +h1-h0
-    dmin  = 60*dhour+(m1-m0)
-    dsec  = fromIntegral (60*dmin) + (s1-s0)
-    (TimeOfDay h0 m0 s0) = timeToTimeOfDay (utctDayTime t0)
-    (TimeOfDay h1 m1 s1) = timeToTimeOfDay (utctDayTime t1)
+    upts  = map utctimeFromTV pts
+    dsec  = diffUTCTime t1 t0  -- seconds
+    dday  = dsec / 86400       -- days
     t1    = maximum upts
     t0    = minimum upts
     ft    = formatTime defaultTimeLocale
