@@ -41,6 +41,7 @@ library
         Graphics.Rendering.Chart.Axis.Floating,
         Graphics.Rendering.Chart.Axis.Indexed,
         Graphics.Rendering.Chart.Axis.Int,
+        Graphics.Rendering.Chart.Axis.Time,
         Graphics.Rendering.Chart.Axis.LocalTime,
         Graphics.Rendering.Chart.Axis.Types,
         Graphics.Rendering.Chart.Axis.Unit,

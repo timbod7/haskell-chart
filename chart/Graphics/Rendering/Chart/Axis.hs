@@ -11,7 +11,7 @@ module Graphics.Rendering.Chart.Axis(
     module Graphics.Rendering.Chart.Axis.Types,
     module Graphics.Rendering.Chart.Axis.Floating,
     module Graphics.Rendering.Chart.Axis.Int,
-    module Graphics.Rendering.Chart.Axis.LocalTime,
+    module Graphics.Rendering.Chart.Axis.Time,
     module Graphics.Rendering.Chart.Axis.Unit,
     module Graphics.Rendering.Chart.Axis.Indexed,
 ) where
@@ -19,6 +19,6 @@ module Graphics.Rendering.Chart.Axis(
 import Graphics.Rendering.Chart.Axis.Types
 import Graphics.Rendering.Chart.Axis.Floating
 import Graphics.Rendering.Chart.Axis.Int
-import Graphics.Rendering.Chart.Axis.LocalTime
+import Graphics.Rendering.Chart.Axis.Time
 import Graphics.Rendering.Chart.Axis.Unit
 import Graphics.Rendering.Chart.Axis.Indexed

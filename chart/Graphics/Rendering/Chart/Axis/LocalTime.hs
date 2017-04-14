@@ -8,21 +8,24 @@
 --
 -- Calculate and render time axes
 
-module Graphics.Rendering.Chart.Axis.LocalTime(
+module Graphics.Rendering.Chart.Axis.LocalTime
+    {-# DEPRECATED "Use Graphics.Rendering.Chart.Axis.Time module" #-}
+    (
     TimeSeq,
     TimeLabelFn,
     TimeLabelAlignment(..),
-    
+
     timeAxis,
     autoTimeAxis,
-    
+
     days, months, years,
-                  
+
     -- * Utilities
     doubleFromLocalTime
-    
-    ) where
- 
+
+    )
+    where
+
 import Data.Default.Class
 #if MIN_VERSION_time(1,5,0)
 import Data.Time hiding (months)
@@ -34,11 +37,7 @@ import Data.Fixed
 import Control.Lens
 
 import Graphics.Rendering.Chart.Axis.Types
-
-instance PlotValue LocalTime where
-    toValue    = doubleFromLocalTime
-    fromValue  = localTimeFromDouble
-    autoAxis   = autoTimeAxis
+import Graphics.Rendering.Chart.Axis.Time ()
 
 ----------------------------------------------------------------------
 
@@ -89,19 +88,19 @@ data TimeLabelAlignment = UnderTicks
 --
 --   The values to be plotted against this axis can be created with
 --   'doubleFromLocalTime'.
-timeAxis :: 
-  TimeSeq 
+timeAxis ::
+  TimeSeq
   -- ^ Set the minor ticks, and the final range will be aligned to its
   --   elements.
-  -> TimeSeq 
+  -> TimeSeq
   -- ^ Set the labels and grid.
-  -> TimeLabelFn 
-  -> TimeLabelAlignment 
-  -> TimeSeq 
+  -> TimeLabelFn
+  -> TimeLabelAlignment
+  -> TimeSeq
   -- ^ Set the second line of labels.
-  -> TimeLabelFn 
+  -> TimeLabelFn
   -- ^ Format `LocalTime` for labels.
-  -> TimeLabelAlignment 
+  -> TimeLabelAlignment
   -> AxisFn LocalTime
 timeAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
     _axis_visibility = def,
@@ -110,7 +109,7 @@ timeAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
     _axis_ticks    = [ (t,2) | t <- times] ++ [ (t,5) | t <- ltimes, visible t],
     _axis_labels   = [ [ (t,l) | (t,l) <- labels labelf   ltimes lal, visible t]
                      , [ (t,l) | (t,l) <- labels contextf ctimes clal, visible t]
-                     ], 
+                     ],
     _axis_grid     = [ t     | t <- ltimes, visible t]
     }
   where
@@ -235,9 +234,9 @@ autoTimeAxis :: AxisFn LocalTime
 autoTimeAxis pts
     | null pts              = timeAxis days    days    (ft "%d-%b-%y") UnderTicks
                                                noTime  (ft "") UnderTicks []
-    | tdiff==0 && 100*dsec<1= timeAxis millis1   millis1  (ft "%S%Q") UnderTicks 
+    | tdiff==0 && 100*dsec<1= timeAxis millis1   millis1  (ft "%S%Q") UnderTicks
                                                  noTime (ft "%S%Q") UnderTicks pts
-    | tdiff==0 && 10*dsec<1 = timeAxis millis10  millis10  (ft "%S%Q") UnderTicks 
+    | tdiff==0 && 10*dsec<1 = timeAxis millis10  millis10  (ft "%S%Q") UnderTicks
                                                  noTime (ft "%S%Q") UnderTicks pts
     | tdiff==0 && dsec<1    = timeAxis millis10  millis100 (ft "%S%Q") UnderTicks
                                                  seconds (ft "%M:%S") BetweenTicks pts
