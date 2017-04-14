@@ -6,6 +6,7 @@
 --
 -- Vector plots
 --
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Plot.Vectors(
@@ -24,7 +25,9 @@ module Graphics.Rendering.Chart.Plot.Vectors(
 
 import Control.Lens
 import Control.Monad
+#if !MIN_VERSION_base(4,8,0)
 import Control.Applicative
+#endif
 import Data.Tuple
 import Data.Colour hiding (over)
 import Data.Colour.Names

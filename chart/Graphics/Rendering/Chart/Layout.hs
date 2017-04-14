@@ -18,6 +18,7 @@
 -- 
 --     * 'LayoutAxis'
 --
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ExistentialQuantification #-}
@@ -95,6 +96,10 @@ module Graphics.Rendering.Chart.Layout
   , slayouts_layouts
   , slayouts_compress_legend
   ) where
+
+#if !MIN_VERSION_base(4,8,0)
+import Control.Applicative ((<$>))
+#endif
 
 import Graphics.Rendering.Chart.Axis
 import Graphics.Rendering.Chart.Geometry
