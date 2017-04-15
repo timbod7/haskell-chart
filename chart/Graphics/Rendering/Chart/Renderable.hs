@@ -8,6 +8,7 @@
 -- is a composable drawing element, along with assorted functions to
 -- them.
 --
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.Rendering.Chart.Renderable(
@@ -69,10 +70,14 @@ data Renderable a = Renderable {
    --   The resulting "pick" function  maps a point in the image to a value.
    render  :: RectSize -> BackendProgram (PickFn a)
 }
+  deriving (Functor)
 
 -- | A type class abtracting the conversion of a value to a Renderable.
 class ToRenderable a where
   toRenderable :: a -> Renderable ()
+
+instance ToRenderable (Renderable a) where
+  toRenderable = void
 
 emptyRenderable :: Renderable a
 emptyRenderable = spacer (0,0)
