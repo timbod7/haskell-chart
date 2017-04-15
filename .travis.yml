@@ -52,6 +52,11 @@ script:
  # build all packages
  - cp -v ../cabal.project ./
  - cabal new-build -j1 all
+ # run test harness
+ - time $(find dist-newstyle -type f -executable -name chart-harness | head -n 1) charts-cairo --svg
+ # cabal new-build and data files don't play yet well together
+ # https://github.com/haskell/cabal/issues/4120
+ # - time $(find dist-newstyle -type f -executable -name chart-harness | head -n 1) charts-diagrams --svg
  # and run testsuite
  # - $(find dist-newstyle -type f -executable -name doctests | head -n 1)
 
