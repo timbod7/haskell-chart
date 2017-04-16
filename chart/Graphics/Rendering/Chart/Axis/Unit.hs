@@ -5,6 +5,7 @@
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Calculate and render unit indexed axes
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Graphics.Rendering.Chart.Axis.Unit(
     unitAxis,

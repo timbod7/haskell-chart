@@ -5,6 +5,7 @@
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- Calculate and render integer indexed axes
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Graphics.Rendering.Chart.Axis.Int(
     defaultIntAxis,
