@@ -5,20 +5,25 @@ import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Grid
 
-import System.Time
-import System.Random
-import Data.Time.LocalTime
 import Control.Lens
+import Control.Monad
 import Data.Char (chr)
 import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
-import Data.List(sort,nub,scanl1)
 import Data.Default.Class
+import Data.List(sort,nub,scanl1)
 import qualified Data.Map as Map
-import Control.Monad
+import Data.Time.LocalTime
 import Prices
+import System.Random
+import System.Time
 import qualified Test1
+import qualified Test14
+import qualified Test14a
+import qualified Test15
+import qualified Test17
+import qualified Test19
 import qualified Test2
 import qualified Test3
 import qualified Test4
@@ -26,11 +31,6 @@ import qualified Test5
 import qualified Test7
 import qualified Test8
 import qualified Test9
-import qualified Test14
-import qualified Test14a
-import qualified Test15
-import qualified Test17
-import qualified Test19
 import qualified TestParametric
 import qualified TestSparkLines
 
@@ -166,14 +166,22 @@ test9 alignment lw = fillBackground fwhite $ (gridToRenderable t)
            $ layout_plots .~ [ plotBars bars ]
            $ def :: Layout PlotIndex Double
 
+    vals1 = [[20],[45],[30],[70]]
     bars1 = plot_bars_titles .~ ["Cash"]
-          $ plot_bars_values .~ addIndexes [[20],[45],[30],[70]]
+          $ plot_bars_values_with_labels .~ addLabels (addIndexes vals1)
           $ plot_bars_alignment .~ alignment
+          $ plot_bars_label_bar_hanchor .~ BHA_Centre
+          $ plot_bars_label_bar_vanchor .~ BVA_Centre
+          $ plot_bars_label_text_hanchor .~ HTA_Centre
           $ def
 
+    vals2 = [[20,45],[45,30],[30,20],[70,25]]
     bars2 = plot_bars_titles .~ ["Cash","Equity"]
-          $ plot_bars_values .~ addIndexes [[20,45],[45,30],[30,20],[70,25]]
+          $ plot_bars_values_with_labels .~ addLabels (addIndexes vals2)
           $ plot_bars_alignment .~ alignment
+          $ plot_bars_label_bar_hanchor .~ BHA_Centre
+          $ plot_bars_label_bar_vanchor .~ BVA_Centre
+          $ plot_bars_label_text_hanchor .~ HTA_Centre
           $ def
 
 -------------------------------------------------------------------------------

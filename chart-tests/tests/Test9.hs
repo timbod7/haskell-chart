@@ -1,17 +1,18 @@
-module Test9 where 
+module Test9 where
 
-import Graphics.Rendering.Chart
+import Control.Arrow
+import Control.Lens
 import Data.Colour
 import Data.Colour.Names
-import Control.Lens
 import Data.Default.Class
+import Graphics.Rendering.Chart
 
 import Utils
 
 chart :: Bool -> Renderable (LayoutPick PlotIndex Double Double)
 chart borders = layoutToRenderable layout
  where
-  layout = 
+  layout =
         layout_title .~ "Sample Bars" ++ btitle
       $ layout_title_style . font_size .~ 10
       $ layout_x_axis . laxis_generate .~ autoIndexAxis alabels
@@ -21,12 +22,13 @@ chart borders = layoutToRenderable layout
       $ def :: Layout PlotIndex Double
 
   bars2 = plot_bars_titles .~ ["Cash","Equity"]
-      $ plot_bars_values .~ addIndexes [[20,45],[45,30],[30,20],[70,25]]
+      $ plot_bars_values_with_labels .~ addLabels (addIndexes vals)
       $ plot_bars_style .~ BarsClustered
       $ plot_bars_spacing .~ BarsFixGap 30 5
       $ plot_bars_item_styles .~ map mkstyle (cycle defaultColorSeq)
       $ def
 
+  vals = [[20,45],[45,30],[30,20],[70,25]]
   alabels = [ "Jun", "Jul", "Aug", "Sep", "Oct" ]
 
   btitle = if borders then "" else " (no borders)"
