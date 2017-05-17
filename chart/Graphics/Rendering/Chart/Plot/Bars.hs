@@ -7,6 +7,7 @@
 -- Bar Charts
 --
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
 
 module Graphics.Rendering.Chart.Plot.Bars(
     PlotBars(..),
@@ -14,6 +15,8 @@ module Graphics.Rendering.Chart.Plot.Bars(
     PlotBarsSpacing(..),
     PlotBarsAlignment(..),
     BarsPlotValue(..),
+    BarHorizAnchor(..),
+    BarVertAnchor(..),
 
     plotBars,
     plot_bars_style,
@@ -24,19 +27,26 @@ module Graphics.Rendering.Chart.Plot.Bars(
     plot_bars_reference,
     plot_bars_singleton_width,
     plot_bars_values,
+    plot_bars_values_with_labels,
+    plot_bars_label_bar_hanchor,
+    plot_bars_label_bar_vanchor,
+    plot_bars_label_text_hanchor,
+    plot_bars_label_text_vanchor,
 
+    addLabels
 ) where
 
+import Control.Arrow
 import Control.Lens
 import Control.Monad
-import Data.List(nub,sort)
-import Graphics.Rendering.Chart.Geometry hiding (x0, y0)
-import Graphics.Rendering.Chart.Drawing
-import Graphics.Rendering.Chart.Plot.Types
-import Graphics.Rendering.Chart.Axis
 import Data.Colour (opaque)
 import Data.Colour.Names (black)
 import Data.Default.Class
+import Data.List(nub,sort)
+import Graphics.Rendering.Chart.Axis
+import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Geometry hiding (x0, y0)
+import Graphics.Rendering.Chart.Plot.Types
 
 class PlotValue a => BarsPlotValue a where
     barsReference :: a
@@ -70,6 +80,18 @@ data PlotBarsAlignment = BarsLeft      -- ^ The left edge of bars is at deviceX
                        | BarsRight     -- ^ The right edge of bars is at deviceX
      deriving (Show)
 
+data BarHorizAnchor
+    = BHA_Left
+    | BHA_Centre
+    | BHA_Right
+     deriving (Show)
+
+data BarVertAnchor
+    = BVA_Bottom
+    | BVA_Centre
+    | BVA_Top
+     deriving (Show)
+
 -- | Value describing how to plot a set of bars.
 --   Note that the input data is typed [(x,[y])], ie for each x value
 --   we plot several y values. Typically the size of each [y] list would
@@ -101,20 +123,48 @@ data PlotBars x y = PlotBars {
 
    _plot_bars_singleton_width :: Double,
 
-   -- | The actual points to be plotted.
-   _plot_bars_values          :: [ (x,[y]) ]
+   -- | The actual points to be plotted, and their labels
+   _plot_bars_values_with_labels :: [(x, [(y, String)])],
+
+   -- | The point on the bar to horizontally anchor the label to
+   _plot_bars_label_bar_hanchor :: BarHorizAnchor,
+
+   -- | The point on the bar to vertically anchor the label to
+   _plot_bars_label_bar_vanchor  :: BarVertAnchor,
+
+    -- | The anchor point on the label.
+   _plot_bars_label_text_hanchor :: HTextAnchor,
+
+    -- | The anchor point on the label.
+   _plot_bars_label_text_vanchor :: VTextAnchor,
+
+   -- | Angle, in degrees, to rotate the label about the anchor point.
+   _plot_bars_label_angle   :: Double,
+
+   -- | The style to use for the label.
+   _plot_bars_label_style   :: FontStyle,
+
+   -- | The offset from the anchor point to display the label at.
+   _plot_bars_label_offset  :: Vector
 }
 
 instance BarsPlotValue y => Default (PlotBars x y) where
   def = PlotBars
-    { _plot_bars_style           = BarsClustered
-    , _plot_bars_item_styles     = cycle istyles
-    , _plot_bars_titles          = []
-    , _plot_bars_spacing         = BarsFixGap 10 2
-    , _plot_bars_alignment       = BarsCentered
-    , _plot_bars_values          = []
-    , _plot_bars_singleton_width = 20
-    , _plot_bars_reference       = barsReference
+    { _plot_bars_style              = BarsClustered
+    , _plot_bars_item_styles        = cycle istyles
+    , _plot_bars_titles             = []
+    , _plot_bars_spacing            = BarsFixGap 10 2
+    , _plot_bars_alignment          = BarsCentered
+    , _plot_bars_values_with_labels = []
+    , _plot_bars_singleton_width    = 20
+    , _plot_bars_reference          = barsReference
+    , _plot_bars_label_bar_hanchor  = BHA_Centre
+    , _plot_bars_label_bar_vanchor  = BVA_Top
+    , _plot_bars_label_text_hanchor = HTA_Centre
+    , _plot_bars_label_text_vanchor = VTA_Bottom
+    , _plot_bars_label_angle        = 0
+    , _plot_bars_label_style        = def
+    , _plot_bars_label_offset       = Vector 0 0
     }
     where
       istyles   = map mkstyle defaultColorSeq
@@ -135,15 +185,27 @@ renderPlotBars p pmap = case _plot_bars_style p of
       BarsStacked   -> forM_ vals stackedBars
   where
     clusteredBars (x,ys) = do
-       forM_ (zip3 [0,1..] ys styles) $ \(i, y, (fstyle,_)) -> 
-           withFillStyle fstyle $ 
+       forM_ (zip3 [0,1..] ys styles) $ \(i, (y, _), (fstyle,_)) ->
+           withFillStyle fstyle $
              alignFillPath (barPath (offset i) x yref0 y)
              >>= fillPath
-       forM_ (zip3 [0,1..] ys styles) $ \(i, y, (_,mlstyle)) -> 
-           whenJust mlstyle $ \lstyle -> 
-             withLineStyle lstyle $ 
+       forM_ (zip3 [0,1..] ys styles) $ \(i, (y, _), (_,mlstyle)) ->
+           whenJust mlstyle $ \lstyle ->
+             withLineStyle lstyle $
                alignStrokePath (barPath (offset i) x yref0 y)
                >>= strokePath
+       withFontStyle (_plot_bars_label_style p) $
+           forM_ (zip [0,1..] ys) $ \(i, (y, txt)) -> do
+             let h = _plot_bars_label_bar_hanchor p
+             let v = _plot_bars_label_bar_vanchor p
+             let pt = rectCorner h v (barRect (offset i) x yref0 y)
+
+             drawTextR
+                (_plot_bars_label_text_hanchor p)
+                (_plot_bars_label_text_vanchor p)
+                (_plot_bars_label_angle p)
+                (pvadd pt $ _plot_bars_label_offset p)
+                txt
 
     offset = case _plot_bars_alignment p of
       BarsLeft     -> \i -> fromIntegral i * width
@@ -151,28 +213,53 @@ renderPlotBars p pmap = case _plot_bars_style p of
       BarsCentered -> \i -> fromIntegral (2*i-nys) * width/2
 
     stackedBars (x,ys) = do
-       let y2s = zip (yref0:stack ys) (stack ys)
+       let ys' = map fst ys
+       let lbls = map snd ys
+       let y2s = zip (yref0:stack ys') (stack ys')
        let ofs = case _plot_bars_alignment p of
              BarsLeft     -> 0
              BarsRight    -> -width
              BarsCentered -> -(width/2)
-       forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) -> 
-           withFillStyle fstyle $ 
+       forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) ->
+           withFillStyle fstyle $
              alignFillPath (barPath ofs x y0 y1)
              >>= fillPath
-       forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) -> 
-           whenJust mlstyle $ \lstyle -> 
-              withLineStyle lstyle $ 
+       forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) ->
+           whenJust mlstyle $ \lstyle ->
+              withLineStyle lstyle $
                 alignStrokePath (barPath ofs x y0 y1)
                 >>= strokePath
+       withFontStyle (_plot_bars_label_style p) $
+           forM_ (zip y2s lbls) $ \((y0, y1), txt) -> do
+             let h = _plot_bars_label_bar_hanchor p
+             let v = _plot_bars_label_bar_vanchor p
+             let pt = rectCorner h v (barRect ofs x y0 y1)
 
-    barPath xos x y0 y1 = do
-      let (Point x' y') = pmap' (x,y1)
-      let (Point _ y0') = pmap' (x,y0)
-      rectPath (Rect (Point (x'+xos) y0') (Point (x'+xos+width) y'))
+             drawTextR
+                (_plot_bars_label_text_hanchor p)
+                (_plot_bars_label_text_vanchor p)
+                (_plot_bars_label_angle p)
+                (pvadd pt $ _plot_bars_label_offset p)
+                txt
+
+    barRect xos x y0 y1 = Rect (Point (x'+xos) y0') (Point (x'+xos+width) y') where
+      Point x' y' = pmap' (x,y1)
+      Point _ y0' = pmap' (x,y0)
+
+    barPath xos x y0 y1 = rectPath $ barRect xos x y0 y1
+
+    rectCorner h v (Rect (Point x0 y0) (Point x1 y1)) = Point x' y' where
+        x' = case h of
+                  BHA_Left   -> x0
+                  BHA_Right  -> x1
+                  BHA_Centre -> (x0 + x1) / 2
+        y' = case v of
+                  BVA_Bottom -> y0
+                  BVA_Top    -> y1
+                  BVA_Centre -> (y0 + y1) / 2
 
     yref0 = _plot_bars_reference p
-    vals  = _plot_bars_values p
+    vals  = _plot_bars_values_with_labels p
     width = case _plot_bars_spacing p of
         BarsFixGap gap minw -> let w = max (minXInterval - gap) minw in
             case _plot_bars_style p of
@@ -198,12 +285,25 @@ whenJust :: (Monad m) => Maybe a -> (a -> m ()) -> m ()
 whenJust (Just a) f = f a
 whenJust _        _ = return ()
 
+-- Provided for backward compat. Note that this does not satisfy the lens laws, as it discards/overwrites the labels.
+plot_bars_values :: Lens' (PlotBars x y) [(x, [y])]
+plot_bars_values = lens getter setter where
+    getter = mapYs fst . _plot_bars_values_with_labels
+    setter pb vals' = pb { _plot_bars_values_with_labels = mapYs (, "") vals' }
+
+    mapYs :: (a -> b) -> [(c, [a])] -> [(c, [b])]
+    mapYs f = map (over _2 $ map f)
+
+-- Helper function for adding labels to a data series
+addLabels :: Show y => [(x, [y])] -> [(x, [(y, String)])]
+addLabels = map . second $ map (\x -> (x, show x))
+
 allBarPoints :: (BarsPlotValue y) => PlotBars x y -> ([x],[y])
 allBarPoints p = case _plot_bars_style p of
     BarsClustered -> ( [x| (x,_) <- pts], y0:concat [ys| (_,ys) <- pts] )
     BarsStacked   -> ( [x| (x,_) <- pts], y0:concat [stack ys | (_,ys) <- pts] )
   where
-    pts = _plot_bars_values p
+    pts = view plot_bars_values  p
     y0  = _plot_bars_reference p
 
 stack :: (BarsPlotValue y) => [y] -> [y]
