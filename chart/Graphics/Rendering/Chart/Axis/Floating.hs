@@ -19,6 +19,7 @@ module Graphics.Rendering.Chart.Axis.Floating(
     LogValue(..),
     LogAxisParams(..),
     scaledAxis,
+    scaledAxis',
     autoScaledAxis,
     autoScaledLogAxis,
     autoSteps,
@@ -31,6 +32,7 @@ module Graphics.Rendering.Chart.Axis.Floating(
 ) where
 
 import Data.List(minimumBy)
+import Data.Maybe (fromMaybe)
 import Data.Ord (comparing)
 import Data.Default.Class
 import Numeric (showEFloat, showFFloat)
@@ -207,6 +209,14 @@ scaledAxis lap rs@(minV,maxV) ps0 = makeAxis' realToFrac realToFrac
                                          (minimum labelvs,maximum labelvs)
     gridvs    = labelvs
     r         = range ps
+
+-- | Generate a linear axis with the optionally specified bounds.
+--   Unspecified bounds are computed automatically.
+scaledAxis' :: RealFloat a => LinearAxisParams a -> (Maybe a, Maybe a) -> AxisFn a
+scaledAxis' lap (minV,maxV) ps0 = scaledAxis lap rs ps
+  where
+    ps = filter isValidNumber ps0
+    rs = (fromMaybe (minimum ps) minV, fromMaybe (maximum ps) maxV)
 
 -- | Generate a linear axis automatically, scaled appropriately for the
 -- input data.
