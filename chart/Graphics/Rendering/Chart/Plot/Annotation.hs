@@ -15,12 +15,14 @@ module Graphics.Rendering.Chart.Plot.Annotation(
     plot_annotation_vanchor,
     plot_annotation_angle,
     plot_annotation_style,
+    plot_annotation_background,
     plot_annotation_values
 ) where
 
 import Control.Lens
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
 import Data.Default.Class
 
@@ -34,6 +36,10 @@ data PlotAnnotation  x y = PlotAnnotation {
       _plot_annotation_angle   :: Double,
       -- ^ Angle, in degrees, to rotate the annotation about the anchor point.
       _plot_annotation_style   :: FontStyle,
+      _plot_annotation_background :: Rectangle,
+      -- ^ Rectangle which style determines the background of the annotation
+      -- text and which '_rect_minsize' determines the additional width and
+      -- height of the background area
       _plot_annotation_values  :: [(x,y,String)]
 }
 
@@ -49,15 +55,31 @@ instance ToPlot PlotAnnotation where
 
 
 renderAnnotation :: PlotAnnotation x y -> PointMapFn x y -> BackendProgram ()
-renderAnnotation p pMap = withFontStyle style $
+renderAnnotation p pMap = withFontStyle style $ do
+                            mapM_ drawRect values
                             mapM_ drawOne values
     where hta = _plot_annotation_hanchor p
           vta = _plot_annotation_vanchor p
           values = _plot_annotation_values p
           angle =  _plot_annotation_angle p
           style =  _plot_annotation_style p
-          drawOne (x,y,s) = drawTextsR hta vta angle point s
-              where point = pMap (LValue x, LValue y)
+          rectangle = _plot_annotation_background p
+          (x1,y1) = _rect_minsize rectangle
+          drawRect (x,y,s) = do
+              ts <- textSize s
+              let (x2,y2) = (textSizeWidth ts, textSizeHeight ts)
+                  Point x3 y3 = point x y
+                  -- position of top-left vertex of the rectangle
+                  xvp HTA_Left = x3 - x1 / 2
+                  xvp HTA_Centre = x3 - (x1 + x2) / 2
+                  xvp HTA_Right = x3 - x2 - x1 / 2
+                  yvp VTA_Top = y3 - y1 / 2
+                  yvp VTA_Centre = y3 - (y1 + y2) / 2
+                  yvp VTA_Bottom = y3 - y2 - y1 / 2
+                  yvp VTA_BaseLine = y3 - y1 / 2 - textSizeAscent ts
+              drawRectangle (Point (xvp hta) (yvp vta)) rectangle{ _rect_minsize = (x1+x2,y1+y2) }
+          drawOne (x,y,s) = drawTextsR hta vta angle (point x y) s
+          point x y = pMap (LValue x, LValue y)
 
 instance Default (PlotAnnotation x y) where
   def = PlotAnnotation 
@@ -65,6 +87,7 @@ instance Default (PlotAnnotation x y) where
     , _plot_annotation_vanchor = VTA_Centre
     , _plot_annotation_angle   = 0
     , _plot_annotation_style   = def
+    , _plot_annotation_background = def
     , _plot_annotation_values  = []
     }
 
