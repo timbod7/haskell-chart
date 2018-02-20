@@ -40,7 +40,7 @@ library
                , operational >= 0.2.2 && < 0.3
                , containers >= 0.4 && < 0.6
                , data-default-class < 0.2
-               , lens >= 3.9 && < 4.16
+               , lens >= 3.9 && < 4.17
                , Chart >= 1.8.2 && < 1.9
                , text
   other-modules: Paths_Chart_diagrams
