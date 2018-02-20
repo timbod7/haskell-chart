@@ -9,6 +9,8 @@ extra-deps:
 - gtk-0.14.6
 flags:
   gtk:
-    # This needs to be false on Linux
-    have-quartz-gtk: true
+    # This needs to be true on osx
+    have-quartz-gtk: false
 resolver: lts-8.5
+nix:
+  packages: [pkgconfig, cairo, zlib, pango, gtk2]
