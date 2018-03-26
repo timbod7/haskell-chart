@@ -19,6 +19,7 @@ module Graphics.Rendering.Chart.Renderable(
     RectCornerStyle(..),
     
     rectangleToRenderable,
+    drawRectangle,
 
     fillBackground,
     addMargins,
@@ -218,47 +219,54 @@ instance ToRenderable Rectangle where
 rectangleToRenderable :: Rectangle -> Renderable a
 rectangleToRenderable rectangle = Renderable mf rf
   where
-    mf    = return (_rect_minsize rectangle)
-    rf sz = do
-      maybeM () (fill sz) (_rect_fillStyle rectangle)
-      maybeM () (stroke sz) (_rect_lineStyle rectangle)
-      return nullPickFn
+    mf = return (_rect_minsize rectangle)
+    rf = \rectSize -> drawRectangle (Point 0 0)
+                                    rectangle{ _rect_minsize = rectSize }
 
-    fill sz fs = 
-        withFillStyle fs $ 
-          fillPath $ strokeRectangleP sz (_rect_cornerStyle rectangle)
-
-    stroke sz ls = 
-        withLineStyle ls $ 
-          strokePath $ strokeRectangleP sz (_rect_cornerStyle rectangle)
-
-    strokeRectangleP (x2,y2) RCornerSquare =
-      let (x1,y1) = (0,0) in moveTo' x1 y1
-                          <> lineTo' x1 y2
-                          <> lineTo' x2 y2
-                          <> lineTo' x2 y1
-                          <> lineTo' x1 y1
-                          <> lineTo' x1 y2
-                                
-    strokeRectangleP (x2,y2) (RCornerBevel s) =
-      let (x1,y1) = (0,0) in moveTo' x1 (y1+s)
-                          <> lineTo' x1 (y2-s)
-                          <> lineTo' (x1+s) y2
-                          <> lineTo' (x2-s) y2
-                          <> lineTo' x2 (y2-s)
-                          <> lineTo' x2 (y1+s)
-                          <> lineTo' (x2-s) y1
-                          <> lineTo' (x1+s) y1
-                          <> lineTo' x1 (y1+s)
-                          <> lineTo' x1 (y2-s)
-
-    strokeRectangleP (x2,y2) (RCornerRounded s) =
-      let (x1,y1) = (0,0) in arcNeg (Point (x1+s) (y2-s)) s (pi2*2) pi2 
-                          <> arcNeg (Point (x2-s) (y2-s)) s pi2 0
-                          <> arcNeg (Point (x2-s) (y1+s)) s 0 (pi2*3)
-                          <> arcNeg (Point (x1+s) (y1+s)) s (pi2*3) (pi2*2)
-                          <> lineTo' x1 (y2-s)
-    
-    pi2 = pi / 2
+-- | Draw the specified rectangle such that its top-left vertex is placed at
+--   the given position
+drawRectangle :: Point -> Rectangle -> BackendProgram (PickFn a)
+drawRectangle point rectangle = do
+  maybeM () (fill point size) (_rect_fillStyle rectangle)
+  maybeM () (stroke point size) (_rect_lineStyle rectangle)
+  return nullPickFn
+    where
+      size = _rect_minsize rectangle
+ 
+      fill p sz fs = 
+          withFillStyle fs $ 
+            fillPath $ strokeRectangleP p sz (_rect_cornerStyle rectangle)
+ 
+      stroke p sz ls = 
+          withLineStyle ls $ 
+            strokePath $ strokeRectangleP p sz (_rect_cornerStyle rectangle)
+ 
+      strokeRectangleP (Point x1 y1) (x2,y2) RCornerSquare =
+          let (x3,y3) = (x1+x2,y1+y2) in moveTo' x1 y1
+                                      <> lineTo' x1 y3
+                                      <> lineTo' x3 y3
+                                      <> lineTo' x3 y1
+                                      <> lineTo' x1 y1
+                                  
+      strokeRectangleP (Point x1 y1) (x2,y2) (RCornerBevel s) =
+          let (x3,y3) = (x1+x2,y1+y2) in moveTo' x1 (y1+s)
+                                      <> lineTo' x1 (y3-s)
+                                      <> lineTo' (x1+s) y3
+                                      <> lineTo' (x3-s) y3
+                                      <> lineTo' x3 (y3-s)
+                                      <> lineTo' x3 (y1+s)
+                                      <> lineTo' (x3-s) y1
+                                      <> lineTo' (x1+s) y1
+                                      <> lineTo' x1 (y1+s)
+ 
+      strokeRectangleP (Point x1 y1) (x2,y2) (RCornerRounded s) =
+          let (x3,y3) = (x1+x2,y1+y2) in
+            arcNeg (Point (x1+s) (y3-s)) s (pi2*2) pi2
+            <> arcNeg (Point (x3-s) (y3-s)) s pi2 0
+            <> arcNeg (Point (x3-s) (y1+s)) s 0 (pi2*3)
+            <> arcNeg (Point (x1+s) (y1+s)) s (pi2*3) (pi2*2)
+            <> lineTo' x1 (y3-s)
+      
+      pi2 = pi / 2
 
 $( makeLenses ''Rectangle )
