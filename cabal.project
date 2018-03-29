@@ -4,3 +4,4 @@ packages:
   chart-diagrams/
   chart-tests/
   chart-gtk/
+  chart-gtk3/
