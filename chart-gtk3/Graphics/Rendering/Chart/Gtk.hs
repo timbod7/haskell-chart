@@ -93,7 +93,6 @@ updateCanvas chart canvas = do
       Just win -> do
         width  <- C.liftIO $ G.widgetGetAllocatedWidth canvas
         height <- C.liftIO $ G.widgetGetAllocatedHeight canvas
-        putStrLn $ "Width = " ++ show width ++ "; Height = " ++ show height
         let rect = GE.Rectangle 0 0 width height
         let sz   = (fromIntegral width, fromIntegral height)
         G.drawWindowBeginPaintRect win rect
