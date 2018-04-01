@@ -6,3 +6,5 @@ haskell-chart
 A 2D charting library for haskell
 
 Further information can be found in the associated [wiki](https://github.com/timbod7/haskell-chart/wiki).
+
+This is a fork to add gtk3 support via a new chart-gtk3 backend.
