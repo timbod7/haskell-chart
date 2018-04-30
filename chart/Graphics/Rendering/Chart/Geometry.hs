@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Geometry
@@ -54,6 +55,9 @@ module Graphics.Rendering.Chart.Geometry
 import qualified Prelude
 import Prelude hiding ((^))
 import Data.Monoid
+#if MIN_VERSION_base(4,9,0)
+import Data.Semigroup (Semigroup(..))
+#endif
 
 -- The homomorphic version to avoid casts inside the code.
 (^) :: Num a => a -> Integer -> a
@@ -196,7 +200,18 @@ data Path = MoveTo Point Path
 -- | Paths are monoids. After a path is closed you can not append
 --   anything to it anymore. The empty path is open.
 --   Use 'close' to close a path.
+#if MIN_VERSION_base(4,9,0)
+instance Semigroup Path where
+  p1 <> p2 = case p1 of
+    MoveTo p path -> MoveTo p $ path <> p2
+    LineTo p path -> LineTo p $ path <> p2
+    Arc    p r a1 a2 path -> Arc p r a1 a2 $ path <> p2
+    ArcNeg p r a1 a2 path -> ArcNeg p r a1 a2 $ path <> p2
+    End   -> p2
+    Close -> Close
+#endif
 instance Monoid Path where
+#if !MIN_VERSION_base(4,11,0)
   mappend p1 p2 = case p1 of
     MoveTo p path -> MoveTo p $ mappend path p2
     LineTo p path -> LineTo p $ mappend path p2
@@ -204,6 +219,7 @@ instance Monoid Path where
     ArcNeg p r a1 a2 path -> ArcNeg p r a1 a2 $ mappend path p2
     End   -> p2
     Close -> Close
+#endif
   mempty = End
 
 -- | Move the paths pointer to the given location.

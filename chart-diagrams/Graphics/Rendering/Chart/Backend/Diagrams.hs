@@ -40,6 +40,9 @@ import qualified Data.Set as S
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.Text as T
 
+import qualified Data.ByteString.Builder     as B
+import           System.IO                   (IOMode (..), hPutStr, withFile)
+
 import Control.Lens(makeLenses)
 import Control.Monad.Operational
 import Control.Monad.State.Lazy
@@ -126,7 +129,9 @@ cBackendToFile fo cb path = do
     EPS -> do
       let (d, a) = runBackend env cb
           opts = DEPS.PostscriptOptions path (D2.dims2D w h) DEPS.EPS
-      D.renderDia DEPS.Postscript opts d
+          eps = D.renderDia DEPS.Postscript opts d
+      withFile (opts D.^. DEPS.psfileName) WriteMode $ \h ->
+        B.hPutBuilder h eps
       return a
     SVG -> do
       let (d, a) = runBackend env cb
