@@ -54,7 +54,9 @@ module Graphics.Rendering.Chart.Geometry
 
 import qualified Prelude
 import Prelude hiding ((^))
+#if !MIN_VERSION_base(4,8,0)
 import Data.Monoid
+#endif
 #if MIN_VERSION_base(4,9,0)
 import Data.Semigroup (Semigroup(..))
 #endif
@@ -270,7 +272,7 @@ close :: Path
 close = Close
 
 -- | Fold the given path to a monoid structure.
-foldPath :: (Monoid m)
+foldPath :: (Monoid m, Semigroup m)
          => (Point -> m) -- ^ MoveTo
          -> (Point -> m) -- ^ LineTo
          -> (Point -> Double -> Double -> Double -> m) -- ^ Arc
