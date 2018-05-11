@@ -130,8 +130,7 @@ cBackendToFile fo cb path = do
       let (d, a) = runBackend env cb
           opts = DEPS.PostscriptOptions path (D2.dims2D w h) DEPS.EPS
           eps = D.renderDia DEPS.Postscript opts d
-      withFile (opts D.^. DEPS.psfileName) WriteMode $ \h ->
-        B.hPutBuilder h eps
+      D.renderDia DEPS.Postscript opts d
       return a
     SVG -> do
       let (d, a) = runBackend env cb
