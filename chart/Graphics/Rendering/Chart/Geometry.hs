@@ -272,7 +272,7 @@ close :: Path
 close = Close
 
 -- | Fold the given path to a monoid structure.
-foldPath :: (Monoid m, Semigroup m)
+foldPath :: (Monoid m)
          => (Point -> m) -- ^ MoveTo
          -> (Point -> m) -- ^ LineTo
          -> (Point -> Double -> Double -> Double -> m) -- ^ Arc
@@ -283,10 +283,10 @@ foldPath :: (Monoid m, Semigroup m)
 foldPath moveTo_ lineTo_ arc_ arcNeg_ close_ path =
   let restF = foldPath moveTo_ lineTo_ arc_ arcNeg_ close_
   in case path of
-    MoveTo p rest -> moveTo_ p <> restF rest
-    LineTo p rest -> lineTo_ p <> restF rest
-    Arc    p r a1 a2 rest -> arc_    p r a1 a2 <> restF rest
-    ArcNeg p r a1 a2 rest -> arcNeg_ p r a1 a2 <> restF rest
+    MoveTo p rest -> moveTo_ p `mappend` restF rest
+    LineTo p rest -> lineTo_ p `mappend` restF rest
+    Arc    p r a1 a2 rest -> arc_    p r a1 a2 `mappend` restF rest
+    ArcNeg p r a1 a2 rest -> arcNeg_ p r a1 a2 `mappend` restF rest
     End   -> mempty
     Close -> close_
 
