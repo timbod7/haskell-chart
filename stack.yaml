@@ -10,6 +10,10 @@ packages:
 #  gtk:
 #    # This needs to be true on osx
 #    have-quartz-gtk: false
-resolver: lts-8.5
+resolver: lts-10.10
+extra-deps:
+- gtk-0.14.9
+- gtk3-0.14.9
+- gio-0.13.5.0
 nix:
   packages: [pkgconfig, cairo, zlib, pango, xorg.xproto, xorg.libX11, gtk2, gtk3]

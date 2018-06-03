@@ -51,11 +51,9 @@ Executable chart-harness
     CompareFonts
     DiagramsCairo
     DiagramsEPS
-    DiagramsSVGEmbedded
     DiagramsSVG
     Drawing.Cairo
     Drawing.DiagramsCairo
-    Drawing.DiagramsSVGEmbedded
     Drawing.Tests
     ExampleStocks
     GtkTestPicking
