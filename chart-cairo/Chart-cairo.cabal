@@ -1,5 +1,5 @@
 Name: Chart-cairo
-Version: 1.8.3
+Version: 1.9
 License: BSD3
 License-file: LICENSE
 Copyright: Tim Docker, 2006-2014
@@ -21,7 +21,7 @@ library
                , data-default-class < 0.2
                , operational >= 0.2.2 && < 0.3
                , lens >= 3.9 && < 4.17
-               , Chart >= 1.8.3 && < 1.9
+               , Chart >= 1.9 && < 1.10
 
   Exposed-modules:
         Graphics.Rendering.Chart.Backend.Cairo
