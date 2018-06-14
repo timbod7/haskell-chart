@@ -568,7 +568,7 @@ fontStyleToTextOpts env =
       , F.textHeight = scaledH -- _font_size fs
       }
 
-fontFromName :: (Read n, RealFloat n) => String -> F.PreparedFont n
+fontFromName :: (Read n, RealFloat n) => String -> IO (F.PreparedFont n)
 fontFromName name = case name of
   "serif" -> F.lin
   "monospace" -> F.bit
