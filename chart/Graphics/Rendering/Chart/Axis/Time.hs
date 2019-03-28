@@ -161,8 +161,8 @@ timeValueAxis ::
   -> AxisFn t
 timeValueAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
     _axis_visibility = def,
-    _axis_viewport = vmap' (min', max'),
-    _axis_tropweiv = invmap' (min', max'),
+    _axis_viewport = vmap' (tvFromUTCTime min', tvFromUTCTime max'),
+    _axis_tropweiv = invmap' (tvFromUTCTime min', tvFromUTCTime max'),
     _axis_ticks    = [ (tvFromUTCTime t,2) | t <- times] ++ [ (tvFromUTCTime t,5) | t <- ltimes, visible t],
     _axis_labels   = [ [ (tvFromUTCTime t,l) | (t,l) <- labels labelf   ltimes lal, visible t]
                      , [ (tvFromUTCTime t,l) | (t,l) <- labels contextf ctimes clal, visible t]
@@ -196,11 +196,11 @@ timeValueAxis tseq lseq labelf lal cseq contextf clal pts = AxisData {
       m1' = doubleFromTimeValue m1
       m2' = doubleFromTimeValue m2
 
-vmap' :: TimeValue x => (UTCTime,UTCTime) -> Range -> x -> Double
+vmap' :: TimeValue x => (x,x) -> Range -> x -> Double
 vmap' (v1,v2) (v3,v4) v = v3 + (doubleFromTimeValue v - doubleFromTimeValue v1) * (v4-v3)
                               / (doubleFromTimeValue v2 - doubleFromTimeValue v1)
 
-invmap' :: TimeValue x => (UTCTime,UTCTime) -> Range -> Double -> x
+invmap' :: TimeValue x => (x,x) -> Range -> Double -> x
 invmap' (v3,v4) (d1,d2) d = timeValueFromDouble (doubleFromTimeValue v3 + ( (d-d1) * doubleRange
                                                    / (d2-d1) ))
     where doubleRange = doubleFromTimeValue v4 - doubleFromTimeValue v3
