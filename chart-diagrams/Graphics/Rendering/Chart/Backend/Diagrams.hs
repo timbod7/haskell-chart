@@ -2,6 +2,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
 
 -- | The backend to render charts with the diagrams library.
 module Graphics.Rendering.Chart.Backend.Diagrams
@@ -79,6 +80,8 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.State(EC, execEC)
 
 import Paths_Chart_diagrams ( getDataFileName )
+
+import System.IO.Unsafe (unsafePerformIO)
 
 -- -----------------------------------------------------------------------
 -- General purpose file output function
@@ -568,11 +571,19 @@ fontStyleToTextOpts env =
       , F.textHeight = scaledH -- _font_size fs
       }
 
+{-# DEPRECATED fontFromName "This function will be removed in the next release" #-}
+
+#if MIN_VERSION_SVGFonts(1,7,0)
+getPreparedFont  = unsafePerformIO
+#else
+getPreparedFont = id
+#endif
+
 fontFromName :: (Read n, RealFloat n) => String -> F.PreparedFont n
 fontFromName name = case name of
-  "serif" -> F.lin
-  "monospace" -> F.bit
-  _ -> F.lin
+  "serif" -> getPreparedFont F.lin
+  "monospace" -> getPreparedFont F.bit
+  _ -> getPreparedFont F.lin
 
 -- | Convert line caps.
 convertLineCap :: LineCap -> D.LineCap
