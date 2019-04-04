@@ -45,7 +45,7 @@ script:
  - read -a PKGS <<< "chart chart-cairo chart-diagrams chart-tests chart-gtk chart-gtk3"
  - rm -rf sdists; mkdir sdists
  - for PKG in "${PKGS[@]}"; do
-     cd "$PKG"; cabal sdist --output-directory="../sdists/$PKG" || break; cd ..;
+     cd "$PKG"; cabal new-sdist --output-dir="../sdists/$PKG" || break; cd ..;
    done
  - cd sdists/
 
