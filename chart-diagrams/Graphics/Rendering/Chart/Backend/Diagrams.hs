@@ -574,10 +574,23 @@ fontStyleToTextOpts env =
 {-# DEPRECATED fontFromName "This function will be removed in the next release" #-}
 
 #if MIN_VERSION_SVGFonts(1,7,0)
-getPreparedFont  = unsafePerformIO
+{-
+  We need this `unsafePerformIO` to deal with breaking
+  change in SVGFonts, which has changed the types of `F.lin` and `F.bit`
+  from `F.PreparedFont n` to `IO F.PreparedFont n`.
+  These functions simply read the files from `data-files`
+  of `SVGFonts`.
+-}
+getPreparedFont = unsafePerformIO
 #else
 getPreparedFont = id
 #endif
+
+{-
+  The `fontFromName` function is not used inside this module.
+  It is not exported either. So it is safe to remove it
+  in the future release thus escaping use of `unsafePerformIO`.
+-}
 
 fontFromName :: (Read n, RealFloat n) => String -> F.PreparedFont n
 fontFromName name = case name of
