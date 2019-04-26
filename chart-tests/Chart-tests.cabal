@@ -30,7 +30,7 @@ Executable chart-harness
     bytestring      >= 0.9 && < 1.0,
     svg-builder     >= 0.1 && < 0.2,
     random          >= 1.0,
-    containers      >= 0.4 && <0.6,
+    containers      >= 0.4 && < 0.6.1,
     old-time        >= 1.0,
     Chart           >= 1.9 && < 1.10,
     Chart-cairo     >= 1.9 && < 1.10,

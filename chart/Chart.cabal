@@ -29,7 +29,7 @@ library
                , vector >=0.9 && <0.13
 
   if !impl(ghc >= 8.0)
-    build-depends: semigroups >= 0.18.4 && <0.19
+    build-depends: semigroups >= 0.18.4 && < 0.20
 
 
   Ghc-options: -Wall -fno-warn-orphans
