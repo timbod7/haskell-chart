@@ -197,7 +197,7 @@ data Layout x y = Layout
 
   , _layout_plots           :: [Plot x y]
     -- ^ The data sets to plot in the chart.
-    --   The are ploted over each other.
+    --   They are plotted over each other.
 
   , _layout_legend          :: Maybe LegendStyle
     -- ^ How to style the legend.
@@ -368,7 +368,7 @@ data LayoutLR x y1 y2 = LayoutLR
   
   , _layoutlr_plots      :: [Either (Plot x y1) (Plot x y2)]
     -- ^ The data sets to plot in the chart.
-    --   The are ploted over each other.
+    --   They are plotted over each other.
     --   The either type associates the plot with the
     --   left or right y axis.
 
