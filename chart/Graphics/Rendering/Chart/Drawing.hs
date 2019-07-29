@@ -129,7 +129,7 @@ withScaleY y = withScale (Vector 1 y)
 --   the given 'PointStyle'.
 withPointStyle :: PointStyle -> BackendProgram a -> BackendProgram a
 withPointStyle (PointStyle cl bcl bw _ _) m = 
-  withLineStyle (def { _line_color = bcl, _line_width = bw }) $ 
+  withLineStyle (def { _line_color = bcl, _line_width = bw, _line_join = LineJoinMiter }) $ 
     withFillStyle (solidFillStyle cl) m
 
 withDefaultStyle :: BackendProgram a -> BackendProgram a
@@ -375,9 +375,9 @@ drawPoint ps@(PointStyle cl _ _ r shape) p = withPointStyle ps $ do
             then       fromIntegral n * 2*pi/fromIntegral sides
             else (0.5 + fromIntegral n)*2*pi/fromIntegral sides
           angles = map intToAngle [0 .. sides-1]
-          (p1:p1s) = map (\a -> Point (x + r * sin a)
+          (p1:p1':p1s) = map (\a -> Point (x + r * sin a)
                                       (y + r * cos a)) angles
-      let path = G.moveTo p1 <> mconcat (map lineTo p1s) <> lineTo p1
+      let path = G.moveTo p1 <> mconcat (map lineTo $ p1':p1s) <> lineTo p1 <> lineTo p1'
       fillPath path
       strokePath path
     PointShapeArrowHead theta ->
