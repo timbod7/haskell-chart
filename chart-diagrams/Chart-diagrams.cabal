@@ -31,7 +31,7 @@ library
                , diagrams-core >= 1.3 && < 1.5
                , diagrams-lib >= 1.2 && < 1.5
                , diagrams-svg >= 1.4 && < 1.5
-               , diagrams-postscript >= 0.7 && < 1.5
+               , diagrams-postscript >= 0.7 && < 1.6
                , SVGFonts >= 1.4 && < 1.8
                , colour >= 2.2.1 && < 2.4
                , blaze-markup >= 0.7 && < 0.9
