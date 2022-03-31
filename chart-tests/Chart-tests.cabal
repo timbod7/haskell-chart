@@ -42,7 +42,7 @@ Executable chart-harness
     diagrams-svg    >= 1.4 && < 1.5,
     diagrams-postscript    >= 0.7 && < 1.6,
     diagrams-lib    >= 1.2 && < 1.5,
-    diagrams-core   >= 1.3 && < 1.5,
+    diagrams-core   >= 1.3 && < 1.6,
     vector          >= 0.9 && < 0.13,
     QuickCheck      >= 2.10 && < 2.15
   Main-is: Main.hs
