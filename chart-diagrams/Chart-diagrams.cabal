@@ -9,7 +9,7 @@ Homepage: https://github.com/timbod7/haskell-chart/wiki
 Synopsis: Diagrams backend for Charts.
 Description: Diagrams backend for Charts.
 Category: Graphics
-Cabal-Version: >= 1.6
+Cabal-Version: >= 1.8
 Build-Type: Simple
 
 data-files: fonts/LinLibertine_R.svg

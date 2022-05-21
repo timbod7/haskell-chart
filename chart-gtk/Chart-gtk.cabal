@@ -9,7 +9,7 @@ Homepage: https://github.com/timbod7/haskell-chart/wiki
 Synopsis: Utility functions for using the chart library with GTK
 Description: Utility functions for using the chart library with GTK
 Category: Graphics
-Cabal-Version: >= 1.6
+Cabal-Version: >= 1.8
 Build-Type: Simple
 
 library

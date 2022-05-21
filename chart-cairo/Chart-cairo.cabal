@@ -9,7 +9,7 @@ Homepage: https://github.com/timbod7/haskell-chart/wiki
 Synopsis: Cairo backend for Charts.
 Description: Cairo backend for Charts.
 Category: Graphics
-Cabal-Version: >= 1.6
+Cabal-Version: >= 1.8
 Build-Type: Simple
 
 library

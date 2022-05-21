@@ -14,7 +14,7 @@ Description: A library for generating 2D Charts and Plots, with backends provide
 
              Documentation: https://github.com/timbod7/haskell-chart/wiki.
 Category: Graphics
-Cabal-Version: >= 1.6
+Cabal-Version: >= 1.8
 Build-Type: Simple
 
 library
