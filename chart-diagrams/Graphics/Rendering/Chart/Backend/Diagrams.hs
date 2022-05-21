@@ -395,7 +395,10 @@ dTextSize text = do
   let fs = envFontStyle env
   let (scaledH, scaledA, scaledD, scaledYB) = calcFontMetrics env
   return (mempty, TextSize
-                { textSizeWidth = realToFrac $ D2.width $ F.textSVG' (fontStyleToTextOpts env) text
+                { textSizeWidth = realToFrac $ D2.width
+                              $ F.drop_rect
+                              $ F.fit_height scaledH
+                              $ F.svgText (fontStyleToTextOpts env) text
                 , textSizeAscent = realToFrac scaledA -- scaledH * (a' / h') -- ascent
                 , textSizeDescent = realToFrac scaledD -- scaledH * (d' / h') -- descent
                 , textSizeYBearing = realToFrac scaledYB -- -scaledH * (capHeight / h)
@@ -412,10 +415,13 @@ dDrawTextSvg :: (D.Renderable (D.Path V2 (N b)) b, D.TypeableFloat (N b))
              => Point -> String -> DState (N b) (D.QDiagram b V2 (N b) Any)
 dDrawTextSvg (Point x y) text = do
   env <- get
+  let (scaledH, _, _, _) = calcFontMetrics env
   return $ D.transform (toTransformation $ translate (Vector x y) 1)
          $ applyFontStyleSVG (envFontStyle env)
          $ D2.scaleY (-1)
-         $ F.textSVG_ (fontStyleToTextOpts env) text
+         $ F.set_envelope
+         $ F.fit_height scaledH
+         $ F.svgText (fontStyleToTextOpts env) text
 
 dDrawTextNative :: (D.Renderable (D2.Text (N b)) b, D.TypeableFloat (N b))
                 => Point -> String -> DState (N b) (D.QDiagram b V2 (N b) Any)
@@ -572,14 +578,10 @@ fontStyleToTextOpts :: RealFloat n => DEnv n -> F.TextOpts n
 fontStyleToTextOpts env =
   let fs = envFontStyle env
       font = envSelectFont env fs
-      (scaledH, _, _, _) = calcFontMetrics env
   in F.TextOpts
       { F.textFont = font
-      , F.mode = F.INSIDE_H
       , F.spacing = F.KERN
       , F.underline = False
-      , F.textWidth = 1
-      , F.textHeight = scaledH -- _font_size fs
       }
 
 {-# DEPRECATED fontFromName "This function will be removed in the next release" #-}
