@@ -95,7 +95,6 @@ import Control.Lens
 import Data.Colour
 import Data.Colour.Names
 import Data.List (unfoldr)
-import Data.Monoid
 
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Geometry hiding (moveTo)

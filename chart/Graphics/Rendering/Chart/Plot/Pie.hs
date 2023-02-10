@@ -50,7 +50,6 @@ module Graphics.Rendering.Chart.Plot.Pie(
 import Control.Lens
 import Data.Colour
 import Data.Colour.Names (white)
-import Data.Monoid
 import Data.Default.Class
 import Control.Monad
 

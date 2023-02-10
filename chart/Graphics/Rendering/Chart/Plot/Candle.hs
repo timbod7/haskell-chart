@@ -24,7 +24,6 @@ module Graphics.Rendering.Chart.Plot.Candle(
 ) where
 
 import Control.Lens hiding (op)
-import Data.Monoid
 
 import Graphics.Rendering.Chart.Geometry hiding (close)
 import Graphics.Rendering.Chart.Drawing

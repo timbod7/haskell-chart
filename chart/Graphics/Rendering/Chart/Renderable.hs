@@ -42,7 +42,6 @@ module Graphics.Rendering.Chart.Renderable(
 
 import Control.Monad
 import Control.Lens
-import Data.Monoid
 import Data.Default.Class
 
 import Graphics.Rendering.Chart.Geometry

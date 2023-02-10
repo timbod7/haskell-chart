@@ -10,7 +10,7 @@
 
 module Graphics.Rendering.Chart.Backend.Impl where
 
-import Control.Monad.Reader
+import Control.Monad
 import Control.Monad.Operational
 
 import Graphics.Rendering.Chart.Geometry

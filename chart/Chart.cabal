@@ -21,11 +21,11 @@ library
   default-language: Haskell98
   Build-depends: base >= 3 && < 5
                , old-locale
-               , time, mtl, array
+               , time, array
                , lens >= 3.9 && < 5.2
                , colour >= 2.2.1 && < 2.4
                , data-default-class < 0.2
-               , mtl >= 2.0 && < 2.3
+               , mtl >= 2.0 && < 2.4
                , operational >= 0.2.2 && < 0.3
                , vector >=0.9 && <0.13
 

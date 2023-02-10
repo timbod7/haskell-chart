@@ -25,7 +25,6 @@ module Graphics.Rendering.Chart.Plot.ErrBars(
 ) where
 
 import Control.Lens
-import Data.Monoid
 
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
