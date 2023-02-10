@@ -75,7 +75,7 @@ instance ToPlot PlotErrBars where
         pts = _plot_errbars_values p
 
 renderPlotErrBars :: PlotErrBars x y -> PointMapFn x y -> BackendProgram ()
-renderPlotErrBars p pmap = 
+renderPlotErrBars p pmap =
     mapM_ (drawErrBar.epmap) (_plot_errbars_values p)
   where
     epmap (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) =
@@ -90,7 +90,7 @@ drawErrBar0 :: PlotErrBars x y -> ErrPoint Double Double -> BackendProgram ()
 drawErrBar0 ps (ErrPoint (ErrValue xl x xh) (ErrValue yl y yh)) = do
         let tl = _plot_errbars_tick_length ps
         let oh = _plot_errbars_overhang ps
-        withLineStyle (_plot_errbars_line_style ps) $ 
+        withLineStyle (_plot_errbars_line_style ps) $
           strokePath $ moveTo' (xl-oh) y
                     <> lineTo' (xh+oh) y
                     <> moveTo' x (yl-oh)
@@ -116,7 +116,7 @@ renderPlotLegendErrBars p (Rect p1 p2) = do
     y          = (p_y p1 + p_y p2)/2
 
 instance Default (PlotErrBars x y) where
-  def = PlotErrBars 
+  def = PlotErrBars
     { _plot_errbars_title       = ""
     , _plot_errbars_line_style  = solidLine 1 $ opaque blue
     , _plot_errbars_tick_length = 3
