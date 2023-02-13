@@ -53,8 +53,6 @@ module Graphics.Rendering.Chart.Geometry
 
 import qualified Prelude
 import Prelude hiding ((^))
-import Data.Monoid (Monoid (..))
-import Data.Semigroup (Semigroup(..))
 
 -- The homomorphic version to avoid casts inside the code.
 (^) :: Num a => a -> Integer -> a

@@ -27,20 +27,20 @@ module Graphics.Rendering.Chart.Drawing
     PointShape(..)
   , PointStyle(..)
   , drawPoint
-  
+
   -- * Alignments and Paths
   , alignPath
   , alignFillPath
   , alignStrokePath
   , alignFillPoints
   , alignStrokePoints
-  
+
   , alignFillPoint
   , alignStrokePoint
-  
+
   , strokePointPath
   , fillPointPath
-  
+
   -- * Transformation and Style Helpers
   , withRotation
   , withTranslation
@@ -48,17 +48,17 @@ module Graphics.Rendering.Chart.Drawing
   , withScaleX, withScaleY
   , withPointStyle
   , withDefaultStyle
-  
+
   -- * Text Drawing
   , drawTextA
   , drawTextR
   , drawTextsR
   , textDrawRect
   , textDimension
-  
+
   -- * Style Helpers
   , defaultColorSeq
-    
+
   , solidLine
   , dashedLine
 
@@ -70,12 +70,12 @@ module Graphics.Rendering.Chart.Drawing
   , exes
   , stars
   , arrows
-    
+
   , solidFillStyle
-  
+
   -- * Backend and general Types
   , module Graphics.Rendering.Chart.Backend
-  
+
   -- * Accessors
   , point_color
   , point_border_color
@@ -95,7 +95,6 @@ import Control.Lens
 import Data.Colour
 import Data.Colour.Names
 import Data.List (unfoldr)
-import Data.Monoid
 
 import Graphics.Rendering.Chart.Backend
 import Graphics.Rendering.Chart.Geometry hiding (moveTo)
@@ -128,8 +127,8 @@ withScaleY y = withScale (Vector 1 y)
 -- | Changes the 'LineStyle' and 'FillStyle' to comply with
 --   the given 'PointStyle'.
 withPointStyle :: PointStyle -> BackendProgram a -> BackendProgram a
-withPointStyle (PointStyle cl bcl bw _ _) m = 
-  withLineStyle (def { _line_color = bcl, _line_width = bw, _line_join = LineJoinMiter }) $ 
+withPointStyle (PointStyle cl bcl bw _ _) m =
+  withLineStyle (def { _line_color = bcl, _line_width = bw, _line_join = LineJoinMiter }) $
     withFillStyle (solidFillStyle cl) m
 
 withDefaultStyle :: BackendProgram a -> BackendProgram a
@@ -148,7 +147,7 @@ alignPath f = foldPath (G.moveTo . f)
                        close
 
 -- | Align the path using the environment's alignment function for points.
---   This is generally useful when stroking. 
+--   This is generally useful when stroking.
 --   See 'alignPath' and 'getPointAlignFn'.
 alignStrokePath :: Path -> BackendProgram Path
 alignStrokePath p = do
@@ -156,7 +155,7 @@ alignStrokePath p = do
   return $ alignPath f p
 
 -- | Align the path using the environment's alignment function for coordinates.
---   This is generally useful when filling. 
+--   This is generally useful when filling.
 --   See 'alignPath' and 'getCoordAlignFn'.
 alignFillPath :: Path -> BackendProgram Path
 alignFillPath p = do
@@ -182,14 +181,14 @@ alignFillPoints p = do
 -- | Align the point using the environment's alignment function for points.
 --   See 'getPointAlignFn'.
 alignStrokePoint :: Point -> BackendProgram Point
-alignStrokePoint p = do 
+alignStrokePoint p = do
     alignfn <- getPointAlignFn
     return (alignfn p)
 
 -- | Align the point using the environment's alignment function for coordinates.
 --   See 'getCoordAlignFn'.
 alignFillPoint :: Point -> BackendProgram Point
-alignFillPoint p = do 
+alignFillPoint p = do
     alignfn <- getCoordAlignFn
     return (alignfn p)
 
@@ -217,19 +216,19 @@ fillPointPath pts = fillPath $ stepPath pts
 drawTextA :: HTextAnchor -> VTextAnchor -> Point -> String -> BackendProgram ()
 drawTextA hta vta = drawTextR hta vta 0
 
-{- 
+{-
    The following is useful for checking out the bounding-box
    calculation. At present it looks okay for PNG/Cairo but
    is a bit off for SVG/Diagrams; this may well be down to
    differences in how fonts are rendered in the two backends
 
 drawTextA hta vta p txt =
-  drawTextR hta vta 0 p txt 
-  >> withLineStyle (solidLine 1 (opaque red)) 
+  drawTextR hta vta 0 p txt
+  >> withLineStyle (solidLine 1 (opaque red))
      (textDrawRect hta vta p txt
        >>= \rect -> alignStrokePath (rectPath rect) >>= strokePath)
 -}
-  
+
 -- | Draw a textual label anchored by one of its corners
 --   or edges, with rotation. Rotation angle is given in degrees,
 --   rotation is performed around anchor point.
@@ -251,7 +250,7 @@ drawTextsR :: HTextAnchor -> VTextAnchor -> Double -> Point -> String -> Backend
 drawTextsR hta vta angle p s = case num of
       0 -> return ()
       1 -> drawTextR hta vta angle p s
-      _ -> 
+      _ ->
         withTranslation p $
           withRotation theta $ do
             tss <- mapM textSize ss
@@ -320,7 +319,7 @@ textDimension :: String -> BackendProgram RectSize
 textDimension s = do
   ts <- textSize s
   return (textSizeWidth ts, textSizeHeight ts)
-  
+
 -- -----------------------------------------------------------------------
 -- Point Types and Drawing
 -- -----------------------------------------------------------------------
@@ -350,7 +349,7 @@ data PointStyle = PointStyle
 
 -- | Default style to use for points.
 instance Default PointStyle where
-  def = PointStyle 
+  def = PointStyle
     { _point_color        = opaque black
     , _point_border_color = transparent
     , _point_border_width = 0
@@ -383,7 +382,7 @@ drawPoint ps@(PointStyle cl _ _ r shape) p = withPointStyle ps $ do
     PointShapeArrowHead theta ->
       withTranslation p $ withRotation (theta - pi/2) $
           drawPoint (filledPolygon r 3 True cl) (Point 0 0)
-    PointShapePlus -> 
+    PointShapePlus ->
       strokePath $ moveTo' (x+r) y
                 <> lineTo' (x-r) y
                 <> moveTo' x (y-r)
@@ -436,7 +435,7 @@ dashedLine w ds cl = LineStyle w cl ds LineCapButt LineJoinMiter
 filledCircles :: Double             -- ^ Radius of circle.
               -> AlphaColour Double -- ^ Fill colour.
               -> PointStyle
-filledCircles radius cl = 
+filledCircles radius cl =
   PointStyle cl transparent 0 radius PointShapeCircle
 
 -- | Style for stroked circle points.
@@ -444,7 +443,7 @@ hollowCircles :: Double -- ^ Radius of circle.
               -> Double -- ^ Thickness of line.
               -> AlphaColour Double -- Colour of line.
               -> PointStyle
-hollowCircles radius w cl = 
+hollowCircles radius w cl =
   PointStyle transparent cl w radius PointShapeCircle
 
 -- | Style for stroked polygon points.
@@ -454,7 +453,7 @@ hollowPolygon :: Double -- ^ Radius of circle.
               -> Bool   -- ^ Is right-side-up?
               -> AlphaColour Double -- ^ Colour of line.
               -> PointStyle
-hollowPolygon radius w sides isrot cl = 
+hollowPolygon radius w sides isrot cl =
   PointStyle transparent cl w radius (PointShapePolygon sides isrot)
 
 -- | Style for filled polygon points.
@@ -463,7 +462,7 @@ filledPolygon :: Double -- ^ Radius of circle.
               -> Bool   -- ^ Is right-side-up?
               -> AlphaColour Double -- ^ Fill color.
               -> PointStyle
-filledPolygon radius sides isrot cl = 
+filledPolygon radius sides isrot cl =
   PointStyle cl transparent 0 radius (PointShapePolygon sides isrot)
 
 -- | Plus sign point style.
@@ -471,7 +470,7 @@ plusses :: Double -- ^ Radius of tightest surrounding circle.
         -> Double -- ^ Thickness of line.
         -> AlphaColour Double -- ^ Color of line.
         -> PointStyle
-plusses radius w cl = 
+plusses radius w cl =
   PointStyle transparent cl w radius PointShapePlus
 
 -- | Cross point style.

@@ -17,7 +17,7 @@ module Graphics.Rendering.Chart.Renderable(
     PickFn,
     Rectangle(..),
     RectCornerStyle(..),
-    
+
     rectangleToRenderable,
     drawRectangle,
 
@@ -42,7 +42,6 @@ module Graphics.Rendering.Chart.Renderable(
 
 import Control.Monad
 import Control.Lens
-import Data.Monoid
 import Data.Default.Class
 
 import Graphics.Rendering.Chart.Geometry
@@ -84,7 +83,7 @@ emptyRenderable :: Renderable a
 emptyRenderable = spacer (0,0)
 
 -- | Create a blank renderable with a specified minimum size.
-spacer :: RectSize -> Renderable a 
+spacer :: RectSize -> Renderable a
 spacer sz  = Renderable {
    minsize = return sz,
    render  = \_ -> return nullPickFn
@@ -119,7 +118,7 @@ addMargins (t,b,l,r) rd = Renderable { minsize = mf, render = rf }
         (w,h) <- minsize rd
         return (w+l+r,h+t+b)
 
-    rf (w,h) = 
+    rf (w,h) =
         withTranslation (Point l t) $ do
           pickf <- render rd (w-l-r,h-t-b)
           return (mkpickf pickf (t,b,l,r) (w,h))
@@ -163,27 +162,27 @@ rlabel fs hta vta rot s = Renderable { minsize = mf, render = rf }
        ts <- textSize s
        let sz = (textSizeWidth ts, textSizeHeight ts)
        return (xwid sz, ywid sz)
-       
+
     rf (w0,h0) = withFontStyle fs $ do
       ts <- textSize s
       let sz@(w,h) = (textSizeWidth ts, textSizeHeight ts)
           descent = textSizeDescent ts
-          
+
           xadj HTA_Left   = xwid sz/2
           xadj HTA_Centre = w0/2
           xadj HTA_Right  = w0 - xwid sz/2
-    
+
           yadj VTA_Top      = ywid sz/2
           yadj VTA_Centre   = h0/2
           yadj VTA_Bottom   = h0 - ywid sz/2
           yadj VTA_BaseLine = h0 - ywid sz/2 + descent*acr
 
-      withTranslation (Point 0 (-descent)) $ 
-        withTranslation (Point (xadj hta) (yadj vta)) $ 
+      withTranslation (Point 0 (-descent)) $
+        withTranslation (Point (xadj hta) (yadj vta)) $
           withRotation rot' $ do
             drawText (Point (-w/2) (h/2)) s
             return (\_-> Just s)  -- PickFn String
-            
+
     rot'      = rot / 180 * pi
     (cr,sr)   = (cos rot', sin rot')
     (acr,asr) = (abs cr, abs sr)
@@ -232,22 +231,22 @@ drawRectangle point rectangle = do
   return nullPickFn
     where
       size = _rect_minsize rectangle
- 
-      fill p sz fs = 
-          withFillStyle fs $ 
+
+      fill p sz fs =
+          withFillStyle fs $
             fillPath $ strokeRectangleP p sz (_rect_cornerStyle rectangle)
- 
-      stroke p sz ls = 
-          withLineStyle ls $ 
+
+      stroke p sz ls =
+          withLineStyle ls $
             strokePath $ strokeRectangleP p sz (_rect_cornerStyle rectangle)
- 
+
       strokeRectangleP (Point x1 y1) (x2,y2) RCornerSquare =
           let (x3,y3) = (x1+x2,y1+y2) in moveTo' x1 y1
                                       <> lineTo' x1 y3
                                       <> lineTo' x3 y3
                                       <> lineTo' x3 y1
                                       <> lineTo' x1 y1
-                                  
+
       strokeRectangleP (Point x1 y1) (x2,y2) (RCornerBevel s) =
           let (x3,y3) = (x1+x2,y1+y2) in moveTo' x1 (y1+s)
                                       <> lineTo' x1 (y3-s)
@@ -258,7 +257,7 @@ drawRectangle point rectangle = do
                                       <> lineTo' (x3-s) y1
                                       <> lineTo' (x1+s) y1
                                       <> lineTo' x1 (y1+s)
- 
+
       strokeRectangleP (Point x1 y1) (x2,y2) (RCornerRounded s) =
           let (x3,y3) = (x1+x2,y1+y2) in
             arcNeg (Point (x1+s) (y3-s)) s (pi2*2) pi2
@@ -266,7 +265,7 @@ drawRectangle point rectangle = do
             <> arcNeg (Point (x3-s) (y1+s)) s 0 (pi2*3)
             <> arcNeg (Point (x1+s) (y1+s)) s (pi2*3) (pi2*2)
             <> lineTo' x1 (y3-s)
-      
+
       pi2 = pi / 2
 
 $( makeLenses ''Rectangle )

@@ -24,7 +24,7 @@ module Graphics.Rendering.Chart.Plot.Pie(
     PieLayout(..),
     PieChart(..),
     PieItem(..),
-    
+
     pieToRenderable,
     pieChartToRenderable,
 
@@ -50,7 +50,6 @@ module Graphics.Rendering.Chart.Plot.Pie(
 import Control.Lens
 import Data.Colour
 import Data.Colour.Names (white)
-import Data.Monoid
 import Data.Default.Class
 import Control.Monad
 
@@ -72,7 +71,7 @@ data PieChart = PieChart {
    _pie_data             :: [PieItem],
    _pie_colors           :: [AlphaColour Double],
    _pie_label_style      :: FontStyle,
-   _pie_label_line_style :: LineStyle, 
+   _pie_label_line_style :: LineStyle,
    _pie_start_angle      :: Double
 
 }
@@ -84,7 +83,7 @@ data PieItem = PieItem {
 }
 
 instance Default PieChart where
-  def = PieChart 
+  def = PieChart
     { _pie_data             = []
     , _pie_colors           = defaultColorSeq
     , _pie_label_style      = def
@@ -96,7 +95,7 @@ instance Default PieItem where
   def = PieItem "" 0 0
 
 instance Default PieLayout where
-  def = PieLayout 
+  def = PieLayout
     { _pie_background  = solidFillStyle $ opaque white
     , _pie_title       = ""
     , _pie_title_style = def { _font_size   = 15
@@ -153,10 +152,10 @@ renderPie p (w,h) = do
     foldM_ (paint center radius) (_pie_start_angle p)
            (zip (_pie_colors p) content)
     return nullPickFn
- 
+
     where
-        -- p1 = Point 0 0 
-        -- p2 = Point w h 
+        -- p1 = Point 0 0
+        -- p2 = Point w h
         content = let total = sum (map _pitem_value (_pie_data p))
                   in [ pitem{_pitem_value=_pitem_value pitem/total}
                      | pitem <- _pie_data p ]
@@ -176,13 +175,13 @@ renderPie p (w,h) = do
 
             where
                 pieLabel :: String -> Double -> Double -> BackendProgram ()
-                pieLabel name angle offset = 
-                    withFontStyle (_pie_label_style p) $ 
+                pieLabel name angle offset =
+                    withFontStyle (_pie_label_style p) $
                       withLineStyle (_pie_label_line_style p) $ do
                         let p1 = ray angle (radius+label_rgap+label_rlength+offset)
                         p1a <- alignStrokePoint p1
                         (tw,_) <- textDimension name
-                        let (offset',anchor) = if angle < 90 || angle > 270 
+                        let (offset',anchor) = if angle < 90 || angle > 270
                                               then ((0+),HTA_Left)
                                               else ((0-),HTA_Right)
                         p0 <- alignStrokePoint $ ray angle (radius + label_rgap+offset)
@@ -200,9 +199,9 @@ renderPie p (w,h) = do
                             <> lineTo' x y
                             <> close
 
-                    withFillStyle (FillStyleSolid pColor) $ 
+                    withFillStyle (FillStyleSolid pColor) $
                       fillPath path
-                    withLineStyle (def { _line_color = withOpacity white 0.1 }) $ 
+                    withLineStyle (def { _line_color = withOpacity white 0.1 }) $
                       strokePath path
 
                 ray :: Double -> Double -> Point

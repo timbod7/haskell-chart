@@ -24,7 +24,6 @@ module Graphics.Rendering.Chart.Plot.Candle(
 ) where
 
 import Control.Lens hiding (op)
-import Data.Monoid
 
 import Graphics.Rendering.Chart.Geometry hiding (close)
 import Graphics.Rendering.Chart.Drawing
@@ -75,7 +74,7 @@ instance ToPlot PlotCandle where
         pts = _plot_candle_values p
 
 renderPlotCandle :: PlotCandle x y -> PointMapFn x y -> BackendProgram ()
-renderPlotCandle p pmap = 
+renderPlotCandle p pmap =
     mapM_ (drawCandle p . candlemap) (_plot_candle_values p)
   where
     candlemap (Candle x lo op mid cl hi) =
@@ -96,7 +95,7 @@ drawCandle ps (Candle x lo open mid close hi) = do
         -- the pixel coordinate system is inverted wrt the value coords.
         when f $ withFillStyle (if open >= close
                                    then _plot_candle_rise_fill_style ps
-                                   else _plot_candle_fall_fill_style ps) $ 
+                                   else _plot_candle_fall_fill_style ps) $
                     fillPath $ moveTo' (x-wd) open
                             <> lineTo' (x-wd) close
                             <> lineTo' (x+wd) close
@@ -119,7 +118,7 @@ drawCandle ps (Candle x lo open mid close hi) = do
                                     <> lineTo' (x+tl) lo
                                     <> moveTo' (x-tl) hi
                                     <> lineTo' (x+tl) hi
-          
+
           when (ct > 0) $ strokePath $ moveTo' (x-ct) mid
                                     <> lineTo' (x+ct) mid
 
@@ -137,7 +136,7 @@ renderPlotLegendCandle pc (Rect p1 p2) = do
     close = (mid + hi) / 2
 
 instance Default (PlotCandle x y) where
-  def = PlotCandle 
+  def = PlotCandle
     { _plot_candle_title       = ""
     , _plot_candle_line_style  = solidLine 1 $ opaque blue
     , _plot_candle_fill        = False
