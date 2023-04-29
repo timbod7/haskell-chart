@@ -19,6 +19,7 @@ module Graphics.Rendering.Chart.Axis.Floating(
     LogValue(..),
     LogAxisParams(..),
     scaledAxis,
+    scaledAxis',
     autoScaledAxis,
     autoScaledLogAxis,
     autoSteps,
@@ -31,6 +32,7 @@ module Graphics.Rendering.Chart.Axis.Floating(
 ) where
 
 import Data.List(minimumBy)
+import Data.Maybe (fromMaybe)
 import Data.Ord (comparing)
 import Data.Default.Class
 import Numeric (showEFloat, showFFloat)
@@ -186,7 +188,7 @@ data LinearAxisParams a = LinearAxisParams {
 }
 
 instance (Show a, RealFloat a) => Default (LinearAxisParams a) where
-  def = LinearAxisParams 
+  def = LinearAxisParams
     { _la_labelf    = showDs
     , _la_nLabels   = 5
     , _la_nTicks    = 50
@@ -208,13 +210,18 @@ scaledAxis lap rs@(minV,maxV) ps0 = makeAxis' realToFrac realToFrac
     gridvs    = labelvs
     r         = range ps
 
+-- | Generate a linear axis with the optionally specified bounds.
+--   Unspecified bounds are computed automatically.
+scaledAxis' :: RealFloat a => LinearAxisParams a -> (Maybe a, Maybe a) -> AxisFn a
+scaledAxis' lap (minV,maxV) ps0 = scaledAxis lap rs ps
+  where
+    ps = filter isValidNumber ps0
+    rs = (fromMaybe (minimum ps) minV, fromMaybe (maximum ps) maxV)
+
 -- | Generate a linear axis automatically, scaled appropriately for the
 -- input data.
 autoScaledAxis :: RealFloat a => LinearAxisParams a -> AxisFn a
-autoScaledAxis lap ps0 = scaledAxis lap rs ps
-  where
-    ps = filter isValidNumber ps0
-    rs = (minimum ps,maximum ps)
+autoScaledAxis lap = scaledAxis' lap (Nothing, Nothing)
 
 steps :: RealFloat a => a -> (a,a) -> [Rational]
 steps nSteps rs@(minV,maxV) = map ((s*) . fromIntegral) [min' .. max']
@@ -249,7 +256,7 @@ autoSteps nSteps vs = map fromRational $ steps (fromIntegral nSteps) r
 ----------------------------------------------------------------------
 
 instance (Show a, RealFloat a) => Default (LogAxisParams a) where
-  def = LogAxisParams 
+  def = LogAxisParams
     { _loga_labelf = showDs
     }
 
@@ -299,17 +306,17 @@ logTicks (low,high) = (major,minor,major)
                maximum (1:filter (\x -> log10 (fromRational x) <= r) l)*10^^i
   upper a l  = let (i,r) = pf (log10 a) in
                minimum (10:filter (\x -> r <= log10 (fromRational x)) l)*10^^i
-               
+
   powers           :: (Double,Double) -> [Rational] -> [Rational]
   powers (x,y) l    = [ a*10^^p | p <- [(floor (log10 x))..(ceiling (log10 y))] :: [Integer]
                                 , a <- l ]
   midselection r l  = filter (inRange r l) (powers r l)
   inRange (a,b) l x = (lower a l <= x) && (x <= upper b l)
-  
+
   logRange = (log10 low, log10 high)
-  
+
   roundPow x = 10^^(round x :: Integer)
-  
+
   major | 17.5 < log10 ratio = map roundPow $
                                steps (min 5 (log10 ratio)) logRange
         | 12 < log10 ratio   = map roundPow $
@@ -326,8 +333,8 @@ logTicks (low,high) = (major,minor,major)
   (dl',dh') = (fromRational l', fromRational h')
   ratio' :: Double
   ratio' = fromRational (h'/l')
-  filterX = filter (\x -> l'<=x && x <=h') . powers (dl',dh') 
-  
+  filterX = filter (\x -> l'<=x && x <=h') . powers (dl',dh')
+
   minor | 50 < log10 ratio' = map roundPow $
                               steps 50 (log10 dl', log10 dh')
         | 6 < log10 ratio'  = filterX [1,10]
