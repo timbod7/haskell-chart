@@ -99,7 +99,7 @@ withTransform t p = singleton (WithTransform t p)
 -- | Use the given font style in this local
 --   environment when drawing text.
 --
---   An implementing backend is expected to guarentee
+--   An implementing backend is expected to guarantee
 --   to support the following font families: @serif@, @sans-serif@ and @monospace@;
 --
 --   If the backend is not able to find or load a given font
