@@ -32,6 +32,9 @@ module Graphics.Rendering.Chart.Plot.Bars(
     plot_bars_label_bar_vanchor,
     plot_bars_label_text_hanchor,
     plot_bars_label_text_vanchor,
+    plot_bars_label_angle,
+    plot_bars_label_style,
+    plot_bars_label_offset,
 
     addLabels
 ) where
@@ -47,17 +50,28 @@ import Graphics.Rendering.Chart.Axis
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Geometry hiding (x0, y0)
 import Graphics.Rendering.Chart.Plot.Types
+import Graphics.Rendering.Chart.Utils
 
 class PlotValue a => BarsPlotValue a where
-    barsReference :: a
+    barsIsNull    :: a -> Bool
+    barsReference :: [a] -> a
     barsAdd       :: a -> a -> a
 
 instance BarsPlotValue Double where
-    barsReference = 0
+    barsIsNull a  = a == 0.0
+    barsReference = const 0
     barsAdd       = (+)
+
 instance BarsPlotValue Int where
-    barsReference = 0
+    barsIsNull a  = a == 0
+    barsReference = const 0
     barsAdd       = (+)
+
+instance BarsPlotValue LogValue where
+    barsIsNull (LogValue a) = a == 0.0
+    barsReference as        =
+      10.0 ^^ (floor (log10 $ minimum $ filter (/= 0.0) as) :: Integer)
+    barsAdd                 = (+)
 
 data PlotBarsStyle
     = BarsStacked   -- ^ Bars for a fixed x are stacked vertically
@@ -118,8 +132,9 @@ data PlotBars x y = PlotBars {
    --   respect to the device coordinate corresponding to x.
    _plot_bars_alignment       :: PlotBarsAlignment,
 
-   -- | The starting level for the chart (normally 0).
-   _plot_bars_reference       :: y,
+   -- | The starting level for the chart, a function of some statistic
+   --   (normally the lowest value or just const 0).
+   _plot_bars_reference       :: [y] -> y,
 
    _plot_bars_singleton_width :: Double,
 
@@ -185,32 +200,33 @@ renderPlotBars p pmap = case _plot_bars_style p of
       BarsStacked   -> forM_ vals stackedBars
   where
     clusteredBars (x,ys) = do
+       let offset i = case _plot_bars_alignment p of
+             BarsLeft     -> fromIntegral i * width
+             BarsRight    -> fromIntegral (i-nys) * width
+             BarsCentered -> fromIntegral (2*i-nys) * width/2
        forM_ (zip3 [0,1..] ys styles) $ \(i, (y, _), (fstyle,_)) ->
+           unless (barsIsNull y) $
            withFillStyle fstyle $
              alignFillPath (barPath (offset i) x yref0 y)
              >>= fillPath
        forM_ (zip3 [0,1..] ys styles) $ \(i, (y, _), (_,mlstyle)) ->
+           unless (barsIsNull y) $
            whenJust mlstyle $ \lstyle ->
              withLineStyle lstyle $
                alignStrokePath (barPath (offset i) x yref0 y)
                >>= strokePath
        withFontStyle (_plot_bars_label_style p) $
-           forM_ (zip [0,1..] ys) $ \(i, (y, txt)) -> do
-             let h = _plot_bars_label_bar_hanchor p
-             let v = _plot_bars_label_bar_vanchor p
-             let pt = rectCorner h v (barRect (offset i) x yref0 y)
-
-             drawTextR
-                (_plot_bars_label_text_hanchor p)
-                (_plot_bars_label_text_vanchor p)
-                (_plot_bars_label_angle p)
-                (pvadd pt $ _plot_bars_label_offset p)
-                txt
-
-    offset = case _plot_bars_alignment p of
-      BarsLeft     -> \i -> fromIntegral i * width
-      BarsRight    -> \i -> fromIntegral (i-nys) * width
-      BarsCentered -> \i -> fromIntegral (2*i-nys) * width/2
+           forM_ (zip [0,1..] ys) $ \(i, (y, txt)) ->
+             unless (null txt) $ do
+               let h = _plot_bars_label_bar_hanchor p
+               let v = _plot_bars_label_bar_vanchor p
+               let pt = rectCorner h v (barRect (offset i) x yref0 y)
+               drawTextR
+                  (_plot_bars_label_text_hanchor p)
+                  (_plot_bars_label_text_vanchor p)
+                  (_plot_bars_label_angle p)
+                  (pvadd pt $ _plot_bars_label_offset p)
+                  txt
 
     stackedBars (x,ys) = do
        let ys' = map fst ys
@@ -221,26 +237,28 @@ renderPlotBars p pmap = case _plot_bars_style p of
              BarsRight    -> -width
              BarsCentered -> -(width/2)
        forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) ->
+           unless (y0 == y1) $
            withFillStyle fstyle $
              alignFillPath (barPath ofs x y0 y1)
              >>= fillPath
        forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) ->
+           unless (y0 == y1) $
            whenJust mlstyle $ \lstyle ->
               withLineStyle lstyle $
                 alignStrokePath (barPath ofs x y0 y1)
                 >>= strokePath
        withFontStyle (_plot_bars_label_style p) $
-           forM_ (zip y2s lbls) $ \((y0, y1), txt) -> do
-             let h = _plot_bars_label_bar_hanchor p
-             let v = _plot_bars_label_bar_vanchor p
-             let pt = rectCorner h v (barRect ofs x y0 y1)
-
-             drawTextR
-                (_plot_bars_label_text_hanchor p)
-                (_plot_bars_label_text_vanchor p)
-                (_plot_bars_label_angle p)
-                (pvadd pt $ _plot_bars_label_offset p)
-                txt
+           forM_ (zip y2s lbls) $ \((y0, y1), txt) ->
+             unless (null txt) $ do
+               let h = _plot_bars_label_bar_hanchor p
+               let v = _plot_bars_label_bar_vanchor p
+               let pt = rectCorner h v (barRect ofs x y0 y1)
+               drawTextR
+                  (_plot_bars_label_text_hanchor p)
+                  (_plot_bars_label_text_vanchor p)
+                  (_plot_bars_label_angle p)
+                  (pvadd pt $ _plot_bars_label_offset p)
+                  txt
 
     barRect xos x y0 y1 = Rect (Point (x'+xos) y0') (Point (x'+xos+width) y') where
       Point x' y' = pmap' (x,y1)
@@ -258,8 +276,11 @@ renderPlotBars p pmap = case _plot_bars_style p of
                   BVA_Top    -> y1
                   BVA_Centre -> (y0 + y1) / 2
 
-    yref0 = _plot_bars_reference p
+    yref0 = _plot_bars_reference p lowerVals
     vals  = _plot_bars_values_with_labels p
+    lowerVals = case _plot_bars_style p of
+                  BarsClustered -> concatMap (map fst . snd) vals
+                  BarsStacked   -> map (fst . head . snd) vals
     width = case _plot_bars_spacing p of
         BarsFixGap gap minw -> let w = max (minXInterval - gap) minw in
             case _plot_bars_style p of
@@ -279,18 +300,14 @@ renderPlotBars p pmap = case _plot_bars_style p of
     nys    = maximum [ length ys | (_,ys) <- vals ]
 
     pmap'  = mapXY pmap
-    mapX x = p_x (pmap' (x,barsReference))
-
-whenJust :: (Monad m) => Maybe a -> (a -> m ()) -> m ()
-whenJust (Just a) f = f a
-whenJust _        _ = return ()
+    mapX x = p_x (pmap' (x, yref0))
 
 -- Provided for backward compat. Note that this does not satisfy the lens laws, as it discards/overwrites the labels.
 plot_bars_values :: Lens' (PlotBars x y) [(x, [y])]
-plot_bars_values = lens getter setter where
+plot_bars_values = lens getter setter
+  where
     getter = mapYs fst . _plot_bars_values_with_labels
     setter pb vals' = pb { _plot_bars_values_with_labels = mapYs (, "") vals' }
-
     mapYs :: (a -> b) -> [(c, [a])] -> [(c, [b])]
     mapYs f = map (over _2 $ map f)
 
@@ -300,18 +317,23 @@ addLabels = map . second $ map (\x -> (x, show x))
 
 allBarPoints :: (BarsPlotValue y) => PlotBars x y -> ([x],[y])
 allBarPoints p = case _plot_bars_style p of
-    BarsClustered -> ( [x| (x,_) <- pts], y0:concat [ys| (_,ys) <- pts] )
-    BarsStacked   -> ( [x| (x,_) <- pts], y0:concat [stack ys | (_,ys) <- pts] )
+    BarsClustered ->
+      let ys = concatMap snd pts in
+      ( xs, f0 ys:ys )
+    BarsStacked   ->
+      let ys = map snd pts in
+      ( xs, f0 (map head ys):concatMap stack ys)
   where
     pts = view plot_bars_values  p
-    y0  = _plot_bars_reference p
+    xs  = map fst pts
+    f0  = _plot_bars_reference p
 
 stack :: (BarsPlotValue y) => [y] -> [y]
 stack = scanl1 barsAdd
 
 renderPlotLegendBars :: (FillStyle,Maybe LineStyle) -> Rect -> BackendProgram ()
-renderPlotLegendBars (fstyle,_) r = 
-  withFillStyle fstyle $ 
+renderPlotLegendBars (fstyle,_) r =
+  withFillStyle fstyle $
     fillPath (rectPath r)
 
 $( makeLenses ''PlotBars )
