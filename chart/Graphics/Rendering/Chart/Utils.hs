@@ -4,13 +4,15 @@ module Graphics.Rendering.Chart.Utils(
     maybeM,
   ) where
 
--- | Checks if the given value is and actual numeric value and not 
+-- | Checks if the given value is and actual numeric value and not
 --   a concept like NaN or infinity.
 isValidNumber :: (RealFloat a) => a -> Bool
 isValidNumber v = not (isNaN v) && not (isInfinite v)
 
+-- | Shorthand for the decimal logarithm
+log10 :: (Floating a) => a -> a
+log10 = logBase 10
+
 -- | Version of 'Prelude.maybe' that returns a monadic value.
 maybeM :: (Monad m) => b -> (a -> m b) -> Maybe a -> m b
 maybeM v = maybe (return v)
-
-
