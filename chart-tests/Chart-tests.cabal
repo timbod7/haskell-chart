@@ -1,5 +1,5 @@
 Name: Chart-tests
-Version: 1.8.2
+Version: 1.9.3
 License: BSD3
 License-file: LICENSE
 Copyright: Tim Docker, 2006-2014
@@ -25,24 +25,26 @@ Executable chart-harness
     time,
     mtl,
     colour          >= 2.2.1 && < 2.4,
-    lens            >= 3.9 && < 4.16,
+    lens            >= 3.9 && < 5.2,
     data-default-class < 0.2,
     bytestring      >= 0.9 && < 1.0,
     svg-builder     >= 0.1 && < 0.2,
     random          >= 1.0,
-    containers      >= 0.4 && <0.6,
+    containers      >= 0.4 && <0.7,
     old-time        >= 1.0,
-    Chart           >= 1.8.2 && < 1.9,
-    Chart-cairo     >= 1.8.2 && < 1.9,
-    Chart-gtk       >= 1.8.2 && < 1.9,
-    Chart-diagrams  >= 1.8.2 && < 1.9,
+    Chart           >= 1.9 && < 1.10,
+    Chart-cairo     >= 1.9 && < 1.10,
+    Chart-gtk       >= 1.9 && < 1.10,
+    Chart-diagrams  >= 1.9 && < 1.10,
     gtk             >= 0.9.11,
     cairo           >= 0.9.11,
     diagrams-cairo  >= 1.3 && < 1.5,
     diagrams-svg    >= 1.4 && < 1.5,
-    diagrams-postscript    >= 0.7 && < 1.5,
+    diagrams-postscript    >= 0.7 && < 1.6,
     diagrams-lib    >= 1.2 && < 1.5,
-    diagrams-core   >= 1.3 && < 1.5
+    diagrams-core   >= 1.3 && < 1.6,
+    vector          >= 0.9 && < 0.13,
+    QuickCheck      >= 2.10 && < 2.15
   Main-is: Main.hs
   Hs-Source-Dirs: tests
   Ghc-Options: -threaded
@@ -51,11 +53,9 @@ Executable chart-harness
     CompareFonts
     DiagramsCairo
     DiagramsEPS
-    DiagramsSVGEmbedded
     DiagramsSVG
     Drawing.Cairo
     Drawing.DiagramsCairo
-    Drawing.DiagramsSVGEmbedded
     Drawing.Tests
     ExampleStocks
     GtkTestPicking

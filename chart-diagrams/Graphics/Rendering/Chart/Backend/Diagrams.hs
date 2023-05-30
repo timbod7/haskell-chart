@@ -2,6 +2,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
 
 -- | The backend to render charts with the diagrams library.
 module Graphics.Rendering.Chart.Backend.Diagrams
@@ -39,6 +40,11 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.Text as T
+
+#if MIN_VERSION_diagrams_postscript(1,5,0)
+import qualified Data.ByteString.Builder     as B
+import           System.IO                   (IOMode (..), hPutStr, withFile)
+#endif
 
 import Control.Lens(makeLenses)
 import Control.Monad.Operational
@@ -79,6 +85,8 @@ import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.State(EC, execEC)
 
 import Paths_Chart_diagrams ( getDataFileName )
+
+import System.IO.Unsafe (unsafePerformIO)
 
 -- -----------------------------------------------------------------------
 -- General purpose file output function
@@ -126,7 +134,13 @@ cBackendToFile fo cb path = do
     EPS -> do
       let (d, a) = runBackend env cb
           opts = DEPS.PostscriptOptions path (D2.dims2D w h) DEPS.EPS
+#if MIN_VERSION_diagrams_postscript(1,5,0)
+          eps = D.renderDia DEPS.Postscript opts d
+      withFile (opts D.^. DEPS.psfileName) WriteMode $ \h ->
+        B.hPutBuilder h eps
+#else
       D.renderDia DEPS.Postscript opts d
+#endif
       return a
     SVG -> do
       let (d, a) = runBackend env cb
@@ -381,7 +395,10 @@ dTextSize text = do
   let fs = envFontStyle env
   let (scaledH, scaledA, scaledD, scaledYB) = calcFontMetrics env
   return (mempty, TextSize
-                { textSizeWidth = realToFrac $ D2.width $ F.textSVG' (fontStyleToTextOpts env) text
+                { textSizeWidth = realToFrac $ D2.width
+                              $ F.drop_rect
+                              $ F.fit_height scaledH
+                              $ F.svgText (fontStyleToTextOpts env) text
                 , textSizeAscent = realToFrac scaledA -- scaledH * (a' / h') -- ascent
                 , textSizeDescent = realToFrac scaledD -- scaledH * (d' / h') -- descent
                 , textSizeYBearing = realToFrac scaledYB -- -scaledH * (capHeight / h)
@@ -398,10 +415,13 @@ dDrawTextSvg :: (D.Renderable (D.Path V2 (N b)) b, D.TypeableFloat (N b))
              => Point -> String -> DState (N b) (D.QDiagram b V2 (N b) Any)
 dDrawTextSvg (Point x y) text = do
   env <- get
+  let (scaledH, _, _, _) = calcFontMetrics env
   return $ D.transform (toTransformation $ translate (Vector x y) 1)
          $ applyFontStyleSVG (envFontStyle env)
          $ D2.scaleY (-1)
-         $ F.textSVG_ (fontStyleToTextOpts env) text
+         $ F.set_envelope
+         $ F.fit_height scaledH
+         $ F.svgText (fontStyleToTextOpts env) text
 
 dDrawTextNative :: (D.Renderable (D2.Text (N b)) b, D.TypeableFloat (N b))
                 => Point -> String -> DState (N b) (D.QDiagram b V2 (N b) Any)
@@ -558,21 +578,11 @@ fontStyleToTextOpts :: RealFloat n => DEnv n -> F.TextOpts n
 fontStyleToTextOpts env =
   let fs = envFontStyle env
       font = envSelectFont env fs
-      (scaledH, _, _, _) = calcFontMetrics env
   in F.TextOpts
       { F.textFont = font
-      , F.mode = F.INSIDE_H
       , F.spacing = F.KERN
       , F.underline = False
-      , F.textWidth = 1
-      , F.textHeight = scaledH -- _font_size fs
       }
-
-fontFromName :: (Read n, RealFloat n) => String -> F.PreparedFont n
-fontFromName name = case name of
-  "serif" -> F.lin
-  "monospace" -> F.bit
-  _ -> F.lin
 
 -- | Convert line caps.
 convertLineCap :: LineCap -> D.LineCap

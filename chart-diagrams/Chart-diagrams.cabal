@@ -1,5 +1,5 @@
 Name: Chart-diagrams
-Version: 1.8.2
+Version: 1.9.4
 License: BSD3
 License-file: LICENSE
 Copyright: Jan Bracker, 2006-2014
@@ -9,7 +9,7 @@ Homepage: https://github.com/timbod7/haskell-chart/wiki
 Synopsis: Diagrams backend for Charts.
 Description: Diagrams backend for Charts.
 Category: Graphics
-Cabal-Version: >= 1.6
+Cabal-Version: 1.18
 Build-Type: Simple
 
 data-files: fonts/LinLibertine_R.svg
@@ -25,23 +25,24 @@ data-files: fonts/LinLibertine_R.svg
 
 
 library
+  default-language: Haskell98
   Build-depends: base >= 3 && < 5
                , old-locale
                , time, mtl
-               , diagrams-core >= 1.3 && < 1.5
+               , diagrams-core >= 1.3 && < 1.6
                , diagrams-lib >= 1.2 && < 1.5
                , diagrams-svg >= 1.4 && < 1.5
-               , diagrams-postscript >= 0.7 && < 1.5
-               , SVGFonts >= 1.4 && < 1.7
+               , diagrams-postscript >= 0.7 && < 1.6
+               , SVGFonts >= 1.8 && < 1.9
                , colour >= 2.2.1 && < 2.4
                , blaze-markup >= 0.7 && < 0.9
                , svg-builder >= 0.1 && < 0.2
                , bytestring >= 0.9 && < 1.0
                , operational >= 0.2.2 && < 0.3
-               , containers >= 0.4 && < 0.6
+               , containers >= 0.4 && < 0.7
                , data-default-class < 0.2
-               , lens >= 3.9 && < 4.16
-               , Chart >= 1.8.2 && < 1.9
+               , lens >= 3.9 && < 5.2
+               , Chart >= 1.9 && < 1.10
                , text
   other-modules: Paths_Chart_diagrams
   Exposed-modules:

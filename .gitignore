@@ -21,3 +21,5 @@ parametric.png
 parametric.svg
 sparklines.png
 sparklines.svg
+.ghc.environment.*
+cabal.project.local

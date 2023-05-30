@@ -53,7 +53,6 @@ module Graphics.Rendering.Chart.Geometry
 
 import qualified Prelude
 import Prelude hiding ((^))
-import Data.Monoid
 
 -- The homomorphic version to avoid casts inside the code.
 (^) :: Num a => a -> Integer -> a
@@ -196,14 +195,17 @@ data Path = MoveTo Point Path
 -- | Paths are monoids. After a path is closed you can not append
 --   anything to it anymore. The empty path is open.
 --   Use 'close' to close a path.
-instance Monoid Path where
-  mappend p1 p2 = case p1 of
-    MoveTo p path -> MoveTo p $ mappend path p2
-    LineTo p path -> LineTo p $ mappend path p2
-    Arc    p r a1 a2 path -> Arc p r a1 a2 $ mappend path p2
-    ArcNeg p r a1 a2 path -> ArcNeg p r a1 a2 $ mappend path p2
+instance Semigroup Path where
+  p1 <> p2 = case p1 of
+    MoveTo p path -> MoveTo p $ path <> p2
+    LineTo p path -> LineTo p $ path <> p2
+    Arc    p r a1 a2 path -> Arc p r a1 a2 $ path <> p2
+    ArcNeg p r a1 a2 path -> ArcNeg p r a1 a2 $ path <> p2
     End   -> p2
     Close -> Close
+
+instance Monoid Path where
+  mappend = (<>)
   mempty = End
 
 -- | Move the paths pointer to the given location.
@@ -265,10 +267,10 @@ foldPath :: (Monoid m)
 foldPath moveTo_ lineTo_ arc_ arcNeg_ close_ path =
   let restF = foldPath moveTo_ lineTo_ arc_ arcNeg_ close_
   in case path of
-    MoveTo p rest -> moveTo_ p <> restF rest
-    LineTo p rest -> lineTo_ p <> restF rest
-    Arc    p r a1 a2 rest -> arc_    p r a1 a2 <> restF rest
-    ArcNeg p r a1 a2 rest -> arcNeg_ p r a1 a2 <> restF rest
+    MoveTo p rest -> moveTo_ p `mappend` restF rest
+    LineTo p rest -> lineTo_ p `mappend` restF rest
+    Arc    p r a1 a2 rest -> arc_    p r a1 a2 `mappend` restF rest
+    ArcNeg p r a1 a2 rest -> arcNeg_ p r a1 a2 `mappend` restF rest
     End   -> mempty
     Close -> close_
 

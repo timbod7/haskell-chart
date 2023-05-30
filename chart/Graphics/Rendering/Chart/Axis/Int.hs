@@ -14,11 +14,58 @@ module Graphics.Rendering.Chart.Axis.Int(
 ) where
 
 import Data.List(genericLength)
+import Data.Int (Int8, Int16, Int32, Int64)
+import Data.Word (Word8, Word16, Word32, Word64)
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Axis.Types
 import Graphics.Rendering.Chart.Axis.Floating
 
 instance PlotValue Int where
+    toValue    = fromIntegral
+    fromValue  = round
+    autoAxis   = autoScaledIntAxis defaultIntAxis
+
+instance PlotValue Int8 where
+    toValue    = fromIntegral
+    fromValue  = round
+    autoAxis   = autoScaledIntAxis defaultIntAxis
+
+instance PlotValue Int16 where
+    toValue    = fromIntegral
+    fromValue  = round
+    autoAxis   = autoScaledIntAxis defaultIntAxis
+
+instance PlotValue Int32 where
+    toValue    = fromIntegral
+    fromValue  = round
+    autoAxis   = autoScaledIntAxis defaultIntAxis
+
+instance PlotValue Int64 where
+    toValue    = fromIntegral
+    fromValue  = round
+    autoAxis   = autoScaledIntAxis defaultIntAxis
+
+instance PlotValue Word where
+    toValue    = fromIntegral
+    fromValue  = round
+    autoAxis   = autoScaledIntAxis defaultIntAxis
+
+instance PlotValue Word8 where
+    toValue    = fromIntegral
+    fromValue  = round
+    autoAxis   = autoScaledIntAxis defaultIntAxis
+
+instance PlotValue Word16 where
+    toValue    = fromIntegral
+    fromValue  = round
+    autoAxis   = autoScaledIntAxis defaultIntAxis
+
+instance PlotValue Word32 where
+    toValue    = fromIntegral
+    fromValue  = round
+    autoAxis   = autoScaledIntAxis defaultIntAxis
+
+instance PlotValue Word64 where
     toValue    = fromIntegral
     fromValue  = round
     autoAxis   = autoScaledIntAxis defaultIntAxis

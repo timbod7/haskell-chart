@@ -9,7 +9,7 @@
 -- 
 -- Importing the Easy module brings into scope all core functions and types required
 -- for working with the chart library. This includes key external dependencies such as
--- Control.Len and Data.Colour. The module also provides several helper functions for
+-- Control.Lens and Data.Colour. The module also provides several helper functions for
 -- quickly generating common plots. Note that chart backends must still be explicitly
 -- imported, as some backends cannot be built on all platforms.
 --

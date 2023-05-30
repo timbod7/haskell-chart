@@ -7,6 +7,7 @@ module Graphics.Rendering.Chart.Plot.Histogram
   , defaultPlotHist
   , defaultFloatPlotHist
   , defaultNormedPlotHist
+  , histToBins
     -- * Accessors
   , plot_hist_title
   , plot_hist_bins
@@ -20,7 +21,6 @@ module Graphics.Rendering.Chart.Plot.Histogram
   ) where
 
 import Control.Monad (when)
-import Data.Monoid
 import Data.Maybe (fromMaybe)
 import qualified Data.Foldable as F
 import qualified Data.Vector as V
@@ -161,6 +161,7 @@ renderPlotLegendHist p (Rect p1 p2) =
         let y = (p_y p1 + p_y p2) / 2
         in strokePath $ moveTo' (p_x p1) y <> lineTo' (p_x p2) y
 
+-- | Obtain the bin dimensions of a given @PlotHist@.
 histToBins :: (RealFrac x, Num y, Ord y) => PlotHist x y -> [((x,x), y)]
 histToBins hist =
     filter_zeros $ zip bounds $ counts

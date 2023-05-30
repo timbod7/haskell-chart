@@ -18,14 +18,22 @@ before_cache:
 
 matrix:
   include:
-    - compiler: "ghc-7.6.3"
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-7.6.3,libgtk2.0-dev,libcairo-dev], sources: [hvr-ghc]}}
-    - compiler: "ghc-7.8.4"
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-7.8.4,libgtk2.0-dev,libcairo-dev], sources: [hvr-ghc]}}
     - compiler: "ghc-7.10.3"
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-7.10.3,libgtk2.0-dev,libcairo-dev], sources: [hvr-ghc]}}
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-7.10.3,libgtk2.0-dev,libgtk-3-dev,libcairo-dev], sources: [hvr-ghc]}}
     - compiler: "ghc-8.0.2"
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.0.2,libgtk2.0-dev,libcairo-dev], sources: [hvr-ghc]}}
+      env: GHCVER=8.0.2
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.0.2,libgtk2.0-dev,libgtk-3-dev,libcairo-dev], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.2.2"
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.2.2,libgtk2.0-dev,libgtk-3-dev,libcairo-dev], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.4.2"
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.4.2,libgtk2.0-dev,libgtk-3-dev,libcairo-dev], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.6.4"
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.4,libgtk2.0-dev,libgtk-3-dev,libcairo-dev], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.8.2"
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-3.2,ghc-8.8.2,libgtk2.0-dev,libgtk-3-dev,libcairo-dev], sources: [hvr-ghc]}}
+
+  allow_failures:
+    - env: GHCVER=8.0.2
 
 before_install:
  - HC=${CC}
@@ -42,10 +50,10 @@ install:
 # any command which exits with a non-zero exit code causes the build to fail.
 script:
 # prepare `cabal sdist` source-tree environment to make sure source-tarballs are complete
- - read -a PKGS <<< "chart chart-cairo chart-diagrams chart-tests chart-gtk"
+ - read -a PKGS <<< "chart chart-cairo chart-diagrams chart-tests chart-gtk chart-gtk3"
  - rm -rf sdists; mkdir sdists
  - for PKG in "${PKGS[@]}"; do
-     cd "$PKG"; cabal sdist --output-directory="../sdists/$PKG" || break; cd ..;
+     cd "$PKG"; cabal v1-sdist --output-directory="../sdists/$PKG" || break; cd ..;
    done
  - cd sdists/
 
