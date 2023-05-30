@@ -73,6 +73,7 @@ Executable chart-harness
     Test15
     Test17
     Test19
+    Test20
     TestParametric
     Tests
     TestSparkLines
