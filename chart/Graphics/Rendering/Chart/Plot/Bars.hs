@@ -253,13 +253,13 @@ renderBars p vals vref0 r mapk = case _bars_settings_style p of
        forM_ (zip3 [0,1..] vs styles) $ \(i, (v, _), (fstyle,_)) ->
            unless (barsIsNull v) $
            withFillStyle fstyle $
-             alignFillPath (rectPath $ r (offset i) bsize k vref0 v)
+             alignFillPath (barPath (offset i) k vref0 v)
              >>= fillPath
        forM_ (zip3 [0,1..] vs styles) $ \(i, (v, _), (_,mlstyle)) ->
            unless (barsIsNull v) $
            whenJust mlstyle $ \lstyle ->
              withLineStyle lstyle $
-               alignStrokePath (rectPath $ r (offset i) bsize k vref0 v)
+               alignStrokePath (barPath (offset i) k vref0 v)
                >>= strokePath
        withFontStyle (_bars_settings_label_style p) $
            forM_ (zip [0,1..] vs) $ \(i, (v, txt)) ->
