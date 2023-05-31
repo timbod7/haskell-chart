@@ -79,7 +79,6 @@ chart = layoutToRenderable layout
       $ plot_bars_label_text_hanchor .~ HTA_Left
       $ plot_bars_label_text_vanchor .~ VTA_Centre
       $ plot_bars_label_offset .~ Vector 3 0
-      $ plot_bars_label_style . font_size .~ 7
       $ plot_bars_label_style . font_slant .~ FontSlantItalic
       $ def
 
