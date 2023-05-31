@@ -38,7 +38,7 @@ dat = [ [66.22192174833207,   50.85424119528999]
       , [4.73981774972079753, 5.092283613261595367]
       ]
 
-chart :: Renderable (LayoutPick LogValue PlotIndexRev PlotIndexRev)
+chart :: Renderable (LayoutPick LogValue PlotIndex PlotIndex)
 chart = layoutToRenderable layout
  where
   layout =
@@ -58,17 +58,18 @@ chart = layoutToRenderable layout
       $ layout_bottom_axis_visibility . axis_show_ticks .~ True
 
       -- Y
-      $ layout_y_axis . laxis_generate .~ autoIndexRevTicksAxis alabels
+      $ layout_y_axis . laxis_generate .~ autoIndexAxis' True alabels
       $ layout_y_axis . laxis_override .~ axisGridAtTicks
+      $ layout_y_axis . laxis_reverse .~ True
       $ layout_y_axis . laxis_style . axis_grid_style .~ solidLine 0.3 (opaque lightgrey)
       $ layout_left_axis_visibility . axis_show_ticks .~ False
 
       -- data
       $ layout_plots .~ [ plotHBars bars2 ]
 
-      $ def :: Layout LogValue PlotIndexRev
+      $ def :: Layout LogValue PlotIndex
 
-  bars2 = plot_bars_values_with_labels .~ addRevIndexes dat'
+  bars2 = plot_bars_values_with_labels .~ addIndexes dat'
       $ plot_bars_titles .~ ["","after","before"]
       $ plot_bars_style .~ BarsStacked
       $ plot_bars_spacing .~ BarsFixGap 12 5
