@@ -7,14 +7,15 @@
 -- Calculate and render indexed axes
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TupleSections #-}
 
 module Graphics.Rendering.Chart.Axis.Indexed(
     PlotIndex(..),
+    autoIndexAxis',
     autoIndexAxis,
     addIndexes,
 ) where
 
-import Control.Arrow (first) 
 import Data.Default.Class
 
 import Graphics.Rendering.Chart.Axis.Types
@@ -31,18 +32,18 @@ instance PlotValue PlotIndex where
 
 -- | Augment a list of values with index numbers for plotting.
 addIndexes :: [a] -> [(PlotIndex,a)]
-addIndexes as = map (first PlotIndex) (zip [0..] as)
+addIndexes = zipWith (\n x -> (PlotIndex n, x)) [0..]
 
 -- | Create an axis for values indexed by position. The
 --   list of strings are the labels to be used.
-autoIndexAxis :: Integral i => [String] -> [i] -> AxisData i
-autoIndexAxis labels vs = AxisData {
+autoIndexAxis' :: Integral i => Bool -> [String] -> AxisFn i
+autoIndexAxis' tks labels vs = AxisData {
     _axis_visibility = def { _axis_show_ticks = False },
     _axis_viewport = vport,
     _axis_tropweiv = invport,
-    _axis_ticks    = [],
+    _axis_ticks    = if tks then map (, 5) $ take (length labels) [0..] else [],
     _axis_labels   = [filter (\(i,_) -> i >= imin && i <= imax)
-                            (zip [0..] labels)],
+                             (zip [0..] labels)],
     _axis_grid     = []
     }
   where
@@ -51,3 +52,6 @@ autoIndexAxis labels vs = AxisData {
     invport = invLinMap round fromIntegral (imin, imax)
     imin = minimum vs
     imax = maximum vs
+
+autoIndexAxis :: Integral i => [String] -> AxisFn i
+autoIndexAxis = autoIndexAxis' False

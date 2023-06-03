@@ -16,15 +16,19 @@ module Graphics.Rendering.Chart.Plot.Annotation(
     plot_annotation_angle,
     plot_annotation_style,
     plot_annotation_background,
+    plot_annotation_offset,
     plot_annotation_values
 ) where
 
 import Control.Lens
+import Data.Default.Class
 import Graphics.Rendering.Chart.Geometry
 import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Renderable
 import Graphics.Rendering.Chart.Plot.Types
-import Data.Default.Class
+import Graphics.Rendering.Chart.Drawing
+import Graphics.Rendering.Chart.Geometry
+import Graphics.Rendering.Chart.Plot.Types
 
 -- | Value for describing a series of text annotations
 --   to be placed at arbitrary points on the graph. Annotations
@@ -40,6 +44,7 @@ data PlotAnnotation  x y = PlotAnnotation {
       -- ^ Rectangle which style determines the background of the annotation
       -- text and which '_rect_minsize' determines the additional width and
       -- height of the background area
+      _plot_annotation_offset  :: Vector,
       _plot_annotation_values  :: [(x,y,String)]
 }
 
@@ -63,6 +68,7 @@ renderAnnotation p pMap = withFontStyle style $ do
           values = _plot_annotation_values p
           angle =  _plot_annotation_angle p
           style =  _plot_annotation_style p
+          offset = _plot_annotation_offset p
           rectangle = _plot_annotation_background p
           (x1,y1) = _rect_minsize rectangle
           drawRect (x,y,s) = do
@@ -77,18 +83,19 @@ renderAnnotation p pMap = withFontStyle style $ do
                   yvp VTA_Centre = y3 - (y1 + y2) / 2
                   yvp VTA_Bottom = y3 - y2 - y1 / 2
                   yvp VTA_BaseLine = y3 - y1 / 2 - textSizeAscent ts
-              drawRectangle (Point (xvp hta) (yvp vta)) rectangle{ _rect_minsize = (x1+x2,y1+y2) }
+              drawRectangle (Point (xvp hta) (yvp vta) `pvadd` offset) rectangle{ _rect_minsize = (x1+x2,y1+y2) }
           drawOne (x,y,s) = drawTextsR hta vta angle (point x y) s
-          point x y = pMap (LValue x, LValue y)
+          point x y = pMap (LValue x, LValue y) `pvadd` offset
 
 instance Default (PlotAnnotation x y) where
-  def = PlotAnnotation 
+  def = PlotAnnotation
     { _plot_annotation_hanchor = HTA_Centre
     , _plot_annotation_vanchor = VTA_Centre
     , _plot_annotation_angle   = 0
     , _plot_annotation_style   = def
     , _plot_annotation_background = def
     , _plot_annotation_values  = []
+    , _plot_annotation_offset  = Vector 0 0
     }
 
 $( makeLenses ''PlotAnnotation )

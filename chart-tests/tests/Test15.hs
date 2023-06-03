@@ -1,4 +1,4 @@
-module Test15 where 
+module Test15 where
 
 import Graphics.Rendering.Chart
 import Data.Colour
@@ -10,14 +10,14 @@ import Utils
 
 chart lo lp = layoutToRenderable layout
  where
-  layout = 
+  layout =
         layout_title .~ "Legend Test"
       $ layout_title_style . font_size .~ 10
       $ layout_x_axis . laxis_generate .~ autoIndexAxis alabels
       $ layout_y_axis . laxis_override .~ axisGridHide
       $ layout_left_axis_visibility . axis_show_ticks .~ False
       $ layout_plots .~ [ plotBars bars2 ]
-      $ layout_legend .~ Just lstyle
+      $ layout_legend ?~ lstyle
       $ def :: Layout PlotIndex Double
 
   bars2 = plot_bars_titles .~ ["A","B","C","D","E","F","G","H","I","J"]

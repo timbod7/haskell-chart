@@ -11,11 +11,11 @@
 -- (see 'Control.Lens') for each field of the following data types:
 --
 --     * 'Layout'
---     
+--
 --     * 'LayoutLR'
--- 
+--
 --     * 'StackedLayouts'
--- 
+--
 --     * 'LayoutAxis'
 --
 {-# LANGUAGE CPP #-}
@@ -33,12 +33,12 @@ module Graphics.Rendering.Chart.Layout
   , StackedLayout(..)
   -- , LegendItem  haddock complains about this being missing, but from what?
   , MAxisFn
-  
+
     -- * Rendering
   , layoutToRenderable
-  , layoutToGrid  
+  , layoutToGrid
   , layoutLRToRenderable
-  , layoutLRToGrid  
+  , layoutLRToGrid
   , renderStackedLayouts
 
     -- * LayoutAxis lenses
@@ -48,7 +48,7 @@ module Graphics.Rendering.Chart.Layout
   , laxis_generate
   , laxis_override
   , laxis_reverse
-    
+
     -- * Layout lenses
   , layout_background
   , layout_plot_background
@@ -69,7 +69,7 @@ module Graphics.Rendering.Chart.Layout
   , layout_axes_title_styles
   , layout_all_font_styles
   , layout_foreground
-      
+
     -- * LayoutLR lenses
   , layoutlr_background
   , layoutlr_plot_background
@@ -114,18 +114,17 @@ import Control.Lens hiding (at)
 import Data.Colour
 import Data.Colour.Names (white)
 import Data.Default.Class
-import Data.Maybe (fromMaybe)
 
 -- | A @MAxisFn@ is a function that generates an (optional) axis
 --   given the points plotted against that axis.
 type MAxisFn t = [t] -> Maybe (AxisData t)
 
 -- | Type of axis that is used in 'Layout' and 'LayoutLR'.
---   
+--
 --   To generate the actual axis type ('AxisData' and 'AxisT')
 --   the '_laxis_generate' function is called and custom settings
 --   are applied with '_laxis_override'. Note that the 'AxisVisibility'
---   values in 'Layout' and 'LayoutLR' override visibility related 
+--   values in 'Layout' and 'LayoutLR' override visibility related
 --   settings of the axis.
 data LayoutAxis x = LayoutAxis
   { _laxis_title_style :: FontStyle
@@ -138,29 +137,29 @@ data LayoutAxis x = LayoutAxis
   , _laxis_generate    :: AxisFn x
     -- ^ Function that generates the axis data, based upon the
     --   points plotted. The default value is 'autoAxis'.
-  
+
   , _laxis_override    :: AxisData x -> AxisData x
     -- ^ Function that can be used to override the generated axis data.
     --   The default value is 'id'.
-  
+
   , _laxis_reverse     :: Bool
     -- ^ True if left to right (bottom to top) is to show descending values.
-  
+
   }
 
 -- | Information on what is at a specifc location of a 'Layout' or 'LayoutLR'.
 --   This is delivered by the 'PickFn' of a 'Renderable'.
-data LayoutPick x y1 y2 = LayoutPick_Legend String -- ^ A legend entry.
-                          | LayoutPick_Title String  -- ^ The title.
-                          | LayoutPick_XTopAxisTitle String      -- ^ The title of the top x axis.
-                          | LayoutPick_XBottomAxisTitle String   -- ^ The title of the bottom x axis.
-                          | LayoutPick_YLeftAxisTitle String  -- ^ The title of the left y axis.
-                          | LayoutPick_YRightAxisTitle String -- ^ The title of the right y axis.
-                          | LayoutPick_PlotArea x y1 y2 -- ^ The plot area at the given plot coordinates.
-                          | LayoutPick_XTopAxis x       -- ^ The top x axis at the given plot coordinate.
-                          | LayoutPick_XBottomAxis x    -- ^ The bottom x axis at the given plot coordinate.
-                          | LayoutPick_YLeftAxis y1  -- ^ The left y axis at the given plot coordinate.
-                          | LayoutPick_YRightAxis y2 -- ^ The right y axis at the given plot coordinate.
+data LayoutPick x y1 y2 = LayoutPick_Legend String           -- ^ A legend entry.
+                        | LayoutPick_Title String            -- ^ The title.
+                        | LayoutPick_XTopAxisTitle String    -- ^ The title of the top x axis.
+                        | LayoutPick_XBottomAxisTitle String -- ^ The title of the bottom x axis.
+                        | LayoutPick_YLeftAxisTitle String   -- ^ The title of the left y axis.
+                        | LayoutPick_YRightAxisTitle String  -- ^ The title of the right y axis.
+                        | LayoutPick_PlotArea x y1 y2        -- ^ The plot area at the given plot coordinates.
+                        | LayoutPick_XTopAxis x              -- ^ The top x axis at the given plot coordinate.
+                        | LayoutPick_XBottomAxis x           -- ^ The bottom x axis at the given plot coordinate.
+                        | LayoutPick_YLeftAxis y1            -- ^ The left y axis at the given plot coordinate.
+                        | LayoutPick_YRightAxis y2           -- ^ The right y axis at the given plot coordinate.
                           deriving (Show)
 
 type LegendItem = (String,Rect -> BackendProgram ())
@@ -169,11 +168,11 @@ type LegendItem = (String,Rect -> BackendProgram ())
 --   axis. The title is at the top and the legend at the bottom. It's
 --   parametrized by the types of values to be plotted on the x
 --   and y axes.
-data Layout x y = Layout 
+data Layout x y = Layout
   { _layout_background      :: FillStyle
     -- ^ How to fill the background of everything.
   , _layout_plot_background :: Maybe FillStyle
-    -- ^ How to fill the background of the plot, 
+    -- ^ How to fill the background of the plot,
     --   if different from the overall background.
 
   , _layout_title           :: String
@@ -219,7 +218,7 @@ layoutToGrid :: forall x y . (Ord x, Ord y) => Layout x y -> Grid (Renderable (L
 layoutToGrid l = grid
   where
     lp :: Grid a -> a -> Grid a
-    lp = case fromMaybe LegendBelow $ _legend_position <$> _layout_legend l of
+    lp = case maybe LegendBelow _legend_position $ _layout_legend l of
               LegendAbove -> flip wideAbove
               LegendBelow -> aboveWide
               LegendRight -> besideTall
@@ -245,7 +244,7 @@ renderLegend l legItems = gridToRenderable g
     g      = besideN [ tval $ mkLegend (_layout_legend l) (_layout_margin l) legItems
                      , weights (1,1) $ tval emptyRenderable ]
 
--- | Render the plot area of a 'Layout'. This consists of the 
+-- | Render the plot area of a 'Layout'. This consists of the
 --   actual plot area with all plots, the axis and their titles.
 layoutPlotAreaToGrid :: forall x y. (Ord x, Ord y) =>
                         Layout x y -> Grid (Renderable (LayoutPick x y y))
@@ -303,7 +302,7 @@ layoutPlotAreaToGrid l = buildGrid LayoutGridElements{
             mapx (AxisT _ _ rev ad) = _axis_tropweiv ad (optPairReverse rev xr)
             mapy (AxisT _ _ rev ad) = _axis_tropweiv ad (optPairReverse rev yr)
 
--- | Empty 'Layout' without title and plots. The background is white and 
+-- | Empty 'Layout' without title and plots. The background is white and
 --   the grid is drawn beneath all plots. There will be a legend. The top
 --   and right axis will not be visible.
 instance (PlotValue x, PlotValue y) => Default (Layout x y) where
@@ -314,7 +313,7 @@ instance (PlotValue x, PlotValue y) => Default (Layout x y) where
     , _layout_title           = ""
     , _layout_title_style     = def { _font_size   = 15
                                     , _font_weight = FontWeightBold }
-    
+
     , _layout_x_axis                 = def
     , _layout_top_axis_visibility    = def { _axis_show_line   = False
                                            , _axis_show_ticks  = False
@@ -333,16 +332,16 @@ instance (PlotValue x, PlotValue y) => Default (Layout x y) where
     }
 
 ----------------------------------------------------------------------
-  
+
 -- | A LayoutLR value is a single plot area, with an x axis and
 --   independent left and right y axes, with a title at the top;
 --   legend at the bottom. It's parametrized by the types of values
 --   to be plotted on the x and two y axes.
-data LayoutLR x y1 y2 = LayoutLR 
+data LayoutLR x y1 y2 = LayoutLR
   { _layoutlr_background      :: FillStyle
     -- ^ How to fill the background of everything.
   , _layoutlr_plot_background :: Maybe FillStyle
-    -- ^ How to fill the background of the plot, 
+    -- ^ How to fill the background of the plot,
     --   if different from the overall background.
 
   , _layoutlr_title           :: String
@@ -365,7 +364,7 @@ data LayoutLR x y1 y2 = LayoutLR
     -- ^ Rules to generate the right y axis.
   , _layoutlr_right_axis_visibility :: AxisVisibility
     -- ^ Visibility options for the right axis.
-  
+
   , _layoutlr_plots      :: [Either (Plot x y1) (Plot x y2)]
     -- ^ The data sets to plot in the chart.
     --   They are plotted over each other.
@@ -385,12 +384,12 @@ instance (Ord x, Ord yl, Ord yr) => ToRenderable (LayoutLR x yl yr) where
   toRenderable = setPickFn nullPickFn . layoutLRToRenderable
 
 -- | Render the given 'LayoutLR'.
-layoutLRToRenderable :: forall x yl yr . (Ord x, Ord yl, Ord yr) 
+layoutLRToRenderable :: forall x yl yr . (Ord x, Ord yl, Ord yr)
                      => LayoutLR x yl yr -> Renderable (LayoutPick x yl yr)
-layoutLRToRenderable l = fillBackground (_layoutlr_background l) 
+layoutLRToRenderable l = fillBackground (_layoutlr_background l)
                        $ gridToRenderable (layoutLRToGrid l)
 
-layoutLRToGrid :: forall x yl yr . (Ord x, Ord yl, Ord yr) 
+layoutLRToGrid :: forall x yl yr . (Ord x, Ord yl, Ord yr)
                      => LayoutLR x yl yr -> Grid (Renderable (LayoutPick x yl yr))
 layoutLRToGrid l = grid
   where
@@ -425,8 +424,8 @@ renderLegendLR l (lefts,rights) = gridToRenderable g
                      , tval $ mkLegend (_layoutlr_legend l) (_layoutlr_margin l) rights ]
     -- lm     = _layoutlr_margin l
 
-layoutLRPlotAreaToGrid :: forall x yl yr. (Ord x, Ord yl, Ord yr) 
-                       => LayoutLR x yl yr 
+layoutLRPlotAreaToGrid :: forall x yl yr. (Ord x, Ord yl, Ord yr)
+                       => LayoutLR x yl yr
                        -> Grid (Renderable (LayoutPick x yl yr))
 layoutLRPlotAreaToGrid l = buildGrid LayoutGridElements{
   lge_plots = mfill (_layoutlr_plot_background l) $ plotsToRenderable l,
@@ -441,7 +440,7 @@ layoutLRPlotAreaToGrid l = buildGrid LayoutGridElements{
           ++ [ x | (Right p) <- _layoutlr_plots l, x <- fst $ _plot_all_points p]
     yvalsL = [ y | (Left p)  <- _layoutlr_plots l, y <- snd $ _plot_all_points p]
     yvalsR = [ y | (Right p) <- _layoutlr_plots l, y <- snd $ _plot_all_points p]
-    
+
     bAxis = mkAxis E_Bottom (overrideAxisVisibility l _layoutlr_x_axis _layoutlr_bottom_axis_visibility) xvals
     tAxis = mkAxis E_Top    (overrideAxisVisibility l _layoutlr_x_axis _layoutlr_top_axis_visibility   ) xvals
     lAxis = mkAxis E_Left   (overrideAxisVisibility l _layoutlr_left_axis  _layoutlr_left_axis_visibility ) yvalsL
@@ -494,7 +493,7 @@ data StackedLayout x = forall y     . (Ord y)          => StackedLayout (Layout 
 
 -- | A container for a set of vertically 'StackedLayout's.
 --   The x axis of the different layouts will be aligned.
-data StackedLayouts x = StackedLayouts 
+data StackedLayouts x = StackedLayouts
   { _slayouts_layouts :: [StackedLayout x]
     -- ^ The stacked layouts from top (first element) to bottom (last element).
   , _slayouts_compress_legend :: Bool
@@ -522,7 +521,7 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
   where
     g = fullOverlayUnder (fillBackground bg emptyRenderable)
       $ foldr (above.mkGrid) nullt (zip sls [0,1..])
-    
+
     mkGrid :: (StackedLayout x, Int) -> Grid (Renderable ())
     mkGrid (sl, i)
         = titleR
@@ -537,21 +536,21 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
         legendR = case sl of
                     StackedLayout l -> noPickFn $ renderLegend l $ fst legenditems
                     StackedLayoutLR l -> noPickFn $ renderLegendLR l legenditems
-        
+
         legenditems = case (_slayouts_compress_legend slp,isBottomPlot) of
             (False,_) -> case sl of
                            StackedLayout l -> (getLegendItems l, [])
                            StackedLayoutLR l -> getLegendItemsLR l
             (True,True) -> allLegendItems
             (True,False) -> ([],[])
-        
+
         mkPlotArea :: LayoutAxis x -> Grid (Renderable ())
         mkPlotArea axis = case sl of
-          StackedLayout l -> fmap noPickFn 
-                           $ layoutPlotAreaToGrid 
+          StackedLayout l -> fmap noPickFn
+                           $ layoutPlotAreaToGrid
                            $ l { _layout_x_axis = axis }
-          StackedLayoutLR l -> fmap noPickFn 
-                             $ layoutLRPlotAreaToGrid 
+          StackedLayoutLR l -> fmap noPickFn
+                             $ layoutLRPlotAreaToGrid
                              $ l { _layoutlr_x_axis = axis }
 
         showLegend = not (null (fst legenditems)) || not (null (snd legenditems))
@@ -561,37 +560,37 @@ renderStackedLayouts slp@(StackedLayouts{_slayouts_layouts=sls@(sl1:_)}) = gridT
         lm = case sl of
           StackedLayout l -> _layout_margin l
           StackedLayoutLR l -> _layoutlr_margin l
-        
+
         xAxis :: LayoutAxis x
         xAxis = case sl of
           StackedLayout l -> _layout_x_axis l
           StackedLayoutLR l -> _layoutlr_x_axis l
-        
+
         usedAxis :: LayoutAxis x
-        usedAxis = xAxis 
+        usedAxis = xAxis
           { _laxis_generate = const (_laxis_generate xAxis all_xvals) }
-        
+
     bg = case sl1 of
            StackedLayout l -> _layout_background l
            StackedLayoutLR l -> _layoutlr_background l
-    
+
     getXVals :: StackedLayout x -> [x]
     getXVals (StackedLayout l) = getLayoutXVals l
     getXVals (StackedLayoutLR l) = getLayoutLRXVals l
-    
+
     all_xvals = concatMap getXVals sls
 
     allLegendItems = (concatMap (fst.legendItems) sls, concatMap (snd.legendItems) sls)
-    
+
     legendItems :: StackedLayout x -> ([LegendItem], [LegendItem])
     legendItems (StackedLayout l)   = (getLegendItems l, [])
     legendItems (StackedLayoutLR l) = getLegendItemsLR l
-    
+
     noPickFn :: Renderable a -> Renderable ()
     noPickFn = mapPickFn (const ())
 
 ----------------------------------------------------------------------
-    
+
 addMarginsToGrid :: (Double,Double,Double,Double) -> Grid (Renderable a)
                  -> Grid (Renderable a)
 addMarginsToGrid (t,b,l,r) g = aboveN [
@@ -623,7 +622,7 @@ mkLegend mls lm vals = case mls of
 
 data LayoutGridElements x yl yr = LayoutGridElements {
   lge_plots :: Renderable (LayoutPick x yl yr),
-  
+
   lge_taxis :: (Maybe (AxisT x),String,FontStyle),
   lge_baxis :: (Maybe (AxisT x),String,FontStyle),
   lge_laxis :: (Maybe (AxisT yl),String,FontStyle),
@@ -660,7 +659,7 @@ buildGrid lge = layer2 `overlay` layer1
     (btitle,_) = mktitle HTA_Centre VTA_Top      0 blbl bstyle LayoutPick_XBottomAxisTitle
     (ltitle,lam) = mktitle HTA_Right  VTA_Centre 270 llbl lstyle LayoutPick_YLeftAxisTitle
     (rtitle,ram) = mktitle HTA_Left   VTA_Centre 270 rlbl rstyle LayoutPick_YRightAxisTitle
-    
+
     baxis = tval $ maybe emptyRenderable
                          (mapPickFn LayoutPick_XBottomAxis . axisToRenderable) bdata
     taxis = tval $ maybe emptyRenderable
@@ -675,10 +674,10 @@ buildGrid lge = layer2 `overlay` layer1
     tr = tval $ axesSpacer snd tdata fst rdata
     br = tval $ axesSpacer snd bdata snd rdata
 
-    mktitle :: HTextAnchor -> VTextAnchor 
+    mktitle :: HTextAnchor -> VTextAnchor
             -> Double
             -> String -> FontStyle
-            -> (String -> LayoutPick x yl yr) 
+            -> (String -> LayoutPick x yl yr)
             -> ( Grid (Renderable (LayoutPick x yl yr))
                , Grid (Renderable (LayoutPick x yl yr)) )
     mktitle ha va rot lbl style pf = if lbl == "" then (er,er) else (labelG,gapG)
@@ -713,7 +712,7 @@ renderSinglePlot (w, h) (Just (AxisT _ _ xrev xaxis)) (Just (AxisT _ _ yrev yaxi
   in _plot_render p pmfn
 renderSinglePlot _ _ _ _ = return ()
 
-axesSpacer :: (Ord x, Ord y) 
+axesSpacer :: (Ord x, Ord y)
            => ((Double, Double) -> Double) -> Maybe (AxisT x)
            -> ((Double, Double) -> Double) -> Maybe (AxisT y)
            -> Renderable a
@@ -722,12 +721,12 @@ axesSpacer f1 a1 f2 a2 = embedRenderable $ do
     oh2 <- maybeM (0,0) axisOverhang a2
     return (spacer (f1 oh1, f2 oh2))
 
--- | Construct a axis for the given edge using the attributes 
+-- | Construct a axis for the given edge using the attributes
 --   from a 'LayoutAxis' the given values.
 mkAxis :: RectEdge -> LayoutAxis z -> [z] -> Maybe (AxisT z)
-mkAxis edge laxis vals = case axisVisible of
-    False -> Nothing
-    True  -> Just $ AxisT edge style rev adata
+mkAxis edge laxis vals = if axisVisible
+                           then Just $ AxisT edge style rev adata
+                           else Nothing
   where
     style = _laxis_style laxis
     rev   = _laxis_reverse laxis
@@ -736,13 +735,13 @@ mkAxis edge laxis vals = case axisVisible of
     axisVisible = _axis_show_labels vis || _axis_show_line vis || _axis_show_ticks vis
 
 -- | Override the visibility of a selected axis with the selected 'AxisVisibility'.
-overrideAxisVisibility :: layout 
-                       -> (layout -> LayoutAxis z) 
-                       -> (layout -> AxisVisibility) 
-                       -> LayoutAxis z 
-overrideAxisVisibility ly selAxis selVis = 
+overrideAxisVisibility :: layout
+                       -> (layout -> LayoutAxis z)
+                       -> (layout -> AxisVisibility)
+                       -> LayoutAxis z
+overrideAxisVisibility ly selAxis selVis =
   let vis = selVis ly
-  in (selAxis ly) { _laxis_override = (\ad -> ad { _axis_visibility = vis }) 
+  in (selAxis ly) { _laxis_override = (\ad -> ad { _axis_visibility = vis })
                                     . _laxis_override (selAxis ly)
                   }
 
@@ -750,7 +749,7 @@ mfill :: Maybe FillStyle -> Renderable a -> Renderable a
 mfill Nothing   = id
 mfill (Just fs) = fillBackground fs
 
--- | Empty 'LayoutLR' without title and plots. The background is white and 
+-- | Empty 'LayoutLR' without title and plots. The background is white and
 --   the grid is drawn beneath all plots. There will be a legend. The top
 --   axis will not be visible.
 instance (PlotValue x, PlotValue y1, PlotValue y2) => Default (LayoutLR x y1 y2) where
@@ -772,7 +771,7 @@ instance (PlotValue x, PlotValue y1, PlotValue y2) => Default (LayoutLR x y1 y2)
     , _layoutlr_left_axis_visibility  = def
     , _layoutlr_right_axis          = def
     , _layoutlr_right_axis_visibility = def
-    
+
     , _layoutlr_plots      = []
 
     , _layoutlr_legend          = Just def
@@ -800,19 +799,19 @@ $( makeLenses ''StackedLayouts )
 
 -- | Setter to update all axis styles on a `Layout`
 layout_axes_styles :: Setter' (Layout x y) AxisStyle
-layout_axes_styles = sets $ \af -> 
+layout_axes_styles = sets $ \af ->
     (layout_x_axis . laxis_style %~ af) .
-    (layout_y_axis . laxis_style %~ af) 
+    (layout_y_axis . laxis_style %~ af)
 
 -- | Setter to update all the axes title styles on a `Layout`
 layout_axes_title_styles :: Setter' (Layout x y) FontStyle
-layout_axes_title_styles = sets $ \af -> 
+layout_axes_title_styles = sets $ \af ->
     (layout_x_axis . laxis_title_style %~ af) .
     (layout_y_axis . laxis_title_style %~ af)
 
 -- | Setter to update all the font styles on a `Layout`
 layout_all_font_styles :: Setter' (Layout x y) FontStyle
-layout_all_font_styles = sets $ \af -> 
+layout_all_font_styles = sets $ \af ->
     (layout_axes_title_styles %~ af) .
     (layout_x_axis . laxis_style . axis_label_style %~ af) .
     (layout_y_axis . laxis_style . axis_label_style %~ af) .
@@ -823,25 +822,25 @@ layout_all_font_styles = sets $ \af ->
 layout_foreground ::  Setter' (Layout x y) (AlphaColour Double)
 layout_foreground = sets $ \af ->
     (layout_all_font_styles . font_color %~ af) .
-    (layout_axes_styles . axis_line_style . line_color %~ af) 
+    (layout_axes_styles . axis_line_style . line_color %~ af)
 
 -- | Setter to update all axis styles on a `LayoutLR`
 layoutlr_axes_styles :: Setter' (LayoutLR x y1 y2) AxisStyle
-layoutlr_axes_styles = sets $ \af -> 
+layoutlr_axes_styles = sets $ \af ->
     (layoutlr_x_axis . laxis_style %~ af) .
     (layoutlr_left_axis . laxis_style %~ af) .
     (layoutlr_right_axis . laxis_style %~ af)
 
 -- | Setter to update all the axes title styles on a `LayoutLR`
 layoutlr_axes_title_styles :: Setter' (LayoutLR x y1 y2) FontStyle
-layoutlr_axes_title_styles = sets $ \af -> 
+layoutlr_axes_title_styles = sets $ \af ->
     (layoutlr_x_axis . laxis_title_style %~ af) .
     (layoutlr_left_axis . laxis_title_style %~ af) .
     (layoutlr_right_axis . laxis_title_style %~ af)
 
 -- | Setter to update all the font styles on a `LayoutLR`
 layoutlr_all_font_styles :: Setter' (LayoutLR x y1 y2) FontStyle
-layoutlr_all_font_styles = sets $ \af -> 
+layoutlr_all_font_styles = sets $ \af ->
     (layoutlr_axes_title_styles %~ af) .
     (layoutlr_x_axis . laxis_style . axis_label_style %~ af) .
     (layoutlr_left_axis . laxis_style . axis_label_style %~ af) .
@@ -853,4 +852,4 @@ layoutlr_all_font_styles = sets $ \af ->
 layoutlr_foreground ::  Setter' (LayoutLR x y1 y2) (AlphaColour Double)
 layoutlr_foreground = sets $ \af ->
     (layoutlr_all_font_styles . font_color %~ af) .
-    (layoutlr_axes_styles . axis_line_style . line_color %~ af) 
+    (layoutlr_axes_styles . axis_line_style . line_color %~ af)

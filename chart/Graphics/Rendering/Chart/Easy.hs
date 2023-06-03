@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, TemplateHaskell, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables, FlexibleInstances #-}
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.Chart.Easy
@@ -6,7 +6,7 @@
 -- License     :  BSD-style (see chart/COPYRIGHT)
 --
 -- A high level API for generating a plot quickly.
--- 
+--
 -- Importing the Easy module brings into scope all core functions and types required
 -- for working with the chart library. This includes key external dependencies such as
 -- Control.Lens and Data.Colour. The module also provides several helper functions for
@@ -17,10 +17,10 @@
 --
 -- > import Graphics.Rendering.Chart.Easy
 -- > import Graphics.Rendering.Chart.Backend.Cairo
--- > 
+-- >
 -- > signal :: [Double] -> [(Double,Double)]
 -- > signal xs = [ (x,(sin (x*3.14159/45) + 1) / 2 * (sin (x*3.14159/5))) | x <- xs ]
--- > 
+-- >
 -- > main = toFile def "example.png" $ do
 -- >     layout_title .= "Amplitude Modulation"
 -- >     plot (line "am" [signal [0,(0.5)..400]])
@@ -46,7 +46,7 @@ module Graphics.Rendering.Chart.Easy(
   ) where
 
 import Control.Lens
-import Control.Monad(when)
+import Control.Monad(unless)
 import Data.Default.Class
 import Data.Colour hiding (over) -- overlaps with lens over function
 import Data.Colour.Names
@@ -83,9 +83,9 @@ points title values = liftEC $ do
     plot_points_style . point_color .= color
     plot_points_style . point_shape .= shape
     plot_points_style . point_radius .= 2
-    
+
     -- Show borders for unfilled shapes
-    when (not (isFilled shape)) $ do
+    unless (isFilled shape) $ do
         plot_points_style . point_border_color .= color
         plot_points_style . point_border_width .= 1
 
@@ -93,9 +93,9 @@ isFilled :: PointShape -> Bool
 isFilled PointShapeCircle = True
 isFilled PointShapePolygon{} = True
 isFilled _ = False
-    
+
 -- | Construct a bar chart with the given titles and data, using the
--- next available colors    
+-- next available colors
 bars :: (PlotValue x, BarsPlotValue y) => [String] -> [(x,[y])] -> EC l (PlotBars x y)
 bars titles vals = liftEC $ do
     styles <- sequence [fmap mkStyle takeColor | _ <- titles]

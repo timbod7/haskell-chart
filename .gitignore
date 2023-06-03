@@ -12,5 +12,14 @@ chart-simple/dist/
 chart-tests/dist/
 chart-tests/output/
 dist-newstyle/
+
+test*.png
+test*.svg
+misc*.png
+misc*.svg
+parametric.png
+parametric.svg
+sparklines.png
+sparklines.svg
 .ghc.environment.*
 cabal.project.local
