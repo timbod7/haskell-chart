@@ -65,6 +65,7 @@ chart = layoutToRenderable layout
       $ layout_y_axis . laxis_override .~ axisGridAtTicks
       $ layout_y_axis . laxis_reverse .~ True
       $ layout_y_axis . laxis_style . axis_grid_style .~ solidLine 0.3 (opaque lightgrey)
+      $ layout_y_axis . laxis_style . axis_label_style . font_size .~ 9
       $ layout_left_axis_visibility . axis_show_ticks .~ False
 
       -- data
