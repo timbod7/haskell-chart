@@ -11,7 +11,10 @@ import Utils
 import Test.QuickCheck (Result(Failure))
 
 dat :: [[Double]]
-dat = [ [66.22192174833207,   50.85424119528999]
+dat = [ [0.0,                 23.81232131645]
+      , [83.87632543135,      0.0]
+      , [0.0,                 0.0]
+      , [66.22192174833207,   50.85424119528999]
       , [18.507408294149144,  29.94826136042779]
       , [271.34564215397256,  482.0060747629345]
       , [0.33308595521927825, 0.25399999403605966]
@@ -62,6 +65,7 @@ chart = layoutToRenderable layout
       $ layout_y_axis . laxis_override .~ axisGridAtTicks
       $ layout_y_axis . laxis_reverse .~ True
       $ layout_y_axis . laxis_style . axis_grid_style .~ solidLine 0.3 (opaque lightgrey)
+      $ layout_y_axis . laxis_style . axis_label_style . font_size .~ 9
       $ layout_left_axis_visibility . axis_show_ticks .~ False
 
       -- data
@@ -82,7 +86,7 @@ chart = layoutToRenderable layout
       $ plot_bars_label_style . font_slant .~ FontSlantItalic
       $ def
 
-  dat' = map (\[a,b] -> [ (LogValue (min a b), "")
+  dat' = map (\[a,b] -> [ (LogValue (min a b), if a == b then "0.0" else "")
                         , if a < b then
                                      let v = b - a in
                                      (LogValue v, printf "%0.2f" v)
@@ -93,5 +97,7 @@ chart = layoutToRenderable layout
                                    else (LogValue 0, "")
                         ]) dat
 
-  alabels = map (\n -> "longDataPointName" ++ show n) $ take (length dat) [1..]
+  alabels =
+    ["addedDataPointName", "removedDataPointName", "nullDataPointName"] ++
+    map (\n -> "longDataPointName" ++ show n) (take (length dat - 3) [1..])
 

@@ -192,45 +192,41 @@ instance Default (PlotBars x y) where
 
 plotBars :: (BarsPlotValue y) => PlotBars x y -> Plot x y
 plotBars p = Plot {
-        _plot_render = \pmap -> renderBars (_plot_bars_settings p) vals yref0
-                                           (barRect pmap) (mapX pmap),
+        _plot_render     = \pmap -> renderBars s vals yref0
+                                      (barRect pmap) (mapX pmap),
         _plot_legend     = zip (_plot_bars_titles p)
                                (map renderPlotLegendBars
-                                    (_bars_settings_item_styles $ _plot_bars_settings p)),
-        _plot_all_points = allBarPoints p
+                                    (_bars_settings_item_styles s)),
+        _plot_all_points = allBarPoints s vals
     }
   where
+    s = _plot_bars_settings p
     vals = _plot_bars_values_with_labels p
+    yref0 = refVal s vals
 
     barRect pmap xos width x y0 y1 = Rect (Point (x'+xos) y0') (Point (x'+xos+width) y') where
       Point x' y' = mapXY pmap (x,y1)
       Point _ y0' = mapXY pmap (x,y0)
 
-    yref0 = barsReference $ case _bars_settings_style $ _plot_bars_settings p of
-              BarsClustered -> concatMap (map fst . snd) vals
-              BarsStacked   -> map (fst . head . snd) vals
-
     mapX pmap x = p_x (mapXY pmap (x, yref0))
 
 plotHBars :: (BarsPlotValue x) => PlotBars y x -> Plot x y
 plotHBars p = Plot {
-        _plot_render = \pmap -> renderBars (_plot_bars_settings p) vals xref0
-                                           (barRect pmap) (mapY pmap),
+        _plot_render     = \pmap -> renderBars s vals xref0
+                                      (barRect pmap) (mapY pmap),
         _plot_legend     = zip (_plot_bars_titles p)
                                (map renderPlotLegendBars
-                                    (_bars_settings_item_styles $ _plot_bars_settings p)),
-        _plot_all_points = swap $ allBarPoints p
+                                    (_bars_settings_item_styles s)),
+        _plot_all_points = swap $ allBarPoints s vals
     }
   where
+    s = _plot_bars_settings p
     vals = _plot_bars_values_with_labels p
+    xref0 = refVal s vals
 
     barRect pmap yos height y x0 x1 = Rect (Point x0' (y'+yos)) (Point x' (y'+yos+height)) where
       Point x' y' = mapXY pmap (x1,y)
       Point x0' _ = mapXY pmap (x0,y)
-
-    xref0 = barsReference $ case _bars_settings_style $ _plot_bars_settings p of
-                  BarsClustered -> concatMap (map fst . snd) vals
-                  BarsStacked   -> map (fst . head . snd) vals
 
     mapY pmap y = p_y (mapXY pmap (xref0, y))
 
@@ -274,30 +270,31 @@ renderBars p vals vref0 r mapk = case _bars_settings_style p of
                   (pvadd pt $ _bars_settings_label_offset p)
                   txt
 
-    stackedBars (x,ys) = do
-       let (ys', lbls) = unzip ys
-       let y2s = zip (vref0:stack ys') (stack ys')
+    stackedBars (k,vs) = do
+       let (vs', lbls) = unzip vs
+       let vs'' = map (\v -> if barsIsNull v then vref0 else v) (stack vs')
+       let v2s = zip (vref0:vs'') vs''
        let ofs = case _bars_settings_alignment p of
              BarsLeft     -> 0
              BarsRight    -> -bsize
              BarsCentered -> -(bsize/2)
-       forM_ (zip y2s styles) $ \((y0,y1), (fstyle,_)) ->
-           unless (y0 == y1) $
+       forM_ (zip v2s styles) $ \((v0,v1), (fstyle,_)) ->
+           unless (v0 >= v1) $
            withFillStyle fstyle $
-             alignFillPath (barPath ofs x y0 y1)
+             alignFillPath (barPath ofs k v0 v1)
              >>= fillPath
-       forM_ (zip y2s styles) $ \((y0,y1), (_,mlstyle)) ->
-           unless (y0 == y1) $
+       forM_ (zip v2s styles) $ \((v0,v1), (_,mlstyle)) ->
+           unless (v0 >= v1) $
            whenJust mlstyle $ \lstyle ->
               withLineStyle lstyle $
-                alignStrokePath (barPath ofs x y0 y1)
+                alignStrokePath (barPath ofs k v0 v1)
                 >>= strokePath
        withFontStyle (_bars_settings_label_style p) $
-           forM_ (zip y2s lbls) $ \((y0, y1), txt) ->
+           forM_ (zip v2s lbls) $ \((v0, v1), txt) ->
              unless (null txt) $ do
                let ha = _bars_settings_label_bar_hanchor p
                let va = _bars_settings_label_bar_vanchor p
-               let pt = rectCorner ha va (r ofs bsize x y0 y1)
+               let pt = rectCorner ha va (r ofs bsize k v0 v1)
                drawTextR
                   (_bars_settings_label_text_hanchor p)
                   (_bars_settings_label_text_vanchor p)
@@ -340,14 +337,19 @@ rectCorner h v (Rect (Point x0 y0) (Point x1 y1)) = Point x' y' where
 addLabels :: Show y => [(x, [y])] -> [(x, [(y, String)])]
 addLabels = map . second $ map (\y -> (y, show y))
 
-allBarPoints :: (BarsPlotValue y) => PlotBars x y -> ([x],[y])
-allBarPoints (PlotBars p _ vals) = case _bars_settings_style p of
+refVal :: (BarsPlotValue y) => BarsSettings -> [(x, [(y, String)])] -> y
+refVal p vals = barsReference $ case _bars_settings_style p of
+    BarsClustered -> concatMap (map fst . snd) vals
+    BarsStacked   -> concatMap (take 1 . dropWhile barsIsNull . stack . map fst . snd) vals
+
+allBarPoints :: (BarsPlotValue y) => BarsSettings -> [(x, [(y, String)])] -> ([x],[y])
+allBarPoints p vals = case _bars_settings_style p of
     BarsClustered ->
       let ys = concatMap (map fst) yls in
       ( xs, barsReference ys:ys )
     BarsStacked   ->
-      let ys = map (map fst) yls in
-      ( xs, barsReference (map head ys):concatMap stack ys)
+      let ys = map (stack . map fst) yls in
+      ( xs, barsReference (concatMap (take 1 . dropWhile barsIsNull) ys):concat ys)
   where (xs, yls) = unzip vals
 
 stack :: (BarsPlotValue y) => [y] -> [y]
