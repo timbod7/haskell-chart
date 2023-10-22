@@ -9,10 +9,11 @@ Homepage: https://github.com/timbod7/haskell-chart/wiki
 Synopsis: Cairo backend for Charts.
 Description: Cairo backend for Charts.
 Category: Graphics
-Cabal-Version: >= 1.8
+Cabal-Version: 1.18
 Build-Type: Simple
 
 library
+  default-language: Haskell98
   Build-depends: base >= 3 && < 5
                , old-locale
                , time, mtl, array
