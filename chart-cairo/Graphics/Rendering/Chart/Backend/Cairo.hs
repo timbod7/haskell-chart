@@ -28,6 +28,7 @@ import Data.Monoid
 import Control.Lens(makeLenses)
 import Control.Monad.Reader
 import Control.Monad.Operational
+import Control.Monad
 
 import qualified Graphics.Rendering.Cairo as C
 import qualified Graphics.Rendering.Cairo.Matrix as CM

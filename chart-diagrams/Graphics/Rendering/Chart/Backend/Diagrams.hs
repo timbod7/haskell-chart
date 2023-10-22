@@ -50,6 +50,7 @@ import           System.IO                   (IOMode (..), hPutStr, withFile)
 import Control.Lens(makeLenses)
 import Control.Monad.Operational
 import Control.Monad.State.Lazy
+import Control.Monad
 
 import Diagrams.Core.Transform ( Transformation(..) )
 import Diagrams.Prelude
