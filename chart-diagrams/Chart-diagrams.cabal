@@ -39,7 +39,7 @@ library
                , svg-builder >= 0.1 && < 0.2
                , bytestring >= 0.9 && < 1.0
                , operational >= 0.2.2 && < 0.3
-               , containers >= 0.4 && < 0.7
+               , containers >= 0.4 && < 0.8
                , data-default-class < 0.2
                , lens >= 3.9 && < 5.3
                , Chart >= 1.9 && < 1.10
