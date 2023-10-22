@@ -20,7 +20,7 @@ chart lwidth = layoutToRenderable layout
     layout = layout_title .~"Price History"
            $ layout_background .~ solidFillStyle (opaque white)
            $ layout_left_axis_visibility . axis_show_ticks .~ False
- 	   $ layout_plots .~ [ toPlot price1, toPlot spots ]
+           $ layout_plots .~ [ toPlot price1, toPlot spots ]
            $ layout_foreground .~ opaque black
            $ def
 

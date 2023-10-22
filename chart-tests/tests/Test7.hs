@@ -18,7 +18,7 @@ chart = layoutToRenderable layout
          $ def
 
     points = plot_points_style .~ filledCircles 2 (opaque red)
-	   $ plot_points_values .~ [(x,y) |  (x,y,dx,dy) <- vals]
+           $ plot_points_values .~ [(x,y) |  (x,y,dx,dy) <- vals]
            $ plot_points_title .~ "test data"
            $ def
 

@@ -40,7 +40,7 @@ chart prices showMinMax lwidth = layoutLRToRenderable layout
            $ def
 
     price2 = plot_lines_style .~ lineStyle (opaque green)
-	   $ plot_lines_values .~ [[ (d, v) | (d,_,v) <- prices]]
+           $ plot_lines_values .~ [[ (d, v) | (d,_,v) <- prices]]
            $ plot_lines_title .~ "price 2"
            $ def
 
@@ -62,7 +62,7 @@ chart prices showMinMax lwidth = layoutLRToRenderable layout
            $ layoutlr_left_axis . laxis_override .~ axisGridHide
            $ layoutlr_right_axis . laxis_override .~ axisGridHide
            $ layoutlr_x_axis . laxis_override .~ axisGridHide
- 	   $ layoutlr_plots .~ ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
+           $ layoutlr_plots .~ ([Left (toPlot price1), Right (toPlot price2)] ++ limits)
            $ layoutlr_grid_last .~ False
            $ layoutlr_foreground .~ fg
            $ def

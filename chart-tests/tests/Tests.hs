@@ -112,7 +112,7 @@ test4d lw = layoutToRenderable layout
            $ layout_y_axis . laxis_generate .~ autoScaledLogAxis def
            $ layout_y_axis . laxis_title .~ "vertical"
            $ layout_y_axis . laxis_reverse .~ False
-	   $ layout_plots .~ [ toPlot points `joinPlot` toPlot lines ]
+           $ layout_plots .~ [ toPlot points `joinPlot` toPlot lines ]
            $ def
 
 ----------------------------------------------------------------------
@@ -208,7 +208,7 @@ test10LR prices lw = layout
                 $ def
 
     price2 = plot_lines_style .~ lineStyle (opaque red)
-	   $ plot_lines_values .~ [[ (d, v) | (d,_,v) <- prices]]
+           $ plot_lines_values .~ [[ (d, v) | (d,_,v) <- prices]]
            $ plot_lines_title .~ "price 2"
            $ def
 
@@ -222,7 +222,7 @@ test10LR prices lw = layout
     layout = layoutlr_title .~"Price History"
            $ layoutlr_background .~ solidFillStyle (opaque white)
            $ layoutlr_right_axis . laxis_override .~ axisGridHide
- 	   $ layoutlr_plots .~ [ Left (toPlot price1_area), Right (toPlot price2_area)
+           $ layoutlr_plots .~ [ Left (toPlot price1_area), Right (toPlot price2_area)
                                , Left (toPlot price1),      Right (toPlot price2)
                                ]
            $ layoutlr_foreground .~ fg
