@@ -25,7 +25,7 @@ Executable chart-harness
     time,
     mtl,
     colour          >= 2.2.1 && < 2.4,
-    lens            >= 3.9 && < 5.3,
+    lens            >= 3.9 && < 5.4,
     data-default-class < 0.2,
     bytestring      >= 0.9 && < 1.0,
     svg-builder     >= 0.1 && < 0.2,

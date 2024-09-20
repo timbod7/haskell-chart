@@ -41,7 +41,7 @@ library
                , operational >= 0.2.2 && < 0.3
                , containers >= 0.4 && < 0.8
                , data-default-class < 0.2
-               , lens >= 3.9 && < 5.3
+               , lens >= 3.9 && < 5.4
                , mtl >= 2.0 && < 2.4
                , Chart >= 1.9 && < 1.10
                , text >= 2.0 && < 2.2
