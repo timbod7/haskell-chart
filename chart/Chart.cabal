@@ -24,7 +24,7 @@ library
                , time, array
                , lens >= 3.9 && < 5.4
                , colour >= 2.2.1 && < 2.4
-               , data-default-class < 0.2
+               , data-default-class < 0.3
                , mtl >= 2.0 && < 2.4
                , operational >= 0.2.2 && < 0.3
                , vector >=0.9 && <0.14

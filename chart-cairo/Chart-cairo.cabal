@@ -20,7 +20,7 @@ library
                , time >= 1.12 && < 1.13
                , cairo >= 0.9.11 && < 0.14
                , colour >= 2.2.1 && < 2.4
-               , data-default-class < 0.2
+               , data-default-class < 0.3
                , operational >= 0.2.2 && < 0.3
                , lens >= 3.9 && < 5.4
                , Chart >= 1.9 && < 1.10

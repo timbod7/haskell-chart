@@ -17,7 +17,7 @@ library
                , old-locale
                , time, mtl, array
                , cairo >= 0.9.11
-               , data-default-class < 0.2
+               , data-default-class < 0.3
                , colour >= 2.2.1 && < 2.4
                , gtk3 >= 0.14
                , Chart >= 1.9 && < 1.10
