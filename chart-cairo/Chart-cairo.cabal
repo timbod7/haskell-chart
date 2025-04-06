@@ -17,7 +17,7 @@ library
   Build-depends: base >= 3 && < 5
                , array >= 0.5 && < 0.6
                , old-locale >= 1.0.0 && < 1.1
-               , time >= 1.12 && < 1.13
+               , time >= 1.12 && < 1.15
                , cairo >= 0.9.11 && < 0.14
                , colour >= 2.2.1 && < 2.4
                , data-default-class < 0.3
