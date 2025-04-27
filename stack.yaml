@@ -1,4 +1,3 @@
-flags: {}
 packages:
 - chart/
 - chart-cairo/
@@ -6,14 +5,10 @@ packages:
 - chart-tests/
 - chart-gtk/
 - chart-gtk3/
-#flags:
+flags:
 #  gtk:
-#    # This needs to be true on osx
-#    have-quartz-gtk: false
-resolver: lts-20.23
-extra-deps:
-- gtk-0.15.8
-- gtk3-0.15.8
-- gio-0.13.8.2
+#    # This needs to be set on macOS
+#    have-quartz-gtk: true
+resolver: lts-23.19
 nix:
   packages: [pkgconfig, cairo, zlib, pango, xorg.xproto, xorg.libX11, gtk2, gtk3]
