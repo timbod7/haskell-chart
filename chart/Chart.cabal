@@ -19,7 +19,7 @@ Build-Type: Simple
 
 library
   default-language: Haskell98
-  Build-depends: base >= 3 && < 5
+  Build-depends: base >= 4.11 && < 5
                , old-locale
                , time, array
                , lens >= 3.9 && < 5.4
