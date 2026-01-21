@@ -200,7 +200,7 @@ scaledAxis lap rs@(minV,maxV) ps0 = makeAxis' realToFrac realToFrac
     ps        = filter isValidNumber ps0
     range []  = (0,1)
     range _   | minV == maxV = if minV==0 then (-1,1) else
-                               let d = abs (minV * 0.01) in (minV-d,maxV+d)
+                               let d = max 1e-300 (abs (minV * 0.01)) in (minV-d,maxV+d)
               | otherwise    = rs
     labelvs   = map fromRational $ steps (fromIntegral (_la_nLabels lap)) r
     tickvs    = map fromRational $ steps (fromIntegral (_la_nTicks lap))
